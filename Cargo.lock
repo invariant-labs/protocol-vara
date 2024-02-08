@@ -2045,6 +2045,7 @@ dependencies = [
  "decimal",
  "gstd",
  "gtest",
+ "traceable_result",
 ]
 
 [[package]]
@@ -4063,6 +4064,10 @@ dependencies = [
  "toml_datetime",
  "winnow",
 ]
+
+[[package]]
+name = "traceable_result"
+version = "0.1.0"
 
 [[package]]
 name = "tracing"
