@@ -4,7 +4,11 @@ use alloc::string::ToString;
 use crate::math::types::liquidity::Liquidity;
 
 #[decimal(24)]
-#[derive(Default, Debug, Clone, Copy, PartialEq, Eq, PartialOrd)]
+#[derive(Default, Debug, Clone, Copy, PartialEq, Eq, PartialOrd, scale::Encode, scale::Decode)]
+#[cfg_attr(
+    feature = "std",
+    derive(scale_info::TypeInfo)
+)]
 pub struct SecondsPerLiquidity(pub u128);
 
 impl SecondsPerLiquidity {
