@@ -1,6 +1,6 @@
 use decimal::*;
 use traceable_result::*;
-
+use alloc::string::ToString;
 use super::sqrt_price::SqrtPrice;
 
 #[decimal(0)]
