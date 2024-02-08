@@ -9,6 +9,7 @@ crate-type = ["cdylib"]
 [dependencies]
 gstd = { git = "https://github.com/gear-tech/gear.git", tag = "v1.0.2", features = ["debug"] }
 decimal = { path = "src/decimal" }
+traceable_result = { path = "src/traceable_result" }
 
 # [build-dependencies]
 # gear-wasm-builder = { git = "https://github.com/gear-tech/gear.git", tag = "v1.0.1" }
