@@ -4,7 +4,11 @@ use traceable_result::*;
 use alloc::string::ToString;
 
 #[decimal(28)]
-#[derive(Default, Debug, Clone, Copy, PartialEq, Eq, PartialOrd)]
+#[derive(Default, Debug, Clone, Copy, PartialEq, Eq, PartialOrd, scale::Encode, scale::Decode)]
+#[cfg_attr(
+    feature = "std",
+    derive(scale_info::TypeInfo)
+)]
 pub struct FeeGrowth(pub u128);
 
 impl FeeGrowth {

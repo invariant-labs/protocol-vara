@@ -5,7 +5,11 @@ use crate::math::consts::*;
 use crate::math::types::{fixed_point::FixedPoint, token_amount::TokenAmount};
 
 #[decimal(24)]
-#[derive(Default, Debug, Clone, Copy, PartialEq, Eq, PartialOrd)]
+#[derive(Default, Debug, Clone, Copy, PartialEq, Eq, PartialOrd, scale::Encode, scale::Decode)]
+#[cfg_attr(
+    feature = "std",
+    derive(scale_info::TypeInfo)
+)]
 pub struct SqrtPrice(pub u128);
 
 impl SqrtPrice {

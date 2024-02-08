@@ -2031,6 +2031,8 @@ dependencies = [
  "gear-wasm-builder",
  "gstd",
  "gtest",
+ "parity-scale-codec",
+ "scale-info",
  "traceable_result",
 ]
 
