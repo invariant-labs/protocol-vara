@@ -740,6 +740,26 @@ dependencies = [
 ]
 
 [[package]]
+name = "decimal"
+version = "0.1.0"
+dependencies = [
+ "decimal_core",
+ "integer-sqrt",
+ "num-traits",
+ "uint",
+]
+
+[[package]]
+name = "decimal_core"
+version = "0.1.0"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "regex",
+ "syn 2.0.48",
+]
+
+[[package]]
 name = "der"
 version = "0.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2022,6 +2042,7 @@ checksum = "f6f38a50a899dc47a6d0ed5508e7f601a2e34c3a85303514b5d137f3c10a0c75"
 name = "invariant"
 version = "0.1.0"
 dependencies = [
+ "decimal",
  "gstd",
  "gtest",
 ]
