@@ -12,7 +12,7 @@ pub struct Liquidity {
 }
 
 static mut GLOBAL_LIQUIDITY: Liquidity = Liquidity { v: 0 };
-static mut GLOBAL_SQRT_PRICE: SqrtPrice = SqrtPrice { v: 0 };
+static mut GLOBAL_SQRT_PRICE: SqrtPrice = SqrtPrice(0);
 
 #[no_mangle]
 extern "C" fn handle() {
@@ -30,7 +30,7 @@ extern "C" fn handle() {
         }
         _ => (),
     }
-    sqrt_price.v = 0;
+    sqrt_price.0 = 0;
 
     unsafe { GLOBAL_LIQUIDITY = *liquidity };
     unsafe { GLOBAL_SQRT_PRICE = *sqrt_price };
