@@ -1,6 +1,7 @@
 use crate::math::types::{liquidity::*, token_amount::*};
 use decimal::*;
 use traceable_result::*;
+use alloc::string::ToString;
 
 #[decimal(28)]
 #[derive(Default, Debug, Clone, Copy, PartialEq, Eq, PartialOrd)]

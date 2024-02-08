@@ -1,6 +1,6 @@
 use decimal::*;
 use traceable_result::*;
-
+use alloc::string::ToString;
 use crate::math::types::liquidity::Liquidity;
 
 #[decimal(24)]
