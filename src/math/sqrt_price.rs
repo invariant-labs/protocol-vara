@@ -5,6 +5,4 @@ use gstd::*;
 // #[derive(Default, Debug, Clone, Copy, PartialEq, Eq, PartialOrd)]
 // #[derive(Default, TypeInfo, Clone, Decode, Encode)]
 #[derive(Default, Debug, Clone, Copy)]
-pub struct SqrtPrice {
-    pub v: u128
-}
+pub struct SqrtPrice(pub u128);
