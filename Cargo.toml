@@ -7,7 +7,7 @@ edition = "2021"
 crate-type = ["cdylib"]
 
 [dependencies]
-gstd = { git = "https://github.com/gear-tech/gear.git", tag = "v1.0.2" }
+gstd = { git = "https://github.com/gear-tech/gear.git", tag = "v1.0.2", features = ["debug"] }
 
 # [build-dependencies]
 # gear-wasm-builder = { git = "https://github.com/gear-tech/gear.git", tag = "v1.0.1" }

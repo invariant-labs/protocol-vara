@@ -2,22 +2,28 @@
 
 use gstd::{msg, prelude::*};
 
-static mut COUNTER: i32 = 0;
+#[derive(Copy, Clone)]
+pub struct Liquidity {
+    pub v: u128
+}
+
+static mut GLOBAL_LIQUIDITY: Liquidity = Liquidity { v: 0 };
 
 #[no_mangle]
 extern "C" fn handle() {
     let command = msg::load_bytes().expect("Invalid message");
 
-    let mut counter = unsafe { COUNTER };
+    let liquidity = unsafe { &mut GLOBAL_LIQUIDITY };
 
     match command.as_slice() {
-        b"inc" => counter += 1,
-        b"dec" => counter -= 1,
+        b"inc" => liquidity.v += 1,
+        b"dec" => liquidity.v -= 1,
         b"get" => {
-            msg::reply_bytes(format!("{counter}"), 0).expect("Unable to reply");
+            let liquidity_value = liquidity.v;
+            msg::reply_bytes(format!("{liquidity_value}"), 0).expect("Unable to reply");
         }
         _ => (),
     }
 
-    unsafe { COUNTER = counter };
+    unsafe { GLOBAL_LIQUIDITY = *liquidity };
 }
