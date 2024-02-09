@@ -2476,7 +2476,6 @@ dependencies = [
 ]
 
 [[package]]
-<<<<<<< HEAD
 name = "gmeta-codegen"
 version = "1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2488,68 +2487,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "gp-allocator"
-version = "4.1.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "93cfb4525b5362966a1971125ff8f9825e6a511403635dccf883273d20c43bdf"
-dependencies = [
- "log",
- "parity-scale-codec",
- "sp-wasm-interface-common 15.0.0",
- "thiserror",
-]
-
-[[package]]
-name = "gp-runtime-interface"
-version = "7.0.5"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ad4bd502c9a03def500e07a9aae45b82c4dcb362bb085ba505d932a1896b1e5d"
-dependencies = [
- "bytes",
- "gp-runtime-interface-proc-macro",
- "gp-wasm-interface",
- "impl-trait-for-tuples",
- "parity-scale-codec",
- "primitive-types",
- "sp-externalities 0.13.0",
- "sp-std 5.0.0",
- "sp-storage 7.0.0",
- "sp-tracing 6.0.0",
- "static_assertions",
-]
-
-[[package]]
-name = "gp-runtime-interface-proc-macro"
-version = "6.0.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "64473d943c8ff17f63af957a0aae8ac87692b5eae8c3d01f0178bd039510fa2d"
-dependencies = [
- "Inflector",
- "proc-macro-crate 1.3.1",
- "proc-macro2",
- "quote",
- "syn 1.0.109",
-]
-
-[[package]]
-name = "gp-wasm-interface"
-version = "7.0.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "109c3fa9ac07808dc72e5920b2755fc30da3c5d67e817eebebf8c2b58346f23b"
-dependencies = [
- "anyhow",
- "gp-allocator",
- "impl-trait-for-tuples",
- "log",
- "parity-scale-codec",
- "sp-std 5.0.0",
- "sp-wasm-interface-common 7.0.2",
- "wasmtime 6.0.2",
-]
-
-[[package]]
-=======
->>>>>>> master
 name = "group"
 version = "0.13.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
