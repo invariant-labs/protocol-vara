@@ -25,4 +25,4 @@ gtest = "1.1.0"
 [features]
 binary-vendor = []
 wasm-opt = ["gear-wasm-builder/wasm-opt"]
-default = ["binary-vendor", "wasm-opt"]
+default = ["binary-vendor", "wasm-opt", "scale-info/std"]

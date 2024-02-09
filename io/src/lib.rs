@@ -1,4 +1,6 @@
 use gmeta::Metadata;
+pub mod collections;
+pub mod storage;
 
 pub struct ContractMetadata;
 

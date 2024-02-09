@@ -7,3 +7,15 @@ edition = "2021"
 
 [dependencies]
 gmeta = "1.1.0"
+gstd = "1.1.0"
+scale = { package = "parity-scale-codec", version = "3", default-features = false, features = [
+  "derive",
+] }
+scale-info = { version = "2.6", default-features = false, features = [
+  "derive",
+], optional = true }
+
+
+[features]
+default = ["std"]
+std = ["sacle-info/std"]
