@@ -33,4 +33,3 @@ sp-runtime = { git = "https://github.com/gear-tech/substrate.git", branch = "gea
 binary-vendor = []
 wasm-opt = ["gear-wasm-builder/wasm-opt"]
 default = ["binary-vendor", "wasm-opt"]
-
