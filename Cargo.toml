@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-gstd = { git = "https://github.com/gear-tech/gear.git", tag = "v1.0.2" }
+gstd = "1.1.0"
 decimal = { path = "src/decimal" }
 traceable_result = { path = "src/traceable_result" }
 scale = { package = "parity-scale-codec", version = "3", default-features = false, features = [
@@ -15,20 +15,22 @@ scale-info = { version = "2.6", default-features = false, features = [
 ], optional = true }
 
 [build-dependencies]
-gear-wasm-builder = { git = "https://github.com/gear-tech/gear.git", tag = "v1.0.2" }
+gear-wasm-builder = "1.1.0"
+gmeta = "1.1.0"
+io = { path = "io" }
 
 [dev-dependencies]
-gtest = { git = "https://github.com/gear-tech/gear.git", tag = "v1.0.2" }
-gclient = { git = "https://github.com/gear-tech/gear.git", tag = "v1.0.2" }
+gtest = { git = "https://github.com/gear-tech/gear.git", tag = "v1.1.0" }
+gclient = { git = "https://github.com/gear-tech/gear.git", tag = "v1.1.0" }
 tokio = { version = "1", features = ["full"] }
 
 # for e2e tests
-# [patch.crates-io]
-# sp-core = { git = "https://github.com/gear-tech/substrate.git", branch = "gear-stable" }
-# sp-runtime = { git = "https://github.com/gear-tech/substrate.git", branch = "gear-stable" }
+[patch.crates-io]
+sp-core = { git = "https://github.com/gear-tech/substrate.git", branch = "gear-stable" }
+sp-runtime = { git = "https://github.com/gear-tech/substrate.git", branch = "gear-stable" }
 
 [features]
-debug = ["gstd/debug"]
-default = ["std"]
-std = ["scale-info/std"]
-e2e = []
+binary-vendor = []
+wasm-opt = ["gear-wasm-builder/wasm-opt"]
+default = ["binary-vendor", "wasm-opt"]
+
