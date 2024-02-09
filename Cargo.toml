@@ -27,3 +27,6 @@ gtest = "1.1.0"
 binary-vendor = []
 wasm-opt = ["gear-wasm-builder/wasm-opt"]
 default = ["binary-vendor", "wasm-opt"]
+
+[workspace]
+members = ["state"]
