@@ -54,11 +54,16 @@ extern "C" fn handle() {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use gstd::ActorId;
     use gtest::{Log, Program, System};
 
+    pub const USER: [u8; 32] = [0; 32];
+
     #[test]
-    fn test_init_and_call() {
+    fn test_init() {
         let sys = System::new();
+        sys.init_logger();
+
         let program_id = 105;
         let program = Program::from_file_with_id(
             &sys,
@@ -66,18 +71,16 @@ mod tests {
             "./target/wasm32-unknown-unknown/release/invariant.wasm",
         );
 
-        sys.init_logger();
-        let _ = Log::builder();
-
-        let _ = program.send_bytes(100001, "INIT MESSAGE");
-        let _ = program.send_bytes(100001, b"inc");
-        let res = program.send_bytes(100001, b"get");
-
-        let expected_response = Log::builder()
-            .source(program_id)
-            .dest(100001)
-            .payload_bytes(b"1");
-
-        assert!(res.contains(&expected_response));
+        assert!(!program
+            .send(
+                100001,
+                InitInvariant {
+                    config: InvariantConfig {
+                        admin: ActorId::new(USER),
+                        protocol_fee: 100,
+                    },
+                },
+            )
+            .main_failed());
     }
 }
