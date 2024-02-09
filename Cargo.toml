@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-gstd = { git = "https://github.com/gear-tech/gear.git", tag = "v1.0.2" }
+gstd = "1.1.0"
 decimal = { path = "src/decimal" }
 traceable_result = { path = "src/traceable_result" }
 scale = { package = "parity-scale-codec", version = "3", default-features = false, features = [
@@ -15,12 +15,14 @@ scale-info = { version = "2.6", default-features = false, features = [
 ], optional = true }
 
 [build-dependencies]
-gear-wasm-builder = { git = "https://github.com/gear-tech/gear.git", tag = "v1.0.2" }
+gear-wasm-builder = "1.1.0"
+gmeta = "1.1.0"
+io = { path = "io" }
 
 [dev-dependencies]
-gtest = { git = "https://github.com/gear-tech/gear.git", tag = "v1.0.2" }
+gtest = "1.1.0"
 
 [features]
-debug = ["gstd/debug"]
-default = ["std"]
-std = ["scale-info/std"]
+binary-vendor = []
+wasm-opt = ["gear-wasm-builder/wasm-opt"]
+default = ["binary-vendor", "wasm-opt"]
