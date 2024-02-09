@@ -3,7 +3,6 @@
 use escrow_io::*;
 use gstd::prelude::*;
 use io::{InvariantConfig, InvariantState};
-use primitive_types::U256;
 
 #[gmeta::metawasm]
 pub mod metafns {

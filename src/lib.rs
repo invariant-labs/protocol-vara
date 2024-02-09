@@ -18,7 +18,7 @@ impl Invariant {
     pub fn change_protocol_fee(&mut self, protocol_fee: u128) {
         self.config.protocol_fee = protocol_fee;
 
-        reply(InvariantEvent::ProtocolFeeChanged(protocol_fee), 0);
+        reply(InvariantEvent::ProtocolFeeChanged(protocol_fee), 0).expect("Unable to reply");
     }
 }
 
