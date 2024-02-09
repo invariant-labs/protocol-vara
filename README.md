@@ -5,6 +5,10 @@ sudo apt install -y build-essential clang cmake
 ```
 
 ```bash
+curl https://get.gear.rs/gear-v1.0.2-x86_64-unknown-linux-gnu.tar.xz | tar xJ
+```
+
+```bash
 rustup toolchain add nightly-2023-09-18
 ```
 

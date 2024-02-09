@@ -1,9 +1,12 @@
-# Install gear node
-curl https://get.gear.rs/gear-v1.0.2-x86_64-unknown-linux-gnu.tar.xz | tar xJ
-
 # Start node
 ./gear --dev
 
-# Build and test
+# Build 
 cargo build --release
+
+# optimalize wasm
+wasm-proc target/wasm32-unknown-unknown/release/invariant.wasm
+
+# Run tests
 cargo test --release
+
