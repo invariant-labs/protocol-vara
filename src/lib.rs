@@ -1,6 +1,8 @@
 #![no_std]
 
 extern crate alloc;
+#[cfg(test)]
+mod e2e;
 mod math;
 
 use gstd::{
@@ -46,5 +48,36 @@ extern "C" fn handle() {
         InvariantAction::ChangeProtocolFee(protocol_fee) => {
             invariant.change_protocol_fee(protocol_fee)
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use gtest::{Log, Program, System};
+
+    #[test]
+    fn test_init_and_call() {
+        let sys = System::new();
+        let program_id = 105;
+        let program = Program::from_file_with_id(
+            &sys,
+            program_id,
+            "./target/wasm32-unknown-unknown/release/invariant.wasm",
+        );
+
+        sys.init_logger();
+        let _ = Log::builder();
+
+        let _ = program.send_bytes(100001, "INIT MESSAGE");
+        let _ = program.send_bytes(100001, b"inc");
+        let res = program.send_bytes(100001, b"get");
+
+        let expected_response = Log::builder()
+            .source(program_id)
+            .dest(100001)
+            .payload_bytes(b"1");
+
+        assert!(res.contains(&expected_response));
     }
 }
