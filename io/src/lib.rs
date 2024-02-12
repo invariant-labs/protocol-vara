@@ -1,14 +1,11 @@
-<<<<<<< HEAD
-use gmeta::Metadata;
+#![no_std]
 pub mod collections;
 pub mod storage;
-=======
-#![no_std]
->>>>>>> 2a63e3ff5b4a5afeb4e53932685ee506cf310de9
+
 
 use gmeta::{In, InOut, Metadata};
-use gstd::ActorId;
-use parity_scale_codec::{Decode, Encode};
+use gstd::{scale_info, ActorId};
+use scale::{Encode, Decode};
 use scale_info::TypeInfo;
 
 pub struct InvariantMetadata;
@@ -32,11 +29,12 @@ pub struct InvariantState {
 #[derive(Decode, Encode, TypeInfo)]
 #[codec(crate = gstd::codec)]
 #[scale_info(crate = gstd::scale_info)]
+#[codec(crate = gstd::codec)]
 pub struct InitInvariant {
     pub config: InvariantConfig,
 }
 
-#[derive(Decode, Encode, TypeInfo, PartialEq, Eq, Clone, Copy, Debug, Default)]
+#[derive(Decode, Encode, PartialEq, Eq, Clone, Copy, Debug, Default, TypeInfo)]
 #[codec(crate = gstd::codec)]
 #[scale_info(crate = gstd::scale_info)]
 pub struct InvariantConfig {
@@ -47,6 +45,10 @@ pub struct InvariantConfig {
 #[derive(Clone, Decode, Encode, TypeInfo)]
 #[codec(crate = gstd::codec)]
 #[scale_info(crate = gstd::scale_info)]
+#[cfg_attr(
+    feature = "std",
+    derive(scale_info::TypeInfo)
+)]
 pub enum InvariantAction {
     ChangeProtocolFee(u128),
 }
@@ -54,6 +56,10 @@ pub enum InvariantAction {
 #[derive(Clone, Decode, Encode, TypeInfo)]
 #[codec(crate = gstd::codec)]
 #[scale_info(crate = gstd::scale_info)]
+#[cfg_attr(
+    feature = "std",
+    derive(scale_info::TypeInfo)
+)]
 pub enum InvariantEvent {
     ProtocolFeeChanged(u128),
 }
