@@ -1,15 +1,15 @@
-use gstd::scale_info;
-use scale::{Encode, Decode};
-use scale_info::TypeInfo;
-use gstd::Vec;
-use crate::storage::fee_tier::FeeTier;
 use crate::errors::InvariantError;
+use crate::storage::fee_tier::FeeTier;
+use gstd::scale_info;
+use gstd::Vec;
+use scale::{Decode, Encode};
+use scale_info::TypeInfo;
 
-#[derive(Decode, Encode, TypeInfo, PartialEq, Eq, Clone, Debug, Default)]
+#[derive(gstd::Decode, gstd::Encode, TypeInfo, PartialEq, Eq, Clone, Debug, Default)]
 #[codec(crate = gstd::codec)]
 #[scale_info(crate = gstd::scale_info)]
 pub struct FeeTiers {
-    fee_tiers: Vec<FeeTier>
+    fee_tiers: Vec<FeeTier>,
 }
 
 impl FeeTiers {

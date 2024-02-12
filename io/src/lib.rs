@@ -46,12 +46,17 @@ pub struct InvariantConfig {
 #[derive(Clone, Decode, Encode, TypeInfo)]
 #[codec(crate = gstd::codec)]
 #[scale_info(crate = gstd::scale_info)]
-#[cfg_attr(feature = "std", derive(scale_info::TypeInfo))]
 pub enum InvariantAction {
     ChangeProtocolFee(u128),
     AddFeeTier(FeeTier),
-    FeeTierExist(FeeTier),
     RemoveFeeTier(FeeTier),
+}
+
+#[derive(Clone, Decode, Encode, TypeInfo)]
+#[codec(crate = gstd::codec)]
+#[scale_info(crate = gstd::scale_info)]
+pub enum InvariantQuery {
+    FeeTierExist(FeeTier),
     GetFeeTiers,
 }
 
