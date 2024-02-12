@@ -1,11 +1,11 @@
 #![no_std]
 pub mod collections;
-pub mod storage;
 pub mod errors;
+pub mod storage;
 
 use gmeta::{In, InOut, Metadata};
-use gstd::{scale_info, ActorId};
-use scale::{Encode, Decode};
+use gstd::{scale_info, ActorId, Vec};
+use scale::{Decode, Encode};
 use scale_info::TypeInfo;
 use storage::fee_tier::FeeTier;
 
@@ -46,10 +46,7 @@ pub struct InvariantConfig {
 #[derive(Clone, Decode, Encode, TypeInfo)]
 #[codec(crate = gstd::codec)]
 #[scale_info(crate = gstd::scale_info)]
-#[cfg_attr(
-    feature = "std",
-    derive(scale_info::TypeInfo)
-)]
+#[cfg_attr(feature = "std", derive(scale_info::TypeInfo))]
 pub enum InvariantAction {
     ChangeProtocolFee(u128),
     AddFeeTier(FeeTier),
@@ -61,10 +58,10 @@ pub enum InvariantAction {
 #[derive(Clone, Decode, Encode, TypeInfo)]
 #[codec(crate = gstd::codec)]
 #[scale_info(crate = gstd::scale_info)]
-#[cfg_attr(
-    feature = "std",
-    derive(scale_info::TypeInfo)
-)]
 pub enum InvariantEvent {
     ProtocolFeeChanged(u128),
+    FeeTierAdded(FeeTier),
+    FeeTierRemoved(FeeTier),
+    QueriedFeeTiers(Vec<FeeTier>),
+    FeeTierExist(bool),
 }

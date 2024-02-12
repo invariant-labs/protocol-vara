@@ -5,7 +5,11 @@ extern crate alloc;
 mod e2e;
 mod math;
 
+use crate::errors::InvariantError;
+use crate::math::percentage::Percentage;
+use decimal::*;
 use gstd::{
+    exec,
     msg::{self, reply},
     prelude::*,
 };
@@ -25,22 +29,43 @@ impl Invariant {
     }
 
     pub fn add_fee_tier(&mut self, fee_tier: FeeTier) {
-        let caller = self.env().caller();
+        let caller = exec::program_id();
 
         if fee_tier.tick_spacing == 0 || fee_tier.tick_spacing > 100 {
-            return Err(InvariantError::InvalidTickSpacing);
+            // return Err(InvariantError::InvalidTickSpacing);
         }
 
-        if fee_tier.fee >= Percentage::from_integer(1) {
-            return Err(InvariantError::InvalidFee);
+        if fee_tier.fee >= Percentage::from_integer(1).get() {
+            // return Err(InvariantError::InvalidFee);
         }
 
         if caller != self.config.admin {
-            return Err(InvariantError::NotAdmin);
+            // return Err(InvariantError::NotAdmin);
         }
 
         self.fee_tiers.add(fee_tier); // ?
+        reply(InvariantEvent::FeeTierAdded(fee_tier), 0).expect("Unable to reply");
+    }
 
+    pub fn fee_tier_exist(&self, fee_tier: FeeTier) {
+        let exist = self.fee_tiers.contains(fee_tier);
+        reply(InvariantEvent::FeeTierExist(exist), 0).expect("Unable to reply");
+    }
+
+    pub fn remove_fee_tier(&mut self, fee_tier: FeeTier) {
+        let caller = exec::program_id();
+
+        if caller != self.config.admin {
+            // return Err(InvariantError::NotAdmin);
+        }
+
+        self.fee_tiers.remove(fee_tier);
+        reply(InvariantEvent::FeeTierRemoved(fee_tier), 0).expect("Unable to reply");
+    }
+
+    pub fn get_fee_tiers(&self) {
+        let fee_tiers = self.fee_tiers.get_all();
+        reply(InvariantEvent::QueriedFeeTiers(fee_tiers), 0).expect("Unable to reply");
     }
 }
 
@@ -52,7 +77,7 @@ extern "C" fn init() {
 
     let invariant = Invariant {
         config: init.config,
-        fee_tiers: FeeTiers::default()
+        fee_tiers: FeeTiers::default(),
     };
 
     unsafe {
@@ -69,22 +94,20 @@ extern "C" fn handle() {
         InvariantAction::ChangeProtocolFee(protocol_fee) => {
             invariant.change_protocol_fee(protocol_fee)
         }
-        InvariantAction::AddFeeTier(fee_tier) => {
-            invariant.add_fee_tier(fee_tier)
-        }
-        InvariantAction::FeeTierExist(fee_tier) => {}
-        InvariantAction::RemoveFeeTier(fee_tier) => {}
-        InvariantAction::GetFeeTiers => {}
-        _ => {}
+        InvariantAction::AddFeeTier(fee_tier) => invariant.add_fee_tier(fee_tier),
+        InvariantAction::FeeTierExist(fee_tier) => invariant.fee_tier_exist(fee_tier),
+        InvariantAction::RemoveFeeTier(fee_tier) => invariant.remove_fee_tier(fee_tier),
+        InvariantAction::GetFeeTiers => invariant.get_fee_tiers(),
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::InvariantAction::*;
     use gstd::ActorId;
     use gtest::{Log, Program, System};
-    
+
     pub const USER: [u8; 32] = [0; 32];
 
     #[test]
@@ -137,7 +160,9 @@ mod tests {
             .main_failed());
 
         let fee_tier = FeeTier::default();
-        let result = program.send(100001, fee_tier);
-
+        program.send(100001, AddFeeTier(fee_tier));
+        program.send(100001, FeeTierExist(fee_tier));
+        program.send(100001, GetFeeTiers);
+        program.send(100001, RemoveFeeTier(fee_tier));
     }
 }
