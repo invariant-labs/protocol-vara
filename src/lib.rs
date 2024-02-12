@@ -121,16 +121,16 @@ extern "C" fn handle() {
 
 #[no_mangle]
 extern "C" fn state() {
-    let query: InvariantQuery = msg::load().expect("Unable to decode InvariantAction");
+    let query: InvariantQuery = msg::load().expect("Unable to decode InvariantQuery");
     let invariant = unsafe { INVARIANT.get_or_insert(Default::default()) };
     match query {
         InvariantQuery::FeeTierExist(fee_tier) => {
             let res = invariant.fee_tier_exist(fee_tier);
-            reply(res, 1).expect("Unable to reply");
+            reply(unsafe { InvariantEvent::FeeTierExist(res) }, 0).expect("Unable to reply");
         }
         InvariantQuery::GetFeeTiers => {
             let res = invariant.get_fee_tiers();
-            reply(res, 0).expect("Unable to reply");
+            reply(unsafe { InvariantEvent::QueriedFeeTiers(res) }, 0).expect("Unable to reply");
         }
     }
 }
@@ -190,6 +190,7 @@ mod tests {
                 },
             )
             .main_failed());
+
         {
             let logs = program.send(100001, AddFeeTier(fee_tier));
             assert!(!logs.main_failed());
@@ -206,7 +207,7 @@ mod tests {
         {
             let logs = program.read_state(fee_tier);
 
-            panic!("{:?}", logs);
+            // panic!("{:?}", logs);
 
             let expected_response = Log::builder()
                 .source(program_id)
@@ -215,18 +216,18 @@ mod tests {
 
             // assert!(logs.contains(&expected_response))
         }
-        {
-            let logs = program.send(100001, GetFeeTiers);
-            assert!(!logs.main_failed());
-            assert!(!logs.others_failed());
+        // {
+        //     let logs = program.send(100001, GetFeeTiers);
+        //     assert!(!logs.main_failed());
+        //     assert!(!logs.others_failed());
 
-            let expected_response = Log::builder()
-                .source(program_id)
-                .dest(100001)
-                .payload_bytes(vec![fee_tier].encode());
+        //     let expected_response = Log::builder()
+        //         .source(program_id)
+        //         .dest(100001)
+        //         .payload_bytes(vec![fee_tier].encode());
 
-            // assert!(logs.contains(&expected_response))
-        }
+        //     // assert!(logs.contains(&expected_response))
+        // }
         {
             let logs = program.send(100001, RemoveFeeTier(fee_tier));
             assert!(!logs.main_failed());

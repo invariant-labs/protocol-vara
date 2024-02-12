@@ -17,7 +17,7 @@ impl Metadata for InvariantMetadata {
     type Others = ();
     type Reply = ();
     type Signal = ();
-    type State = ();
+    type State = InOut<InvariantQuery, InvariantEvent>;
 }
 
 #[derive(Default, Encode, Decode, Clone, TypeInfo)]
