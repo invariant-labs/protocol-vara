@@ -13,16 +13,27 @@ scale = { package = "parity-scale-codec", version = "3", default-features = fals
 scale-info = { version = "2.6", default-features = false, features = [
   "derive",
 ], optional = true }
+io = { path = "./io" }
 
 [build-dependencies]
 gear-wasm-builder = "1.1.0"
 gmeta = "1.1.0"
-io = { path = "io" }
+io = { path = "./io" }
 
 [dev-dependencies]
-gtest = "1.1.0"
+gtest = { git = "https://github.com/gear-tech/gear.git", tag = "v1.1.0" }
+gclient = { git = "https://github.com/gear-tech/gear.git", tag = "v1.1.0" }
+tokio = { version = "1", features = ["full"] }
+
+# for e2e tests
+[patch.crates-io]
+sp-core = { git = "https://github.com/gear-tech/substrate.git", branch = "gear-stable" }
+sp-runtime = { git = "https://github.com/gear-tech/substrate.git", branch = "gear-stable" }
 
 [features]
 binary-vendor = []
 wasm-opt = ["gear-wasm-builder/wasm-opt"]
-default = ["binary-vendor", "wasm-opt", "scale-info/std"]
+default = ["binary-vendor", "wasm-opt"]
+
+[workspace]
+members = ["state"]
