@@ -5,7 +5,7 @@ use gstd::Vec;
 use scale::{Decode, Encode};
 use scale_info::TypeInfo;
 
-#[derive(gstd::Decode, gstd::Encode, TypeInfo, PartialEq, Eq, Clone, Debug, Default)]
+#[derive(Decode, Encode, TypeInfo, PartialEq, Eq, Clone, Debug, Default)]
 #[codec(crate = gstd::codec)]
 #[scale_info(crate = gstd::scale_info)]
 pub struct FeeTiers {

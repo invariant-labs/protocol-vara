@@ -204,7 +204,7 @@ mod tests {
         }
 
         {
-            let logs = program.read_state(FeeTierExist(fee_tier));
+            let logs = program.read_state(fee_tier);
 
             panic!("{:?}", logs);
 

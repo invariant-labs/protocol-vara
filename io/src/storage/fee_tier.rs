@@ -2,7 +2,7 @@ use crate::errors::InvariantError;
 use gstd::scale_info;
 use scale::{Decode, Encode};
 use scale_info::TypeInfo;
-#[derive(gstd::Decode, gstd::Encode, TypeInfo, PartialEq, Eq, Clone, Copy, Debug)]
+#[derive(Decode, Encode, TypeInfo, PartialEq, Eq, Clone, Copy, Debug)]
 #[codec(crate = gstd::codec)]
 #[scale_info(crate = gstd::scale_info)]
 pub struct FeeTier {
