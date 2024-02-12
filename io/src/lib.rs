@@ -1,12 +1,13 @@
 #![no_std]
 pub mod collections;
 pub mod storage;
-
+pub mod errors;
 
 use gmeta::{In, InOut, Metadata};
 use gstd::{scale_info, ActorId};
 use scale::{Encode, Decode};
 use scale_info::TypeInfo;
+use storage::fee_tier::FeeTier;
 
 pub struct InvariantMetadata;
 
@@ -51,6 +52,10 @@ pub struct InvariantConfig {
 )]
 pub enum InvariantAction {
     ChangeProtocolFee(u128),
+    AddFeeTier(FeeTier),
+    FeeTierExist(FeeTier),
+    RemoveFeeTier(FeeTier),
+    GetFeeTiers,
 }
 
 #[derive(Clone, Decode, Encode, TypeInfo)]
