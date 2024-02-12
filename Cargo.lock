@@ -2470,8 +2470,20 @@ checksum = "5c0a1ed30a16d6f9bb5f6b871a8c102869ec151fe2700cf6dca2678bad39a719"
 dependencies = [
  "blake2-rfc",
  "derive_more",
+ "gmeta-codegen",
  "hex",
  "scale-info",
+]
+
+[[package]]
+name = "gmeta-codegen"
+version = "1.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3e3a341d27b765d12cff7968acf86ccc2085c89b8b656f63f1f7cdd3d3924c94"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.48",
 ]
 
 [[package]]
@@ -2970,6 +2982,9 @@ name = "io"
 version = "0.1.0"
 dependencies = [
  "gmeta",
+ "gstd",
+ "parity-scale-codec",
+ "scale-info",
 ]
 
 [[package]]
@@ -5629,6 +5644,16 @@ name = "stable_deref_trait"
 version = "1.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a8f112729512f8e442d81f95a8a7ddf2b7c6b8a1a6f509a95864142b30cab2d3"
+
+[[package]]
+name = "state"
+version = "0.1.0"
+dependencies = [
+ "gear-wasm-builder",
+ "gmeta",
+ "gstd",
+ "io",
+]
 
 [[package]]
 name = "static_assertions"

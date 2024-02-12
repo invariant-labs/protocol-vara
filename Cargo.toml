@@ -13,11 +13,12 @@ scale = { package = "parity-scale-codec", version = "3", default-features = fals
 scale-info = { version = "2.6", default-features = false, features = [
   "derive",
 ], optional = true }
+io = { path = "./io" }
 
 [build-dependencies]
 gear-wasm-builder = "1.1.0"
 gmeta = "1.1.0"
-io = { path = "io" }
+io = { path = "./io" }
 
 [dev-dependencies]
 gtest = { git = "https://github.com/gear-tech/gear.git", tag = "v1.1.0" }
@@ -33,3 +34,6 @@ sp-runtime = { git = "https://github.com/gear-tech/substrate.git", branch = "gea
 binary-vendor = []
 wasm-opt = ["gear-wasm-builder/wasm-opt"]
 default = ["binary-vendor", "wasm-opt"]
+
+[workspace]
+members = ["state"]
