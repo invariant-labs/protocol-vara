@@ -9,8 +9,8 @@ on:
       - master
 
 jobs:
-  checks:
-    name: Build 
+  build:
+    name: Build contract
     runs-on: ubuntu-latest
 
     steps:
@@ -25,10 +25,31 @@ jobs:
             rustup install nightly-2024-01-25
             rustup target add wasm32-unknown-unknown --toolchain nightly-2024-01-25
 
-    #   - name: Instal Gear node 
-    #     run: curl https://get.gear.rs/gear-v1.1.0-x86_64-unknown-linux-gnu.tar.xz | tar Jx
-
       - name: Build
         run: cargo build --release
 
+  tests:
+    name: Run tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v3
+  
+      - name: Install prerequisites
+        run: sudo apt install -y build-essential clang cmake curl
+  
+      - name: Install Rust toolchain
+        run: |
+            rustup install nightly-2024-01-25
+            rustup target add wasm32-unknown-unknown --toolchain nightly-2024-01-25
+  
+      - name: Instal Gear node 
+        run: curl https://get.gear.rs/gear-v1.1.0-x86_64-unknown-linux-gnu.tar.xz | tar Jx
+  
+      - name: Run tests script (with building)
+        run: |
+          chmod +x tests.sh
+          ./tests.sh
+        shell: bash
    
