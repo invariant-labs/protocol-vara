@@ -57,7 +57,8 @@ mod tests {
     use gstd::ActorId;
     use gtest::{Log, Program, System};
 
-    pub const USER: [u8; 32] = [0; 32];
+    const USER: [u8; 32] = [0; 32];
+    const PATH: &str = "./target/wasm32-unknown-unknown/release/invariant.wasm";
 
     #[test]
     fn test_init() {
@@ -65,11 +66,7 @@ mod tests {
         sys.init_logger();
 
         let program_id = 105;
-        let program = Program::from_file_with_id(
-            &sys,
-            program_id,
-            "./target/wasm32-unknown-unknown/release/invariant.wasm",
-        );
+        let program = Program::from_file_with_id(&sys, program_id, PATH);
 
         assert!(!program
             .send(
