@@ -43,6 +43,7 @@ pub struct InvariantConfig {
 #[scale_info(crate = gstd::scale_info)]
 pub enum InvariantAction {
     ChangeProtocolFee(u128),
+    AddFeeTier(u128),
 }
 
 #[derive(Clone, Decode, Encode, TypeInfo)]
@@ -50,4 +51,5 @@ pub enum InvariantAction {
 #[scale_info(crate = gstd::scale_info)]
 pub enum InvariantEvent {
     ProtocolFeeChanged(u128),
+    FeeTierAdded(u128),
 }

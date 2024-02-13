@@ -48,6 +48,7 @@ extern "C" fn handle() {
         InvariantAction::ChangeProtocolFee(protocol_fee) => {
             invariant.change_protocol_fee(protocol_fee)
         }
+        InvariantAction::AddFeeTier(protocol_fee) => invariant.change_protocol_fee(protocol_fee),
     }
 }
 
@@ -79,5 +80,32 @@ mod tests {
                 },
             )
             .main_failed());
+    }
+
+    #[test]
+    fn test_protocol_fee() {
+        let sys = System::new();
+        sys.init_logger();
+
+        let program_id = 105;
+        let program = Program::from_file_with_id(&sys, program_id, PATH);
+
+        assert!(!program
+            .send(
+                100001,
+                InitInvariant {
+                    config: InvariantConfig {
+                        admin: ActorId::new(USER),
+                        protocol_fee: 100,
+                    },
+                },
+            )
+            .main_failed());
+
+        let result = program.send(100001, InvariantAction::ChangeProtocolFee(0));
+        panic!("result: {:?}", result);
+
+        // let result = program.send(100001, InvariantAction::AddFeeTier(0));
+        // panic!("result: {:?}", result);
     }
 }
