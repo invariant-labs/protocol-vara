@@ -202,9 +202,7 @@ mod tests {
         }
 
         {
-            let logs = program.read_state(fee_tier);
-
-            // panic!("{:?}", logs);
+            let logs = program.read_state(FeeTierExist(fee_tier));
 
             let expected_response = Log::builder()
                 .source(program_id)
