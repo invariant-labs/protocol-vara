@@ -10,4 +10,7 @@ cargo test &
 node_pid=$!
 
 wait -n
+test_status=$?
+
 kill $node_pid
+exit $test_status
