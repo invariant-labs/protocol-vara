@@ -1,9 +1,8 @@
 #![no_std]
-
+pub mod contracts;
 extern crate alloc;
 #[cfg(test)]
 mod e2e;
-mod math;
 
 use gstd::{
     msg::{self, reply},
@@ -55,7 +54,7 @@ extern "C" fn handle() {
 mod tests {
     use super::*;
     use gstd::ActorId;
-    use gtest::{Log, Program, System};
+    use gtest::{Program, System};
 
     const USER: [u8; 32] = [0; 32];
     const PATH: &str = "./target/wasm32-unknown-unknown/release/invariant.wasm";

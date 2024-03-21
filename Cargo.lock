@@ -56,9 +56,9 @@ dependencies = [
 
 [[package]]
 name = "aes"
-version = "0.8.3"
+version = "0.8.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ac1f845298e95f983ff1944b728ae08b8cebab80d684f0a832ed0fc74dfa27e2"
+checksum = "b169f7a6d4742236a0a00c541b845991d0ac43e546831af1249753ab4c3aa3a0"
 dependencies = [
  "cfg-if",
  "cipher",
@@ -199,7 +199,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f28243a43d821d11341ab73c80bed182dc015c514b951616cf79bd4af39af0c3"
 dependencies = [
  "concurrent-queue",
- "event-listener 5.0.0",
+ "event-listener 5.2.0",
  "event-listener-strategy 0.5.0",
  "futures-core",
  "pin-project-lite",
@@ -215,7 +215,7 @@ dependencies = [
  "async-task",
  "concurrent-queue",
  "fastrand 2.0.1",
- "futures-lite 2.2.0",
+ "futures-lite 2.3.0",
  "slab",
 ]
 
@@ -253,17 +253,17 @@ dependencies = [
 
 [[package]]
 name = "async-io"
-version = "2.3.1"
+version = "2.3.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8f97ab0c5b00a7cdbe5a371b9a782ee7be1316095885c8a4ea1daf490eb0ef65"
+checksum = "dcccb0f599cfa2f8ace422d3555572f47424da5648a4382a9dd0310ff8210884"
 dependencies = [
  "async-lock 3.3.0",
  "cfg-if",
  "concurrent-queue",
  "futures-io",
- "futures-lite 2.2.0",
+ "futures-lite 2.3.0",
  "parking",
- "polling 3.4.0",
+ "polling 3.5.0",
  "rustix 0.38.31",
  "slab",
  "tracing",
@@ -324,7 +324,7 @@ version = "0.2.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9e47d90f65a225c4527103a8d747001fc56e375203592b25ad103e1ca13124c5"
 dependencies = [
- "async-io 2.3.1",
+ "async-io 2.3.2",
  "async-lock 2.8.0",
  "atomic-waker",
  "cfg-if",
@@ -566,7 +566,7 @@ dependencies = [
  "async-task",
  "fastrand 2.0.1",
  "futures-io",
- "futures-lite 2.2.0",
+ "futures-lite 2.3.0",
  "piper",
  "tracing",
 ]
@@ -1628,9 +1628,9 @@ dependencies = [
 
 [[package]]
 name = "event-listener"
-version = "5.0.0"
+version = "5.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b72557800024fabbaa2449dd4bf24e37b93702d457a4d4f2b0dd1f0f039f20c1"
+checksum = "2b5fb89194fa3cad959b833185b3063ba881dbfc7030680b314250779fb4cc91"
 dependencies = [
  "concurrent-queue",
  "parking",
@@ -1653,7 +1653,7 @@ version = "0.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "feedafcaa9b749175d5ac357452a9d41ea2911da598fde46ce1fe02c37751291"
 dependencies = [
- "event-listener 5.0.0",
+ "event-listener 5.2.0",
  "pin-project-lite",
 ]
 
@@ -1709,9 +1709,9 @@ dependencies = [
 
 [[package]]
 name = "fiat-crypto"
-version = "0.2.6"
+version = "0.2.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1676f435fc1dadde4d03e43f5d62b259e1ce5f40bd4ffb21db2b42ebe59c1382"
+checksum = "c007b1ae3abe1cb6f85a16305acd418b7ca6343b953633fee2b76d8f108b830f"
 
 [[package]]
 name = "fixed-hash"
@@ -1766,7 +1766,7 @@ dependencies = [
 [[package]]
 name = "frame-support"
 version = "4.0.0-dev"
-source = "git+https://github.com/gear-tech/substrate.git?branch=gear-polkadot-v1.0.0-canary#e4b3ebf0ed497e9d121a2e272d238fa87269b756"
+source = "git+https://github.com/gear-tech/substrate.git?branch=gear-polkadot-v1.0.0-canary#01d999dab4c70a4120084c21f6acad4bf2791f65"
 dependencies = [
  "bitflags 1.3.2",
  "environmental",
@@ -1800,7 +1800,7 @@ dependencies = [
 [[package]]
 name = "frame-support-procedural"
 version = "4.0.0-dev"
-source = "git+https://github.com/gear-tech/substrate.git?branch=gear-polkadot-v1.0.0-canary#e4b3ebf0ed497e9d121a2e272d238fa87269b756"
+source = "git+https://github.com/gear-tech/substrate.git?branch=gear-polkadot-v1.0.0-canary#01d999dab4c70a4120084c21f6acad4bf2791f65"
 dependencies = [
  "Inflector",
  "cfg-expr",
@@ -1818,7 +1818,7 @@ dependencies = [
 [[package]]
 name = "frame-support-procedural-tools"
 version = "4.0.0-dev"
-source = "git+https://github.com/gear-tech/substrate.git?branch=gear-polkadot-v1.0.0-canary#e4b3ebf0ed497e9d121a2e272d238fa87269b756"
+source = "git+https://github.com/gear-tech/substrate.git?branch=gear-polkadot-v1.0.0-canary#01d999dab4c70a4120084c21f6acad4bf2791f65"
 dependencies = [
  "frame-support-procedural-tools-derive",
  "proc-macro-crate 1.3.1",
@@ -1830,7 +1830,7 @@ dependencies = [
 [[package]]
 name = "frame-support-procedural-tools-derive"
 version = "3.0.0"
-source = "git+https://github.com/gear-tech/substrate.git?branch=gear-polkadot-v1.0.0-canary#e4b3ebf0ed497e9d121a2e272d238fa87269b756"
+source = "git+https://github.com/gear-tech/substrate.git?branch=gear-polkadot-v1.0.0-canary#01d999dab4c70a4120084c21f6acad4bf2791f65"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -1840,7 +1840,7 @@ dependencies = [
 [[package]]
 name = "frame-system"
 version = "4.0.0-dev"
-source = "git+https://github.com/gear-tech/substrate.git?branch=gear-polkadot-v1.0.0-canary#e4b3ebf0ed497e9d121a2e272d238fa87269b756"
+source = "git+https://github.com/gear-tech/substrate.git?branch=gear-polkadot-v1.0.0-canary#01d999dab4c70a4120084c21f6acad4bf2791f65"
 dependencies = [
  "cfg-if",
  "frame-support",
@@ -1937,9 +1937,9 @@ dependencies = [
 
 [[package]]
 name = "futures-lite"
-version = "2.2.0"
+version = "2.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "445ba825b27408685aaecefd65178908c36c6e96aaf6d8599419d46e624192ba"
+checksum = "52527eb5074e35e9339c6b4e8d12600c7128b68fb25dcb9fa9dec18f7c25f3a5"
 dependencies = [
  "fastrand 2.0.1",
  "futures-core",
@@ -1973,9 +1973,9 @@ checksum = "38d84fa142264698cdce1a9f9172cf383a0c82de1bddcf3092901442c4097004"
 
 [[package]]
 name = "futures-timer"
-version = "3.0.2"
+version = "3.0.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e64b03909df88034c26dc1547e8970b91f98bdb65165d6a4e9110d94263dbb2c"
+checksum = "f288b0a4f20f9a56b5d1da57e2227c661b7b16168e2f72365f57b63326e29b24"
 
 [[package]]
 name = "futures-util"
@@ -2420,9 +2420,9 @@ dependencies = [
 
 [[package]]
 name = "ghash"
-version = "0.5.0"
+version = "0.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d930750de5717d2dd0b8c0d42c076c0e884c81a73e6cab859bbd2339c71e3e40"
+checksum = "f0d8a4362ccb29cb0b265253fb0a2728f592895ee6854fd9bc13f2ffda266ff1"
 dependencies = [
  "opaque-debug 0.3.0",
  "polyval",
@@ -2470,20 +2470,8 @@ checksum = "5c0a1ed30a16d6f9bb5f6b871a8c102869ec151fe2700cf6dca2678bad39a719"
 dependencies = [
  "blake2-rfc",
  "derive_more",
- "gmeta-codegen",
  "hex",
  "scale-info",
-]
-
-[[package]]
-name = "gmeta-codegen"
-version = "1.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3e3a341d27b765d12cff7968acf86ccc2085c89b8b656f63f1f7cdd3d3924c94"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn 2.0.48",
 ]
 
 [[package]]
@@ -2614,9 +2602,9 @@ dependencies = [
 
 [[package]]
 name = "h2"
-version = "0.3.24"
+version = "0.3.25"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bb2c4422095b67ee78da96fbb51a4cc413b3b25883c7717ff7ca1ab31022c9c9"
+checksum = "4fbd2820c5e49886948654ab546d0688ff24530286bdcf8fca3cefb16d4618eb"
 dependencies = [
  "bytes",
  "fnv",
@@ -2753,9 +2741,9 @@ dependencies = [
 
 [[package]]
 name = "http"
-version = "0.2.11"
+version = "0.2.12"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8947b1a6fad4393052c7ba1f4cd97bed3e953a95c79c92ad9b051a04611d9fbb"
+checksum = "601cbb57e577e2f5ef5be8e7b83f0f63994f25aa94d673e54a92d5c516d101f1"
 dependencies = [
  "bytes",
  "fnv",
@@ -2808,7 +2796,7 @@ dependencies = [
  "httpdate",
  "itoa",
  "pin-project-lite",
- "socket2 0.5.5",
+ "socket2 0.5.6",
  "tokio",
  "tower-service",
  "tracing",
@@ -2971,8 +2959,7 @@ dependencies = [
  "gstd",
  "gtest",
  "io",
- "parity-scale-codec",
- "scale-info",
+ "math",
  "tokio",
  "traceable_result",
 ]
@@ -2983,8 +2970,6 @@ version = "0.1.0"
 dependencies = [
  "gmeta",
  "gstd",
- "parity-scale-codec",
- "scale-info",
 ]
 
 [[package]]
@@ -3492,6 +3477,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "math"
+version = "0.1.0"
+dependencies = [
+ "decimal",
+ "gstd",
+ "traceable_result",
+]
+
+[[package]]
 name = "memchr"
 version = "2.7.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3598,9 +3592,9 @@ dependencies = [
 
 [[package]]
 name = "mio"
-version = "0.8.10"
+version = "0.8.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8f3d0b296e374a4e6f3c7b0a1f5a51d748a0d34c85e7dc48fc3fa9a87657fe09"
+checksum = "a4a650543ca06a924e8b371db273b2756685faae30f8487da1b56505a8f78b0c"
 dependencies = [
  "libc",
  "wasi 0.11.0+wasi-snapshot-preview1",
@@ -3928,18 +3922,18 @@ checksum = "e3148f5046208a5d56bcfc03053e3ca6334e51da8dfb19b6cdc8b306fae3283e"
 
 [[package]]
 name = "pin-project"
-version = "1.1.4"
+version = "1.1.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0302c4a0442c456bd56f841aee5c3bfd17967563f6fadc9ceb9f9c23cf3807e0"
+checksum = "b6bf43b791c5b9e34c3d182969b4abb522f9343702850a2e57f460d00d09b4b3"
 dependencies = [
  "pin-project-internal",
 ]
 
 [[package]]
 name = "pin-project-internal"
-version = "1.1.4"
+version = "1.1.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "266c042b60c9c76b8d53061e52b2e0d1116abc57cefc8c5cd671619a56ac3690"
+checksum = "2f38a4412a78282e09a2cf38d195ea5420d15ba0602cb375210efbc877243965"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -4003,9 +3997,9 @@ dependencies = [
 
 [[package]]
 name = "polling"
-version = "3.4.0"
+version = "3.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "30054e72317ab98eddd8561db0f6524df3367636884b7b21b703e4b280a84a14"
+checksum = "24f040dee2588b4963afb4e420540439d126f73fdacf4a9c486a96d840bac3c9"
 dependencies = [
  "cfg-if",
  "concurrent-queue",
@@ -4028,9 +4022,9 @@ dependencies = [
 
 [[package]]
 name = "polyval"
-version = "0.6.1"
+version = "0.6.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d52cff9d1d4dee5fe6d03729099f4a310a41179e0a10dbf542039873f2e826fb"
+checksum = "9d1fe60d06143b2430aa532c94cfe9e29783047f06c0d7fd359a9a51b729fa25"
 dependencies = [
  "cfg-if",
  "cpufeatures",
@@ -4383,16 +4377,17 @@ dependencies = [
 
 [[package]]
 name = "ring"
-version = "0.17.7"
+version = "0.17.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "688c63d65483050968b2a8937f7995f443e27041a0f7700aa59b0822aedebb74"
+checksum = "c17fa4cb658e3583423e915b9f3acc01cceaee1860e33d59ebae66adc3a2dc0d"
 dependencies = [
  "cc",
+ "cfg-if",
  "getrandom 0.2.12",
  "libc",
  "spin",
  "untrusted",
- "windows-sys 0.48.0",
+ "windows-sys 0.52.0",
 ]
 
 [[package]]
@@ -5121,12 +5116,12 @@ dependencies = [
 
 [[package]]
 name = "socket2"
-version = "0.5.5"
+version = "0.5.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7b5fac59a5cb5dd637972e5fca70daf0523c9067fcdc4842f053dae04a18f8e9"
+checksum = "05ffd9c0a93b7543e062e759284fcf5f5e3b098501104bfbdde4d404db792871"
 dependencies = [
  "libc",
- "windows-sys 0.48.0",
+ "windows-sys 0.52.0",
 ]
 
 [[package]]
@@ -5147,7 +5142,7 @@ dependencies = [
 [[package]]
 name = "sp-allocator"
 version = "4.1.0-dev"
-source = "git+https://github.com/gear-tech/substrate.git?branch=gear-polkadot-v1.0.0-canary#e4b3ebf0ed497e9d121a2e272d238fa87269b756"
+source = "git+https://github.com/gear-tech/substrate.git?branch=gear-polkadot-v1.0.0-canary#01d999dab4c70a4120084c21f6acad4bf2791f65"
 dependencies = [
  "log",
  "parity-scale-codec",
@@ -5158,7 +5153,7 @@ dependencies = [
 [[package]]
 name = "sp-api"
 version = "4.0.0-dev"
-source = "git+https://github.com/gear-tech/substrate.git?branch=gear-polkadot-v1.0.0-canary#e4b3ebf0ed497e9d121a2e272d238fa87269b756"
+source = "git+https://github.com/gear-tech/substrate.git?branch=gear-polkadot-v1.0.0-canary#01d999dab4c70a4120084c21f6acad4bf2791f65"
 dependencies = [
  "hash-db",
  "log",
@@ -5179,7 +5174,7 @@ dependencies = [
 [[package]]
 name = "sp-api-proc-macro"
 version = "4.0.0-dev"
-source = "git+https://github.com/gear-tech/substrate.git?branch=gear-polkadot-v1.0.0-canary#e4b3ebf0ed497e9d121a2e272d238fa87269b756"
+source = "git+https://github.com/gear-tech/substrate.git?branch=gear-polkadot-v1.0.0-canary#01d999dab4c70a4120084c21f6acad4bf2791f65"
 dependencies = [
  "Inflector",
  "blake2",
@@ -5193,7 +5188,7 @@ dependencies = [
 [[package]]
 name = "sp-application-crypto"
 version = "23.0.0"
-source = "git+https://github.com/gear-tech/substrate.git?branch=gear-polkadot-v1.0.0-canary#e4b3ebf0ed497e9d121a2e272d238fa87269b756"
+source = "git+https://github.com/gear-tech/substrate.git?branch=gear-polkadot-v1.0.0-canary#01d999dab4c70a4120084c21f6acad4bf2791f65"
 dependencies = [
  "parity-scale-codec",
  "scale-info",
@@ -5206,7 +5201,7 @@ dependencies = [
 [[package]]
 name = "sp-arithmetic"
 version = "16.0.0"
-source = "git+https://github.com/gear-tech/substrate.git?branch=gear-polkadot-v1.0.0-canary#e4b3ebf0ed497e9d121a2e272d238fa87269b756"
+source = "git+https://github.com/gear-tech/substrate.git?branch=gear-polkadot-v1.0.0-canary#01d999dab4c70a4120084c21f6acad4bf2791f65"
 dependencies = [
  "integer-sqrt",
  "num-traits",
@@ -5220,7 +5215,7 @@ dependencies = [
 [[package]]
 name = "sp-core"
 version = "21.0.0"
-source = "git+https://github.com/gear-tech/substrate.git?branch=gear-polkadot-v1.0.0-canary#e4b3ebf0ed497e9d121a2e272d238fa87269b756"
+source = "git+https://github.com/gear-tech/substrate.git?branch=gear-polkadot-v1.0.0-canary#01d999dab4c70a4120084c21f6acad4bf2791f65"
 dependencies = [
  "array-bytes",
  "bitflags 1.3.2",
@@ -5281,7 +5276,7 @@ dependencies = [
 [[package]]
 name = "sp-core-hashing"
 version = "9.0.0"
-source = "git+https://github.com/gear-tech/substrate.git?branch=gear-polkadot-v1.0.0-canary#e4b3ebf0ed497e9d121a2e272d238fa87269b756"
+source = "git+https://github.com/gear-tech/substrate.git?branch=gear-polkadot-v1.0.0-canary#01d999dab4c70a4120084c21f6acad4bf2791f65"
 dependencies = [
  "blake2b_simd",
  "byteorder",
@@ -5294,7 +5289,7 @@ dependencies = [
 [[package]]
 name = "sp-core-hashing-proc-macro"
 version = "9.0.0"
-source = "git+https://github.com/gear-tech/substrate.git?branch=gear-polkadot-v1.0.0-canary#e4b3ebf0ed497e9d121a2e272d238fa87269b756"
+source = "git+https://github.com/gear-tech/substrate.git?branch=gear-polkadot-v1.0.0-canary#01d999dab4c70a4120084c21f6acad4bf2791f65"
 dependencies = [
  "quote",
  "sp-core-hashing 9.0.0 (git+https://github.com/gear-tech/substrate.git?branch=gear-polkadot-v1.0.0-canary)",
@@ -5304,7 +5299,7 @@ dependencies = [
 [[package]]
 name = "sp-debug-derive"
 version = "8.0.0"
-source = "git+https://github.com/gear-tech/substrate.git?branch=gear-polkadot-v1.0.0-canary#e4b3ebf0ed497e9d121a2e272d238fa87269b756"
+source = "git+https://github.com/gear-tech/substrate.git?branch=gear-polkadot-v1.0.0-canary#01d999dab4c70a4120084c21f6acad4bf2791f65"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -5314,7 +5309,7 @@ dependencies = [
 [[package]]
 name = "sp-externalities"
 version = "0.19.0"
-source = "git+https://github.com/gear-tech/substrate.git?branch=gear-polkadot-v1.0.0-canary#e4b3ebf0ed497e9d121a2e272d238fa87269b756"
+source = "git+https://github.com/gear-tech/substrate.git?branch=gear-polkadot-v1.0.0-canary#01d999dab4c70a4120084c21f6acad4bf2791f65"
 dependencies = [
  "environmental",
  "parity-scale-codec",
@@ -5325,7 +5320,7 @@ dependencies = [
 [[package]]
 name = "sp-inherents"
 version = "4.0.0-dev"
-source = "git+https://github.com/gear-tech/substrate.git?branch=gear-polkadot-v1.0.0-canary#e4b3ebf0ed497e9d121a2e272d238fa87269b756"
+source = "git+https://github.com/gear-tech/substrate.git?branch=gear-polkadot-v1.0.0-canary#01d999dab4c70a4120084c21f6acad4bf2791f65"
 dependencies = [
  "async-trait",
  "impl-trait-for-tuples",
@@ -5339,7 +5334,7 @@ dependencies = [
 [[package]]
 name = "sp-io"
 version = "23.0.0"
-source = "git+https://github.com/gear-tech/substrate.git?branch=gear-polkadot-v1.0.0-canary#e4b3ebf0ed497e9d121a2e272d238fa87269b756"
+source = "git+https://github.com/gear-tech/substrate.git?branch=gear-polkadot-v1.0.0-canary#01d999dab4c70a4120084c21f6acad4bf2791f65"
 dependencies = [
  "bytes",
  "ed25519",
@@ -5364,7 +5359,7 @@ dependencies = [
 [[package]]
 name = "sp-keystore"
 version = "0.27.0"
-source = "git+https://github.com/gear-tech/substrate.git?branch=gear-polkadot-v1.0.0-canary#e4b3ebf0ed497e9d121a2e272d238fa87269b756"
+source = "git+https://github.com/gear-tech/substrate.git?branch=gear-polkadot-v1.0.0-canary#01d999dab4c70a4120084c21f6acad4bf2791f65"
 dependencies = [
  "parity-scale-codec",
  "parking_lot",
@@ -5376,7 +5371,7 @@ dependencies = [
 [[package]]
 name = "sp-metadata-ir"
 version = "0.1.0"
-source = "git+https://github.com/gear-tech/substrate.git?branch=gear-polkadot-v1.0.0-canary#e4b3ebf0ed497e9d121a2e272d238fa87269b756"
+source = "git+https://github.com/gear-tech/substrate.git?branch=gear-polkadot-v1.0.0-canary#01d999dab4c70a4120084c21f6acad4bf2791f65"
 dependencies = [
  "frame-metadata 16.0.0",
  "parity-scale-codec",
@@ -5387,7 +5382,7 @@ dependencies = [
 [[package]]
 name = "sp-panic-handler"
 version = "8.0.0"
-source = "git+https://github.com/gear-tech/substrate.git?branch=gear-polkadot-v1.0.0-canary#e4b3ebf0ed497e9d121a2e272d238fa87269b756"
+source = "git+https://github.com/gear-tech/substrate.git?branch=gear-polkadot-v1.0.0-canary#01d999dab4c70a4120084c21f6acad4bf2791f65"
 dependencies = [
  "backtrace",
  "lazy_static",
@@ -5397,7 +5392,7 @@ dependencies = [
 [[package]]
 name = "sp-runtime"
 version = "24.0.0"
-source = "git+https://github.com/gear-tech/substrate.git?branch=gear-polkadot-v1.0.0-canary#e4b3ebf0ed497e9d121a2e272d238fa87269b756"
+source = "git+https://github.com/gear-tech/substrate.git?branch=gear-polkadot-v1.0.0-canary#01d999dab4c70a4120084c21f6acad4bf2791f65"
 dependencies = [
  "either",
  "hash256-std-hasher",
@@ -5419,7 +5414,7 @@ dependencies = [
 [[package]]
 name = "sp-runtime-interface"
 version = "17.0.0"
-source = "git+https://github.com/gear-tech/substrate.git?branch=gear-polkadot-v1.0.0-canary#e4b3ebf0ed497e9d121a2e272d238fa87269b756"
+source = "git+https://github.com/gear-tech/substrate.git?branch=gear-polkadot-v1.0.0-canary#01d999dab4c70a4120084c21f6acad4bf2791f65"
 dependencies = [
  "bytes",
  "impl-trait-for-tuples",
@@ -5437,7 +5432,7 @@ dependencies = [
 [[package]]
 name = "sp-runtime-interface-proc-macro"
 version = "11.0.0"
-source = "git+https://github.com/gear-tech/substrate.git?branch=gear-polkadot-v1.0.0-canary#e4b3ebf0ed497e9d121a2e272d238fa87269b756"
+source = "git+https://github.com/gear-tech/substrate.git?branch=gear-polkadot-v1.0.0-canary#01d999dab4c70a4120084c21f6acad4bf2791f65"
 dependencies = [
  "Inflector",
  "proc-macro-crate 1.3.1",
@@ -5449,7 +5444,7 @@ dependencies = [
 [[package]]
 name = "sp-staking"
 version = "4.0.0-dev"
-source = "git+https://github.com/gear-tech/substrate.git?branch=gear-polkadot-v1.0.0-canary#e4b3ebf0ed497e9d121a2e272d238fa87269b756"
+source = "git+https://github.com/gear-tech/substrate.git?branch=gear-polkadot-v1.0.0-canary#01d999dab4c70a4120084c21f6acad4bf2791f65"
 dependencies = [
  "impl-trait-for-tuples",
  "parity-scale-codec",
@@ -5463,7 +5458,7 @@ dependencies = [
 [[package]]
 name = "sp-state-machine"
 version = "0.28.0"
-source = "git+https://github.com/gear-tech/substrate.git?branch=gear-polkadot-v1.0.0-canary#e4b3ebf0ed497e9d121a2e272d238fa87269b756"
+source = "git+https://github.com/gear-tech/substrate.git?branch=gear-polkadot-v1.0.0-canary#01d999dab4c70a4120084c21f6acad4bf2791f65"
 dependencies = [
  "hash-db",
  "log",
@@ -5490,12 +5485,12 @@ checksum = "53458e3c57df53698b3401ec0934bea8e8cfce034816873c0b0abbd83d7bac0d"
 [[package]]
 name = "sp-std"
 version = "8.0.0"
-source = "git+https://github.com/gear-tech/substrate.git?branch=gear-polkadot-v1.0.0-canary#e4b3ebf0ed497e9d121a2e272d238fa87269b756"
+source = "git+https://github.com/gear-tech/substrate.git?branch=gear-polkadot-v1.0.0-canary#01d999dab4c70a4120084c21f6acad4bf2791f65"
 
 [[package]]
 name = "sp-storage"
 version = "13.0.0"
-source = "git+https://github.com/gear-tech/substrate.git?branch=gear-polkadot-v1.0.0-canary#e4b3ebf0ed497e9d121a2e272d238fa87269b756"
+source = "git+https://github.com/gear-tech/substrate.git?branch=gear-polkadot-v1.0.0-canary#01d999dab4c70a4120084c21f6acad4bf2791f65"
 dependencies = [
  "impl-serde",
  "parity-scale-codec",
@@ -5508,7 +5503,7 @@ dependencies = [
 [[package]]
 name = "sp-tracing"
 version = "10.0.0"
-source = "git+https://github.com/gear-tech/substrate.git?branch=gear-polkadot-v1.0.0-canary#e4b3ebf0ed497e9d121a2e272d238fa87269b756"
+source = "git+https://github.com/gear-tech/substrate.git?branch=gear-polkadot-v1.0.0-canary#01d999dab4c70a4120084c21f6acad4bf2791f65"
 dependencies = [
  "parity-scale-codec",
  "sp-std 8.0.0 (git+https://github.com/gear-tech/substrate.git?branch=gear-polkadot-v1.0.0-canary)",
@@ -5520,7 +5515,7 @@ dependencies = [
 [[package]]
 name = "sp-trie"
 version = "22.0.0"
-source = "git+https://github.com/gear-tech/substrate.git?branch=gear-polkadot-v1.0.0-canary#e4b3ebf0ed497e9d121a2e272d238fa87269b756"
+source = "git+https://github.com/gear-tech/substrate.git?branch=gear-polkadot-v1.0.0-canary#01d999dab4c70a4120084c21f6acad4bf2791f65"
 dependencies = [
  "ahash 0.8.7",
  "hash-db",
@@ -5543,7 +5538,7 @@ dependencies = [
 [[package]]
 name = "sp-version"
 version = "22.0.0"
-source = "git+https://github.com/gear-tech/substrate.git?branch=gear-polkadot-v1.0.0-canary#e4b3ebf0ed497e9d121a2e272d238fa87269b756"
+source = "git+https://github.com/gear-tech/substrate.git?branch=gear-polkadot-v1.0.0-canary#01d999dab4c70a4120084c21f6acad4bf2791f65"
 dependencies = [
  "impl-serde",
  "parity-scale-codec",
@@ -5560,7 +5555,7 @@ dependencies = [
 [[package]]
 name = "sp-version-proc-macro"
 version = "8.0.0"
-source = "git+https://github.com/gear-tech/substrate.git?branch=gear-polkadot-v1.0.0-canary#e4b3ebf0ed497e9d121a2e272d238fa87269b756"
+source = "git+https://github.com/gear-tech/substrate.git?branch=gear-polkadot-v1.0.0-canary#01d999dab4c70a4120084c21f6acad4bf2791f65"
 dependencies = [
  "parity-scale-codec",
  "proc-macro2",
@@ -5571,7 +5566,7 @@ dependencies = [
 [[package]]
 name = "sp-wasm-interface"
 version = "14.0.0"
-source = "git+https://github.com/gear-tech/substrate.git?branch=gear-polkadot-v1.0.0-canary#e4b3ebf0ed497e9d121a2e272d238fa87269b756"
+source = "git+https://github.com/gear-tech/substrate.git?branch=gear-polkadot-v1.0.0-canary#01d999dab4c70a4120084c21f6acad4bf2791f65"
 dependencies = [
  "anyhow",
  "impl-trait-for-tuples",
@@ -5586,7 +5581,7 @@ dependencies = [
 [[package]]
 name = "sp-wasm-interface-common"
 version = "7.0.0"
-source = "git+https://github.com/gear-tech/substrate.git?branch=gear-polkadot-v1.0.0-canary#e4b3ebf0ed497e9d121a2e272d238fa87269b756"
+source = "git+https://github.com/gear-tech/substrate.git?branch=gear-polkadot-v1.0.0-canary#01d999dab4c70a4120084c21f6acad4bf2791f65"
 dependencies = [
  "parity-scale-codec",
  "sp-std 8.0.0 (git+https://github.com/gear-tech/substrate.git?branch=gear-polkadot-v1.0.0-canary)",
@@ -5596,7 +5591,7 @@ dependencies = [
 [[package]]
 name = "sp-weights"
 version = "20.0.0"
-source = "git+https://github.com/gear-tech/substrate.git?branch=gear-polkadot-v1.0.0-canary#e4b3ebf0ed497e9d121a2e272d238fa87269b756"
+source = "git+https://github.com/gear-tech/substrate.git?branch=gear-polkadot-v1.0.0-canary#01d999dab4c70a4120084c21f6acad4bf2791f65"
 dependencies = [
  "parity-scale-codec",
  "scale-info",
@@ -5974,7 +5969,7 @@ dependencies = [
  "parking_lot",
  "pin-project-lite",
  "signal-hook-registry",
- "socket2 0.5.5",
+ "socket2 0.5.6",
  "tokio-macros",
  "windows-sys 0.48.0",
 ]
@@ -6002,9 +5997,9 @@ dependencies = [
 
 [[package]]
 name = "tokio-stream"
-version = "0.1.14"
+version = "0.1.15"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "397c988d37662c7dda6d2208364a706264bf3d6138b11d436cbac0ad38832842"
+checksum = "267ac89e0bec6e691e5813911606935d77c476ff49024f98abcea3e7b15e37af"
 dependencies = [
  "futures-core",
  "pin-project-lite",

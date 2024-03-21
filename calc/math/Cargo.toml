@@ -1,0 +1,11 @@
+[package]
+name = "math"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+decimal.workspace = true
+traceable_result.workspace = true
+gstd.workspace = true
+[lib]
+path = "lib.rs"

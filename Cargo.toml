@@ -4,26 +4,21 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-gstd = "1.1.0"
-decimal = { path = "src/decimal" }
-traceable_result = { path = "src/traceable_result" }
-scale = { package = "parity-scale-codec", version = "3", default-features = false, features = [
-  "derive",
-] }
-scale-info = { version = "2.6", default-features = false, features = [
-  "derive",
-], optional = true }
-io = { path = "./io" }
+gstd.workspace = true
+traceable_result.workspace = true
+math.workspace = true
+decimal.workspace = true
+io.workspace = true
 
 [build-dependencies]
-gear-wasm-builder = "1.1.0"
-gmeta = "1.1.0"
-io = { path = "./io" }
+gear-wasm-builder.workspace = true
+gmeta.workspace = true
+io.workspace = true
 
 [dev-dependencies]
-gtest = { git = "https://github.com/gear-tech/gear.git", tag = "v1.1.0" }
-gclient = { git = "https://github.com/gear-tech/gear.git", tag = "v1.1.0" }
-tokio = { version = "1", features = ["full"] }
+gtest.workspace = true
+gclient.workspace = true
+tokio.workspace = true
 
 # for e2e tests
 [patch.crates-io]
@@ -37,3 +32,18 @@ default = ["binary-vendor", "wasm-opt"]
 
 [workspace]
 members = ["state"]
+
+[workspace.dependencies]
+decimal.path = "calc/decimal"
+math.path = "calc/math"
+traceable_result.path = "calc/traceable_result"
+
+io.path = "io"
+
+# Gear dependencies
+gstd = "1.1.0"
+gear-wasm-builder = "1.1.0"
+gmeta = "1.1.0"
+gtest = { git = "https://github.com/gear-tech/gear.git", tag = "v1.1.0" }
+gclient = { git = "https://github.com/gear-tech/gear.git", tag = "v1.1.0" }
+tokio = { version = "1", features = ["full"] }

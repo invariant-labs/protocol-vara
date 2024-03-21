@@ -3,8 +3,9 @@
 use escrow_io::*;
 use gstd::prelude::*;
 use io::{InvariantConfig, InvariantState};
+use gmeta::metawasm;
 
-#[gmeta::metawasm]
+#[metawasm]
 pub mod metafns {
     pub type State = InvariantState;
 

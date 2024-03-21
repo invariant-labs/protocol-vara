@@ -4,7 +4,5 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-gmeta = "1.1.0"
-gstd = "1.1.0"
-scale-info = { version = "2", default-features = false }
-parity-scale-codec = { version = "3", default-features = false }
+gmeta.workspace = true
+gstd.workspace = true

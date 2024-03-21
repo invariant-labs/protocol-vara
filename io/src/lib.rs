@@ -1,10 +1,7 @@
 #![no_std]
 
-use gmeta::{In, InOut, Metadata};
-use gstd::ActorId;
-use parity_scale_codec::{Decode, Encode};
-use scale_info::TypeInfo;
-
+use gmeta::{In, InOut, Out, Metadata};
+use gstd::{Decode, Encode, ActorId, TypeInfo};
 pub struct InvariantMetadata;
 
 impl Metadata for InvariantMetadata {
@@ -13,7 +10,7 @@ impl Metadata for InvariantMetadata {
     type Others = ();
     type Reply = ();
     type Signal = ();
-    type State = ();
+    type State = Out<InvariantState>;
 }
 
 #[derive(Default, Encode, Decode, Clone, TypeInfo)]

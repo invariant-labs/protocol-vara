@@ -1,14 +1,12 @@
-use crate::math::types::{liquidity::*, token_amount::*};
+use crate::types::{liquidity::*, token_amount::*};
 use decimal::*;
 use traceable_result::*;
-use alloc::string::ToString;
+use gstd::{Decode, Encode, TypeInfo};
 
 #[decimal(28)]
-#[derive(Default, Debug, Clone, Copy, PartialEq, Eq, PartialOrd, scale::Encode, scale::Decode)]
-#[cfg_attr(
-    feature = "std",
-    derive(scale_info::TypeInfo)
-)]
+#[derive(Default, Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Encode, Decode, TypeInfo)]
+#[codec(crate = gstd::codec)]
+#[scale_info(crate = gstd::scale_info)]
 pub struct FeeGrowth(pub u128);
 
 impl FeeGrowth {
@@ -103,8 +101,8 @@ pub fn calculate_fee_growth_inside(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::math::consts::{MAX_TICK, TICK_SEARCH_RANGE};
-    use crate::math::types::sqrt_price::SqrtPrice;
+    use crate::consts::{MAX_TICK, TICK_SEARCH_RANGE};
+    use crate::types::sqrt_price::SqrtPrice;
 
     #[test]
     fn test_unchecked_add() {
