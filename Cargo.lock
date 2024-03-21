@@ -2470,8 +2470,20 @@ checksum = "5c0a1ed30a16d6f9bb5f6b871a8c102869ec151fe2700cf6dca2678bad39a719"
 dependencies = [
  "blake2-rfc",
  "derive_more",
+ "gmeta-codegen",
  "hex",
  "scale-info",
+]
+
+[[package]]
+name = "gmeta-codegen"
+version = "1.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f6c5b9a168936d49be77437f06808509f0b4f36a2db79f46078afcc3be7683d7"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.48",
 ]
 
 [[package]]
@@ -2960,6 +2972,7 @@ dependencies = [
  "gtest",
  "io",
  "math",
+ "state",
  "tokio",
  "traceable_result",
 ]
@@ -7365,13 +7378,3 @@ dependencies = [
  "quote",
  "syn 2.0.48",
 ]
-
-[[patch.unused]]
-name = "sp-core"
-version = "6.0.0"
-source = "git+https://github.com/gear-tech/substrate.git?branch=gear-stable#0dfdf6f7722f776c30978b9be29057be3206bc89"
-
-[[patch.unused]]
-name = "sp-runtime"
-version = "6.0.0"
-source = "git+https://github.com/gear-tech/substrate.git?branch=gear-stable#0dfdf6f7722f776c30978b9be29057be3206bc89"

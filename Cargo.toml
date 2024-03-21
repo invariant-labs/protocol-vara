@@ -14,16 +14,12 @@ io.workspace = true
 gear-wasm-builder.workspace = true
 gmeta.workspace = true
 io.workspace = true
+state.workspace = true
 
 [dev-dependencies]
 gtest.workspace = true
 gclient.workspace = true
 tokio.workspace = true
-
-# for e2e tests
-[patch.crates-io]
-sp-core = { git = "https://github.com/gear-tech/substrate.git", branch = "gear-stable" }
-sp-runtime = { git = "https://github.com/gear-tech/substrate.git", branch = "gear-stable" }
 
 [features]
 binary-vendor = []
@@ -34,10 +30,13 @@ default = ["binary-vendor", "wasm-opt"]
 members = ["state"]
 
 [workspace.dependencies]
+# Library dependencies
 decimal.path = "calc/decimal"
 math.path = "calc/math"
 traceable_result.path = "calc/traceable_result"
 
+# Contract dependencies
+state.path = "state"
 io.path = "io"
 
 # Gear dependencies
@@ -46,4 +45,6 @@ gear-wasm-builder = "1.1.0"
 gmeta = "1.1.0"
 gtest = { git = "https://github.com/gear-tech/gear.git", tag = "v1.1.0" }
 gclient = { git = "https://github.com/gear-tech/gear.git", tag = "v1.1.0" }
+
+# External
 tokio = { version = "1", features = ["full"] }
