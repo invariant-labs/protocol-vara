@@ -1,5 +1,4 @@
 #![no_std]
-pub mod contracts;
 extern crate alloc;
 #[cfg(test)]
 mod e2e;

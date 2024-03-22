@@ -1,5 +1,5 @@
 use math::types::percentage::Percentage;
-use crate::contracts::errors::InvariantError;
+use crate::errors::InvariantError;
 use decimal::*;
 use gstd::*;
 
