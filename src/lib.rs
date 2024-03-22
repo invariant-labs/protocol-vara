@@ -152,10 +152,9 @@ mod tests {
 
     use super::*;
     use gtest::{Program, System};
-    const USERS: [u64; 3] = [1, 2, 3];
+    const USERS: [u64; 2] = [1, 2];
     const ADMIN: u64 = USERS[0];
-    const USER: u64 = USERS[1];
-    const PROGRAM_OWNER: u64 = USERS[2];
+    const PROGRAM_OWNER: u64 = USERS[1];
     const PROGRAM_ID: u64 = 105;
     const PATH: &str = "./target/wasm32-unknown-unknown/release/invariant.wasm";
 

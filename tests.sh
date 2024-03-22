@@ -1,16 +1,12 @@
 # Build 
 cargo build --release
 
-# Optimize WASM
-wasm-proc target/wasm32-unknown-unknown/release/invariant.wasm
-
+# Download node binary
+cargo xtask node
 # Run tests
-cargo test &
-./gear --dev & 
-node_pid=$!
+cargo test
 
 wait -n
 test_status=$?
 
-kill $node_pid
 exit $test_status

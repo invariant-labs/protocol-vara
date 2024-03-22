@@ -28,7 +28,7 @@ wasm-opt = ["gear-wasm-builder/wasm-opt"]
 default = ["binary-vendor", "wasm-opt"]
 
 [workspace]
-members = ["state"]
+members = ["state", "xtask"]
 
 [workspace.dependencies]
 # Library dependencies
@@ -50,3 +50,5 @@ gclient = { git = "https://github.com/gear-tech/gear.git", tag = "v1.1.0" }
 
 # External
 tokio = { version = "1", features = ["full"] }
+xshell = "0.2"
+anyhow = "1"
