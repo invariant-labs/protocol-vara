@@ -1,9 +1,9 @@
 use math::types::percentage::Percentage;
 use crate::errors::InvariantError;
 use decimal::*;
-use gstd::*;
+use gstd::{Decode, Encode, TypeInfo};
 
-#[derive(Encode, Decode, scale_info::TypeInfo)]
+#[derive(Encode, Decode, TypeInfo, PartialEq, Eq, Clone, Copy, Debug)]
 #[codec(crate = gstd::codec)]
 #[scale_info(crate = gstd::scale_info)]
 pub struct FeeTier {
