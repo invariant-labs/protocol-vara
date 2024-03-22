@@ -1,14 +1,12 @@
 use decimal::*;
 use traceable_result::*;
-use alloc::string::ToString;
-use crate::math::types::liquidity::Liquidity;
+use gstd::{Decode, Encode, TypeInfo};
+use crate::types::liquidity::Liquidity;
 
 #[decimal(24)]
-#[derive(Default, Debug, Clone, Copy, PartialEq, Eq, PartialOrd, scale::Encode, scale::Decode)]
-#[cfg_attr(
-    feature = "std",
-    derive(scale_info::TypeInfo)
-)]
+#[derive(Default, Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Encode, Decode, TypeInfo)]
+#[codec(crate = gstd::codec)]
+#[scale_info(crate = gstd::scale_info)]
 pub struct SecondsPerLiquidity(pub u128);
 
 impl SecondsPerLiquidity {
@@ -77,7 +75,7 @@ pub mod tests {
 
     use super::*;
 
-    use crate::math::types::seconds_per_liquidity::SecondsPerLiquidity;
+    use crate::types::seconds_per_liquidity::SecondsPerLiquidity;
     #[test]
     fn test_domain_calculate_seconds_per_liquidity_global() {
         // current_timestamp <= last_timestamp

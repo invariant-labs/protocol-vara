@@ -1,14 +1,12 @@
 use decimal::*;
 use traceable_result::*;
-use alloc::string::ToString;
-use super::sqrt_price::SqrtPrice;
+use crate::sqrt_price::SqrtPrice;
+use gstd::{Decode, Encode, TypeInfo};
 
 #[decimal(0)]
-#[derive(Default, Debug, Clone, Copy, PartialEq, Eq, PartialOrd, scale::Encode, scale::Decode)]
-#[cfg_attr(
-    feature = "std",
-    derive(scale_info::TypeInfo)
-)]
+#[derive(Default, Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Encode, Decode, TypeInfo)]
+#[codec(crate = gstd::codec)]
+#[scale_info(crate = gstd::scale_info)]
 pub struct TokenAmount(pub u128);
 
 impl TokenAmount {

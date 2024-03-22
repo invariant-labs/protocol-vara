@@ -1,7 +1,6 @@
 use gclient::{EventProcessor, GearApi, Result};
-use gstd::{vec, ActorId};
+use gstd::{Encode, ActorId};
 use io::*;
-use scale::Encode;
 
 const PATH: &str = "./target/wasm32-unknown-unknown/release/invariant.opt.wasm";
 const USER: [u8; 32] = [0; 32];

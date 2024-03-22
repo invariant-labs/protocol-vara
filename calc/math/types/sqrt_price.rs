@@ -1,15 +1,13 @@
 use decimal::*;
 use traceable_result::*;
-use alloc::string::ToString;
-use crate::math::consts::*;
-use crate::math::types::{fixed_point::FixedPoint, token_amount::TokenAmount};
+use gstd::{Decode, Encode, TypeInfo};
+use crate::consts::*;
+use crate::types::{fixed_point::FixedPoint, token_amount::TokenAmount};
 
 #[decimal(24)]
-#[derive(Default, Debug, Clone, Copy, PartialEq, Eq, PartialOrd, scale::Encode, scale::Decode)]
-#[cfg_attr(
-    feature = "std",
-    derive(scale_info::TypeInfo)
-)]
+#[derive(Default, Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Encode, Decode, TypeInfo)]
+#[codec(crate = gstd::codec)]
+#[scale_info(crate = gstd::scale_info)]
 pub struct SqrtPrice(pub u128);
 
 impl SqrtPrice {
