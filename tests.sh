@@ -5,8 +5,3 @@ cargo build --release
 cargo xtask node
 # Run tests
 cargo test
-
-wait -n
-test_status=$?
-
-exit $test_status
