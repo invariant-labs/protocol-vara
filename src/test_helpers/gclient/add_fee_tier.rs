@@ -1,4 +1,4 @@
-use crate::test_helpers::gclient::utils::*;
+use crate::test_helpers::gclient::{utils::*, fee_tier_exists};
 use contracts::{FeeTier,InvariantError};
 use gstd::{prelude::*, codec::decode_from_bytes};
 use gclient::{EventListener, GearApi, EventProcessor};
@@ -13,7 +13,7 @@ pub async fn add_fee_tier(api: &GearApi, listener: &mut EventListener, invariant
       assert_eq!(decode_from_bytes::<InvariantEvent>(bytes).unwrap(), InvariantEvent::ActionFailed(e));
     }
     None => {
-      assert_eq!(decode_from_bytes::<InvariantEvent>(bytes).unwrap(), InvariantEvent::FeeTierAdded(fee_tier))
+      assert!(fee_tier_exists(api, invariant, fee_tier).await)
     }
   }
 }

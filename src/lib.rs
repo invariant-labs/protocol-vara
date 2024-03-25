@@ -107,9 +107,7 @@ extern "C" fn handle() {
         }
         InvariantAction::AddFeeTier(fee_tier) => {
             match invariant.add_fee_tier(fee_tier) {
-                Ok(fee_tier) => {
-                    reply(InvariantEvent::FeeTierAdded(fee_tier), 0).expect("Unable to reply");
-                }
+                Ok(_fee_tier) => {}
                 Err(e) => {
                     reply(InvariantEvent::ActionFailed(e), 0).expect("Unable to reply");
                 }
@@ -117,9 +115,7 @@ extern "C" fn handle() {
         }
         InvariantAction::RemoveFeeTier(fee_tier) => {
             match invariant.remove_fee_tier(fee_tier) {
-                Ok(fee_tier) => {
-                    reply(InvariantEvent::FeeTierRemoved(fee_tier), 0).expect("Unable to reply");
-                }
+                Ok(_fee_tier) => {}
                 Err(e) => {
                     reply(InvariantEvent::ActionFailed(e), 0).expect("Unable to reply");
                 }
@@ -197,7 +193,6 @@ mod tests {
 
         let res = invariant.send(ADMIN, InvariantAction::AddFeeTier(fee_tier));
         assert!(!res.main_failed());
-        assert!(res.contains(&(ADMIN, InvariantEvent::FeeTierAdded(fee_tier_value).encode())));
         
         let state: InvariantState = invariant.read_state(InvariantStateQuery::GetFeeTiers).expect("Failed to read state");
         assert_eq!(state, InvariantState::QueriedFeeTiers(vec![fee_tier_value]));
@@ -211,7 +206,6 @@ mod tests {
 
         let res = invariant.send(ADMIN, InvariantAction::RemoveFeeTier(fee_tier));
         assert!(!res.main_failed());
-        assert!(res.contains(&(ADMIN, InvariantEvent::FeeTierRemoved(fee_tier_value).encode())));
 
         let state: InvariantState = invariant.read_state(InvariantStateQuery::GetFeeTiers).expect("Failed to read state");
         assert_eq!(state, InvariantState::QueriedFeeTiers(vec![]));

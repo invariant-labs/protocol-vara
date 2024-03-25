@@ -45,8 +45,6 @@ pub enum InvariantAction {
 #[scale_info(crate = gstd::scale_info)]
 pub enum InvariantEvent {
     ProtocolFeeChanged(u128),
-    FeeTierAdded(FeeTier),
-    FeeTierRemoved(FeeTier),
     ActionFailed(InvariantError),
 }
 
