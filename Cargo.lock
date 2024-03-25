@@ -859,6 +859,7 @@ dependencies = [
  "decimal",
  "gstd",
  "math",
+ "traceable_result",
 ]
 
 [[package]]
