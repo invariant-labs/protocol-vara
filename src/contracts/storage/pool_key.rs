@@ -3,7 +3,7 @@ use crate::{InvariantError, FeeTier};
 use math::percentage::Percentage;
 use decimal::Decimal;
 
-#[derive(Decode, Encode, TypeInfo, PartialEq, Eq, Clone, Debug)]
+#[derive(Decode, Encode, TypeInfo, PartialEq, Eq, Clone, Copy, Debug, Hash)]
 #[codec(crate = gstd::codec)]
 #[scale_info(crate = gstd::scale_info)]
 pub struct PoolKey {
