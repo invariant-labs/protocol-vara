@@ -1,6 +1,8 @@
 use decimal::*;
 use traceable_result::*;
 use crate::sqrt_price::SqrtPrice;
+#[allow(unused_imports)]
+use gstd::ToString;
 use gstd::{Decode, Encode, TypeInfo};
 
 #[decimal(0)]
