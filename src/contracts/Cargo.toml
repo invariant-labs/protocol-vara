@@ -6,7 +6,7 @@ edition = "2021"
 [dependencies]
 gstd.workspace = true
 math.workspace = true
+traceable_result.workspace = true
 decimal.workspace = true
-
 [lib]
 path = "lib.rs"
