@@ -9,6 +9,7 @@ traceable_result.workspace = true
 math.workspace = true
 decimal.workspace = true
 io.workspace = true
+contracts.workspace = true
 
 [build-dependencies]
 gear-wasm-builder.workspace = true
@@ -27,13 +28,14 @@ wasm-opt = ["gear-wasm-builder/wasm-opt"]
 default = ["binary-vendor", "wasm-opt"]
 
 [workspace]
-members = ["state"]
+members = ["state", "xtask"]
 
 [workspace.dependencies]
 # Library dependencies
 decimal.path = "calc/decimal"
 math.path = "calc/math"
 traceable_result.path = "calc/traceable_result"
+contracts.path = "src/contracts"
 
 # Contract dependencies
 state.path = "state"
@@ -48,3 +50,5 @@ gclient = { git = "https://github.com/gear-tech/gear.git", tag = "v1.1.0" }
 
 # External
 tokio = { version = "1", features = ["full"] }
+xshell = "0.2"
+anyhow = "1"

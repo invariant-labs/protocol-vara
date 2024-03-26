@@ -1,8 +1,9 @@
 #![no_std]
 
-use gmeta::{In, InOut, Out, Metadata};
-use gstd::{Decode, Encode, ActorId, TypeInfo};
+use gmeta::{In, InOut, Metadata};
+use gstd::{Decode, Encode, ActorId, TypeInfo, Vec};
 pub struct InvariantMetadata;
+use contracts::*;
 
 impl Metadata for InvariantMetadata {
     type Init = In<InitInvariant>;
@@ -10,15 +11,10 @@ impl Metadata for InvariantMetadata {
     type Others = ();
     type Reply = ();
     type Signal = ();
-    type State = Out<InvariantState>;
+    type State = InOut<InvariantStateQuery, InvariantState>;
 }
 
-#[derive(Default, Encode, Decode, Clone, TypeInfo)]
-#[codec(crate = gstd::codec)]
-#[scale_info(crate = gstd::scale_info)]
-pub struct InvariantState {
-    pub config: InvariantConfig,
-}
+
 
 #[derive(Decode, Encode, TypeInfo)]
 #[codec(crate = gstd::codec)]
@@ -35,16 +31,38 @@ pub struct InvariantConfig {
     pub protocol_fee: u128,
 }
 
-#[derive(Clone, Decode, Encode, TypeInfo)]
+#[derive(Clone, Decode, Encode, Debug, TypeInfo)]
 #[codec(crate = gstd::codec)]
 #[scale_info(crate = gstd::scale_info)]
 pub enum InvariantAction {
     ChangeProtocolFee(u128),
+    AddFeeTier(FeeTier),
+    RemoveFeeTier(FeeTier)
 }
 
-#[derive(Clone, Decode, Encode, TypeInfo)]
+#[derive(Clone, Decode, Encode, Debug, PartialEq, Eq, TypeInfo)]
 #[codec(crate = gstd::codec)]
 #[scale_info(crate = gstd::scale_info)]
 pub enum InvariantEvent {
     ProtocolFeeChanged(u128),
+    ActionFailed(InvariantError),
 }
+
+#[derive(Clone, Decode, Encode, Debug, TypeInfo)]
+#[codec(crate = gstd::codec)]
+#[scale_info(crate = gstd::scale_info)]
+pub enum InvariantStateQuery {
+    FeeTierExist(FeeTier),
+    GetFeeTiers,
+    GetProtocolFee
+}
+
+#[derive(Encode, Decode, Clone, PartialEq, Eq, Debug, TypeInfo)]
+#[codec(crate = gstd::codec)]
+#[scale_info(crate = gstd::scale_info)]
+pub enum InvariantState {
+    ProtocolFee(u128),
+    QueriedFeeTiers(Vec<FeeTier>),
+    FeeTierExist(bool)
+}
+

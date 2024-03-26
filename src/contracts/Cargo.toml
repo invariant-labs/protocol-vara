@@ -1,0 +1,12 @@
+[package]
+name = "contracts"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+gstd.workspace = true
+math.workspace = true
+decimal.workspace = true
+
+[lib]
+path = "lib.rs"

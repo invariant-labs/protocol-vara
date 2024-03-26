@@ -6,3 +6,4 @@ edition = "2021"
 [dependencies]
 gmeta.workspace = true
 gstd.workspace = true
+contracts.workspace = true

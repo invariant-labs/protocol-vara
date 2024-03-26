@@ -1,13 +1,17 @@
-use gclient::{EventProcessor, GearApi, Result};
-use gstd::{Encode, ActorId};
+use contracts::FeeTier;
+use gclient::{GearApi, Result};
+use gstd::{ActorId, Vec};
 use io::*;
+use crate::test_helpers::gclient::{get_fee_tiers, get_protocol_fee};
+use crate::test_helpers::gclient::init::init_invariant;
+use crate::test_helpers::consts::GEAR_PATH;
 
-const PATH: &str = "./target/wasm32-unknown-unknown/release/invariant.opt.wasm";
 const USER: [u8; 32] = [0; 32];
 
 #[tokio::test]
 async fn test_init() -> Result<()> {
-    let api = GearApi::dev().await.unwrap();
+    
+    let api = GearApi::dev_from_path(GEAR_PATH).await.unwrap();
 
     let mut listener = api.subscribe().await?;
 
@@ -20,29 +24,9 @@ async fn test_init() -> Result<()> {
         },
     };
 
-    let init_payload = init.encode();
-
-    let gas_info = api
-        .calculate_upload_gas(
-            None,
-            gclient::code_from_os(PATH)?,
-            init_payload.clone(),
-            0,
-            true,
-        )
-        .await?;
-
-    let (message_id, _program_id, _hash) = api
-        .upload_program_bytes_by_path(
-            PATH,
-            gclient::now_micros().to_le_bytes(),
-            init_payload,
-            gas_info.min_limit,
-            0,
-        )
-        .await?;
-
-    assert!(listener.message_processed(message_id).await?.succeed());
+    let invariant = init_invariant(&api, &mut listener, init).await;
+    assert_eq!(Vec::<FeeTier>::new(), get_fee_tiers(&api, invariant).await);
+    assert_eq!(100, get_protocol_fee(&api, invariant).await);
 
     Ok(())
 }

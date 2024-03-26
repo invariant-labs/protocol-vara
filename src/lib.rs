@@ -1,25 +1,75 @@
 #![no_std]
-pub mod contracts;
 extern crate alloc;
 #[cfg(test)]
 mod e2e;
+#[cfg(test)]
+mod test_helpers;
+
 
 use gstd::{
     msg::{self, reply},
     prelude::*,
 };
 use io::*;
-
+use contracts::{errors::InvariantError, FeeTier, FeeTiers};
+use math::percentage::Percentage;
+use decimal::*;
 #[derive(Default, Clone)]
 pub struct Invariant {
     pub config: InvariantConfig,
+    pub fee_tiers: FeeTiers,
 }
 
 impl Invariant {
-    pub fn change_protocol_fee(&mut self, protocol_fee: u128) {
-        self.config.protocol_fee = protocol_fee;
+    pub fn change_protocol_fee(&mut self, protocol_fee: u128) -> Result<u128, InvariantError> {
+        if !self.caller_is_admin() {
+            return Err(InvariantError::NotAdmin);
+        }
 
-        reply(InvariantEvent::ProtocolFeeChanged(protocol_fee), 0).expect("Unable to reply");
+        self.config.protocol_fee = protocol_fee;
+        Ok(self.config.protocol_fee)
+    }
+
+    pub fn get_protocol_fee(&self) -> u128 {
+        self.config.protocol_fee
+    }
+
+    pub fn add_fee_tier(&mut self, fee_tier: FeeTier) -> Result<FeeTier, InvariantError> {
+        if fee_tier.tick_spacing == 0 || fee_tier.tick_spacing > 100 {
+            return Err(InvariantError::InvalidTickSpacing);
+        }
+
+        if fee_tier.fee >= Percentage::from_integer(1) {
+            return Err(InvariantError::InvalidFee);
+        }
+
+        if !self.caller_is_admin() {
+            return Err(InvariantError::NotAdmin);
+        }
+
+        self.fee_tiers.add(&fee_tier)?;
+        Ok(fee_tier)
+    }
+
+    pub fn fee_tier_exists(&self, fee_tier: FeeTier) -> bool {
+        self.fee_tiers.contains(&fee_tier)
+    }
+
+    pub fn remove_fee_tier(&mut self, fee_tier: FeeTier) -> Result<FeeTier, InvariantError> {
+        if !self.caller_is_admin() {
+            return Err(InvariantError::NotAdmin);
+        }
+
+        self.fee_tiers.remove(&fee_tier)?;
+        Ok(fee_tier)
+    }
+
+    pub fn get_fee_tiers(&self) -> Vec<FeeTier> {
+        self.fee_tiers.get_all()
+    }
+
+    fn caller_is_admin(&self) -> bool {
+        msg::source() == self.config.admin
     }
 }
 
@@ -31,6 +81,7 @@ extern "C" fn init() {
 
     let invariant = Invariant {
         config: init.config,
+        fee_tiers: Default::default()
     };
 
     unsafe {
@@ -45,38 +96,119 @@ extern "C" fn handle() {
 
     match action {
         InvariantAction::ChangeProtocolFee(protocol_fee) => {
-            invariant.change_protocol_fee(protocol_fee)
+            match invariant.change_protocol_fee(protocol_fee) {
+                Ok(protocol_fee) => {
+                    reply(InvariantEvent::ProtocolFeeChanged(protocol_fee), 0).expect("Unable to reply");
+                }
+                Err(e) => {
+                    reply(InvariantEvent::ActionFailed(e), 0).expect("Unable to reply");
+                }
+            };
+        }
+        InvariantAction::AddFeeTier(fee_tier) => {
+            match invariant.add_fee_tier(fee_tier) {
+                Ok(_fee_tier) => {}
+                Err(e) => {
+                    reply(InvariantEvent::ActionFailed(e), 0).expect("Unable to reply");
+                }
+            };
+        }
+        InvariantAction::RemoveFeeTier(fee_tier) => {
+            match invariant.remove_fee_tier(fee_tier) {
+                Ok(_fee_tier) => {}
+                Err(e) => {
+                    reply(InvariantEvent::ActionFailed(e), 0).expect("Unable to reply");
+                }
+            };
+        }
+    }
+}
+#[no_mangle]
+extern "C" fn state() {
+    let query: InvariantStateQuery = msg::load().expect("Unable to decode InvariantStateQuery");
+    let invariant = unsafe { INVARIANT.get_or_insert(Default::default()) };
+    match query {
+        InvariantStateQuery::FeeTierExist(fee_tier) => {
+            let exists = invariant.fee_tier_exists(fee_tier);
+            reply(InvariantState::FeeTierExist(exists), 0).expect("Unable to reply");
+        }
+        InvariantStateQuery::GetFeeTiers => {
+            let fee_tiers = invariant.get_fee_tiers();
+            reply(InvariantState::QueriedFeeTiers(fee_tiers), 0).expect("Unable to reply");
+        }
+        InvariantStateQuery::GetProtocolFee => {
+            let protocol_fee = invariant.get_protocol_fee();
+            reply(InvariantState::ProtocolFee(protocol_fee), 0).expect("Unable to reply");
         }
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use gstd::ActorId;
-    use gtest::{Program, System};
 
-    const USER: [u8; 32] = [0; 32];
-    const PATH: &str = "./target/wasm32-unknown-unknown/release/invariant.wasm";
+    use super::*;
+    use gtest::{Program, System};
+    use test_helpers::consts::INVARIANT_PATH;
+    const USERS: [u64; 2] = [1, 2];
+    const ADMIN: u64 = USERS[0];
+    const PROGRAM_OWNER: u64 = USERS[1];
+    const PROGRAM_ID: u64 = 105;
+    const PATH: &str = INVARIANT_PATH;
+
+    pub fn init_invariant(sys: &System, protocol_fee: u128) -> Program<'_> {
+        let program = Program::from_file_with_id(sys, PROGRAM_ID, PATH);
+    
+        assert!(!program
+            .send(
+                PROGRAM_OWNER,
+                InitInvariant {
+                    config: InvariantConfig {
+                        admin: ADMIN.into(),
+                        protocol_fee,
+                    },
+                },
+            )
+            .main_failed());
+        program
+    }
 
     #[test]
     fn test_init() {
         let sys = System::new();
         sys.init_logger();
 
-        let program_id = 105;
-        let program = Program::from_file_with_id(&sys, program_id, PATH);
+        let _invariant = init_invariant(&sys, 100);
+    }
 
-        assert!(!program
-            .send(
-                100001,
-                InitInvariant {
-                    config: InvariantConfig {
-                        admin: ActorId::new(USER),
-                        protocol_fee: 100,
-                    },
-                },
-            )
-            .main_failed());
+    #[test]
+    fn test_fee_tiers() {
+        let sys = System::new();
+        sys.init_logger();
+
+        let invariant = init_invariant(&sys, 100);
+        let fee_tier = FeeTier::new(Percentage::new(1), 10u16).unwrap();
+        let fee_tier_value = FeeTier {
+            fee: Percentage::new(1),
+            tick_spacing: 10u16,
+        };
+
+        let res = invariant.send(ADMIN, InvariantAction::AddFeeTier(fee_tier));
+        assert!(!res.main_failed());
+        
+        let state: InvariantState = invariant.read_state(InvariantStateQuery::GetFeeTiers).expect("Failed to read state");
+        assert_eq!(state, InvariantState::QueriedFeeTiers(vec![fee_tier_value]));
+
+        let res = invariant.send(ADMIN, InvariantAction::AddFeeTier(fee_tier));
+        assert!(!res.main_failed());
+        assert!(res.contains(&(ADMIN, InvariantEvent::ActionFailed(InvariantError::FeeTierAlreadyExist).encode())));
+
+        let state: InvariantState = invariant.read_state(InvariantStateQuery::GetFeeTiers).expect("Failed to read state");
+        assert_eq!(state, InvariantState::QueriedFeeTiers(vec![fee_tier_value]));
+
+        let res = invariant.send(ADMIN, InvariantAction::RemoveFeeTier(fee_tier));
+        assert!(!res.main_failed());
+
+        let state: InvariantState = invariant.read_state(InvariantStateQuery::GetFeeTiers).expect("Failed to read state");
+        assert_eq!(state, InvariantState::QueriedFeeTiers(vec![]));
     }
 }
