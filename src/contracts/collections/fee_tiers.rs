@@ -52,7 +52,7 @@ mod tests {
         let fee_tier_key = FeeTier::default();
         let new_fee_tier_key = FeeTier::new(Percentage::new(0), 2).unwrap();
 
-        fee_tier_keys.add(f&ee_tier_key).unwrap();
+        fee_tier_keys.add(&fee_tier_key).unwrap();
         assert!(fee_tier_keys.contains(&fee_tier_key));
         assert!(!fee_tier_keys.contains(&new_fee_tier_key));
 
