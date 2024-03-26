@@ -13,7 +13,7 @@ use math::{
 use traceable_result::*;
 
 
-#[derive(PartialEq, Debug, Clone, Decode, Encode, TypeInfo)]
+#[derive(PartialEq, Debug, Clone, Decode, Encode, TypeInfo, Eq)]
 #[codec(crate = gstd::codec)]
 #[scale_info(crate = gstd::scale_info)]
 pub struct Pool {

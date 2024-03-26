@@ -2995,6 +2995,7 @@ dependencies = [
  "contracts",
  "gmeta",
  "gstd",
+ "math",
 ]
 
 [[package]]
