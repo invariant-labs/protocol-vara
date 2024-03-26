@@ -1,6 +1,8 @@
 use crate::types::{liquidity::*, token_amount::*};
 use decimal::*;
 use traceable_result::*;
+#[allow(unused_imports)]
+use gstd::ToString;
 use gstd::{Decode, Encode, TypeInfo};
 
 #[decimal(28)]
@@ -357,7 +359,7 @@ mod tests {
             let (_format, cause, stack) = fee_growth.to_fee(liquidity).unwrap_err().get();
             assert_eq!(
                 cause,
-                "conversion to invariant::math::types::token_amount::TokenAmount type failed"
+                "conversion to math::types::token_amount::TokenAmount type failed"
             );
             assert_eq!(stack.len(), 1);
         }
