@@ -1,4 +1,6 @@
 use decimal::*;
+#[allow(unused_imports)]
+use gstd::ToString;
 use gstd::{Decode, Encode, TypeInfo};
 
 #[decimal(6)]
