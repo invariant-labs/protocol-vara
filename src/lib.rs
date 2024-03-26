@@ -47,12 +47,12 @@ impl Invariant {
             return Err(InvariantError::NotAdmin);
         }
 
-        self.fee_tiers.add(fee_tier)?;
+        self.fee_tiers.add(&fee_tier)?;
         Ok(fee_tier)
     }
 
     pub fn fee_tier_exists(&self, fee_tier: FeeTier) -> bool {
-        self.fee_tiers.contains(fee_tier)
+        self.fee_tiers.contains(&fee_tier)
     }
 
     pub fn remove_fee_tier(&mut self, fee_tier: FeeTier) -> Result<FeeTier, InvariantError> {
@@ -60,7 +60,7 @@ impl Invariant {
             return Err(InvariantError::NotAdmin);
         }
 
-        self.fee_tiers.remove(fee_tier)?;
+        self.fee_tiers.remove(&fee_tier)?;
         Ok(fee_tier)
     }
 
