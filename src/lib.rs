@@ -106,6 +106,16 @@ impl Invariant {
         Ok(())
     }
 
+    pub fn get_pool(
+        &self,
+        token_0: ActorId,
+        token_1: ActorId,
+        fee_tier: FeeTier
+    )->Result<Pool, InvariantError> {
+        let pool_key = PoolKey::new(token_0, token_1, fee_tier)?;
+        self.pools.get(pool_key)
+    }
+
     fn caller_is_admin(&self) -> bool {
         msg::source() == self.config.admin
     }
@@ -195,6 +205,16 @@ extern "C" fn state() {
             let protocol_fee = invariant.get_protocol_fee();
             reply(InvariantState::ProtocolFee(protocol_fee), 0).expect("Unable to reply");
         }
+        InvariantStateQuery::GetPool(token_0, token_1, fee_tier) => {
+            match invariant.get_pool(token_0, token_1, fee_tier) {
+                Ok(pool) => {
+                    reply(InvariantState::Pool(pool), 0).expect("Unable to reply");
+                }
+                Err(e) => {
+                    reply(InvariantState::QueryFailed(e), 0).expect("Unable to reply");
+                }
+            }
+        }
     }
 }
 
@@ -203,7 +223,7 @@ mod tests {
 
     use super::*;
     use gtest::{Program, System};
-    use math::sqrt_price::calculate_sqrt_price;
+    use math::{sqrt_price::calculate_sqrt_price, liquidity::Liquidity};
     const USERS: [u64; 2] = [1, 2];
     const ADMIN: u64 = USERS[0];
     const PROGRAM_OWNER: u64 = USERS[1];
@@ -234,6 +254,47 @@ mod tests {
 
         let _invariant = init_invariant(&sys, 100);
     }
+    #[test]
+    fn test_fee_tiers() {
+        let sys = System::new();
+        sys.init_logger();
+
+        let invariant = init_invariant(&sys, 100);
+        let fee_tier = FeeTier::new(Percentage::new(1), 10u16).unwrap();
+        let fee_tier_value = FeeTier {
+            fee: Percentage::new(1),
+            tick_spacing: 10u16,
+        };
+
+        let res = invariant.send(ADMIN, InvariantAction::AddFeeTier(fee_tier));
+        assert!(!res.main_failed());
+
+        let state: InvariantState = invariant
+            .read_state(InvariantStateQuery::GetFeeTiers)
+            .expect("Failed to read state");
+        assert_eq!(state, InvariantState::QueriedFeeTiers(vec![fee_tier_value]));
+
+        let res = invariant.send(ADMIN, InvariantAction::AddFeeTier(fee_tier));
+        assert!(!res.main_failed());
+        assert!(res.contains(&(
+            ADMIN,
+            InvariantEvent::ActionFailed(InvariantError::FeeTierAlreadyExist).encode()
+        )));
+
+        let state: InvariantState = invariant
+            .read_state(InvariantStateQuery::GetFeeTiers)
+            .expect("Failed to read state");
+        assert_eq!(state, InvariantState::QueriedFeeTiers(vec![fee_tier_value]));
+
+        let res = invariant.send(ADMIN, InvariantAction::RemoveFeeTier(fee_tier));
+        assert!(!res.main_failed());
+
+        let state: InvariantState = invariant
+            .read_state(InvariantStateQuery::GetFeeTiers)
+            .expect("Failed to read state");
+        assert_eq!(state, InvariantState::QueriedFeeTiers(vec![]));
+    }
+
     #[test]
     fn test_add_pool() {
         let sys = System::new();
@@ -279,7 +340,7 @@ mod tests {
     }
 
     #[test]
-    fn test_fee_tiers() {
+    fn test_get_pool() {
         let sys = System::new();
         sys.init_logger();
 
@@ -289,33 +350,40 @@ mod tests {
             fee: Percentage::new(1),
             tick_spacing: 10u16,
         };
-
+        let token_0 = ActorId::from([0x01; 32]);
+        let token_1 = ActorId::from([0x02; 32]);
+        let fee_tier = FeeTier {
+            fee: Percentage::new(1),
+            tick_spacing: 1,
+        };
         let res = invariant.send(ADMIN, InvariantAction::AddFeeTier(fee_tier));
         assert!(!res.main_failed());
+        assert!(res.log().last().unwrap().payload().is_empty());
 
-        let state: InvariantState = invariant
-            .read_state(InvariantStateQuery::GetFeeTiers)
-            .expect("Failed to read state");
-        assert_eq!(state, InvariantState::QueriedFeeTiers(vec![fee_tier_value]));
+        let init_sqrt_price = calculate_sqrt_price(0).unwrap();
+        let init_tick = 0;
+    
+        let block_timestamp = sys.block_timestamp();
 
-        let res = invariant.send(ADMIN, InvariantAction::AddFeeTier(fee_tier));
-        assert!(!res.main_failed());
-        assert!(res.contains(&(
-            ADMIN,
-            InvariantEvent::ActionFailed(InvariantError::FeeTierAlreadyExist).encode()
-        )));
-
-        let state: InvariantState = invariant
-            .read_state(InvariantStateQuery::GetFeeTiers)
-            .expect("Failed to read state");
-        assert_eq!(state, InvariantState::QueriedFeeTiers(vec![fee_tier_value]));
-
-        let res = invariant.send(ADMIN, InvariantAction::RemoveFeeTier(fee_tier));
+        let res = invariant.send(ADMIN, InvariantAction::CreatePool{
+            token_0,
+            token_1,
+            fee_tier,
+            init_sqrt_price,
+            init_tick,
+        });
         assert!(!res.main_failed());
 
         let state: InvariantState = invariant
-            .read_state(InvariantStateQuery::GetFeeTiers)
+            .read_state(InvariantStateQuery::GetPool(token_0, token_1, fee_tier))
             .expect("Failed to read state");
-        assert_eq!(state, InvariantState::QueriedFeeTiers(vec![]));
+        assert_eq!(state, InvariantState::Pool(Pool{
+            start_timestamp: block_timestamp,
+            last_timestamp: block_timestamp,
+            sqrt_price: init_sqrt_price,
+            current_tick_index: init_tick,
+            fee_receiver: ADMIN.into(),
+            ..Pool::default()
+        }))
     }
 }

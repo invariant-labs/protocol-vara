@@ -10,6 +10,7 @@ math.workspace = true
 decimal.workspace = true
 io.workspace = true
 contracts.workspace = true
+gear-core.workspace = true
 
 [build-dependencies]
 gear-wasm-builder.workspace = true
@@ -45,6 +46,7 @@ io.path = "io"
 gstd = "1.1.0"
 gear-wasm-builder = "1.1.0"
 gmeta = "1.1.0"
+gear-core = "1.1.0"
 gtest = { git = "https://github.com/gear-tech/gear.git", tag = "v1.1.0" }
 gclient = { git = "https://github.com/gear-tech/gear.git", tag = "v1.1.0" }
 
