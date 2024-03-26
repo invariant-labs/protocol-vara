@@ -3,7 +3,7 @@ use crate::errors::InvariantError;
 use decimal::*;
 use gstd::{Decode, Encode, TypeInfo};
 
-#[derive(Encode, Decode, TypeInfo, PartialEq, Eq, Clone, Copy, Debug)]
+#[derive(Encode, Decode, TypeInfo, PartialEq, Eq, Clone, Copy, Debug, Hash)]
 #[codec(crate = gstd::codec)]
 #[scale_info(crate = gstd::scale_info)]
 pub struct FeeTier {
