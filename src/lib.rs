@@ -148,11 +148,12 @@ mod tests {
 
     use super::*;
     use gtest::{Program, System};
+    use test_helpers::consts::INVARIANT_PATH;
     const USERS: [u64; 2] = [1, 2];
     const ADMIN: u64 = USERS[0];
     const PROGRAM_OWNER: u64 = USERS[1];
     const PROGRAM_ID: u64 = 105;
-    const PATH: &str = "./target/wasm32-unknown-unknown/release/invariant.wasm";
+    const PATH: &str = INVARIANT_PATH;
 
     pub fn init_invariant(sys: &System, protocol_fee: u128) -> Program<'_> {
         let program = Program::from_file_with_id(sys, PROGRAM_ID, PATH);
