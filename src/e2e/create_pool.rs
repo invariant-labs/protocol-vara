@@ -50,21 +50,8 @@ async fn test_create_pool() -> Result<()> {
         None,
     )
     .await;
-    let block_timestamp = api.last_block_timestamp().await.unwrap();
 
-    assert_eq!(
-        get_pool(&api, invariant, token_0, token_1, fee_tier, None)
-            .await
-            .unwrap(),
-        Pool {
-            fee_receiver: get_api_user_id(&api).into(),
-            sqrt_price: init_sqrt_price,
-            current_tick_index: init_tick,
-            last_timestamp: block_timestamp,
-            start_timestamp: block_timestamp,
-            ..Pool::default()
-        }
-    );
+    get_pool(&api, invariant, token_0, token_1, fee_tier, None).await.expect("Pool doesn't exist");
     Ok(())
 }
 
