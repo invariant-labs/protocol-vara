@@ -3,7 +3,7 @@ use crate::test_helpers::gclient::{
     add_fee_tier, create_pool, get_api_user_id,
     get_new_token, get_pool, init_invariant
 };
-use contracts::{FeeTier, InvariantError, Pool};
+use contracts::{FeeTier, InvariantError};
 use decimal::*;
 use gclient::{GearApi, Result};
 use gstd::prelude::*;
