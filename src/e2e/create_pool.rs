@@ -72,10 +72,8 @@ async fn test_create_pool() -> Result<()> {
 #[tokio::test]
 async fn test_create_pool_x_to_y_and_y_to_x() -> Result<()> {
     let api = GearApi::dev_from_path(GEAR_PATH).await.unwrap();
-    let mut token_0 = get_api_user_id(&api);
-    token_0[0] = token_0[0].wrapping_add(1);
-    let mut token_1 = token_0;
-    token_1[0] = token_1[0].wrapping_add(1);
+    let token_0 = get_new_token(get_api_user_id(&api));
+    let token_1 = get_new_token(token_0);
 
     let mut listener = api.subscribe().await?;
 
@@ -128,8 +126,7 @@ async fn test_create_pool_x_to_y_and_y_to_x() -> Result<()> {
 #[tokio::test]
 async fn test_create_pool_with_same_tokens() -> Result<()> {
     let api = GearApi::dev_from_path(GEAR_PATH).await.unwrap();
-    let mut token_0 = get_api_user_id(&api);
-    token_0[0] = token_0[0].wrapping_add(1);
+    let token_0 = get_new_token(get_api_user_id(&api));
 
     let mut listener = api.subscribe().await?;
 
@@ -170,10 +167,8 @@ async fn test_create_pool_with_same_tokens() -> Result<()> {
 #[tokio::test]
 async fn test_create_pool_fee_tier_not_added() -> Result<()> {
     let api = GearApi::dev_from_path(GEAR_PATH).await.unwrap();
-    let mut token_0 = get_api_user_id(&api);
-    token_0[0] = token_0[0].wrapping_add(1);
-    let mut token_1 = token_0;
-    token_1[0] = token_1[0].wrapping_add(1);
+    let token_0 = get_new_token(get_api_user_id(&api));
+    let token_1 = get_new_token(token_0);
 
     let mut listener = api.subscribe().await?;
 
@@ -212,10 +207,8 @@ async fn test_create_pool_fee_tier_not_added() -> Result<()> {
 #[tokio::test]
 async fn test_create_pool_init_tick_not_divisible_by_tick_spacing() -> Result<()> {
     let api = GearApi::dev_from_path(GEAR_PATH).await.unwrap();
-    let mut token_0 = get_api_user_id(&api);
-    token_0[0] = token_0[0].wrapping_add(1);
-    let mut token_1 = token_0;
-    token_1[0] = token_1[0].wrapping_add(1);
+    let token_0 = get_new_token(get_api_user_id(&api));
+    let token_1 = get_new_token(token_0);
 
     let mut listener = api.subscribe().await?;
 
@@ -255,10 +248,8 @@ async fn test_create_pool_init_tick_not_divisible_by_tick_spacing() -> Result<()
 #[tokio::test]
 async fn test_create_pool_init_sqrt_price_minimal_difference_from_tick() -> Result<()> {
     let api = GearApi::dev_from_path(GEAR_PATH).await.unwrap();
-    let mut token_0 = get_api_user_id(&api);
-    token_0[0] = token_0[0].wrapping_add(1);
-    let mut token_1 = token_0;
-    token_1[0] = token_1[0].wrapping_add(1);
+    let token_0 = get_new_token(get_api_user_id(&api));
+    let token_1 = get_new_token(token_0);
 
     let mut listener = api.subscribe().await?;
 
@@ -305,10 +296,8 @@ async fn test_create_pool_init_sqrt_price_minimal_difference_from_tick() -> Resu
 #[tokio::test]
 async fn test_create_pool_init_sqrt_price_has_closer_init_tick() -> Result<()> {
     let api = GearApi::dev_from_path(GEAR_PATH).await.unwrap();
-    let mut token_0 = get_api_user_id(&api);
-    token_0[0] = token_0[0].wrapping_add(1);
-    let mut token_1 = token_0;
-    token_1[0] = token_1[0].wrapping_add(1);
+    let token_0 = get_new_token(get_api_user_id(&api));
+    let token_1 = get_new_token(token_0);
 
     let mut listener = api.subscribe().await?;
 
@@ -371,10 +360,8 @@ async fn test_create_pool_init_sqrt_price_has_closer_init_tick() -> Result<()> {
 #[tokio::test]
 async fn test_create_pool_init_sqrt_price_has_closer_init_tick_spacing_over_one() -> Result<()> {
     let api = GearApi::dev_from_path(GEAR_PATH).await.unwrap();
-    let mut token_0 = get_api_user_id(&api);
-    token_0[0] = token_0[0].wrapping_add(1);
-    let mut token_1 = token_0;
-    token_1[0] = token_1[0].wrapping_add(1);
+    let token_0 = get_new_token(get_api_user_id(&api));
+    let token_1 = get_new_token(token_0);
 
     let mut listener = api.subscribe().await?;
 
