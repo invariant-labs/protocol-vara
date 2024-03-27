@@ -7,7 +7,7 @@ pub struct Positions {
     positions: HashMap<(ActorId, u32), Position>,
 }
 
-impl Positions {
+impl<'a> Positions {
     pub fn add(&mut self, account_id: &ActorId, position: &Position) {
         let positions_length = self.get_length(account_id);
 
@@ -41,7 +41,7 @@ impl Positions {
         index: u32,
     ) -> Result<Position, InvariantError> {
         let positions_length = self.get_length(account_id);
-        let position = self.get(account_id, index)?;
+        let position = self.get(account_id, index)?.clone();
 
         if index < positions_length - 1 {
             let last_position = self
@@ -72,11 +72,10 @@ impl Positions {
         Ok(())
     }
 
-    pub fn get(&self, account_id: &ActorId, index: u32) -> Result<Position, InvariantError> {
+    pub fn get(&'a self, account_id: &ActorId, index: u32) -> Result<&'a Position, InvariantError> {
         let position = self
             .positions
             .get(&(account_id.clone(), index))
-            .cloned()
             .ok_or(InvariantError::PositionNotFound)?;
 
         Ok(position)
@@ -111,8 +110,8 @@ mod tests {
 
         positions.add(&account_id, &position);
         positions.add(&account_id, &new_position);
-        assert_eq!(positions.get(&account_id, 0), Ok(position));
-        assert_eq!(positions.get(&account_id, 1), Ok(new_position));
+        assert_eq!(positions.get(&account_id, 0), Ok(&position));
+        assert_eq!(positions.get(&account_id, 1), Ok(&new_position));
         assert_eq!(
             positions.get(&account_id, 2),
             Err(InvariantError::PositionNotFound)
@@ -134,7 +133,7 @@ mod tests {
         positions.add(&account_id, &position);
 
         positions.update(&account_id, 0, &new_position).unwrap();
-        assert_eq!(positions.get(&account_id, 0), Ok(new_position));
+        assert_eq!(positions.get(&account_id, 0), Ok(&new_position));
         assert_eq!(positions.get_length(&account_id), 1);
 
         let result = positions.update(&account_id, 1, &new_position);
@@ -157,7 +156,7 @@ mod tests {
 
         let result = positions.remove(&account_id, 0);
         assert_eq!(result, Ok(position));
-        assert_eq!(positions.get(&account_id, 0), Ok(new_position));
+        assert_eq!(positions.get(&account_id, 0), Ok(&new_position));
         assert_eq!(positions.get_length(&account_id), 1);
 
         let result = positions.remove(&account_id, 0);
@@ -189,7 +188,7 @@ mod tests {
             Err(InvariantError::PositionNotFound)
         );
         assert_eq!(positions.get_length(&account_id), 0);
-        assert_eq!(positions.get(&receiver_account_id, 0), Ok(position));
+        assert_eq!(positions.get(&receiver_account_id, 0), Ok(&position));
         assert_eq!(positions.get_length(&receiver_account_id), 1);
 
         let result = positions.transfer(&account_id, 0, &receiver_account_id);
