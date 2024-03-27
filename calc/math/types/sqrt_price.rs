@@ -1,5 +1,7 @@
 use decimal::*;
 use traceable_result::*;
+#[allow(unused_imports)]
+use gstd::ToString;
 use gstd::{Decode, Encode, TypeInfo};
 use crate::consts::*;
 use crate::types::{fixed_point::FixedPoint, token_amount::TokenAmount};

@@ -7,30 +7,30 @@ pub struct Ticks {
   ticks: HashMap<(PoolKey, i32), Tick>,
 }
 
-impl Ticks {
+impl<'a> Ticks {
   pub fn add(
       &mut self,
       pool_key: PoolKey,
       index: i32,
-      tick: &Tick,
+      tick: Tick,
   ) -> Result<(), InvariantError> {
       self.ticks
           .get(&(pool_key, index))
           .map_or(Ok(()), |_| Err(InvariantError::TickAlreadyExist))?;
 
-      self.ticks.insert((pool_key, index), tick.clone());
+      self.ticks.insert((pool_key, index), tick);
       Ok(())
   }
 
   pub fn update(
       &mut self,
       pool_key: PoolKey,
-      index: i32,
-      tick: &Tick,
+      index: i32,   
+      tick: Tick,
   ) -> Result<(), InvariantError> {
       self.get(pool_key, index)?;
 
-      self.ticks.insert((pool_key, index), tick.clone());
+      self.ticks.insert((pool_key, index), tick);
       Ok(())
   }
 
@@ -41,11 +41,10 @@ impl Ticks {
       Ok(())
   }
 
-  pub fn get(&self, pool_key: PoolKey, index: i32) -> Result<Tick, InvariantError> {
+  pub fn get(&'a self, pool_key: PoolKey, index: i32) -> Result<&'a Tick, InvariantError> {
       let tick = self
           .ticks
           .get(&(pool_key, index))
-          .cloned()
           .ok_or(InvariantError::TickNotFound)?;
 
       Ok(tick)
@@ -72,11 +71,11 @@ mod tests {
       let pool_key = PoolKey::new(token_x, token_y, fee_tier).unwrap();
       let tick = Tick::default();
 
-      ticks.add(pool_key, 0, &tick).unwrap();
-      assert_eq!(ticks.get(pool_key, 0), Ok(tick));
+      ticks.add(pool_key, 0, tick).unwrap();
+      assert_eq!(ticks.get(pool_key, 0), Ok(&tick));
       assert_eq!(ticks.get(pool_key, 1), Err(InvariantError::TickNotFound));
 
-      let result = ticks.add(pool_key, 0, &tick);
+      let result = ticks.add(pool_key, 0, tick);
       assert_eq!(result, Err(InvariantError::TickAlreadyExist));
   }
 
@@ -96,12 +95,12 @@ mod tests {
           ..Tick::default()
       };
 
-      ticks.add(pool_key, 0, &tick).unwrap();
+      ticks.add(pool_key, 0, tick).unwrap();
 
-      ticks.update(pool_key, 0, &new_tick).unwrap();
-      assert_eq!(ticks.get(pool_key, 0), Ok(new_tick));
+      ticks.update(pool_key, 0, new_tick).unwrap();
+      assert_eq!(ticks.get(pool_key, 0), Ok(&new_tick));
 
-      let result = ticks.update(pool_key, 1, &new_tick);
+      let result = ticks.update(pool_key, 1, new_tick);
       assert_eq!(result, Err(InvariantError::TickNotFound));
   }
 
@@ -117,7 +116,7 @@ mod tests {
       let pool_key = PoolKey::new(token_x, token_y, fee_tier).unwrap();
       let tick = Tick::default();
 
-      ticks.add(pool_key, 0, &tick).unwrap();
+      ticks.add(pool_key, 0, tick).unwrap();
 
       ticks.remove(pool_key, 0).unwrap();
       assert_eq!(ticks.get(pool_key, 0), Err(InvariantError::TickNotFound));

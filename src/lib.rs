@@ -47,12 +47,12 @@ impl Invariant {
             return Err(InvariantError::NotAdmin);
         }
 
-        self.fee_tiers.add(fee_tier)?;
+        self.fee_tiers.add(&fee_tier)?;
         Ok(fee_tier)
     }
 
     pub fn fee_tier_exists(&self, fee_tier: FeeTier) -> bool {
-        self.fee_tiers.contains(fee_tier)
+        self.fee_tiers.contains(&fee_tier)
     }
 
     pub fn remove_fee_tier(&mut self, fee_tier: FeeTier) -> Result<FeeTier, InvariantError> {
@@ -60,7 +60,7 @@ impl Invariant {
             return Err(InvariantError::NotAdmin);
         }
 
-        self.fee_tiers.remove(fee_tier)?;
+        self.fee_tiers.remove(&fee_tier)?;
         Ok(fee_tier)
     }
 
@@ -148,11 +148,12 @@ mod tests {
 
     use super::*;
     use gtest::{Program, System};
+    use test_helpers::consts::INVARIANT_PATH;
     const USERS: [u64; 2] = [1, 2];
     const ADMIN: u64 = USERS[0];
     const PROGRAM_OWNER: u64 = USERS[1];
     const PROGRAM_ID: u64 = 105;
-    const PATH: &str = "./target/wasm32-unknown-unknown/release/invariant.wasm";
+    const PATH: &str = INVARIANT_PATH;
 
     pub fn init_invariant(sys: &System, protocol_fee: u128) -> Program<'_> {
         let program = Program::from_file_with_id(sys, PROGRAM_ID, PATH);
