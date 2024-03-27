@@ -397,4 +397,39 @@ mod tests {
             ..Pool::default()
         }))
     }
+
+    #[test]
+    fn test_get_pools() {
+        let sys = System::new();
+        sys.init_logger();
+
+        let invariant = init_invariant(&sys, 100);
+
+        let token_0 = ActorId::from([0x01; 32]);
+        let token_1 = ActorId::from([0x02; 32]);
+        let fee_tier = FeeTier {
+            fee: Percentage::new(1),
+            tick_spacing: 1,
+        };
+        let res = invariant.send(ADMIN, InvariantAction::AddFeeTier(fee_tier));
+        assert!(!res.main_failed());
+        assert!(res.log().last().unwrap().payload().is_empty());
+
+        let init_sqrt_price = calculate_sqrt_price(0).unwrap();
+        let init_tick = 0;
+    
+        let res = invariant.send(ADMIN, InvariantAction::CreatePool{
+            token_0,
+            token_1,
+            fee_tier,
+            init_sqrt_price,
+            init_tick,
+        });
+        assert!(!res.main_failed());
+
+        let state: InvariantState = invariant
+            .read_state(InvariantStateQuery::GetPools(u8::MAX, 0))
+            .expect("Failed to read state");
+        assert_eq!(state, InvariantState::Pools(vec![PoolKey{token_x: token_0, token_y: token_1, fee_tier}]))
+    }
 }

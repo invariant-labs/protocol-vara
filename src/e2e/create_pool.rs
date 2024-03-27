@@ -1,9 +1,9 @@
 use crate::test_helpers::consts::GEAR_PATH;
 use crate::test_helpers::gclient::{
     add_fee_tier, create_pool, get_api_user_id,
-    get_new_token, get_pool, init_invariant
+    get_new_token, get_pool, get_pools, init_invariant
 };
-use contracts::{FeeTier, InvariantError, Pool};
+use contracts::{FeeTier, InvariantError, Pool, PoolKey};
 use decimal::*;
 use gclient::{GearApi, Result};
 use gstd::prelude::*;
@@ -51,6 +51,11 @@ async fn test_create_pool() -> Result<()> {
     )
     .await;
     let block_timestamp = api.last_block_timestamp().await.unwrap();
+
+    assert_eq!(
+        get_pools(&api, invariant, u8::MAX, 0, None).await.unwrap(),
+        vec![PoolKey{token_x: token_0.into(), token_y: token_1.into(), fee_tier}]
+    );
 
     assert_eq!(
         get_pool(&api, invariant, token_0, token_1, fee_tier, None)
@@ -119,6 +124,11 @@ async fn test_create_pool_x_to_y_and_y_to_x() -> Result<()> {
     )
     .await;
 
+    assert_eq!(
+        get_pools(&api, invariant, u8::MAX, 0, None).await.unwrap(),
+        vec![PoolKey{token_x: token_0.into(), token_y: token_1.into(), fee_tier}]
+    );
+
     Ok(())
 }
 
@@ -160,6 +170,10 @@ async fn test_create_pool_with_same_tokens() -> Result<()> {
     )
     .await;
 
+    assert_eq!(
+        get_pools(&api, invariant, u8::MAX, 0, None).await.unwrap(),
+        vec![]
+    );
     Ok(())
 }
 
@@ -200,6 +214,10 @@ async fn test_create_pool_fee_tier_not_added() -> Result<()> {
     )
     .await;
 
+    assert_eq!(
+        get_pools(&api, invariant, u8::MAX, 0, None).await.unwrap(),
+        vec![]
+    );
     Ok(())
 }
 
@@ -241,6 +259,10 @@ async fn test_create_pool_init_tick_not_divisible_by_tick_spacing() -> Result<()
     )
     .await;
 
+    assert_eq!(
+        get_pools(&api, invariant, u8::MAX, 0, None).await.unwrap(),
+        vec![]
+    );
     Ok(())
 }
 
@@ -283,12 +305,18 @@ async fn test_create_pool_init_sqrt_price_minimal_difference_from_tick() -> Resu
     .await;
 
     assert_eq!(
+        get_pools(&api, invariant, u8::MAX, 0, None).await.unwrap(),
+        vec![PoolKey{token_x: token_0.into(), token_y: token_1.into(), fee_tier}]
+    );
+
+    assert_eq!(
         get_pool(&api, invariant, token_0, token_1, fee_tier, None)
             .await
             .unwrap()
             .current_tick_index,
         init_tick
     );
+
     Ok(())
 }
 
@@ -345,6 +373,11 @@ async fn test_create_pool_init_sqrt_price_has_closer_init_tick() -> Result<()> {
         None,
     )
     .await;
+
+    assert_eq!(
+        get_pools(&api, invariant, u8::MAX, 0, None).await.unwrap(),
+        vec![PoolKey{token_x: token_0.into(), token_y: token_1.into(), fee_tier}]
+    );
 
     assert_eq!(
         get_pool(&api, invariant, token_0, token_1, fee_tier, None)
@@ -409,6 +442,11 @@ async fn test_create_pool_init_sqrt_price_has_closer_init_tick_spacing_over_one(
         None,
     )
     .await;
+
+    assert_eq!(
+        get_pools(&api, invariant, u8::MAX, 0, None).await.unwrap(),
+        vec![PoolKey{token_x: token_0.into(), token_y: token_1.into(), fee_tier}]
+    );
 
     assert_eq!(
         get_pool(&api, invariant, token_0, token_1, fee_tier, None)

@@ -1,5 +1,5 @@
 use crate::test_helpers::gclient::utils::*;
-use contracts::{FeeTier, InvariantError, Pool, PoolKey} ;
+use contracts::{InvariantError, PoolKey} ;
 use gclient::GearApi;
 use gstd::prelude::*;
 use io::*;
@@ -30,6 +30,5 @@ pub async fn get_pools(
           }
           panic!("Unexpected state {:?}", state);
         }
-    
     }
 }
