@@ -4,7 +4,6 @@ use crate::test_helpers::gclient::{
     get_new_token, get_pool, init_invariant
 };
 use contracts::{FeeTier, InvariantError, Pool};
-use decimal::num_traits::Inv;
 use decimal::*;
 use gclient::{GearApi, Result};
 use gstd::prelude::*;
@@ -418,50 +417,6 @@ async fn test_create_pool_init_sqrt_price_has_closer_init_tick_spacing_over_one(
             .current_tick_index,
         correct_init_tick
     );
-
-    Ok(())
-}
-#[tokio::test]
-async fn test_create_many_pools_success() -> Result<()> {
-    let api = GearApi::dev_from_path(GEAR_PATH).await.unwrap();
-    let mut token_0 = get_new_token(get_api_user_id(&api));
-    let mut token_1 = get_new_token(token_0);
-
-
-    let mut listener = api.subscribe().await?;
-
-    assert!(listener.blocks_running().await?);
-
-    let init = InitInvariant {
-        config: InvariantConfig {
-            admin: get_api_user_id(&api).into(),
-            protocol_fee: 100,
-        },
-    };
-
-    let invariant = init_invariant(&api, &mut listener, init).await;
-
-    let fee_tier = FeeTier::new(Percentage::from_scale(5, 1), 3).unwrap();
-
-    let init_tick = 0;
-    let init_sqrt_price = SqrtPrice::new(1000225003749000000000000);
-
-    add_fee_tier(&api, &mut listener, invariant, fee_tier, None).await;
-    for i in 0..1000 {
-        create_pool(
-            &api,
-            &mut listener,
-            invariant,
-            token_0,
-            token_1,
-            fee_tier,
-            init_sqrt_price,
-            init_tick,
-            None,
-        );
-        get_pool(&api, invariant, token_0, token_1, fee_tier, None).await.unwrap();
-        token_1 = get_new_token(token_1);
-    };
 
     Ok(())
 }

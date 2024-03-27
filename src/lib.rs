@@ -223,7 +223,7 @@ mod tests {
 
     use super::*;
     use gtest::{Program, System};
-    use math::{sqrt_price::calculate_sqrt_price, liquidity::Liquidity};
+    use math::sqrt_price::calculate_sqrt_price;
     const USERS: [u64; 2] = [1, 2];
     const ADMIN: u64 = USERS[0];
     const PROGRAM_OWNER: u64 = USERS[1];
@@ -345,11 +345,7 @@ mod tests {
         sys.init_logger();
 
         let invariant = init_invariant(&sys, 100);
-        let fee_tier = FeeTier::new(Percentage::new(1), 10u16).unwrap();
-        let fee_tier_value = FeeTier {
-            fee: Percentage::new(1),
-            tick_spacing: 10u16,
-        };
+
         let token_0 = ActorId::from([0x01; 32]);
         let token_1 = ActorId::from([0x02; 32]);
         let fee_tier = FeeTier {

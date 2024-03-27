@@ -1,5 +1,5 @@
 use gclient::GearApi;
-use gstd::{prelude::*, ActorId};
+use gstd::prelude::*;
 
 pub type MessageId = [u8; 32];
 pub type UserId = [u8; 32];
