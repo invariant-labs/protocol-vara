@@ -7,7 +7,7 @@ pub struct Ticks {
   ticks: HashMap<(PoolKey, i32), Tick>,
 }
 
-impl Ticks {
+impl<'a> Ticks {
   pub fn add(
       &mut self,
       pool_key: PoolKey,
@@ -41,11 +41,10 @@ impl Ticks {
       Ok(())
   }
 
-  pub fn get(& self, pool_key: PoolKey, index: i32) -> Result<Tick, InvariantError> {
+  pub fn get(&'a self, pool_key: PoolKey, index: i32) -> Result<&'a Tick, InvariantError> {
       let tick = self
           .ticks
           .get(&(pool_key, index))
-          .cloned()
           .ok_or(InvariantError::TickNotFound)?;
 
       Ok(tick)
@@ -73,7 +72,7 @@ mod tests {
       let tick = Tick::default();
 
       ticks.add(pool_key, 0, tick).unwrap();
-      assert_eq!(ticks.get(pool_key, 0), Ok(tick));
+      assert_eq!(ticks.get(pool_key, 0), Ok(&tick));
       assert_eq!(ticks.get(pool_key, 1), Err(InvariantError::TickNotFound));
 
       let result = ticks.add(pool_key, 0, tick);
@@ -99,7 +98,7 @@ mod tests {
       ticks.add(pool_key, 0, tick).unwrap();
 
       ticks.update(pool_key, 0, new_tick).unwrap();
-      assert_eq!(ticks.get(pool_key, 0), Ok(new_tick));
+      assert_eq!(ticks.get(pool_key, 0), Ok(&new_tick));
 
       let result = ticks.update(pool_key, 1, new_tick);
       assert_eq!(result, Err(InvariantError::TickNotFound));
