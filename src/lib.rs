@@ -49,12 +49,12 @@ impl Invariant {
             return Err(InvariantError::NotAdmin);
         }
 
-        self.fee_tiers.add(fee_tier)?;
+        self.fee_tiers.add(&fee_tier)?;
         Ok(fee_tier)
     }
 
     pub fn fee_tier_exists(&self, fee_tier: FeeTier) -> bool {
-        self.fee_tiers.contains(fee_tier)
+        self.fee_tiers.contains(&fee_tier)
     }
 
     pub fn remove_fee_tier(&mut self, fee_tier: FeeTier) -> Result<FeeTier, InvariantError> {
@@ -62,7 +62,7 @@ impl Invariant {
             return Err(InvariantError::NotAdmin);
         }
 
-        self.fee_tiers.remove(fee_tier)?;
+        self.fee_tiers.remove(&fee_tier)?;
         Ok(fee_tier)
     }
 
@@ -80,7 +80,7 @@ impl Invariant {
     )->Result<(),InvariantError> {
         let current_timestamp = exec::block_timestamp();
 
-        if !self.fee_tiers.contains(fee_tier) {
+        if !self.fee_tiers.contains(&fee_tier) {
             return Err(InvariantError::FeeTierNotFound);
         };
 
@@ -89,7 +89,7 @@ impl Invariant {
 
         let pool_key = PoolKey::new(token_0, token_1, fee_tier)?;
 
-        if self.pools.get(pool_key).is_ok() {
+        if self.pools.get(&pool_key).is_ok() {
             return Err(InvariantError::PoolAlreadyExist);
         };
 
@@ -100,8 +100,8 @@ impl Invariant {
             fee_tier.tick_spacing,
             self.config.admin,
         )?;
-        self.pools.add(pool_key, &pool)?;
-        self.pool_keys.add(pool_key)?;
+        self.pools.add(&pool_key, &pool)?;
+        self.pool_keys.add(&pool_key)?;
 
         Ok(())
     }
@@ -113,7 +113,7 @@ impl Invariant {
         fee_tier: FeeTier
     )->Result<Pool, InvariantError> {
         let pool_key = PoolKey::new(token_0, token_1, fee_tier)?;
-        self.pools.get(pool_key)
+        self.pools.get(&pool_key)
     }
 
     fn caller_is_admin(&self) -> bool {
@@ -223,12 +223,13 @@ mod tests {
 
     use super::*;
     use gtest::{Program, System};
+    use test_helpers::consts::INVARIANT_PATH;
     use math::sqrt_price::calculate_sqrt_price;
     const USERS: [u64; 2] = [1, 2];
     const ADMIN: u64 = USERS[0];
     const PROGRAM_OWNER: u64 = USERS[1];
     const PROGRAM_ID: u64 = 105;
-    const PATH: &str = "./target/wasm32-unknown-unknown/release/invariant.wasm";
+    const PATH: &str = INVARIANT_PATH;
 
     pub fn init_invariant(sys: &System, protocol_fee: u128) -> Program<'_> {
         let program = Program::from_file_with_id(sys, PROGRAM_ID, PATH);

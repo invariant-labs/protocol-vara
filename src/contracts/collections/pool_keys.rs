@@ -9,38 +9,38 @@ pub struct PoolKeys {
 }
 
 impl PoolKeys {
-  pub fn get_index(&self, pool_key: PoolKey) -> Option<u16> {
-      self.pool_keys.get(&pool_key).copied()
+  pub fn get_index(&self, pool_key: &PoolKey) -> Option<u16> {
+      self.pool_keys.get(pool_key).copied()
   }
 
-  pub fn add(&mut self, pool_key: PoolKey) -> Result<(), InvariantError> {
+  pub fn add(&mut self, pool_key: &PoolKey) -> Result<(), InvariantError> {
       if self.contains(pool_key) {
           return Err(InvariantError::PoolKeyAlreadyExist);
       }
 
-      self.pool_keys.insert(pool_key, self.pool_keys_length);
+      self.pool_keys.insert(*pool_key, self.pool_keys_length);
       self.pool_keys_by_index
-          .insert(self.pool_keys_length, pool_key);
+          .insert(self.pool_keys_length, *pool_key);
       self.pool_keys_length += 1;
 
       Ok(())
   }
 
   #[allow(dead_code)]
-  pub fn remove(&mut self, pool_key: PoolKey) -> Result<(), InvariantError> {
+  pub fn remove(&mut self, pool_key: &PoolKey) -> Result<(), InvariantError> {
       match self.get_index(pool_key) {
           Some(index) => {
               self.pool_keys_by_index.remove(&index);
               self.pool_keys_length -= 1;
-              self.pool_keys.remove(&pool_key);
+              self.pool_keys.remove(pool_key);
               Ok(())
           }
           None => Err(InvariantError::PoolKeyNotFound),
       }
   }
 
-  pub fn contains(&self, pool_key: PoolKey) -> bool {
-      self.pool_keys.get(&pool_key).is_some()
+  pub fn contains(&self, pool_key: &PoolKey) -> bool {
+      self.pool_keys.get(pool_key).is_some()
   }
 
   pub fn get_all(&self, size: u8, offset: u16) -> Result<Vec<PoolKey>, InvariantError> {
@@ -77,11 +77,11 @@ mod tests {
       };
       let new_pool_key = PoolKey::new(token_x, token_y, fee_tier).unwrap();
 
-      pool_keys.add(pool_key).unwrap();
-      assert!(pool_keys.contains(pool_key));
-      assert!(!pool_keys.contains(new_pool_key));
+      pool_keys.add(&pool_key).unwrap();
+      assert!(pool_keys.contains(&pool_key));
+      assert!(!pool_keys.contains(&new_pool_key));
 
-      let result = pool_keys.add(pool_key);
+      let result = pool_keys.add(&pool_key);
       assert_eq!(result, Err(InvariantError::PoolKeyAlreadyExist));
   }
 
@@ -90,12 +90,12 @@ mod tests {
       let pool_keys = &mut PoolKeys::default();
       let pool_key = PoolKey::default();
 
-      pool_keys.add(pool_key).unwrap();
+      pool_keys.add(&pool_key).unwrap();
 
-      pool_keys.remove(pool_key).unwrap();
-      assert!(!pool_keys.contains(pool_key));
+      pool_keys.remove(&pool_key).unwrap();
+      assert!(!pool_keys.contains(&pool_key));
 
-      let result = pool_keys.remove(pool_key);
+      let result = pool_keys.remove(&pool_key);
       assert_eq!(result, Err(InvariantError::PoolKeyNotFound));
   }
 
@@ -115,8 +115,8 @@ mod tests {
       assert_eq!(result, vec![]);
       assert_eq!(result.len(), 0);
 
-      pool_keys.add(pool_key).unwrap();
-      pool_keys.add(new_pool_key).unwrap();
+      pool_keys.add(&pool_key).unwrap();
+      pool_keys.add(&new_pool_key).unwrap();
 
       let result = pool_keys.get_all(3, 0).unwrap();
       assert_eq!(result, vec![pool_key, new_pool_key]);

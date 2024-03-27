@@ -1,6 +1,8 @@
+use contracts::FeeTier;
 use gclient::{GearApi, Result};
-use gstd::ActorId;
+use gstd::{ActorId, Vec};
 use io::*;
+use crate::test_helpers::gclient::{get_fee_tiers, get_protocol_fee};
 use crate::test_helpers::gclient::init::init_invariant;
 use crate::test_helpers::consts::GEAR_PATH;
 
@@ -22,6 +24,9 @@ async fn test_init() -> Result<()> {
         },
     };
 
-    let _invariant = init_invariant(&api, &mut listener, init).await;
+    let invariant = init_invariant(&api, &mut listener, init).await;
+    assert_eq!(Vec::<FeeTier>::new(), get_fee_tiers(&api, invariant).await);
+    assert_eq!(100, get_protocol_fee(&api, invariant).await);
+
     Ok(())
 }
