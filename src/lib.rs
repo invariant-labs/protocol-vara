@@ -116,6 +116,10 @@ impl Invariant {
         self.pools.get(&pool_key)
     }
 
+    pub fn get_pools(&self, size: u8, offset: u16) ->  Result<Vec<PoolKey>, InvariantError> {
+        self.pool_keys.get_all(size, offset)
+    }
+
     fn caller_is_admin(&self) -> bool {
         msg::source() == self.config.admin
     }
@@ -209,6 +213,16 @@ extern "C" fn state() {
             match invariant.get_pool(token_0, token_1, fee_tier) {
                 Ok(pool) => {
                     reply(InvariantState::Pool(pool), 0).expect("Unable to reply");
+                }
+                Err(e) => {
+                    reply(InvariantState::QueryFailed(e), 0).expect("Unable to reply");
+                }
+            }
+        }
+        InvariantStateQuery::GetPools(size, offset) => {
+            match invariant.get_pools(size, offset) {
+                Ok(pool_keys) => {
+                    reply(InvariantState::Pools(pool_keys), 0).expect("Unable to reply");
                 }
                 Err(e) => {
                     reply(InvariantState::QueryFailed(e), 0).expect("Unable to reply");
