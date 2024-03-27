@@ -315,7 +315,7 @@ mod tests {
 
         let init_sqrt_price = calculate_sqrt_price(0).unwrap();
 
-        let res = invariant.send(ADMIN, InvariantAction::CreatePool{
+        let res = invariant.send(USERS[0], InvariantAction::CreatePool{
             token_0,
             token_1,
             fee_tier,
@@ -325,7 +325,7 @@ mod tests {
         assert!(!res.main_failed());
         assert!(res.log().last().unwrap().payload().is_empty());
         
-        let res = invariant.send(ADMIN, InvariantAction::CreatePool{
+        let res = invariant.send(USERS[1], InvariantAction::CreatePool{
             token_0,
             token_1,
             fee_tier,
@@ -335,7 +335,7 @@ mod tests {
 
         assert!(!res.main_failed());
         assert!(res.contains(&(
-            ADMIN,
+            USERS[1],
             InvariantEvent::ActionFailed(InvariantError::PoolAlreadyExist).encode()
         )));
     }
