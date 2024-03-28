@@ -45,7 +45,8 @@ pub enum InvariantAction {
         fee_tier: FeeTier,
         init_sqrt_price: SqrtPrice,
         init_tick: i32,
-    }
+    },
+    ChangeFeeReceiver(PoolKey, ActorId),
 }
 
 #[derive(Clone, Decode, Encode, Debug, PartialEq, Eq, TypeInfo)]
@@ -63,7 +64,8 @@ pub enum InvariantStateQuery {
     FeeTierExist(FeeTier),
     GetFeeTiers,
     GetProtocolFee,
-    GetPool(ActorId, ActorId, FeeTier)
+    GetPool(ActorId, ActorId, FeeTier),
+    GetPools(u8, u16)
 }
 
 #[derive(Encode, Decode, Clone, PartialEq, Eq, Debug, TypeInfo)]
@@ -74,6 +76,7 @@ pub enum InvariantState {
     QueriedFeeTiers(Vec<FeeTier>),
     FeeTierExist(bool),
     Pool(Pool),
+    Pools(Vec<PoolKey>),
     QueryFailed(InvariantError),
 }
 
