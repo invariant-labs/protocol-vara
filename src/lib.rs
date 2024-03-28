@@ -239,9 +239,13 @@ mod tests {
     use gtest::{Program, System};
     use test_helpers::consts::INVARIANT_PATH;
     use math::sqrt_price::calculate_sqrt_price;
-    const USERS: [u64; 2] = [1, 2];
-    const ADMIN: u64 = USERS[0];
-    const PROGRAM_OWNER: u64 = USERS[1];
+    const ADMIN: u64 = 1;
+    const USERS: [u64; 3] = [2, 3, 4];
+    
+    const REGULAR_USER_1: u64 = USERS[0];
+    const REGULAR_USER_2: u64 = USERS[1];
+    
+    const PROGRAM_OWNER: u64 = USERS[2];
     const PROGRAM_ID: u64 = 105;
     const PATH: &str = INVARIANT_PATH;
 
@@ -329,7 +333,7 @@ mod tests {
 
         let init_sqrt_price = calculate_sqrt_price(0).unwrap();
 
-        let res = invariant.send(ADMIN, InvariantAction::CreatePool{
+        let res = invariant.send(REGULAR_USER_1, InvariantAction::CreatePool{
             token_0,
             token_1,
             fee_tier,
@@ -339,7 +343,7 @@ mod tests {
         assert!(!res.main_failed());
         assert!(res.log().last().unwrap().payload().is_empty());
         
-        let res = invariant.send(ADMIN, InvariantAction::CreatePool{
+        let res = invariant.send(REGULAR_USER_2, InvariantAction::CreatePool{
             token_0,
             token_1,
             fee_tier,
@@ -349,7 +353,7 @@ mod tests {
 
         assert!(!res.main_failed());
         assert!(res.contains(&(
-            ADMIN,
+            USERS[1],
             InvariantEvent::ActionFailed(InvariantError::PoolAlreadyExist).encode()
         )));
     }
