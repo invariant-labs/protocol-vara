@@ -2977,6 +2977,7 @@ dependencies = [
  "contracts",
  "decimal",
  "gclient",
+ "gear-core 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "gear-wasm-builder",
  "gmeta",
  "gstd",
@@ -2995,6 +2996,7 @@ dependencies = [
  "contracts",
  "gmeta",
  "gstd",
+ "math",
 ]
 
 [[package]]

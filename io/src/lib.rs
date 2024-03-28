@@ -2,6 +2,7 @@
 
 use gmeta::{In, InOut, Metadata};
 use gstd::{Decode, Encode, ActorId, TypeInfo, Vec};
+use math::types::sqrt_price::SqrtPrice;
 pub struct InvariantMetadata;
 use contracts::*;
 
@@ -37,7 +38,14 @@ pub struct InvariantConfig {
 pub enum InvariantAction {
     ChangeProtocolFee(u128),
     AddFeeTier(FeeTier),
-    RemoveFeeTier(FeeTier)
+    RemoveFeeTier(FeeTier),
+    CreatePool{
+        token_0: ActorId,
+        token_1: ActorId,
+        fee_tier: FeeTier,
+        init_sqrt_price: SqrtPrice,
+        init_tick: i32,
+    }
 }
 
 #[derive(Clone, Decode, Encode, Debug, PartialEq, Eq, TypeInfo)]
@@ -54,7 +62,8 @@ pub enum InvariantEvent {
 pub enum InvariantStateQuery {
     FeeTierExist(FeeTier),
     GetFeeTiers,
-    GetProtocolFee
+    GetProtocolFee,
+    GetPool(ActorId, ActorId, FeeTier)
 }
 
 #[derive(Encode, Decode, Clone, PartialEq, Eq, Debug, TypeInfo)]
@@ -63,6 +72,8 @@ pub enum InvariantStateQuery {
 pub enum InvariantState {
     ProtocolFee(u128),
     QueriedFeeTiers(Vec<FeeTier>),
-    FeeTierExist(bool)
+    FeeTierExist(bool),
+    Pool(Pool),
+    QueryFailed(InvariantError),
 }
 

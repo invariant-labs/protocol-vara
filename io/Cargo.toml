@@ -7,3 +7,4 @@ edition = "2021"
 gmeta.workspace = true
 gstd.workspace = true
 contracts.workspace = true
+math.workspace = true
