@@ -116,7 +116,6 @@ impl Tickmap {
             }
 
             // go to the text chunk
-            // if let value = chunk.checked_add(1)? {
             if let Some(value) = chunk.checked_add(1) {
                 chunk = value;
             } else {
@@ -165,7 +164,6 @@ impl Tickmap {
             }
 
             // go to the next chunk
-            // if let value = chunk.checked_sub(1)? {
             if let Some(value) = chunk.checked_sub(1) {
                 chunk = value;
             } else {
@@ -266,16 +264,10 @@ mod tests {
         tickmap.flip(true, 0, 1, pool_key);
         // tick limit closer
         {
-            // let (result, from_tick) =
-            // let result = tickmap::Tickmap::get_closer_limit(
-            let _result =
-                tickmap.get_closer_limit(SqrtPrice::from_integer(5), true, 100, 1, pool_key);
-            // println!("Result: {:?}", result);
-
-            // let expected = Price::from_integer(5);
-            let _expected = SqrtPrice::from_integer(5);
-            // assert_eq!(result, expected);
-            // assert_eq!(from_tick, None);
+            let (result, from_tick) = tickmap.get_closer_limit(SqrtPrice::from_integer(5), true, 100, 1, pool_key);
+            let expected = SqrtPrice::from_integer(5);
+            assert_eq!(result, expected);
+            assert_eq!(from_tick, None);
         }
         // trade limit closer
         {
@@ -713,13 +705,10 @@ mod tests {
         // initalized edges
         {
             for spacing in 1..=10 {
-                //println!("spacing = {}", spacing);
                 let tickmap = &mut Tickmap::default();
 
                 let max_index = MAX_TICK - MAX_TICK % spacing;
                 let min_index = -max_index;
-                //println!("max_index = {}", max_index);
-                //println!("min_index = {}", min_index);
 
                 tickmap.flip(true, max_index, spacing as u16, pool_key);
                 tickmap.flip(true, min_index, spacing as u16, pool_key);
@@ -731,12 +720,7 @@ mod tests {
                 let next =
                     tickmap.next_initialized(max_index - tick_edge_diff, spacing as u16, pool_key);
 
-                if prev.is_some() {
-                    //println!("found prev = {}", prev.unwrap());
-                }
-                if next.is_some() {
-                    //println!("found next = {}", next.unwrap());
-                }
+                assert_eq!((prev.is_some(), next.is_some()), (true, true));
 
                 // cleanup
                 {
@@ -747,7 +731,6 @@ mod tests {
         }
         // unintalized edges
         for spacing in 1..=1000 {
-            // let mut contract = Contract::new();
             let tickmap = &mut Tickmap::default();
             let max_index = MAX_TICK - MAX_TICK % spacing;
             let min_index = -max_index;
@@ -758,12 +741,7 @@ mod tests {
             let next =
                 tickmap.next_initialized(max_index - tick_edge_diff, spacing as u16, pool_key);
 
-            if prev.is_some() {
-                //println!("found prev = {}", prev.unwrap());
-            }
-            if next.is_some() {
-                //println!("found next = {}", next.unwrap());
-            }
+            assert_eq!((prev.is_some(), next.is_some()), (false, false));
         }
     }
 }
