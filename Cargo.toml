@@ -11,6 +11,8 @@ decimal.workspace = true
 io.workspace = true
 contracts.workspace = true
 gear-core.workspace = true
+fungible-token-io.workspace = true
+fungible-token-state.workspace = true
 
 [build-dependencies]
 gear-wasm-builder.workspace = true
@@ -22,6 +24,7 @@ state.workspace = true
 gtest.workspace = true
 gclient.workspace = true
 tokio.workspace = true
+fungible-token.workspace = true
 
 [features]
 binary-vendor = []
@@ -38,9 +41,14 @@ math.path = "calc/math"
 traceable_result.path = "calc/traceable_result"
 contracts.path = "src/contracts"
 
+# Local contracts
+fungible-token.path = "fungible-token"
+
 # Contract dependencies
 state.path = "state"
 io.path = "io"
+fungible-token-io.path = "fungible-token/io"
+fungible-token-state.path = "fungible-token/state"
 
 # Gear dependencies
 gstd = "1.1.0"

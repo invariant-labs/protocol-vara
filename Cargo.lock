@@ -1876,6 +1876,35 @@ dependencies = [
 ]
 
 [[package]]
+name = "fungible-token"
+version = "0.1.0"
+dependencies = [
+ "fungible-token-io",
+ "gear-wasm-builder",
+ "gmeta",
+ "gstd",
+ "gtest",
+]
+
+[[package]]
+name = "fungible-token-io"
+version = "0.1.0"
+dependencies = [
+ "gmeta",
+ "gstd",
+]
+
+[[package]]
+name = "fungible-token-state"
+version = "0.1.0"
+dependencies = [
+ "fungible-token-io",
+ "gear-wasm-builder",
+ "gmeta",
+ "gstd",
+]
+
+[[package]]
 name = "funty"
 version = "2.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2976,6 +3005,9 @@ version = "0.1.0"
 dependencies = [
  "contracts",
  "decimal",
+ "fungible-token",
+ "fungible-token-io",
+ "fungible-token-state",
  "gclient",
  "gear-core 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "gear-wasm-builder",
