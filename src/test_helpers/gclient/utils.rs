@@ -1,5 +1,6 @@
 use gclient::GearApi;
 use gstd::prelude::*;
+use contracts::Pool;
 
 pub type MessageId = [u8; 32];
 pub type UserId = [u8; 32];
@@ -40,4 +41,27 @@ pub fn get_new_token(mut last_token_id: TokenId) -> TokenId {
         last_token_id[i] = val;
     }
     last_token_id
+}
+
+pub fn pools_are_identical_no_timestamp(pool: &Pool, other_poll: &Pool) {
+    let Pool {
+        liquidity,
+        sqrt_price,
+        current_tick_index,
+        fee_growth_global_x,
+        fee_growth_global_y,
+        fee_protocol_token_x,
+        fee_protocol_token_y,
+        start_timestamp: _start_timestamp,
+        last_timestamp: _last_timestamp,
+        fee_receiver,
+    } = pool;
+    assert_eq!(*liquidity, other_poll.liquidity);
+    assert_eq!(*sqrt_price, other_poll.sqrt_price);
+    assert_eq!(*current_tick_index, other_poll.current_tick_index);
+    assert_eq!(*fee_growth_global_x, other_poll.fee_growth_global_x);
+    assert_eq!(*fee_growth_global_y, other_poll.fee_growth_global_y);
+    assert_eq!(*fee_protocol_token_x, other_poll.fee_protocol_token_x);
+    assert_eq!(*fee_protocol_token_y, other_poll.fee_protocol_token_y);
+    assert_eq!(*fee_receiver, other_poll.fee_receiver);
 }
