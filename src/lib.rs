@@ -116,6 +116,22 @@ impl Invariant {
         self.pools.get(&pool_key)
     }
 
+    pub fn get_pools(&self, size: u8, offset: u16) ->  Result<Vec<PoolKey>, InvariantError> {
+        self.pool_keys.get_all(size, offset)
+    }
+
+    pub fn change_fee_receiver(&mut self, pool_key: PoolKey, fee_receiver: ActorId) -> Result<(), InvariantError> {
+        if !self.caller_is_admin() {
+            return Err(InvariantError::NotAdmin);
+        }
+
+        let mut pool = self.pools.get(&pool_key)?;
+        pool.fee_receiver = fee_receiver;
+        self.pools.update(&pool_key, &pool)?;
+        
+        Ok(())
+    }
+
     fn caller_is_admin(&self) -> bool {
         msg::source() == self.config.admin
     }
@@ -186,6 +202,14 @@ extern "C" fn handle() {
                 }
             }
         }
+        InvariantAction::ChangeFeeReceiver(pool_key, fee_receiver) => {
+            match invariant.change_fee_receiver(pool_key, fee_receiver) {
+                Ok(_) => {}
+                Err(e) => {
+                    reply(InvariantEvent::ActionFailed(e), 0).expect("Unable to reply");
+                }
+            }
+        }
     }
 }
 #[no_mangle]
@@ -209,6 +233,16 @@ extern "C" fn state() {
             match invariant.get_pool(token_0, token_1, fee_tier) {
                 Ok(pool) => {
                     reply(InvariantState::Pool(pool), 0).expect("Unable to reply");
+                }
+                Err(e) => {
+                    reply(InvariantState::QueryFailed(e), 0).expect("Unable to reply");
+                }
+            }
+        }
+        InvariantStateQuery::GetPools(size, offset) => {
+            match invariant.get_pools(size, offset) {
+                Ok(pool_keys) => {
+                    reply(InvariantState::Pools(pool_keys), 0).expect("Unable to reply");
                 }
                 Err(e) => {
                     reply(InvariantState::QueryFailed(e), 0).expect("Unable to reply");
@@ -386,5 +420,84 @@ mod tests {
             fee_receiver: ADMIN.into(),
             ..Pool::default()
         }))
+    }
+
+    #[test]
+    fn test_get_pools() {
+        let sys = System::new();
+        sys.init_logger();
+
+        let invariant = init_invariant(&sys, 100);
+
+        let token_0 = ActorId::from([0x01; 32]);
+        let token_1 = ActorId::from([0x02; 32]);
+        let fee_tier = FeeTier {
+            fee: Percentage::new(1),
+            tick_spacing: 1,
+        };
+        let res = invariant.send(ADMIN, InvariantAction::AddFeeTier(fee_tier));
+        assert!(!res.main_failed());
+        assert!(res.log().last().unwrap().payload().is_empty());
+
+        let init_sqrt_price = calculate_sqrt_price(0).unwrap();
+        let init_tick = 0;
+    
+        let res = invariant.send(ADMIN, InvariantAction::CreatePool{
+            token_0,
+            token_1,
+            fee_tier,
+            init_sqrt_price,
+            init_tick,
+        });
+        assert!(!res.main_failed());
+
+        let state: InvariantState = invariant
+            .read_state(InvariantStateQuery::GetPools(u8::MAX, 0))
+            .expect("Failed to read state");
+        assert_eq!(state, InvariantState::Pools(vec![PoolKey{token_x: token_0, token_y: token_1, fee_tier}]))
+    }
+
+    #[test]
+    fn test_change_fee_receiver() {
+        let sys = System::new();
+        sys.init_logger();
+
+        let invariant = init_invariant(&sys, 0);
+
+        let token_0 = ActorId::from([0x01; 32]);
+        let token_1 = ActorId::from([0x02; 32]);
+        let fee_tier = FeeTier {
+            fee: Percentage::new(1),
+            tick_spacing: 1,
+        };
+        let res = invariant.send(ADMIN, InvariantAction::AddFeeTier(fee_tier));
+        assert!(!res.main_failed());
+        assert!(res.log().last().unwrap().payload().is_empty());
+
+        let init_sqrt_price = calculate_sqrt_price(0).unwrap();
+
+        let res = invariant.send(REGULAR_USER_1, InvariantAction::CreatePool{
+            token_0,
+            token_1,
+            fee_tier,
+            init_sqrt_price,
+            init_tick: 0,
+        });
+        assert!(!res.main_failed());
+        assert!(res.log().last().unwrap().payload().is_empty());
+        let pool_key = PoolKey::new(token_0, token_1, fee_tier).unwrap();
+        let res = invariant.send(ADMIN, InvariantAction::ChangeFeeReceiver(pool_key, ADMIN.into()));
+        
+        assert!(!res.main_failed());
+        assert!(res.log().last().unwrap().payload().is_empty());
+
+        
+        let state: InvariantState = invariant
+        .read_state(InvariantStateQuery::GetPool(token_0, token_1, fee_tier))
+        .expect("Failed to read state");
+
+        if let InvariantState::Pool(pool) = state {
+            assert_eq!(pool.fee_receiver, ADMIN.into());
+        }
     }
 }
