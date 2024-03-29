@@ -116,6 +116,10 @@ impl Invariant {
         self.pools.get(&pool_key)
     }
 
+    pub fn get_pools(&self, size: u8, offset: u16) ->  Result<Vec<PoolKey>, InvariantError> {
+        self.pool_keys.get_all(size, offset)
+    }
+
     fn caller_is_admin(&self) -> bool {
         msg::source() == self.config.admin
     }
@@ -195,23 +199,33 @@ extern "C" fn state() {
     match query {
         InvariantStateQuery::FeeTierExist(fee_tier) => {
             let exists = invariant.fee_tier_exists(fee_tier);
-            reply(InvariantState::FeeTierExist(exists), 0).expect("Unable to reply");
+            reply(InvariantStateReply::FeeTierExist(exists), 0).expect("Unable to reply");
         }
         InvariantStateQuery::GetFeeTiers => {
             let fee_tiers = invariant.get_fee_tiers();
-            reply(InvariantState::QueriedFeeTiers(fee_tiers), 0).expect("Unable to reply");
+            reply(InvariantStateReply::QueriedFeeTiers(fee_tiers), 0).expect("Unable to reply");
         }
         InvariantStateQuery::GetProtocolFee => {
             let protocol_fee = invariant.get_protocol_fee();
-            reply(InvariantState::ProtocolFee(protocol_fee), 0).expect("Unable to reply");
+            reply(InvariantStateReply::ProtocolFee(protocol_fee), 0).expect("Unable to reply");
         }
         InvariantStateQuery::GetPool(token_0, token_1, fee_tier) => {
             match invariant.get_pool(token_0, token_1, fee_tier) {
                 Ok(pool) => {
-                    reply(InvariantState::Pool(pool), 0).expect("Unable to reply");
+                    reply(InvariantStateReply::Pool(pool), 0).expect("Unable to reply");
                 }
                 Err(e) => {
-                    reply(InvariantState::QueryFailed(e), 0).expect("Unable to reply");
+                    reply(InvariantStateReply::QueryFailed(e), 0).expect("Unable to reply");
+                }
+            }
+        }
+        InvariantStateQuery::GetPools(size, offset) => {
+            match invariant.get_pools(size, offset) {
+                Ok(pool_keys) => {
+                    reply(InvariantStateReply::Pools(pool_keys), 0).expect("Unable to reply");
+                }
+                Err(e) => {
+                    reply(InvariantStateReply::QueryFailed(e), 0).expect("Unable to reply");
                 }
             }
         }
@@ -274,10 +288,10 @@ mod tests {
         let res = invariant.send(ADMIN, InvariantAction::AddFeeTier(fee_tier));
         assert!(!res.main_failed());
 
-        let state: InvariantState = invariant
+        let state: InvariantStateReply = invariant
             .read_state(InvariantStateQuery::GetFeeTiers)
             .expect("Failed to read state");
-        assert_eq!(state, InvariantState::QueriedFeeTiers(vec![fee_tier_value]));
+        assert_eq!(state, InvariantStateReply::QueriedFeeTiers(vec![fee_tier_value]));
 
         let res = invariant.send(ADMIN, InvariantAction::AddFeeTier(fee_tier));
         assert!(!res.main_failed());
@@ -286,18 +300,18 @@ mod tests {
             InvariantEvent::ActionFailed(InvariantError::FeeTierAlreadyExist).encode()
         )));
 
-        let state: InvariantState = invariant
+        let state: InvariantStateReply = invariant
             .read_state(InvariantStateQuery::GetFeeTiers)
             .expect("Failed to read state");
-        assert_eq!(state, InvariantState::QueriedFeeTiers(vec![fee_tier_value]));
+        assert_eq!(state, InvariantStateReply::QueriedFeeTiers(vec![fee_tier_value]));
 
         let res = invariant.send(ADMIN, InvariantAction::RemoveFeeTier(fee_tier));
         assert!(!res.main_failed());
 
-        let state: InvariantState = invariant
+        let state: InvariantStateReply = invariant
             .read_state(InvariantStateQuery::GetFeeTiers)
             .expect("Failed to read state");
-        assert_eq!(state, InvariantState::QueriedFeeTiers(vec![]));
+        assert_eq!(state, InvariantStateReply::QueriedFeeTiers(vec![]));
     }
 
     #[test]
@@ -366,7 +380,7 @@ mod tests {
     
         let block_timestamp = sys.block_timestamp();
 
-        let res = invariant.send(ADMIN, InvariantAction::CreatePool{
+        let res = invariant.send(REGULAR_USER_1, InvariantAction::CreatePool{
             token_0,
             token_1,
             fee_tier,
@@ -375,10 +389,10 @@ mod tests {
         });
         assert!(!res.main_failed());
 
-        let state: InvariantState = invariant
+        let state: InvariantStateReply = invariant
             .read_state(InvariantStateQuery::GetPool(token_0, token_1, fee_tier))
             .expect("Failed to read state");
-        assert_eq!(state, InvariantState::Pool(Pool{
+        assert_eq!(state, InvariantStateReply::Pool(Pool{
             start_timestamp: block_timestamp,
             last_timestamp: block_timestamp,
             sqrt_price: init_sqrt_price,
@@ -386,5 +400,40 @@ mod tests {
             fee_receiver: ADMIN.into(),
             ..Pool::default()
         }))
+    }
+
+    #[test]
+    fn test_get_pools() {
+        let sys = System::new();
+        sys.init_logger();
+
+        let invariant = init_invariant(&sys, 100);
+
+        let token_0 = ActorId::from([0x01; 32]);
+        let token_1 = ActorId::from([0x02; 32]);
+        let fee_tier = FeeTier {
+            fee: Percentage::new(1),
+            tick_spacing: 1,
+        };
+        let res = invariant.send(ADMIN, InvariantAction::AddFeeTier(fee_tier));
+        assert!(!res.main_failed());
+        assert!(res.log().last().unwrap().payload().is_empty());
+
+        let init_sqrt_price = calculate_sqrt_price(0).unwrap();
+        let init_tick = 0;
+    
+        let res = invariant.send(REGULAR_USER_1, InvariantAction::CreatePool{
+            token_0,
+            token_1,
+            fee_tier,
+            init_sqrt_price,
+            init_tick,
+        });
+        assert!(!res.main_failed());
+
+        let state: InvariantStateReply = invariant
+            .read_state(InvariantStateQuery::GetPools(u8::MAX, 0))
+            .expect("Failed to read state");
+        assert_eq!(state, InvariantStateReply::Pools(vec![PoolKey::new(token_0, token_1, fee_tier).unwrap()]))
     }
 }

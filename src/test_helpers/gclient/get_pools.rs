@@ -1,18 +1,17 @@
 use crate::test_helpers::gclient::utils::*;
-use contracts::{FeeTier, Pool, InvariantError} ;
+use contracts::{InvariantError, PoolKey} ;
 use gclient::GearApi;
-use gstd::{prelude::*, ActorId};
+use gstd::prelude::*;
 use io::*;
 
-pub async fn get_pool(
+pub async fn get_pools(
     api: &GearApi,
     invariant: ProgramId,
-    token_0: impl Into<ActorId>,
-    token_1: impl Into<ActorId>,
-    fee_tier: FeeTier,
+    size: u8,
+    offset: u16,
     expected_error: Option<InvariantError>,
-)-> Option<Pool>{
-    let payload = InvariantStateQuery::GetPool(token_0.into(), token_1.into(), fee_tier).encode();
+)-> Option<Vec<PoolKey>>{
+    let payload = InvariantStateQuery::GetPools(size, offset).encode();
     let state = api
         .read_state::<InvariantStateReply>(invariant.into(), payload)
         .await
@@ -26,11 +25,10 @@ pub async fn get_pool(
             return None;
         }
         None => {
-          if let InvariantStateReply::Pool(pool) = state {
+          if let InvariantStateReply::Pools(pool) = state {
             return pool.into();
           }
           panic!("Unexpected state {:?}", state);
         }
-    
     }
 }

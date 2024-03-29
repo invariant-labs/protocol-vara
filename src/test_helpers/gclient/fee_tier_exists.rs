@@ -11,11 +11,11 @@ pub async fn fee_tier_exists(
 )-> bool {
     let payload = InvariantStateQuery::FeeTierExist(fee_tier).encode();
     let state = api
-        .read_state::<InvariantState>(invariant.into(), payload)
+        .read_state::<InvariantStateReply>(invariant.into(), payload)
         .await
         .expect("Failed to read state");
     match state {
-        InvariantState::FeeTierExist(exists) => {
+        InvariantStateReply::FeeTierExist(exists) => {
             return exists;
         }
         _ => {
