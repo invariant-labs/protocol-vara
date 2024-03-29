@@ -1,0 +1,18 @@
+[package]
+name = "fungible-token"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[dependencies]
+fungible-token-io.workspace = true
+gstd.workspace = true
+gmeta.workspace = true
+
+[dev-dependencies]
+gstd.workspace = true
+gtest.workspace = true
+
+[build-dependencies]
+fungible-token-io.workspace = true
+gear-wasm-builder.workspace = true
