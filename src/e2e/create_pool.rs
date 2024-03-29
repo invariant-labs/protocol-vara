@@ -55,7 +55,7 @@ async fn test_create_pool() -> Result<()> {
 
     assert_eq!(
         get_pools(&api, invariant, u8::MAX, 0, None).await.unwrap(),
-        vec![PoolKey{token_x: token_0.into(), token_y: token_1.into(), fee_tier}]
+        vec![PoolKey::new(token_0.into(), token_1.into(), fee_tier).unwrap()]
     );
 
     let pool = get_pool(&api, invariant, token_0, token_1, fee_tier, None).await.expect("Pool doesn't exist");
@@ -126,7 +126,7 @@ async fn test_create_pool_x_to_y_and_y_to_x() -> Result<()> {
 
     assert_eq!(
         get_pools(&api, invariant, u8::MAX, 0, None).await.unwrap(),
-        vec![PoolKey{token_x: token_0.into(), token_y: token_1.into(), fee_tier}]
+        vec![PoolKey::new(token_0.into(), token_1.into(), fee_tier).unwrap()]
     );
 
     Ok(())
@@ -314,7 +314,7 @@ async fn test_create_pool_init_sqrt_price_minimal_difference_from_tick() -> Resu
 
     assert_eq!(
         get_pools(&api, invariant, u8::MAX, 0, None).await.unwrap(),
-        vec![PoolKey{token_x: token_0.into(), token_y: token_1.into(), fee_tier}]
+        vec![PoolKey::new(token_0.into(), token_1.into(), fee_tier).unwrap()]
     );
 
     assert_eq!(
@@ -386,7 +386,7 @@ async fn test_create_pool_init_sqrt_price_has_closer_init_tick() -> Result<()> {
 
     assert_eq!(
         get_pools(&api, invariant, u8::MAX, 0, None).await.unwrap(),
-        vec![PoolKey{token_x: token_0.into(), token_y: token_1.into(), fee_tier}]
+        vec![PoolKey::new(token_0.into(), token_1.into(), fee_tier).unwrap()]
     );
 
     assert_eq!(
@@ -457,7 +457,7 @@ async fn test_create_pool_init_sqrt_price_has_closer_init_tick_spacing_over_one(
 
     assert_eq!(
         get_pools(&api, invariant, u8::MAX, 0, None).await.unwrap(),
-        vec![PoolKey{token_x: token_0.into(), token_y: token_1.into(), fee_tier}]
+        vec![PoolKey::new(token_0.into(), token_1.into(), fee_tier).unwrap()]
     );
 
     assert_eq!(

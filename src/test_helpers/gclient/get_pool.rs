@@ -14,19 +14,19 @@ pub async fn get_pool(
 )-> Option<Pool>{
     let payload = InvariantStateQuery::GetPool(token_0.into(), token_1.into(), fee_tier).encode();
     let state = api
-        .read_state::<InvariantState>(invariant.into(), payload)
+        .read_state::<InvariantStateReply>(invariant.into(), payload)
         .await
         .expect("Failed to read state");
     match expected_error {
         Some(e) => {
             assert_eq!(
                 state,
-                InvariantState::QueryFailed(e)
+                InvariantStateReply::QueryFailed(e)
             );
             return None;
         }
         None => {
-          if let InvariantState::Pool(pool) = state {
+          if let InvariantStateReply::Pool(pool) = state {
             return pool.into();
           }
           panic!("Unexpected state {:?}", state);
