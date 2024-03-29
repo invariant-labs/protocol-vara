@@ -1,7 +1,7 @@
 use crate::PoolKey;
 use gstd::collections::HashMap;
 use math::{
-    types::sqrt_price::{calculate_sqrt_price, get_max_tick, SqrtPrice},
+    types::sqrt_price::{calculate_sqrt_price, get_max_tick, get_min_tick, SqrtPrice},
     MAX_TICK,
 };
 
@@ -43,7 +43,7 @@ pub fn tick_to_position(tick: i32, tick_spacing: u16) -> (u16, u8) {
 }
 
 pub fn position_to_tick(chunk: u16, bit: u8, tick_spacing: u16) -> i32 {
-    let tick_range_limit = MAX_TICK - MAX_TICK % tick_spacing as i32;
+    let tick_range_limit = get_max_tick(tick_spacing);
     (chunk as i32 * CHUNK_SIZE * tick_spacing as i32 + bit as i32 * tick_spacing as i32)
         - tick_range_limit
 }
@@ -707,8 +707,8 @@ mod tests {
             for spacing in 1..=10 {
                 let tickmap = &mut Tickmap::default();
 
-                let max_index = MAX_TICK - MAX_TICK % spacing;
-                let min_index = -max_index;
+                let max_index = get_max_tick(spacing as u16);
+                let min_index = get_min_tick(spacing as u16);
 
                 tickmap.flip(true, max_index, spacing as u16, pool_key);
                 tickmap.flip(true, min_index, spacing as u16, pool_key);
@@ -732,8 +732,8 @@ mod tests {
         // unintalized edges
         for spacing in 1..=1000 {
             let tickmap = &mut Tickmap::default();
-            let max_index = MAX_TICK - MAX_TICK % spacing;
-            let min_index = -max_index;
+            let max_index = get_max_tick(spacing as u16);
+            let min_index = get_min_tick(spacing as u16);;
             let tick_edge_diff = TICK_SEARCH_RANGE / spacing * spacing;
 
             let prev =
