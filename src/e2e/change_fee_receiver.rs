@@ -58,11 +58,7 @@ async fn test_change_fee_receiver() -> Result<()> {
         &api,
         &mut listener,
         invariant,
-        PoolKey {
-            token_x: token_0.into(),
-            token_y: token_1.into(),
-            fee_tier,
-        },
+        PoolKey::new(token_0.into(), token_1.into(), fee_tier).unwrap(),
         get_api_user_id(&user_api).into(),
         None,
     )
@@ -125,11 +121,7 @@ async fn test_change_fee_receiver_not_admin() -> Result<()> {
         &user_api,
         &mut listener,
         invariant,
-        PoolKey {
-            token_x: token_0.into(),
-            token_y: token_1.into(),
-            fee_tier,
-        },
+        PoolKey::new(token_0.into(), token_1.into(), fee_tier).unwrap(),
         get_api_user_id(&user_api).into(),
         InvariantError::NotAdmin.into(),
     )
