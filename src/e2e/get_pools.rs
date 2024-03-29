@@ -53,11 +53,7 @@ async fn test_get_pools() -> Result<()> {
 
     assert_eq!(
         get_pools(&api, invariant, u8::MAX, 0, None).await.unwrap(),
-        vec![PoolKey {
-            token_x: token_0.into(),
-            token_y: token_1.into(),
-            fee_tier
-        }]
+        vec![PoolKey::new(token_0.into(),token_1.into(), fee_tier).unwrap()]
     );
     Ok(())
 }
