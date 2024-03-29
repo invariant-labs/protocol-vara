@@ -76,6 +76,7 @@ pub enum InvariantStateQuery {
     GetPool(ActorId, ActorId, FeeTier),
     GetPools(u8, u16),
     GetPosition(ActorId, u32),
+    GetTick(PoolKey, i32),
 }
 
 #[derive(Encode, Decode, Clone, PartialEq, Eq, Debug, TypeInfo)]
@@ -88,6 +89,7 @@ pub enum InvariantState {
     Pool(Pool),
     Pools(Vec<PoolKey>),
     Position(Position),
+    Tick(Tick),
     QueryFailed(InvariantError),
 }
 

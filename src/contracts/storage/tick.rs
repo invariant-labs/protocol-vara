@@ -9,7 +9,7 @@ use gstd::{Decode, Encode, TypeInfo};
 use decimal::*;
 use traceable_result::*;
 
-#[derive(Debug, Copy, Clone, Decode, Encode, PartialEq, TypeInfo)]
+#[derive(Debug, Copy, Clone, Decode, Encode, PartialEq, Eq, TypeInfo)]
 #[codec(crate = gstd::codec)]
 #[scale_info(crate = gstd::scale_info)]
 pub struct Tick {

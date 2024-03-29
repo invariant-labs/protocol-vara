@@ -225,6 +225,10 @@ impl Invariant {
     pub fn get_position(&self, owner_id: &ActorId, index: u32) -> Result<Position, InvariantError> {
         self.positions.get(owner_id, index).cloned()
     }
+    
+    pub fn get_tick(&self, key: PoolKey, index: i32) -> Result<Tick, InvariantError> {
+        self.ticks.get(key, index).cloned()
+    }
 
     fn create_tick(&mut self, pool_key: PoolKey, index: i32) -> Result<Tick, InvariantError> {
         let current_timestamp = exec::block_timestamp();
@@ -390,6 +394,17 @@ extern "C" fn state() {
                     reply(InvariantState::QueryFailed(e), 0).expect("Unable to reply");
                 }
             }
+        }
+        InvariantStateQuery::GetTick(pool_key, index) => {
+            match invariant.get_tick(pool_key, index) {
+                Ok(tick) => {
+                    reply(InvariantState::Tick(tick), 0).expect("Unable to reply");
+                }
+                Err(e) => {
+                    reply(InvariantState::QueryFailed(e), 0).expect("Unable to reply");
+                }
+            }
+        
         }
     }
 }
