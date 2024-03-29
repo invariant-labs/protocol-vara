@@ -5,7 +5,7 @@ mod e2e;
 #[cfg(test)]
 mod test_helpers;
 
-use contracts::{errors::InvariantError, FeeTier, FeeTiers, Pool, PoolKey, PoolKeys, Pools, Position, Ticks, Positions, Tick, Tickmap};
+use contracts::{errors::InvariantError, FeeTier, FeeTiers, Pool, PoolKey, PoolKeys, Pools, Position, Positions, Tick, Tickmap, Ticks};
 use decimal::*;
 use gstd::{
     async_main, exec, msg::{self, reply}, prelude::*, ActorId
@@ -230,6 +230,10 @@ impl Invariant {
         self.ticks.get(key, index).cloned()
     }
 
+    pub fn is_tick_initialized(&self, key: PoolKey, index: i32) -> bool {
+        self.tickmap.get(index, key.fee_tier.tick_spacing, key)
+    }
+    
     fn create_tick(&mut self, pool_key: PoolKey, index: i32) -> Result<Tick, InvariantError> {
         let current_timestamp = exec::block_timestamp();
 
@@ -404,7 +408,10 @@ extern "C" fn state() {
                     reply(InvariantState::QueryFailed(e), 0).expect("Unable to reply");
                 }
             }
-        
+        }
+        InvariantStateQuery::IsTickInitialized(pool_key, index) => {
+            reply(InvariantState::IsTickInitialized(invariant.is_tick_initialized(pool_key, index)), 0)
+                .expect("Unable to reply");
         }
     }
 }
