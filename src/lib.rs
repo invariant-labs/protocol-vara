@@ -492,11 +492,11 @@ mod tests {
         assert!(res.log().last().unwrap().payload().is_empty());
 
         
-        let state: InvariantState = invariant
+        let state: InvariantStateReply = invariant
         .read_state(InvariantStateQuery::GetPool(token_0, token_1, fee_tier))
         .expect("Failed to read state");
 
-        if let InvariantState::Pool(pool) = state {
+        if let InvariantStateReply::Pool(pool) = state {
             assert_eq!(pool.fee_receiver, REGULAR_USER_1.into());
         }
     }
