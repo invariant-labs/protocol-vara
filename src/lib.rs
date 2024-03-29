@@ -486,7 +486,7 @@ mod tests {
         assert!(!res.main_failed());
         assert!(res.log().last().unwrap().payload().is_empty());
         let pool_key = PoolKey::new(token_0, token_1, fee_tier).unwrap();
-        let res = invariant.send(ADMIN, InvariantAction::ChangeFeeReceiver(pool_key, ADMIN.into()));
+        let res = invariant.send(ADMIN, InvariantAction::ChangeFeeReceiver(pool_key, REGULAR_USER_1.into()));
         
         assert!(!res.main_failed());
         assert!(res.log().last().unwrap().payload().is_empty());
@@ -497,7 +497,7 @@ mod tests {
         .expect("Failed to read state");
 
         if let InvariantState::Pool(pool) = state {
-            assert_eq!(pool.fee_receiver, ADMIN.into());
+            assert_eq!(pool.fee_receiver, REGULAR_USER_1.into());
         }
     }
 }
