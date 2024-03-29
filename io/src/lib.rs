@@ -12,7 +12,7 @@ impl Metadata for InvariantMetadata {
     type Others = ();
     type Reply = ();
     type Signal = ();
-    type State = InOut<InvariantStateQuery, InvariantState>;
+    type State = InOut<InvariantStateQuery, InvariantStateReply>;
 }
 
 
@@ -70,7 +70,7 @@ pub enum InvariantStateQuery {
 #[derive(Encode, Decode, Clone, PartialEq, Eq, Debug, TypeInfo)]
 #[codec(crate = gstd::codec)]
 #[scale_info(crate = gstd::scale_info)]
-pub enum InvariantState {
+pub enum InvariantStateReply {
     ProtocolFee(u128),
     QueriedFeeTiers(Vec<FeeTier>),
     FeeTierExist(bool),

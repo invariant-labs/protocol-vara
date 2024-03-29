@@ -199,33 +199,33 @@ extern "C" fn state() {
     match query {
         InvariantStateQuery::FeeTierExist(fee_tier) => {
             let exists = invariant.fee_tier_exists(fee_tier);
-            reply(InvariantState::FeeTierExist(exists), 0).expect("Unable to reply");
+            reply(InvariantStateReply::FeeTierExist(exists), 0).expect("Unable to reply");
         }
         InvariantStateQuery::GetFeeTiers => {
             let fee_tiers = invariant.get_fee_tiers();
-            reply(InvariantState::QueriedFeeTiers(fee_tiers), 0).expect("Unable to reply");
+            reply(InvariantStateReply::QueriedFeeTiers(fee_tiers), 0).expect("Unable to reply");
         }
         InvariantStateQuery::GetProtocolFee => {
             let protocol_fee = invariant.get_protocol_fee();
-            reply(InvariantState::ProtocolFee(protocol_fee), 0).expect("Unable to reply");
+            reply(InvariantStateReply::ProtocolFee(protocol_fee), 0).expect("Unable to reply");
         }
         InvariantStateQuery::GetPool(token_0, token_1, fee_tier) => {
             match invariant.get_pool(token_0, token_1, fee_tier) {
                 Ok(pool) => {
-                    reply(InvariantState::Pool(pool), 0).expect("Unable to reply");
+                    reply(InvariantStateReply::Pool(pool), 0).expect("Unable to reply");
                 }
                 Err(e) => {
-                    reply(InvariantState::QueryFailed(e), 0).expect("Unable to reply");
+                    reply(InvariantStateReply::QueryFailed(e), 0).expect("Unable to reply");
                 }
             }
         }
         InvariantStateQuery::GetPools(size, offset) => {
             match invariant.get_pools(size, offset) {
                 Ok(pool_keys) => {
-                    reply(InvariantState::Pools(pool_keys), 0).expect("Unable to reply");
+                    reply(InvariantStateReply::Pools(pool_keys), 0).expect("Unable to reply");
                 }
                 Err(e) => {
-                    reply(InvariantState::QueryFailed(e), 0).expect("Unable to reply");
+                    reply(InvariantStateReply::QueryFailed(e), 0).expect("Unable to reply");
                 }
             }
         }
@@ -288,10 +288,10 @@ mod tests {
         let res = invariant.send(ADMIN, InvariantAction::AddFeeTier(fee_tier));
         assert!(!res.main_failed());
 
-        let state: InvariantState = invariant
+        let state: InvariantStateReply = invariant
             .read_state(InvariantStateQuery::GetFeeTiers)
             .expect("Failed to read state");
-        assert_eq!(state, InvariantState::QueriedFeeTiers(vec![fee_tier_value]));
+        assert_eq!(state, InvariantStateReply::QueriedFeeTiers(vec![fee_tier_value]));
 
         let res = invariant.send(ADMIN, InvariantAction::AddFeeTier(fee_tier));
         assert!(!res.main_failed());
@@ -300,18 +300,18 @@ mod tests {
             InvariantEvent::ActionFailed(InvariantError::FeeTierAlreadyExist).encode()
         )));
 
-        let state: InvariantState = invariant
+        let state: InvariantStateReply = invariant
             .read_state(InvariantStateQuery::GetFeeTiers)
             .expect("Failed to read state");
-        assert_eq!(state, InvariantState::QueriedFeeTiers(vec![fee_tier_value]));
+        assert_eq!(state, InvariantStateReply::QueriedFeeTiers(vec![fee_tier_value]));
 
         let res = invariant.send(ADMIN, InvariantAction::RemoveFeeTier(fee_tier));
         assert!(!res.main_failed());
 
-        let state: InvariantState = invariant
+        let state: InvariantStateReply = invariant
             .read_state(InvariantStateQuery::GetFeeTiers)
             .expect("Failed to read state");
-        assert_eq!(state, InvariantState::QueriedFeeTiers(vec![]));
+        assert_eq!(state, InvariantStateReply::QueriedFeeTiers(vec![]));
     }
 
     #[test]
@@ -389,10 +389,10 @@ mod tests {
         });
         assert!(!res.main_failed());
 
-        let state: InvariantState = invariant
+        let state: InvariantStateReply = invariant
             .read_state(InvariantStateQuery::GetPool(token_0, token_1, fee_tier))
             .expect("Failed to read state");
-        assert_eq!(state, InvariantState::Pool(Pool{
+        assert_eq!(state, InvariantStateReply::Pool(Pool{
             start_timestamp: block_timestamp,
             last_timestamp: block_timestamp,
             sqrt_price: init_sqrt_price,
@@ -431,9 +431,9 @@ mod tests {
         });
         assert!(!res.main_failed());
 
-        let state: InvariantState = invariant
+        let state: InvariantStateReply = invariant
             .read_state(InvariantStateQuery::GetPools(u8::MAX, 0))
             .expect("Failed to read state");
-        assert_eq!(state, InvariantState::Pools(vec![PoolKey{token_x: token_0, token_y: token_1, fee_tier}]))
+        assert_eq!(state, InvariantStateReply::Pools(vec![PoolKey{token_x: token_0, token_y: token_1, fee_tier}]))
     }
 }
