@@ -434,6 +434,6 @@ mod tests {
         let state: InvariantStateReply = invariant
             .read_state(InvariantStateQuery::GetPools(u8::MAX, 0))
             .expect("Failed to read state");
-        assert_eq!(state, InvariantStateReply::Pools(vec![PoolKey{token_x: token_0, token_y: token_1, fee_tier}]))
+        assert_eq!(state, InvariantStateReply::Pools(vec![PoolKey::new(token_0, token_1, fee_tier).unwrap()]))
     }
 }
