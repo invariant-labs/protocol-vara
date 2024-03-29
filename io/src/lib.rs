@@ -45,7 +45,8 @@ pub enum InvariantAction {
         fee_tier: FeeTier,
         init_sqrt_price: SqrtPrice,
         init_tick: i32,
-    }
+    },
+    ChangeFeeReceiver(PoolKey, ActorId),
 }
 
 #[derive(Clone, Decode, Encode, Debug, PartialEq, Eq, TypeInfo)]

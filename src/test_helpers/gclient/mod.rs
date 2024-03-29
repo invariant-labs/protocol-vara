@@ -8,6 +8,7 @@ pub mod get_protocol_fee;
 pub mod create_pool;
 pub mod get_pool;
 pub mod get_pools;
+pub mod change_fee_receiver;
 
 pub use init::*;
 pub use utils::*;
@@ -19,3 +20,4 @@ pub use get_protocol_fee::*;
 pub use create_pool::*;
 pub use get_pool::*;
 pub use get_pools::*;
+pub use change_fee_receiver::*;
