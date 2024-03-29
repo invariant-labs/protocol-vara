@@ -380,7 +380,7 @@ mod tests {
     
         let block_timestamp = sys.block_timestamp();
 
-        let res = invariant.send(ADMIN, InvariantAction::CreatePool{
+        let res = invariant.send(REGULAR_USER_1, InvariantAction::CreatePool{
             token_0,
             token_1,
             fee_tier,
@@ -422,7 +422,7 @@ mod tests {
         let init_sqrt_price = calculate_sqrt_price(0).unwrap();
         let init_tick = 0;
     
-        let res = invariant.send(ADMIN, InvariantAction::CreatePool{
+        let res = invariant.send(REGULAR_USER_1, InvariantAction::CreatePool{
             token_0,
             token_1,
             fee_tier,
