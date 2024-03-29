@@ -2,7 +2,7 @@
 
 use gmeta::{In, InOut, Metadata};
 use gstd::{Decode, Encode, ActorId, TypeInfo, Vec};
-use math::types::sqrt_price::SqrtPrice;
+use math::types::{sqrt_price::SqrtPrice, liquidity::Liquidity};
 pub struct InvariantMetadata;
 use contracts::*;
 
@@ -47,6 +47,14 @@ pub enum InvariantAction {
         init_tick: i32,
     },
     ChangeFeeReceiver(PoolKey, ActorId),
+    CreatePosition {
+        pool_key: PoolKey,
+        lower_tick: i32,
+        upper_tick: i32,
+        liquidity_delta: Liquidity,
+        slippage_limit_lower: SqrtPrice,
+        slippage_limit_upper: SqrtPrice,
+    }
 }
 
 #[derive(Clone, Decode, Encode, Debug, PartialEq, Eq, TypeInfo)]
@@ -54,6 +62,7 @@ pub enum InvariantAction {
 #[scale_info(crate = gstd::scale_info)]
 pub enum InvariantEvent {
     ProtocolFeeChanged(u128),
+    PositionCreated(Position),
     ActionFailed(InvariantError),
 }
 

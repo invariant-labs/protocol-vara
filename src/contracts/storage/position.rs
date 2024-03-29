@@ -14,7 +14,7 @@ use gstd::{Decode, Encode, TypeInfo};
 use decimal::*;
 use traceable_result::*;
 
-#[derive(PartialEq, Debug, Default, Clone, Copy, Decode, Encode, TypeInfo)]
+#[derive(PartialEq, Eq, Debug, Default, Clone, Copy, Decode, Encode, TypeInfo)]
 #[codec(crate = gstd::codec)]
 #[scale_info(crate = gstd::scale_info)]
 pub struct Position {

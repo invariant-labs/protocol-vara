@@ -5,21 +5,52 @@ mod e2e;
 #[cfg(test)]
 mod test_helpers;
 
-use contracts::{errors::InvariantError, FeeTier, FeeTiers, Pool, PoolKey, PoolKeys, Pools};
+use contracts::{errors::InvariantError, FeeTier, FeeTiers, Pool, PoolKey, PoolKeys, Pools, Position, Ticks, Positions, Tick, Tickmap};
 use decimal::*;
 use gstd::{
-    msg::{self, reply},
-    prelude::*, ActorId,
-    exec
+    async_main, exec, msg::{self, reply}, prelude::*, ActorId
 };
 use io::*;
-use math::{check_tick, percentage::Percentage, sqrt_price::SqrtPrice };
+use math::{check_tick, percentage::Percentage, sqrt_price::SqrtPrice, liquidity::Liquidity };
+use fungible_token_io::{FTAction, FTEvent};
+
+async fn transfer_tokens(
+    token_address: &ActorId,
+    from: &ActorId,
+    to: &ActorId,
+    amount_tokens: u128,
+) -> Result<(), InvariantError> {
+    let reply = msg::send_for_reply_as::<_, FTEvent>(
+        *token_address,
+        FTAction::Transfer {
+            from: *from,
+            to: *to,
+            amount: amount_tokens,
+        },
+        0,
+        0,
+    )
+    .map_err(|_| InvariantError::TransferError)?
+    .await
+    .map_err(|_| InvariantError::TransferError)?;
+
+    match reply {
+        FTEvent::Transfer { from: _, to: _, amount: _ } => {
+            return Ok(())
+        },
+        _ => return Err(InvariantError::TransferError),
+    }
+}
+
 #[derive(Default)]
 pub struct Invariant {
     pub config: InvariantConfig,
     pub fee_tiers: FeeTiers,
-    pub pool_keys: PoolKeys,
     pub pools: Pools,
+    pub pool_keys: PoolKeys,
+    pub positions: Positions,
+    pub ticks: Ticks,   
+    pub tickmap: Tickmap,
 }
 
 impl Invariant {
@@ -132,6 +163,82 @@ impl Invariant {
         Ok(())
     }
 
+    pub async fn create_position(
+        &mut self,
+        pool_key: PoolKey,
+        lower_tick: i32,
+        upper_tick: i32,
+        liquidity_delta: Liquidity,
+        slippage_limit_lower: SqrtPrice,
+        slippage_limit_upper: SqrtPrice,
+    ) -> Result<Position, InvariantError> {
+        let caller = msg::source();
+        let program = exec::program_id();
+        let current_timestamp = exec::block_timestamp();
+        let current_block_number = exec::block_height() as u64;
+
+        // liquidity delta = 0 => return
+        if liquidity_delta == Liquidity::new(0) {
+            return Err(InvariantError::ZeroLiquidity);
+        }
+
+        let mut pool = self.pools.get(&pool_key)?;
+
+        let mut lower_tick = self
+            .ticks
+            .get(pool_key, lower_tick)
+            .cloned()
+            .unwrap_or_else(|_| Self::create_tick(self, pool_key, lower_tick).unwrap());
+
+        let mut upper_tick = self
+            .ticks
+            .get(pool_key, upper_tick)
+            .cloned()
+            .unwrap_or_else(|_| Self::create_tick(self, pool_key, upper_tick).unwrap());
+
+        let (position, x, y) = Position::create(
+            &mut pool,
+            pool_key,
+            &mut lower_tick,
+            &mut upper_tick,
+            current_timestamp,
+            liquidity_delta,
+            slippage_limit_lower,
+            slippage_limit_upper,
+            current_block_number,
+            pool_key.fee_tier.tick_spacing,
+        )?;
+
+        self.pools.update(&pool_key, &pool)?;
+
+        self.positions.add(&caller, &position);
+
+        self.ticks.update(pool_key, lower_tick.index, lower_tick)?;
+        self.ticks.update(pool_key, upper_tick.index, upper_tick)?;
+
+        transfer_tokens(&pool_key.token_x, &caller, &program, x.get()).await?;
+        transfer_tokens(&pool_key.token_y, &caller, &program, y.get()).await?;
+
+        Ok(position)
+    }
+
+    fn create_tick(&mut self, pool_key: PoolKey, index: i32) -> Result<Tick, InvariantError> {
+        let current_timestamp = exec::block_timestamp();
+
+        check_tick(index, pool_key.fee_tier.tick_spacing)
+            .map_err(|_| InvariantError::InvalidTickIndexOrTickSpacing)?;
+
+        let pool = self.pools.get(&pool_key)?;
+
+        let tick = Tick::create(index, &pool, current_timestamp);
+        self.ticks.add(pool_key, index, tick)?;
+
+        self.tickmap
+            .flip(true, index, pool_key.fee_tier.tick_spacing, pool_key);
+
+        Ok(tick)
+    }
+
     fn caller_is_admin(&self) -> bool {
         msg::source() == self.config.admin
     }
@@ -145,18 +252,16 @@ extern "C" fn init() {
 
     let invariant = Invariant {
         config: init.config,
-        fee_tiers: Default::default(),
-        pool_keys: Default::default(),
-        pools: Default::default(),
+        ..Invariant::default()
     };
 
     unsafe {
         INVARIANT = Some(invariant);
     }
 }
-
-#[no_mangle]
-extern "C" fn handle() {
+//'handle' endpoint
+#[async_main]
+async fn main() {
     let action: InvariantAction = msg::load().expect("Unable to decode InvariantAction");
     let invariant = unsafe { INVARIANT.get_or_insert(Default::default()) };
 
@@ -205,6 +310,29 @@ extern "C" fn handle() {
         InvariantAction::ChangeFeeReceiver(pool_key, fee_receiver) => {
             match invariant.change_fee_receiver(pool_key, fee_receiver) {
                 Ok(_) => {}
+                Err(e) => {
+                    reply(InvariantEvent::ActionFailed(e), 0).expect("Unable to reply");
+                }
+            }
+        }
+        InvariantAction::CreatePosition { 
+            pool_key,
+            lower_tick,
+            upper_tick,
+            liquidity_delta,
+            slippage_limit_lower,
+            slippage_limit_upper 
+        } => {
+            match invariant.create_position(pool_key,
+                                            lower_tick,
+                                            upper_tick,
+                                            liquidity_delta,
+                                            slippage_limit_lower,
+                                            slippage_limit_upper
+                                        ).await {
+                Ok(position) => {
+                    reply(InvariantEvent::PositionCreated(position), 0).expect("Unable to reply");
+                }
                 Err(e) => {
                     reply(InvariantEvent::ActionFailed(e), 0).expect("Unable to reply");
                 }
