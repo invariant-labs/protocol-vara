@@ -6,7 +6,7 @@ mod e2e;
 mod test_helpers;
 
 use contracts::{errors::InvariantError, FeeTier, FeeTiers, Pool, PoolKey, PoolKeys, Pools, Position, Positions, Tick, Tickmap, Ticks};
-use decimal::{num_traits::Inv, *};
+use decimal::*;
 use gstd::{
     async_main, exec, msg::{self, reply}, prelude::*, ActorId
 };

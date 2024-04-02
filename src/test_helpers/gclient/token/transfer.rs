@@ -1,9 +1,9 @@
-use crate::test_helpers::{consts::TOKEN_PATH, gclient::utils::ProgramId, gclient::utils::*};
+use crate::test_helpers::{gclient::utils::ProgramId, gclient::utils::*};
 use fungible_token_io::*;
 use gclient::{EventListener, EventProcessor, GearApi};
-use gstd::fmt::Error;
 use gstd::prelude::*;
 
+#[allow(dead_code)]
 pub async fn transfer(
     api: &GearApi,
     listener: &mut EventListener,

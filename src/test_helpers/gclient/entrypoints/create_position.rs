@@ -1,7 +1,7 @@
 use crate::test_helpers::gclient::utils::*;
-use contracts::{pool_key, FeeTier, InvariantError, PoolKey};
+use contracts::{InvariantError, PoolKey};
 use gclient::{EventListener, EventProcessor, GearApi};
-use gstd::{codec::decode_from_bytes, prelude::*, ActorId};
+use gstd::{codec::decode_from_bytes, prelude::*};
 use io::*;
 use math::{liquidity::Liquidity, sqrt_price::SqrtPrice};
 
@@ -46,7 +46,7 @@ pub async fn create_position(
         None => {
             //Check that no event was emitted
             let event = decode_from_bytes::<InvariantEvent>(bytes).unwrap();
-            if let InvariantEvent::PositionCreated(position) = &event {
+            if let InvariantEvent::PositionCreated(_position) = &event {
                 return;
             }
 

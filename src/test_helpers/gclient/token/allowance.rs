@@ -2,7 +2,8 @@ use gstd::ActorId;
 use gclient::GearApi;
 use fungible_token_io::*;
 
-async fn allowance(
+#[allow(dead_code)]
+pub async fn allowance(
   api: &GearApi,
   token: impl Into<[u8; 32]> + gstd::Copy,
   from: impl Into<[u8; 32]> + gstd::Copy,

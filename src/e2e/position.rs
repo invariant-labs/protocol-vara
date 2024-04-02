@@ -2,16 +2,14 @@ use crate::test_helpers::consts::GEAR_PATH;
 use crate::test_helpers::gclient::token::init_tokens;
 use crate::test_helpers::gclient::{
     add_fee_tier, approve, balance_of, create_pool, create_position, get_api_user_id,
-    get_new_token, get_pool, get_pools, get_position, get_tick, init_invariant, init_token, mint,
-    pools_are_identical_no_timestamp, token,
+    get_pool, get_position, get_tick, init_invariant, mint,
 };
-use contracts::{pool_key, FeeTier, InvariantError, Pool, PoolKey, Tick};
+use contracts::{FeeTier, PoolKey};
 use decimal::*;
 use fungible_token_io::InitConfig;
 use gclient::{GearApi, Result};
 use gstd::prelude::*;
 use io::*;
-use math::sqrt_price::get_max_tick;
 use math::{
     fee_growth::FeeGrowth,
     liquidity::Liquidity,
@@ -112,8 +110,6 @@ async fn test_position_below_current_tick() -> Result<()> {
     let fee_tier = FeeTier::new(Percentage::from_scale(2, 4), 4).unwrap();
 
     let initial_balance = 10_000_000_000;
-
-    let pool_key = PoolKey::new(token_x.into(), token_y.into(), fee_tier).unwrap();
 
     add_fee_tier(&admin_api, &mut listener, invariant, fee_tier, None).await;
     create_pool(
@@ -269,8 +265,6 @@ async fn test_position_within_current_tick() -> Result<()> {
 
     let initial_balance = 100_000_000;
 
-    let pool_key = PoolKey::new(token_x.into(), token_y.into(), fee_tier).unwrap();
-
     add_fee_tier(&admin_api, &mut listener, invariant, fee_tier, None).await;
 
     create_pool(
@@ -423,8 +417,6 @@ async fn test_position_above_current_tick() -> Result<()> {
     let remove_position_index = 0;
     let initial_balance = 10_000_000_000;
 
-    let pool_key = PoolKey::new(token_x.into(), token_y.into(), fee_tier).unwrap();
-
     add_fee_tier(&admin_api, &mut listener, invariant, fee_tier, None).await;
 
     create_pool(
@@ -439,7 +431,7 @@ async fn test_position_above_current_tick() -> Result<()> {
         None,
     )
     .await;
-    let pool_state_before = get_pool(&user_1_api, invariant, token_x, token_y, fee_tier, None)
+    let _pool_state_before = get_pool(&user_1_api, invariant, token_x, token_y, fee_tier, None)
         .await
         .unwrap();
 

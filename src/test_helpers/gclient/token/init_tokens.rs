@@ -1,7 +1,7 @@
 use super::init_token::init_token;
-use crate::test_helpers::{consts::TOKEN_PATH, gclient::utils::ProgramId};
+use crate::test_helpers::gclient::utils::ProgramId;
 use fungible_token_io::InitConfig;
-use gclient::{EventListener, EventProcessor, GearApi};
+use gclient::{EventListener, GearApi};
 use gstd::prelude::*;
 
 pub async fn init_tokens(

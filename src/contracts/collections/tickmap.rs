@@ -1,7 +1,7 @@
 use crate::PoolKey;
 use gstd::collections::HashMap;
 use math::{
-    types::sqrt_price::{calculate_sqrt_price, get_max_tick, get_min_tick, SqrtPrice},
+    types::sqrt_price::{calculate_sqrt_price, get_max_tick, SqrtPrice},
     MAX_TICK,
 };
 
@@ -248,7 +248,8 @@ mod tests {
     use crate::FeeTier;
     use decimal::*;
     use gstd::ActorId;
-    use math::percentage::Percentage;
+    use math::{percentage::Percentage, sqrt_price::get_min_tick};
+
 
     #[test]
     fn test_get_closer_limit() {
@@ -733,7 +734,7 @@ mod tests {
         for spacing in 1..=1000 {
             let tickmap = &mut Tickmap::default();
             let max_index = get_max_tick(spacing as u16);
-            let min_index = get_min_tick(spacing as u16);;
+            let min_index = get_min_tick(spacing as u16);
             let tick_edge_diff = TICK_SEARCH_RANGE / spacing * spacing;
 
             let prev =
