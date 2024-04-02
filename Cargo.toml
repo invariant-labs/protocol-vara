@@ -25,6 +25,8 @@ gtest.workspace = true
 gclient.workspace = true
 tokio.workspace = true
 fungible-token.workspace = true
+fungible-token-io.workspace = true
+fungible-token-state.workspace = true
 
 [features]
 binary-vendor = []

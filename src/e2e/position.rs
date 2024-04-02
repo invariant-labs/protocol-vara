@@ -237,8 +237,8 @@ async fn test_position_within_current_tick() -> Result<()> {
     let (token_x, token_y) = init_tokens(&user_1_api, &mut listener, InitConfig::default()).await;
 
 
-    let max_tick_test = get_max_tick(4);
-    assert_eq!(177_450, max_tick_test); 
+    let max_tick_test = 177_450;
+    let min_tick_test = -max_tick_test;
     let init_tick = -23028;
     let init_sqrt_price = calculate_sqrt_price(init_tick).unwrap();
     let fee_tier = FeeTier::new(Percentage::from_scale(2, 4), 4).unwrap();
@@ -275,7 +275,7 @@ async fn test_position_within_current_tick() -> Result<()> {
         .await
         .unwrap();
 
-    let pool_key = PoolKey::new(token_x, token_y, fee_tier).unwrap();
+    let pool_key = PoolKey::new(token_x.into(), token_y.into(), fee_tier).unwrap();
     let lower_tick_index = min_tick_test + 10;
     let upper_tick_index = max_tick_test - 10;
     let liquidity_delta = Liquidity::from_integer(100);

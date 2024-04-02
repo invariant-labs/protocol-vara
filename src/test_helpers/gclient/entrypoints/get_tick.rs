@@ -13,16 +13,16 @@ pub async fn get_tick(
 ) -> Option<Tick> {
     let payload = InvariantStateQuery::GetTick(pool_key, index).encode();
     let state = api
-        .read_state::<InvariantState>(invariant.into(), payload)
+        .read_state::<InvariantStateReply>(invariant.into(), payload)
         .await
         .expect("Failed to read state");
     match expected_error {
         Some(e) => {
-            assert_eq!(state, InvariantState::QueryFailed(e));
+            assert_eq!(state, InvariantStateReply::QueryFailed(e));
             return None;
         }
         None => {
-            if let InvariantState::Tick(tick) = state {
+            if let InvariantStateReply::Tick(tick) = state {
                 return tick.into();
             }
             panic!("Unexpected state {:?}", state);

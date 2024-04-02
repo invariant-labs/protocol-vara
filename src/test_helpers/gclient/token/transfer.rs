@@ -16,6 +16,7 @@ pub async fn transfer(
         api,
         token,
         FTAction::Transfer {
+            tx_id: None,
             from: from.into().into(),
             to: to.into().into(),
             amount,

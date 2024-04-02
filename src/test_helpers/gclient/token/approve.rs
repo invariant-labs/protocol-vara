@@ -15,6 +15,7 @@ pub async fn approve(
         api,
         token,
         FTAction::Approve {
+            tx_id: None,
             to: to.into().into(),
             amount,
         },

@@ -6,41 +6,14 @@ mod e2e;
 mod test_helpers;
 
 use contracts::{errors::InvariantError, FeeTier, FeeTiers, Pool, PoolKey, PoolKeys, Pools, Position, Positions, Tick, Tickmap, Ticks};
-use decimal::*;
+use decimal::{num_traits::Inv, *};
 use gstd::{
     async_main, exec, msg::{self, reply}, prelude::*, ActorId
 };
 use io::*;
 use math::{check_tick, percentage::Percentage, sqrt_price::SqrtPrice, liquidity::Liquidity };
-use fungible_token_io::{FTAction, FTEvent};
+use fungible_token_io::{FTAction, FTError, FTEvent};
 
-async fn transfer_tokens(
-    token_address: &ActorId,
-    from: &ActorId,
-    to: &ActorId,
-    amount_tokens: u128,
-) -> Result<(), InvariantError> {
-    let reply = msg::send_for_reply_as::<_, FTEvent>(
-        *token_address,
-        FTAction::Transfer {
-            from: *from,
-            to: *to,
-            amount: amount_tokens,
-        },
-        0,
-        0,
-    )
-    .map_err(|_| InvariantError::TransferError)?
-    .await
-    .map_err(|_| InvariantError::TransferError)?;
-
-    match reply {
-        FTEvent::Transfer { from: _, to: _, amount: _ } => {
-            return Ok(())
-        },
-        _ => return Err(InvariantError::TransferError),
-    }
-}
 
 #[derive(Default)]
 pub struct Invariant {
@@ -51,6 +24,7 @@ pub struct Invariant {
     pub positions: Positions,
     pub ticks: Ticks,   
     pub tickmap: Tickmap,
+    pub transaction_id: u64,
 }
 
 impl Invariant {
@@ -216,8 +190,8 @@ impl Invariant {
         self.ticks.update(pool_key, lower_tick.index, lower_tick)?;
         self.ticks.update(pool_key, upper_tick.index, upper_tick)?;
 
-        transfer_tokens(&pool_key.token_x, &caller, &program, x.get()).await?;
-        transfer_tokens(&pool_key.token_y, &caller, &program, y.get()).await?;
+        self.transfer_tokens(&pool_key.token_x, None, &caller, &program, x.get()).await?;
+        self.transfer_tokens(&pool_key.token_y, None, &caller, &program, y.get()).await?;
 
         Ok(position)
     }
@@ -234,6 +208,52 @@ impl Invariant {
         self.tickmap.get(index, key.fee_tier.tick_spacing, key)
     }
     
+    async fn transfer_tokens(
+        &mut self,
+        token_address: &ActorId,
+        tx_id: Option<u64>,
+        from: &ActorId,
+        to: &ActorId,
+        amount_tokens: u128,
+    ) -> Result<(), InvariantError> {
+        let tx_id = tx_id.or(self.get_transaction_id().into());
+        let reply = msg::send_for_reply_as::<_, Result<FTEvent, FTError>>(
+            *token_address,
+            FTAction::Transfer {
+                tx_id,
+                from: *from,
+                to: *to,
+                amount: amount_tokens,
+            },
+            0,
+            0,
+        )
+        .map_err(|_| InvariantError::TransferError)?
+        .await
+        .map_err(|_| InvariantError::TransferError)?;
+    
+        match reply {
+            Ok(ft_event) => {
+                match ft_event {
+                    FTEvent::Transfer { from: _, to: _, amount: _ } => {
+                        return Ok(())
+                    },
+                    _ => return Err(InvariantError::TransferError)
+                }
+            }
+            Err(_ft_error) => {
+                return Err(InvariantError::TransferError)
+            }
+    
+        }
+    }
+
+    fn get_transaction_id(&mut self) -> u64 {
+        let transaction_id = self.transaction_id;
+        self.transaction_id = self.transaction_id.wrapping_add(1);
+        transaction_id
+    }
+
     fn create_tick(&mut self, pool_key: PoolKey, index: i32) -> Result<Tick, InvariantError> {
         let current_timestamp = exec::block_timestamp();
 
@@ -392,25 +412,25 @@ extern "C" fn state() {
         InvariantStateQuery::GetPosition(owner_id, index) => {
             match invariant.get_position(&owner_id, index) {
                 Ok(position) => {
-                    reply(InvariantState::Position(position), 0).expect("Unable to reply");
+                    reply(InvariantStateReply::Position(position), 0).expect("Unable to reply");
                 }
                 Err(e) => {
-                    reply(InvariantState::QueryFailed(e), 0).expect("Unable to reply");
+                    reply(InvariantStateReply::QueryFailed(e), 0).expect("Unable to reply");
                 }
             }
         }
         InvariantStateQuery::GetTick(pool_key, index) => {
             match invariant.get_tick(pool_key, index) {
                 Ok(tick) => {
-                    reply(InvariantState::Tick(tick), 0).expect("Unable to reply");
+                    reply(InvariantStateReply::Tick(tick), 0).expect("Unable to reply");
                 }
                 Err(e) => {
-                    reply(InvariantState::QueryFailed(e), 0).expect("Unable to reply");
+                    reply(InvariantStateReply::QueryFailed(e), 0).expect("Unable to reply");
                 }
             }
         }
         InvariantStateQuery::IsTickInitialized(pool_key, index) => {
-            reply(InvariantState::IsTickInitialized(invariant.is_tick_initialized(pool_key, index)), 0)
+            reply(InvariantStateReply::IsTickInitialized(invariant.is_tick_initialized(pool_key, index)), 0)
                 .expect("Unable to reply");
         }
     }
