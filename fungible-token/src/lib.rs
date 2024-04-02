@@ -2,28 +2,37 @@
 
 use fungible_token_io::*;
 use gstd::{
-    collections::HashMap, errors::Result as GstdResult, msg, prelude::*, ActorId, MessageId,
+    collections::{HashMap, HashSet}, errors::Result as GstdResult, exec::block_timestamp, msg, prelude::*, ActorId, MessageId
 };
 
 #[cfg(test)]
 mod tests;
 
 const ZERO_ID: ActorId = ActorId::new([0u8; 32]);
-
+type Config = ();
+type ValidUntil = u64;
+type TxId = u64;
+const VALIDITY_PERIOD: u64 = 3000 * 10;
 #[derive(Debug, Clone, Default)]
 struct FungibleToken {
     /// Name of the token.
     name: String,
     /// Symbol of the token.
     symbol: String,
+    /// Number of decimal places for the token.
+    decimals: u8,
     /// Total supply of the token.
     total_supply: u128,
-    /// Map to hold balances of token holders.
+    /// A map of account addresses to their token balances.
     balances: HashMap<ActorId, u128>,
-    /// Map to hold allowance information of token holders.
+    /// A map that records how much an authorized spender is allowed to transfer from a user's account
     allowances: HashMap<ActorId, HashMap<ActorId, u128>>,
-    /// Token's decimals.
-    pub decimals: u8,
+	/// A map of executed transactions to the time they are valid.
+    tx_ids: HashMap<(ActorId, TxId), ValidUntil>,
+    /// A map of accounts to their transaction IDs.
+    account_to_tx_ids: HashMap<ActorId, HashSet<TxId>>,
+    /// Configuration parameters for the fungible token contract.
+    _config: Config,
 }
 
 static mut FUNGIBLE_TOKEN: Option<FungibleToken> = None;
@@ -70,16 +79,20 @@ impl FungibleToken {
     }
     /// Executed on receiving `fungible-token-messages::TransferInput` or `fungible-token-messages::TransferFromInput`.
     /// Transfers `amount` tokens from `sender` account to `recipient` account.
-    fn transfer(&mut self, from: &ActorId, to: &ActorId, amount: u128) {
+    fn transfer(&mut self, tx_id: Option<u64>, from: &ActorId, to: &ActorId, amount: u128)->Result<(), FTError> {
         if from == &ZERO_ID || to == &ZERO_ID {
-            panic!("Zero addresses");
+            Err(FTError::ZeroAddress)?
         };
         if !self.can_transfer(from, amount) {
-            panic!("Not allowed to transfer")
+            Err(FTError::NotAllowedToTransfer)?
         }
         if self.balances.get(from).unwrap_or(&0) < &amount {
-            panic!("Amount exceeds account balance");
+            Err(FTError::NotEnoughBalance)?
         }
+        if self.tx_exits(tx_id) {
+            Err(FTError::TxAlreadyExists)?
+        }
+
         self.balances
             .entry(*from)
             .and_modify(|balance| *balance -= amount);
@@ -87,55 +100,36 @@ impl FungibleToken {
             .entry(*to)
             .and_modify(|balance| *balance += amount)
             .or_insert(amount);
-        msg::reply(
-            FTEvent::Transfer {
-                from: *from,
-                to: *to,
-                amount,
-            },
-            0,
-        )
-        .unwrap();
+
+        self.insert_tx(tx_id);
+
+        Ok(())
     }
 
     /// Executed on receiving `fungible-token-messages::ApproveInput`.
-    fn approve(&mut self, to: &ActorId, amount: u128) {
+    fn approve(&mut self, tx_id: Option<u64>, to: &ActorId, amount: u128)->Result<(), FTError> {
         if to == &ZERO_ID {
-            panic!("Approve to zero address");
+            Err(FTError::ZeroAddress)?
         }
+        if self.tx_exits(tx_id) {
+            Err(FTError::TxAlreadyExists)?
+        }
+
         let source = msg::source();
+
         self.allowances
             .entry(source)
             .or_default()
             .insert(*to, amount);
-        msg::reply(
-            FTEvent::Approve {
-                from: source,
-                to: *to,
-                amount,
-            },
-            0,
-        )
-        .unwrap();
+
+        self.insert_tx(tx_id);
+
+        Ok(())
     }
 
-    fn check_allowance(&mut self, from: &ActorId, amount: u128) {
-        let source = msg::source();
-        let allowed = if let Some(allowed_amount) = self.allowances.get(from)
-                                                                     .and_then(|m| m.get(&source)) {
-            allowed_amount >= &amount
-        } else { false };
-
-        msg::reply(FTEvent::CheckAllowance {
-            allowed,
-            from: *from,
-            sender: source,
-            amount,
-        }, 0).unwrap();
-    }
     fn can_transfer(&mut self, from: &ActorId, amount: u128) -> bool {
         let source = msg::source();
-        if from == &source && self.balances.get(&source).unwrap_or(&0) >= &amount {
+        if from == &source {
             return true;
         }
         if let Some(allowed_amount) = self.allowances.get(from).and_then(|m| m.get(&source)) {
@@ -148,6 +142,33 @@ impl FungibleToken {
         }
         false
     }
+
+    fn tx_exits(&self, tx_id: Option<u64>)->bool {
+        let current_time = block_timestamp();
+        let source = msg::source();
+        if let Some(tx_id) = tx_id {
+            if let Some(valid_until) = self.tx_ids.get(&(source, tx_id)) {
+                return current_time < *valid_until;
+            }
+        }
+        false
+    }
+
+    fn insert_tx(&mut self, tx_id: Option<u64>) {
+        let current_time = block_timestamp();
+        let source = msg::source();
+        if let Some(tx_id) = tx_id {
+            if let Some(tx_ids) = self.account_to_tx_ids.get_mut(&source) {
+                tx_ids.insert(tx_id);
+            } else {
+                let mut new_tx_ids = HashSet::new();
+                new_tx_ids.insert(tx_id);
+                self.account_to_tx_ids.insert(source, new_tx_ids);
+            }
+        
+            self.tx_ids.insert((source, tx_id), current_time + VALIDITY_PERIOD);
+        }
+    }
 }
 
 fn common_state() -> IoFungibleToken {
@@ -159,6 +180,9 @@ fn common_state() -> IoFungibleToken {
         balances,
         allowances,
         decimals,
+        tx_ids: _,
+        account_to_tx_ids: _,
+        _config: _
     } = state.clone();
 
     let balances = balances.iter().map(|(k, v)| (*k, *v)).collect();
@@ -195,28 +219,51 @@ extern fn handle() {
     let action: FTAction = msg::load().expect("Could not load Action");
     let ft: &mut FungibleToken = unsafe { FUNGIBLE_TOKEN.get_or_insert(Default::default()) };
     match action {
+        FTAction::Transfer { tx_id, from, to, amount } => {
+            match ft.transfer(tx_id, &from, &to, amount) {
+                Ok(_) => {
+                    msg::reply::<Result::<FTEvent, FTError>>(
+                        Ok(FTEvent::Transfer {
+                            from: from,
+                            to: to,
+                            amount,
+                        }),
+                        0,
+                    )
+                    .expect("Unable to reply");
+                }
+                Err(e) => {
+                    msg::reply::<Result::<FTEvent, FTError>>(Err(e), 0).expect("Unable to reply");
+                }
+            }
+        }
+        FTAction::Approve { tx_id, to, amount } => {
+            match ft.approve(tx_id, &to, amount) {
+                Ok(_) => {
+                    msg::reply::<Result<FTEvent, FTError>>(
+                        Ok(FTEvent::Approve {
+                            from: msg::source(),
+                            to,
+                            amount,
+                        }),
+                        0,
+                    )
+                    .expect("Unable to reply");
+                }
+                Err(e) => {
+                    msg::reply::<Result::<FTEvent, FTError>>(Err(e), 0).expect("Unable to reply");
+                }
+            }
+        }
         FTAction::Mint(amount) => {
             ft.mint(amount);
         }
         FTAction::Burn(amount) => {
             ft.burn(amount);
         }
-        FTAction::CheckAllowance { from, amount } =>
-        {
-            ft.check_allowance(&from, amount);
-        }
-        FTAction::Transfer { from, to, amount } => {
-            ft.transfer(&from, &to, amount);
-        }
-        FTAction::Approve { to, amount } => {
-            ft.approve(&to, amount);
-        }
-        FTAction::TotalSupply => {
-            msg::reply(FTEvent::TotalSupply(ft.total_supply), 0).unwrap();
-        }
         FTAction::BalanceOf(account) => {
             let balance = ft.balances.get(&account).unwrap_or(&0);
-            msg::reply(FTEvent::Balance(*balance), 0).unwrap();
+            msg::reply::<FTEvent>(FTEvent::Balance(*balance), 0).unwrap();
         }
     }
 }
