@@ -78,21 +78,19 @@ fn transfer() {
     let res = ft.send(
         USERS[0],
         FTAction::Transfer {
+            tx_id: None,
             from: USERS[0].into(),
             to: USERS[1].into(),
             amount: 500,
         },
     );
 
-    assert!(res.contains(&(
-        USERS[0],
-        FTEvent::Transfer {
-            from: USERS[0].into(),
-            to: USERS[1].into(),
-            amount: 500,
-        }
-        .encode()
-    )));
+    let expected_res: Result<FTEvent, FTError> = Ok(FTEvent::Transfer {
+        from: USERS[0].into(),
+        to: USERS[1].into(),
+        amount: 500,
+    });
+    assert!(res.contains(&(USERS[0], expected_res.encode())));
 
     // check that the balance of `USER[0]` decreased and the balance of `USER[1]` increased
     let res = ft.send(USERS[0], FTAction::BalanceOf(USERS[0].into()));
@@ -110,27 +108,31 @@ fn transfer_failures() {
     let res = ft.send(
         USERS[0],
         FTAction::Transfer {
+            tx_id: None,
             from: USERS[0].into(),
             to: USERS[1].into(),
             amount: 2000000,
         },
     );
-    assert!(res.main_failed());
+    let expected_res: Result<FTEvent, FTError> = Err(FTError::NotEnoughBalance);
+    assert!(res.contains(&(USERS[0], expected_res.encode())));
 
     //must fail transfer to zero address
     let res = ft.send(
         USERS[2],
         FTAction::Transfer {
+            tx_id: None,
             from: USERS[0].into(),
             to: 0.into(),
             amount: 100,
         },
     );
-    assert!(res.main_failed());
+    let expected_res: Result<FTEvent, FTError> = Err(FTError::ZeroAddress);
+    assert!(res.contains(&(USERS[2], expected_res.encode())));
 }
 
 #[test]
-fn check_allowance_failures() {
+fn transfer_allowance_not_large_enough() {
     let sys = System::new();
     init_with_mint(&sys);
     let ft = sys.get_program(1);
@@ -138,56 +140,29 @@ fn check_allowance_failures() {
     let res = ft.send(
         USERS[0],
         FTAction::Approve {
+            tx_id: None,
             to: USERS[1].into(),
             amount: 500,
         },
     );
-    assert!(res.contains(&(
-        USERS[0],
-        FTEvent::Approve {
+    let expected_res: Result<FTEvent, FTError> = Ok(FTEvent::Approve {
+        from: USERS[0].into(),
+        to: USERS[1].into(),
+        amount: 500,
+    });
+    assert!(res.contains(&(USERS[0], expected_res.encode())));
+
+    let res = ft.send(
+        USERS[2],
+        FTAction::Transfer {
+            tx_id: None,
             from: USERS[0].into(),
             to: USERS[1].into(),
-            amount: 500,
-        }
-        .encode()
-    )));
-
-
-    let res = ft.send(
-        USERS[2],
-        FTAction::CheckAllowance { 
-            from: USERS[0].into(),
-            amount: 500 
+            amount: 501,
         },
     );
-    assert!(res.contains(&(
-        USERS[2],
-        FTEvent::CheckAllowance { 
-            from: USERS[0].into(),
-            sender: USERS[2].into(),
-            allowed: false,
-            amount: 500 
-        }
-        .encode()
-    )));
-
-    let res = ft.send(
-        USERS[1],
-        FTAction::CheckAllowance { 
-            from: USERS[0].into(),
-            amount: 501 
-        },
-    );
-    assert!(res.contains(&(
-        USERS[1],
-        FTEvent::CheckAllowance { 
-            from: USERS[0].into(),
-            sender: USERS[1].into(),
-            allowed: false,
-            amount: 501 
-        }
-        .encode()
-    )));
+    let expected_res: Result<FTEvent, FTError> = Err(FTError::NotAllowedToTransfer);
+    assert!(res.contains(&(USERS[2], expected_res.encode())));
 }
 
 #[test]
@@ -199,57 +174,35 @@ fn approve_and_transfer() {
     let res = ft.send(
         USERS[0],
         FTAction::Approve {
+            tx_id: None,
             to: USERS[1].into(),
             amount: 500,
         },
     );
-    assert!(res.contains(&(
-        USERS[0],
-        FTEvent::Approve {
-            from: USERS[0].into(),
-            to: USERS[1].into(),
-            amount: 500,
-        }
-        .encode()
-    )));
 
+    let expected_res: Result<FTEvent, FTError> = Ok(FTEvent::Approve {
+        from: USERS[0].into(),
+        to: USERS[1].into(),
+        amount: 500,
+    });
 
-    let res = ft.send(
-        USERS[1],
-        FTAction::CheckAllowance { 
-            from: USERS[0].into(),
-            amount: 500 
-        },
-    );
-    assert!(res.contains(&(
-        USERS[1],
-        FTEvent::CheckAllowance { 
-            from: USERS[0].into(),
-            sender: USERS[1].into(),
-            allowed: true,
-            amount: 500 
-        }
-        .encode()
-    )));
-
+    assert!(res.contains(&(USERS[0], expected_res.encode())));
 
     let res = ft.send(
         USERS[1],
         FTAction::Transfer {
+            tx_id: None,
             from: USERS[0].into(),
             to: USERS[2].into(),
             amount: 200,
         },
     );
-    assert!(res.contains(&(
-        USERS[1],
-        FTEvent::Transfer {
-            from: USERS[0].into(),
-            to: USERS[2].into(),
-            amount: 200,
-        }
-        .encode()
-    )));
+    let expected_res: Result<FTEvent, FTError> = Ok(FTEvent::Transfer {
+        from: USERS[0].into(),
+        to: USERS[2].into(),
+        amount: 200,
+    });
+    assert!(res.contains(&(USERS[1], expected_res.encode())));
 
     // check that the balance of `USER[0]` decreased and the balance of `USER[1]` increased
     let res = ft.send(USERS[0], FTAction::BalanceOf(USERS[0].into()));
@@ -261,10 +214,13 @@ fn approve_and_transfer() {
     let res = ft.send(
         USERS[1],
         FTAction::Transfer {
+            tx_id: None,
             from: USERS[0].into(),
             to: USERS[2].into(),
             amount: 800,
         },
     );
-    assert!(res.main_failed());
+
+    let expected_res: Result<FTEvent, FTError> = Err(FTError::NotAllowedToTransfer);
+    assert!(res.contains(&(USERS[1], expected_res.encode())));
 }

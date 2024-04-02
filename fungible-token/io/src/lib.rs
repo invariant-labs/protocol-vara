@@ -7,7 +7,7 @@ pub struct FungibleTokenMetadata;
 
 impl Metadata for FungibleTokenMetadata {
     type Init = In<InitConfig>;
-    type Handle = InOut<FTAction, FTEvent>;
+    type Handle = InOut<FTAction, Result<FTEvent, FTError>>;
     type Others = ();
     type Reply = ();
     type Signal = ();
@@ -22,28 +22,34 @@ pub struct InitConfig {
     pub symbol: String,
     pub decimals: u8,
 }
+#[derive(Debug, Decode, Encode, Clone, Copy, TypeInfo, PartialEq, Eq)]
+#[codec(crate = gstd::codec)]
+#[scale_info(crate = gstd::scale_info)]
+pub enum FTError {
+    ZeroAddress,
+    NotAllowedToTransfer,
+    NotEnoughBalance,
+    TxAlreadyExists,
+}
 
 #[derive(Debug, Decode, Encode, Clone, Copy, TypeInfo)]
 #[codec(crate = gstd::codec)]
 #[scale_info(crate = gstd::scale_info)]
 pub enum FTAction {
-    Mint(u128),
-    Burn(u128),
     Transfer {
+        tx_id: Option<u64>,
         from: ActorId,
         to: ActorId,
-        amount: u128,
-    },
-    CheckAllowance {
-        from: ActorId,
         amount: u128,
     },
     Approve {
+        tx_id: Option<u64>,
         to: ActorId,
         amount: u128,
     },
-    TotalSupply,
     BalanceOf(ActorId),
+    Mint(u128),
+    Burn(u128),
 }
 
 #[derive(Debug, Encode, Decode, TypeInfo)]
@@ -58,12 +64,6 @@ pub enum FTEvent {
     Approve {
         from: ActorId,
         to: ActorId,
-        amount: u128,
-    },
-    CheckAllowance {
-        from: ActorId,
-        sender: ActorId,
-        allowed: bool,
         amount: u128,
     },
     TotalSupply(u128),
