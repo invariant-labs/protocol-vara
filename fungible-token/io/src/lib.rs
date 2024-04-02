@@ -14,7 +14,7 @@ impl Metadata for FungibleTokenMetadata {
     type State = Out<IoFungibleToken>;
 }
 
-#[derive(Debug, Default, Decode, Encode, TypeInfo)]
+#[derive(Debug, Default, Decode, Encode, Clone, TypeInfo)]
 #[codec(crate = gstd::codec)]
 #[scale_info(crate = gstd::scale_info)]
 pub struct InitConfig {

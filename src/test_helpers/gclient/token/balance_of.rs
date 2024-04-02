@@ -2,7 +2,7 @@ use gstd::ActorId;
 use gclient::GearApi;
 use fungible_token_io::*;
 
-async fn balance_of(
+pub async fn balance_of(
   api: &GearApi,
   token: impl Into<[u8; 32]> + gstd::Copy,
   account: impl Into<[u8; 32]> + gstd::Copy,
