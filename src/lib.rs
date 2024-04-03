@@ -29,7 +29,7 @@ pub struct Invariant {
 
 impl Invariant {
     pub fn change_protocol_fee(&mut self, protocol_fee: u128) -> Result<u128, InvariantError> {
-        if !self.caller_is_admin() {
+        if !self.is_caller_admin() {
             return Err(InvariantError::NotAdmin);
         }
 
@@ -50,7 +50,7 @@ impl Invariant {
             return Err(InvariantError::InvalidFee);
         }
 
-        if !self.caller_is_admin() {
+        if !self.is_caller_admin() {
             return Err(InvariantError::NotAdmin);
         }
 
@@ -63,7 +63,7 @@ impl Invariant {
     }
 
     pub fn remove_fee_tier(&mut self, fee_tier: FeeTier) -> Result<FeeTier, InvariantError> {
-        if !self.caller_is_admin() {
+        if !self.is_caller_admin() {
             return Err(InvariantError::NotAdmin);
         }
 
@@ -126,7 +126,7 @@ impl Invariant {
     }
 
     pub fn change_fee_receiver(&mut self, pool_key: PoolKey, fee_receiver: ActorId) -> Result<(), InvariantError> {
-        if !self.caller_is_admin() {
+        if !self.is_caller_admin() {
             return Err(InvariantError::NotAdmin);
         }
 
@@ -339,7 +339,7 @@ impl Invariant {
         Ok(())
     }
 
-    fn caller_is_admin(&self) -> bool {
+    fn is_caller_admin(&self) -> bool {
         msg::source() == self.config.admin
     }
 }
