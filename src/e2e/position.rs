@@ -14,7 +14,7 @@ use math::{
     fee_growth::FeeGrowth,
     liquidity::Liquidity,
     percentage::Percentage,
-    sqrt_price::{calculate_sqrt_price, SqrtPrice},
+    sqrt_price::calculate_sqrt_price,
 };
 
 #[tokio::test]
@@ -55,7 +55,7 @@ async fn test_create_position() -> Result<()> {
         None,
     )
     .await;
-    get_pool(&user_api, invariant, token_x, token_y, fee_tier, None)
+    let pool = get_pool(&user_api, invariant, token_x, token_y, fee_tier, None)
         .await
         .unwrap();
 
@@ -77,8 +77,8 @@ async fn test_create_position() -> Result<()> {
         -10,
         10,
         Liquidity::new(10),
-        SqrtPrice::new(0),
-        SqrtPrice::max_instance(),
+        pool.sqrt_price,
+        pool.sqrt_price,
         None,
     )
     .await;
@@ -169,7 +169,7 @@ async fn test_position_below_current_tick() -> Result<()> {
         upper_tick_index,
         liquidity_delta,
         pool_state_before.sqrt_price,
-        SqrtPrice::max_instance(),
+        pool_state_before.sqrt_price,
         None,
     )
     .await;
@@ -323,7 +323,7 @@ async fn test_position_within_current_tick() -> Result<()> {
         upper_tick_index,
         liquidity_delta,
         pool_state.sqrt_price,
-        SqrtPrice::max_instance(),
+        pool_state.sqrt_price,
         None,
     )
     .await;
@@ -431,7 +431,7 @@ async fn test_position_above_current_tick() -> Result<()> {
         None,
     )
     .await;
-    let _pool_state_before = get_pool(&user_1_api, invariant, token_x, token_y, fee_tier, None)
+    let pool_state_before = get_pool(&user_1_api, invariant, token_x, token_y, fee_tier, None)
         .await
         .unwrap();
 
@@ -475,8 +475,8 @@ async fn test_position_above_current_tick() -> Result<()> {
         lower_tick_index,
         upper_tick_index,
         liquidity_delta,
-        SqrtPrice::new(0),
-        SqrtPrice::max_instance(),
+        pool_state_before.sqrt_price,
+        pool_state_before.sqrt_price,
         None,
     )
     .await;
@@ -625,8 +625,8 @@ async fn test_create_position_not_enough_token_x()->Result<()> {
         lower_tick_index,
         upper_tick_index,
         liquidity_delta,
-        SqrtPrice::new(0),
-        SqrtPrice::max_instance(),
+        pool_state_before.sqrt_price,
+        pool_state_before.sqrt_price,
         InvariantError::TransferError.into(),
     )
     .await;
@@ -634,7 +634,7 @@ async fn test_create_position_not_enough_token_x()->Result<()> {
     let pool_state = get_pool(&user_1_api, invariant, token_x, token_y, fee_tier, None)
         .await
         .unwrap();
-    let position_state = get_position(
+    let _position_state = get_position(
         &user_1_api,
         invariant,
         get_api_user_id(&user_1_api),
@@ -642,6 +642,7 @@ async fn test_create_position_not_enough_token_x()->Result<()> {
         InvariantError::PositionNotFound.into(),
     )
     .await;
+
     pools_are_identical_no_timestamp(&pool_state_before, &pool_state);
     get_tick(&user_1_api, invariant, pool_key, lower_tick_index, InvariantError::TickNotFound.into()).await;
     get_tick(&user_1_api, invariant, pool_key, upper_tick_index, InvariantError::TickNotFound.into()).await;
@@ -739,8 +740,8 @@ async fn test_create_position_not_enough_token_y()->Result<()> {
         lower_tick_index,
         upper_tick_index,
         liquidity_delta,
-        SqrtPrice::new(0),
-        SqrtPrice::max_instance(),
+        pool_state_before.sqrt_price,
+        pool_state_before.sqrt_price,
         InvariantError::TransferError.into(),
     )
     .await;
@@ -748,7 +749,7 @@ async fn test_create_position_not_enough_token_y()->Result<()> {
     let pool_state = get_pool(&user_1_api, invariant, token_x, token_y, fee_tier, None)
         .await
         .unwrap();
-    let position_state = get_position(
+    let _position_state = get_position(
         &user_1_api,
         invariant,
         get_api_user_id(&user_1_api),
