@@ -468,7 +468,7 @@ async fn main() {
                     reply(InvariantEvent::PositionCreatedReturn(position), 0).expect("Unable to reply");
                 }
                 Err(e) => {
-                                        reply(InvariantEvent::ActionFailed(e), 0).expect("Unable to reply");
+                    reply(InvariantEvent::ActionFailed(e), 0).expect("Unable to reply");
                 }
             }
         }
