@@ -6,3 +6,4 @@ mod get_pools;
 mod change_fee_receiver;
 mod position;
 mod position_slippage;
+mod remove_position;
