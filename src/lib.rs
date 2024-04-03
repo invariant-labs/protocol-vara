@@ -216,7 +216,7 @@ impl Invariant {
         to: &ActorId,
         amount_tokens: u128,
     ) -> Result<(), InvariantError> {
-        let tx_id = tx_id.or(self.get_transaction_id().into());
+        let tx_id = tx_id.or(self.generate_transaction_id().into());
         let reply = msg::send_for_reply_as::<_, Result<FTEvent, FTError>>(
             *token_address,
             FTAction::Transfer {
@@ -248,7 +248,7 @@ impl Invariant {
         }
     }
 
-    fn get_transaction_id(&mut self) -> u64 {
+    fn generate_transaction_id(&mut self) -> u64 {
         let transaction_id = self.transaction_id;
         self.transaction_id = self.transaction_id.wrapping_add(1);
         transaction_id
