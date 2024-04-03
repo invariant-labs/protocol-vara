@@ -44,7 +44,6 @@ pub async fn create_position(
             );
         }
         None => {
-            //Check that no event was emitted
             let event = decode_from_bytes::<InvariantEvent>(bytes).unwrap();
             if let InvariantEvent::PositionCreated(_position) = &event {
                 return;

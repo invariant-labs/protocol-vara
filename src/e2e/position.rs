@@ -2,9 +2,9 @@ use crate::test_helpers::consts::GEAR_PATH;
 use crate::test_helpers::gclient::token::init_tokens;
 use crate::test_helpers::gclient::{
     add_fee_tier, approve, balance_of, create_pool, create_position, get_api_user_id,
-    get_pool, get_position, get_tick, init_invariant, mint,
+    get_pool, get_position, get_tick, init_invariant, mint, pools_are_identical_no_timestamp,
 };
-use contracts::{FeeTier, PoolKey};
+use contracts::{FeeTier, InvariantError, PoolKey};
 use decimal::*;
 use fungible_token_io::InitConfig;
 use gclient::{GearApi, Result};
@@ -414,7 +414,7 @@ async fn test_position_above_current_tick() -> Result<()> {
     let fee_tier = FeeTier::new(Percentage::from_scale(2, 4), 4).unwrap();
     let init_tick = -23028;
     let init_sqrt_price = calculate_sqrt_price(init_tick).unwrap();
-    let remove_position_index = 0;
+    let position_index = 0;
     let initial_balance = 10_000_000_000;
 
     add_fee_tier(&admin_api, &mut listener, invariant, fee_tier, None).await;
@@ -488,7 +488,7 @@ async fn test_position_above_current_tick() -> Result<()> {
         &user_1_api,
         invariant,
         get_api_user_id(&user_1_api),
-        remove_position_index,
+        position_index,
         None,
     )
     .await
@@ -538,5 +538,233 @@ async fn test_position_above_current_tick() -> Result<()> {
     assert_eq!(invariant_x, expected_x_increase);
     assert_eq!(invariant_y, expected_y_increase);
 
+    Ok(())
+}
+
+#[tokio::test]
+async fn test_create_position_not_enough_token_x()->Result<()> {
+    let admin_api = GearApi::dev_from_path(GEAR_PATH).await.unwrap();
+    let user_1_api = admin_api.clone().with("//Bob").unwrap();
+
+    let mut listener = admin_api.subscribe().await?;
+
+    assert!(listener.blocks_running().await?);
+
+    let init = InitInvariant {
+        config: InvariantConfig {
+            admin: get_api_user_id(&admin_api).into(),
+            protocol_fee: 0,
+        },
+    };
+
+    let invariant = init_invariant(&admin_api, &mut listener, init).await;
+
+    let (token_x, token_y) = init_tokens(&user_1_api, &mut listener, InitConfig::default()).await;
+
+    let fee_tier = FeeTier::new(Percentage::from_scale(2, 4), 4).unwrap();
+    let init_tick = 0;
+    let init_sqrt_price = calculate_sqrt_price(init_tick).unwrap();
+    let position_index = 0;
+    let initial_balance = 10_000_000_000;
+
+    add_fee_tier(&admin_api, &mut listener, invariant, fee_tier, None).await;
+
+    create_pool(
+        &user_1_api,
+        &mut listener,
+        invariant,
+        token_x,
+        token_y,
+        fee_tier,
+        init_sqrt_price,
+        init_tick,
+        None,
+    )
+    .await;
+    let pool_state_before = get_pool(&user_1_api, invariant, token_x, token_y, fee_tier, None)
+        .await
+        .unwrap();
+
+    mint(&user_1_api, &mut listener, token_x, 1)
+        .await
+        .unwrap();
+    mint(&user_1_api, &mut listener, token_y, initial_balance)
+        .await
+        .unwrap();
+
+    approve(
+        &user_1_api,
+        &mut listener,
+        token_x,
+        invariant,
+        initial_balance,
+    )
+    .await
+    .unwrap();
+    approve(
+        &user_1_api,
+        &mut listener,
+        token_y,
+        invariant,
+        initial_balance,
+    )
+    .await
+    .unwrap();
+
+    let pool_key = PoolKey::new(token_x.into(), token_y.into(), fee_tier).unwrap();
+
+    let lower_tick_index = -8;
+    let upper_tick_index = 8;
+    let liquidity_delta = Liquidity::from_integer(10_000);
+
+    create_position(
+        &user_1_api,
+        &mut listener,
+        invariant,
+        pool_key,
+        lower_tick_index,
+        upper_tick_index,
+        liquidity_delta,
+        SqrtPrice::new(0),
+        SqrtPrice::max_instance(),
+        InvariantError::TransferError.into(),
+    )
+    .await;
+
+    let pool_state = get_pool(&user_1_api, invariant, token_x, token_y, fee_tier, None)
+        .await
+        .unwrap();
+    let position_state = get_position(
+        &user_1_api,
+        invariant,
+        get_api_user_id(&user_1_api),
+        position_index,
+        InvariantError::PositionNotFound.into(),
+    )
+    .await;
+    pools_are_identical_no_timestamp(&pool_state_before, &pool_state);
+    get_tick(&user_1_api, invariant, pool_key, lower_tick_index, InvariantError::TickNotFound.into()).await;
+    get_tick(&user_1_api, invariant, pool_key, upper_tick_index, InvariantError::TickNotFound.into()).await;
+
+    assert_eq!(balance_of(&user_1_api, token_x, get_api_user_id(&user_1_api)).await, 1);
+    assert_eq!(balance_of(&user_1_api, token_y, get_api_user_id(&user_1_api)).await, initial_balance);
+
+    assert_eq!(balance_of(&user_1_api, token_x, invariant).await, 0);
+    assert_eq!(balance_of(&user_1_api, token_y, invariant).await, 0);
+
+    Ok(())
+}
+
+#[tokio::test]
+async fn test_create_position_not_enough_token_y()->Result<()> {
+    let admin_api = GearApi::dev_from_path(GEAR_PATH).await.unwrap();
+    let user_1_api = admin_api.clone().with("//Bob").unwrap();
+
+    let mut listener = admin_api.subscribe().await?;
+
+    assert!(listener.blocks_running().await?);
+
+    let init = InitInvariant {
+        config: InvariantConfig {
+            admin: get_api_user_id(&admin_api).into(),
+            protocol_fee: 0,
+        },
+    };
+
+    let invariant = init_invariant(&admin_api, &mut listener, init).await;
+
+    let (token_x, token_y) = init_tokens(&user_1_api, &mut listener, InitConfig::default()).await;
+
+    let fee_tier = FeeTier::new(Percentage::from_scale(2, 4), 4).unwrap();
+    let init_tick = 0;
+    let init_sqrt_price = calculate_sqrt_price(init_tick).unwrap();
+    let position_index = 0;
+    let initial_balance = 10_000_000_000;
+
+    add_fee_tier(&admin_api, &mut listener, invariant, fee_tier, None).await;
+
+    create_pool(
+        &user_1_api,
+        &mut listener,
+        invariant,
+        token_x,
+        token_y,
+        fee_tier,
+        init_sqrt_price,
+        init_tick,
+        None,
+    )
+    .await;
+    let pool_state_before = get_pool(&user_1_api, invariant, token_x, token_y, fee_tier, None)
+        .await
+        .unwrap();
+
+    mint(&user_1_api, &mut listener, token_x, initial_balance)
+        .await
+        .unwrap();
+    mint(&user_1_api, &mut listener, token_y, 1)
+        .await
+        .unwrap();
+
+    approve(
+        &user_1_api,
+        &mut listener,
+        token_x,
+        invariant,
+        initial_balance,
+    )
+    .await
+    .unwrap();
+    approve(
+        &user_1_api,
+        &mut listener,
+        token_y,
+        invariant,
+        initial_balance,
+    )
+    .await
+    .unwrap();
+
+    let pool_key = PoolKey::new(token_x.into(), token_y.into(), fee_tier).unwrap();
+
+    let lower_tick_index = -8;
+    let upper_tick_index = 8;
+    let liquidity_delta = Liquidity::from_integer(10_000);
+
+    create_position(
+        &user_1_api,
+        &mut listener,
+        invariant,
+        pool_key,
+        lower_tick_index,
+        upper_tick_index,
+        liquidity_delta,
+        SqrtPrice::new(0),
+        SqrtPrice::max_instance(),
+        InvariantError::TransferError.into(),
+    )
+    .await;
+
+    let pool_state = get_pool(&user_1_api, invariant, token_x, token_y, fee_tier, None)
+        .await
+        .unwrap();
+    let position_state = get_position(
+        &user_1_api,
+        invariant,
+        get_api_user_id(&user_1_api),
+        position_index,
+        InvariantError::PositionNotFound.into(),
+    )
+    .await;
+
+    pools_are_identical_no_timestamp(&pool_state_before, &pool_state);
+    get_tick(&user_1_api, invariant, pool_key, lower_tick_index, InvariantError::TickNotFound.into()).await;
+    get_tick(&user_1_api, invariant, pool_key, upper_tick_index, InvariantError::TickNotFound.into()).await;
+
+    assert_eq!(balance_of(&user_1_api, token_x, get_api_user_id(&user_1_api)).await, initial_balance);
+    assert_eq!(balance_of(&user_1_api, token_y, get_api_user_id(&user_1_api)).await, 1);
+
+    assert_eq!(balance_of(&user_1_api, token_x, invariant).await, 0);
+    assert_eq!(balance_of(&user_1_api, token_y, invariant).await, 0);
     Ok(())
 }

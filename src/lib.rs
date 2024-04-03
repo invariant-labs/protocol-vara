@@ -22,7 +22,7 @@ pub struct Invariant {
     pub pools: Pools,
     pub pool_keys: PoolKeys,
     pub positions: Positions,
-    pub ticks: Ticks,   
+    pub ticks: Ticks,
     pub tickmap: Tickmap,
     pub transaction_id: u64,
 }
@@ -133,7 +133,7 @@ impl Invariant {
         let mut pool = self.pools.get(&pool_key)?;
         pool.fee_receiver = fee_receiver;
         self.pools.update(&pool_key, &pool)?;
-        
+
         Ok(())
     }
 
@@ -170,7 +170,7 @@ impl Invariant {
             .cloned()
             .unwrap_or_else(|_| Self::create_tick(self, pool_key, upper_tick).unwrap());
 
-        let (position, x, y) = Position::create(
+        let (mut position, x, y) = Position::create(
             &mut pool,
             pool_key,
             &mut lower_tick,
@@ -183,6 +183,66 @@ impl Invariant {
             pool_key.fee_tier.tick_spacing,
         )?;
 
+        let undo_creating_position = |invariant: &mut Self,
+                                      position: &mut Position,
+                                      pool: &mut Pool,
+                                      mut lower_tick: Tick,
+                                      mut upper_tick: Tick,
+                                      pool_key: PoolKey| {
+            let (_x, _y, remove_lower_tick, remove_upper_tick) = position.remove(
+                pool,
+                current_timestamp,
+                &mut lower_tick,
+                &mut upper_tick,
+                pool_key.fee_tier.tick_spacing,
+            );
+            if remove_lower_tick {
+                invariant
+                    .remove_tick(pool_key, lower_tick)
+                    .expect("Attempted to remove incorrect tick");
+            }
+            if remove_upper_tick {
+                invariant
+                    .remove_tick(pool_key, upper_tick)
+                    .expect("Attempted to remove incorrect tick");
+            }
+        };
+
+        let first_transaction = self
+            .transfer_tokens(&pool_key.token_x, None, &caller, &program, x.get())
+            .await;
+        if let Err(e) = first_transaction {
+            undo_creating_position(
+                self,
+                &mut position,
+                &mut pool,
+                lower_tick,
+                upper_tick,
+                pool_key,
+            );
+
+            return Err(e);
+        }
+        let second_transaction = self
+            .transfer_tokens(&pool_key.token_y, None, &caller, &program, y.get())
+            .await;
+
+        if let Err(e) = second_transaction {
+            undo_creating_position(
+                self,
+                &mut position,
+                &mut pool,
+                lower_tick,
+                upper_tick,
+                pool_key,
+            );
+            self.transfer_tokens(&pool_key.token_x, None, &program, &caller, x.get())
+                .await
+                .unwrap();
+
+            return Err(e);
+        }
+
         self.pools.update(&pool_key, &pool)?;
 
         self.positions.add(&caller, &position);
@@ -190,16 +250,13 @@ impl Invariant {
         self.ticks.update(pool_key, lower_tick.index, lower_tick)?;
         self.ticks.update(pool_key, upper_tick.index, upper_tick)?;
 
-        self.transfer_tokens(&pool_key.token_x, None, &caller, &program, x.get()).await?;
-        self.transfer_tokens(&pool_key.token_y, None, &caller, &program, y.get()).await?;
-
         Ok(position)
     }
 
     pub fn get_position(&self, owner_id: &ActorId, index: u32) -> Result<Position, InvariantError> {
         self.positions.get(owner_id, index).cloned()
     }
-    
+
     pub fn get_tick(&self, key: PoolKey, index: i32) -> Result<Tick, InvariantError> {
         self.ticks.get(key, index).cloned()
     }
@@ -207,7 +264,7 @@ impl Invariant {
     pub fn is_tick_initialized(&self, key: PoolKey, index: i32) -> bool {
         self.tickmap.get(index, key.fee_tier.tick_spacing, key)
     }
-    
+
     async fn transfer_tokens(
         &mut self,
         token_address: &ActorId,
@@ -231,14 +288,14 @@ impl Invariant {
         .map_err(|_| InvariantError::TransferError)?
         .await
         .map_err(|_| InvariantError::TransferError)?;
-    
+
         match reply {
             Ok(ft_event) => {
                 match ft_event {
-                    FTEvent::Transfer { from: _, to: _, amount: _ } => {
+                FTEvent::Transfer { from: _, to: _, amount: _ } => {
                         return Ok(())
                     },
-                    _ => return Err(InvariantError::TransferError)
+                _ => return Err(InvariantError::TransferError)
                 }
             }
             Err(_ft_error) => {
@@ -269,6 +326,17 @@ impl Invariant {
             .flip(true, index, pool_key.fee_tier.tick_spacing, pool_key);
 
         Ok(tick)
+    }
+
+    fn remove_tick(&mut self, key: PoolKey, tick: Tick) -> Result<(), InvariantError> {
+        if !tick.liquidity_gross.is_zero() {
+            return Err(InvariantError::NotEmptyTickDeinitialization);
+        }
+
+        self.tickmap
+            .flip(false, tick.index, key.fee_tier.tick_spacing, key);
+        self.ticks.remove(key, tick.index)?;
+        Ok(())
     }
 
     fn caller_is_admin(&self) -> bool {
@@ -333,11 +401,11 @@ async fn main() {
             init_tick,
         } => {
             match invariant.create_pool(token_0, token_1, fee_tier, init_sqrt_price, init_tick) {
-                Ok(_fee_tier) => {}
-                Err(e) => {
-                    reply(InvariantEvent::ActionFailed(e), 0).expect("Unable to reply");
-                }
+            Ok(_fee_tier) => {}
+            Err(e) => {
+                reply(InvariantEvent::ActionFailed(e), 0).expect("Unable to reply");
             }
+        }
         }
         InvariantAction::ChangeFeeReceiver(pool_key, fee_receiver) => {
             match invariant.change_fee_receiver(pool_key, fee_receiver) {
@@ -347,21 +415,25 @@ async fn main() {
                 }
             }
         }
-        InvariantAction::CreatePosition { 
+        InvariantAction::CreatePosition {
             pool_key,
             lower_tick,
             upper_tick,
             liquidity_delta,
             slippage_limit_lower,
-            slippage_limit_upper 
+            slippage_limit_upper,
         } => {
-            match invariant.create_position(pool_key,
-                                            lower_tick,
-                                            upper_tick,
-                                            liquidity_delta,
-                                            slippage_limit_lower,
-                                            slippage_limit_upper
-                                        ).await {
+            match invariant
+                .create_position(
+                    pool_key,
+                    lower_tick,
+                    upper_tick,
+                    liquidity_delta,
+                    slippage_limit_lower,
+                    slippage_limit_upper,
+                )
+                .await
+            {
                 Ok(position) => {
                     reply(InvariantEvent::PositionCreated(position), 0).expect("Unable to reply");
                 }
@@ -431,7 +503,7 @@ extern "C" fn state() {
         }
         InvariantStateQuery::IsTickInitialized(pool_key, index) => {
             reply(InvariantStateReply::IsTickInitialized(invariant.is_tick_initialized(pool_key, index)), 0)
-                .expect("Unable to reply");
+            .expect("Unable to reply");
         }
     }
 }
@@ -443,12 +515,12 @@ mod tests {
     use gtest::{Program, System};
     use test_helpers::consts::INVARIANT_PATH;
     use math::sqrt_price::calculate_sqrt_price;
-    const ADMIN: u64 = 1;
+        const ADMIN: u64 = 1;
     const USERS: [u64; 3] = [2, 3, 4];
-    
+
     const REGULAR_USER_1: u64 = USERS[0];
     const REGULAR_USER_2: u64 = USERS[1];
-    
+
     const PROGRAM_OWNER: u64 = USERS[2];
     const PROGRAM_ID: u64 = 105;
     const PATH: &str = INVARIANT_PATH;
@@ -538,22 +610,22 @@ mod tests {
         let init_sqrt_price = calculate_sqrt_price(0).unwrap();
 
         let res = invariant.send(REGULAR_USER_1, InvariantAction::CreatePool{
-            token_0,
-            token_1,
-            fee_tier,
-            init_sqrt_price,
-            init_tick: 0,
-        });
+                token_0,
+                token_1,
+                fee_tier,
+                init_sqrt_price,
+                init_tick: 0,
+            });
         assert!(!res.main_failed());
         assert!(res.log().last().unwrap().payload().is_empty());
-        
+
         let res = invariant.send(REGULAR_USER_2, InvariantAction::CreatePool{
-            token_0,
-            token_1,
-            fee_tier,
-            init_sqrt_price,
-            init_tick: 0,
-        });
+                token_0,
+                token_1,
+                fee_tier,
+                init_sqrt_price,
+                init_tick: 0,
+            });
 
         assert!(!res.main_failed());
         assert!(res.contains(&(
@@ -581,29 +653,29 @@ mod tests {
 
         let init_sqrt_price = calculate_sqrt_price(0).unwrap();
         let init_tick = 0;
-    
+
         let block_timestamp = sys.block_timestamp();
 
         let res = invariant.send(REGULAR_USER_1, InvariantAction::CreatePool{
-            token_0,
-            token_1,
-            fee_tier,
-            init_sqrt_price,
-            init_tick,
-        });
+                token_0,
+                token_1,
+                fee_tier,
+                init_sqrt_price,
+                init_tick,
+            });
         assert!(!res.main_failed());
 
         let state: InvariantStateReply = invariant
             .read_state(InvariantStateQuery::GetPool(token_0, token_1, fee_tier))
             .expect("Failed to read state");
         assert_eq!(state, InvariantStateReply::Pool(Pool{
-            start_timestamp: block_timestamp,
-            last_timestamp: block_timestamp,
-            sqrt_price: init_sqrt_price,
-            current_tick_index: init_tick,
-            fee_receiver: ADMIN.into(),
-            ..Pool::default()
-        }))
+                start_timestamp: block_timestamp,
+                last_timestamp: block_timestamp,
+                sqrt_price: init_sqrt_price,
+                current_tick_index: init_tick,
+                fee_receiver: ADMIN.into(),
+                ..Pool::default()
+            }))
     }
 
     #[test]
@@ -625,14 +697,14 @@ mod tests {
 
         let init_sqrt_price = calculate_sqrt_price(0).unwrap();
         let init_tick = 0;
-    
+
         let res = invariant.send(REGULAR_USER_1, InvariantAction::CreatePool{
-            token_0,
-            token_1,
-            fee_tier,
-            init_sqrt_price,
-            init_tick,
-        });
+                token_0,
+                token_1,
+                fee_tier,
+                init_sqrt_price,
+                init_tick,
+            });
         assert!(!res.main_failed());
 
         let state: InvariantStateReply = invariant
@@ -660,25 +732,26 @@ mod tests {
 
         let init_sqrt_price = calculate_sqrt_price(0).unwrap();
 
-        let res = invariant.send(REGULAR_USER_1, InvariantAction::CreatePool{
-            token_0,
-            token_1,
-            fee_tier,
-            init_sqrt_price,
-            init_tick: 0,
-        });
+        let res = invariant.send(
+            REGULAR_USER_1,
+            InvariantAction::CreatePool {
+                token_0,
+                token_1,
+                fee_tier,
+                init_sqrt_price,
+                init_tick: 0,
+            });
         assert!(!res.main_failed());
         assert!(res.log().last().unwrap().payload().is_empty());
         let pool_key = PoolKey::new(token_0, token_1, fee_tier).unwrap();
         let res = invariant.send(ADMIN, InvariantAction::ChangeFeeReceiver(pool_key, REGULAR_USER_1.into()));
-        
+
         assert!(!res.main_failed());
         assert!(res.log().last().unwrap().payload().is_empty());
 
-        
         let state: InvariantStateReply = invariant
-        .read_state(InvariantStateQuery::GetPool(token_0, token_1, fee_tier))
-        .expect("Failed to read state");
+            .read_state(InvariantStateQuery::GetPool(token_0, token_1, fee_tier))
+            .expect("Failed to read state");
 
         if let InvariantStateReply::Pool(pool) = state {
             assert_eq!(pool.fee_receiver, REGULAR_USER_1.into());

@@ -22,7 +22,7 @@ pub async fn send_message(
         )
         .await
         .expect("Failed to send message");
-
+        
     let (message_id, _hash) = api
         .send_message(program.into().into(), message, gas_info.burned * 2, 0)
         .await
@@ -43,7 +43,7 @@ pub fn get_new_token(mut last_token_id: TokenId) -> TokenId {
     last_token_id
 }
 
-pub fn pools_are_identical_no_timestamp(pool: &Pool, other_poll: &Pool) {
+pub fn pools_are_identical_no_timestamp(pool: &Pool, other_pool: &Pool) {
     let Pool {
         liquidity,
         sqrt_price,
@@ -56,12 +56,12 @@ pub fn pools_are_identical_no_timestamp(pool: &Pool, other_poll: &Pool) {
         last_timestamp: _last_timestamp,
         fee_receiver,
     } = pool;
-    assert_eq!(*liquidity, other_poll.liquidity);
-    assert_eq!(*sqrt_price, other_poll.sqrt_price);
-    assert_eq!(*current_tick_index, other_poll.current_tick_index);
-    assert_eq!(*fee_growth_global_x, other_poll.fee_growth_global_x);
-    assert_eq!(*fee_growth_global_y, other_poll.fee_growth_global_y);
-    assert_eq!(*fee_protocol_token_x, other_poll.fee_protocol_token_x);
-    assert_eq!(*fee_protocol_token_y, other_poll.fee_protocol_token_y);
-    assert_eq!(*fee_receiver, other_poll.fee_receiver);
+    assert_eq!(*liquidity, other_pool.liquidity);
+    assert_eq!(*sqrt_price, other_pool.sqrt_price);
+    assert_eq!(*current_tick_index, other_pool.current_tick_index);
+    assert_eq!(*fee_growth_global_x, other_pool.fee_growth_global_x);
+    assert_eq!(*fee_growth_global_y, other_pool.fee_growth_global_y);
+    assert_eq!(*fee_protocol_token_x, other_pool.fee_protocol_token_x);
+    assert_eq!(*fee_protocol_token_y, other_pool.fee_protocol_token_y);
+    assert_eq!(*fee_receiver, other_pool.fee_receiver);
 }
