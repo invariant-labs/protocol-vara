@@ -170,7 +170,18 @@ impl Invariant {
             .cloned()
             .unwrap_or_else(|_| Self::create_tick(self, pool_key, upper_tick).unwrap());
 
-        let (mut position, x, y) = Position::create(
+        let undo_ticks_creation = |invariant: &mut Self, remove_lower_tick: bool, lower_tick: Tick, remove_upper_tick: bool, upper_tick: Tick| {
+            if remove_lower_tick {
+                invariant.remove_tick(pool_key, lower_tick)
+                    .expect("Attempted to remove incorrect tick");
+            } 
+            if remove_upper_tick {
+                invariant.remove_tick(pool_key, upper_tick)
+                    .expect("Attempted to remove incorrect tick");
+            }
+        };
+
+        let (mut position, x, y) = match Position::create(
             &mut pool,
             pool_key,
             &mut lower_tick,
@@ -181,7 +192,19 @@ impl Invariant {
             slippage_limit_upper,
             current_block_number,
             pool_key.fee_tier.tick_spacing,
-        )?;
+        ) {
+            Ok(position) => position,
+            Err(e) => {
+                undo_ticks_creation(
+                    self,
+                    lower_tick.liquidity_gross.is_zero(),
+                    lower_tick,
+                    upper_tick.liquidity_gross.is_zero(),
+                    upper_tick
+                );
+                return Err(e);
+            }
+        };
 
         let undo_creating_position = |invariant: &mut Self,
                                       position: &mut Position,
@@ -196,21 +219,14 @@ impl Invariant {
                 &mut upper_tick,
                 pool_key.fee_tier.tick_spacing,
             );
-            if remove_lower_tick {
-                invariant
-                    .remove_tick(pool_key, lower_tick)
-                    .expect("Attempted to remove incorrect tick");
-            }
-            if remove_upper_tick {
-                invariant
-                    .remove_tick(pool_key, upper_tick)
-                    .expect("Attempted to remove incorrect tick");
-            }
+
+            undo_ticks_creation(invariant, remove_lower_tick, lower_tick, remove_upper_tick, upper_tick);
         };
 
         let first_transaction = self
             .transfer_tokens(&pool_key.token_x, None, &caller, &program, x.get())
             .await;
+
         if let Err(e) = first_transaction {
             undo_creating_position(
                 self,

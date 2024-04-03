@@ -1,6 +1,6 @@
 use crate::test_helpers::consts::GEAR_PATH;
 use crate::test_helpers::gclient::entrypoints::{create_position, get_pool};
-use crate::test_helpers::gclient::snippets::*;
+use crate::test_helpers::gclient::{get_tick, snippets::*};
 
 use contracts::InvariantError;
 use decimal::*;
@@ -138,6 +138,9 @@ async fn test_position_slippage_below_range() -> Result<()> {
     )
     .await;
 
+    let lower_tick = get_tick(&user_api, invariant, pool_key, -tick, InvariantError::TickNotFound.into()).await;
+    let upper_tick = get_tick(&user_api, invariant, pool_key, tick, InvariantError::TickNotFound.into()).await;
+
     Ok(())
 }
 
@@ -191,6 +194,9 @@ async fn test_position_slippage_above_range() -> Result<()> {
         InvariantError::PriceLimitReached.into(),
     )
     .await;
+
+    let lower_tick = get_tick(&user_api, invariant, pool_key, -tick, InvariantError::TickNotFound.into()).await;
+    let upper_tick = get_tick(&user_api, invariant, pool_key, tick, InvariantError::TickNotFound.into()).await;
 
     Ok(())
 }
