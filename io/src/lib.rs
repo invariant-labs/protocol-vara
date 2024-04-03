@@ -62,7 +62,16 @@ pub enum InvariantAction {
 #[scale_info(crate = gstd::scale_info)]
 pub enum InvariantEvent {
     ProtocolFeeChanged(u128),
-    PositionCreated(Position),
+    PositionCreatedReturn(Position),
+    PositionCreatedEvent{
+        block_timestamp: u64,
+        address: ActorId,
+        pool_key: PoolKey,
+        liquidity_delta: Liquidity,
+        lower_tick: i32,
+        upper_tick: i32,
+        current_sqrt_price: SqrtPrice,
+    },
     ActionFailed(InvariantError),
 }
 

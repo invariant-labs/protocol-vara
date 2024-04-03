@@ -138,8 +138,8 @@ async fn test_position_slippage_below_range() -> Result<()> {
     )
     .await;
 
-    let lower_tick = get_tick(&user_api, invariant, pool_key, -tick, InvariantError::TickNotFound.into()).await;
-    let upper_tick = get_tick(&user_api, invariant, pool_key, tick, InvariantError::TickNotFound.into()).await;
+    let _lower_tick = get_tick(&user_api, invariant, pool_key, -tick, InvariantError::TickNotFound.into()).await;
+    let _upper_tick = get_tick(&user_api, invariant, pool_key, tick, InvariantError::TickNotFound.into()).await;
 
     Ok(())
 }
@@ -195,8 +195,8 @@ async fn test_position_slippage_above_range() -> Result<()> {
     )
     .await;
 
-    let lower_tick = get_tick(&user_api, invariant, pool_key, -tick, InvariantError::TickNotFound.into()).await;
-    let upper_tick = get_tick(&user_api, invariant, pool_key, tick, InvariantError::TickNotFound.into()).await;
+    let _lower_tick = get_tick(&user_api, invariant, pool_key, -tick, InvariantError::TickNotFound.into()).await;
+    let _upper_tick = get_tick(&user_api, invariant, pool_key, tick, InvariantError::TickNotFound.into()).await;
 
     Ok(())
 }

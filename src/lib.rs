@@ -265,6 +265,16 @@ impl Invariant {
 
         self.ticks.update(pool_key, lower_tick.index, lower_tick)?;
         self.ticks.update(pool_key, upper_tick.index, upper_tick)?;
+     
+        self.emit_event(InvariantEvent::PositionCreatedEvent {
+            block_timestamp: exec::block_timestamp(),
+            address: msg::source(),
+            pool_key,
+            liquidity_delta,
+            lower_tick: lower_tick.index,
+            upper_tick: upper_tick.index,
+            current_sqrt_price: pool.sqrt_price 
+        });
 
         Ok(position)
     }
@@ -353,6 +363,10 @@ impl Invariant {
             .flip(false, tick.index, key.fee_tier.tick_spacing, key);
         self.ticks.remove(key, tick.index)?;
         Ok(())
+    }
+
+    fn emit_event(&self, event: InvariantEvent) {
+        msg::send(msg::source(), event, 0).expect("Unable to emit event");
     }
 
     fn is_caller_admin(&self) -> bool {
@@ -451,10 +465,10 @@ async fn main() {
                 .await
             {
                 Ok(position) => {
-                    reply(InvariantEvent::PositionCreated(position), 0).expect("Unable to reply");
+                    reply(InvariantEvent::PositionCreatedReturn(position), 0).expect("Unable to reply");
                 }
                 Err(e) => {
-                    reply(InvariantEvent::ActionFailed(e), 0).expect("Unable to reply");
+                                        reply(InvariantEvent::ActionFailed(e), 0).expect("Unable to reply");
                 }
             }
         }
@@ -531,7 +545,7 @@ mod tests {
     use gtest::{Program, System};
     use test_helpers::consts::INVARIANT_PATH;
     use math::sqrt_price::calculate_sqrt_price;
-        const ADMIN: u64 = 1;
+    const ADMIN: u64 = 1;
     const USERS: [u64; 3] = [2, 3, 4];
 
     const REGULAR_USER_1: u64 = USERS[0];
@@ -539,10 +553,9 @@ mod tests {
 
     const PROGRAM_OWNER: u64 = USERS[2];
     const PROGRAM_ID: u64 = 105;
-    const PATH: &str = INVARIANT_PATH;
 
     pub fn init_invariant(sys: &System, protocol_fee: u128) -> Program<'_> {
-        let program = Program::from_file_with_id(sys, PROGRAM_ID, PATH);
+        let program = Program::from_file_with_id(sys, PROGRAM_ID, INVARIANT_PATH);
 
         assert!(!program
             .send(
