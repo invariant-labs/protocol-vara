@@ -2,7 +2,7 @@
 
 use gmeta::{In, InOut, Metadata};
 use gstd::{Decode, Encode, ActorId, TypeInfo, Vec};
-use math::types::sqrt_price::SqrtPrice;
+use math::types::{sqrt_price::SqrtPrice, liquidity::Liquidity};
 pub struct InvariantMetadata;
 use contracts::*;
 
@@ -47,6 +47,14 @@ pub enum InvariantAction {
         init_tick: i32,
     },
     ChangeFeeReceiver(PoolKey, ActorId),
+    CreatePosition {
+        pool_key: PoolKey,
+        lower_tick: i32,
+        upper_tick: i32,
+        liquidity_delta: Liquidity,
+        slippage_limit_lower: SqrtPrice,
+        slippage_limit_upper: SqrtPrice,
+    }
 }
 
 #[derive(Clone, Decode, Encode, Debug, PartialEq, Eq, TypeInfo)]
@@ -54,6 +62,16 @@ pub enum InvariantAction {
 #[scale_info(crate = gstd::scale_info)]
 pub enum InvariantEvent {
     ProtocolFeeChanged(u128),
+    PositionCreatedReturn(Position),
+    PositionCreatedEvent{
+        block_timestamp: u64,
+        address: ActorId,
+        pool_key: PoolKey,
+        liquidity_delta: Liquidity,
+        lower_tick: i32,
+        upper_tick: i32,
+        current_sqrt_price: SqrtPrice,
+    },
     ActionFailed(InvariantError),
 }
 
@@ -65,7 +83,10 @@ pub enum InvariantStateQuery {
     GetFeeTiers,
     GetProtocolFee,
     GetPool(ActorId, ActorId, FeeTier),
-    GetPools(u8, u16)
+    GetPools(u8, u16),
+    GetPosition(ActorId, u32),
+    GetTick(PoolKey, i32),
+    IsTickInitialized(PoolKey, i32),
 }
 
 #[derive(Encode, Decode, Clone, PartialEq, Eq, Debug, TypeInfo)]
@@ -77,6 +98,9 @@ pub enum InvariantStateReply {
     FeeTierExist(bool),
     Pool(Pool),
     Pools(Vec<PoolKey>),
+    Position(Position),
+    Tick(Tick),
+    IsTickInitialized(bool),
     QueryFailed(InvariantError),
 }
 
