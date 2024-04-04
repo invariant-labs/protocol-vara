@@ -12,6 +12,10 @@ pub mod change_fee_receiver;
 pub mod create_position;
 pub mod get_position;
 pub mod get_tick;
+pub mod remove_position;
+pub mod get_all_positions;
+pub mod transfer_position;
+pub mod is_tick_initialized;
 
 pub use init::*;
 pub use utils::*;
@@ -27,3 +31,7 @@ pub use change_fee_receiver::*;
 pub use create_position::*;
 pub use get_position::*;
 pub use get_tick::*;
+pub use remove_position::*;
+pub use get_all_positions::*;
+pub use transfer_position::*;
+pub use is_tick_initialized::*;

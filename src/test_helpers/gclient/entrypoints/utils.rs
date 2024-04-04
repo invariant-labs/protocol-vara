@@ -1,6 +1,6 @@
 use gclient::GearApi;
 use gstd::prelude::*;
-use contracts::Pool;
+use contracts::{Pool, Position};
 
 pub type MessageId = [u8; 32];
 pub type UserId = [u8; 32];
@@ -64,4 +64,26 @@ pub fn pools_are_identical_no_timestamp(pool: &Pool, other_pool: &Pool) {
     assert_eq!(*fee_protocol_token_x, other_pool.fee_protocol_token_x);
     assert_eq!(*fee_protocol_token_y, other_pool.fee_protocol_token_y);
     assert_eq!(*fee_receiver, other_pool.fee_receiver);
+}
+
+pub fn positions_are_identical_no_timestamp(position: &Position, other_position: &Position) {
+    let Position { 
+        pool_key,
+        liquidity,
+        lower_tick_index,
+        upper_tick_index,
+        fee_growth_inside_x,
+        fee_growth_inside_y,
+        last_block_number: _,
+        tokens_owed_x,
+        tokens_owed_y 
+    } = *position;
+    assert_eq!(pool_key, other_position.pool_key);
+    assert_eq!(liquidity, other_position.liquidity);
+    assert_eq!(lower_tick_index, other_position.lower_tick_index);
+    assert_eq!(upper_tick_index, other_position.upper_tick_index);
+    assert_eq!(fee_growth_inside_x, other_position.fee_growth_inside_x);
+    assert_eq!(fee_growth_inside_y, other_position.fee_growth_inside_y);
+    assert_eq!(tokens_owed_x, other_position.tokens_owed_x);
+    assert_eq!(tokens_owed_y, other_position.tokens_owed_y);
 }
