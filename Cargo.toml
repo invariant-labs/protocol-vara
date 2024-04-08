@@ -53,12 +53,12 @@ fungible-token-io.path = "fungible-token/io"
 fungible-token-state.path = "fungible-token/state"
 
 # Gear dependencies
-gstd = "1.1.0"
-gear-wasm-builder = "1.1.0"
-gmeta = "1.1.0"
-gear-core = "1.1.0"
-gtest = { git = "https://github.com/gear-tech/gear.git", tag = "v1.1.0" }
-gclient = { git = "https://github.com/gear-tech/gear.git", tag = "v1.1.0" }
+gstd = "1.1.1"
+gear-wasm-builder = "1.1.1"
+gmeta = "1.1.1"
+gear-core = "1.1.1"
+gtest = { git = "https://github.com/gear-tech/gear.git", tag = "v1.1.1" }
+gclient = { git = "https://github.com/gear-tech/gear.git", tag = "v1.1.1" }
 
 # External
 tokio = { version = "1", features = ["full"] }
