@@ -3,7 +3,7 @@ use contracts::{InvariantError, PoolKey} ;
 use gclient::GearApi;
 use gstd::prelude::*;
 use io::*;
-
+#[allow(dead_code)]
 pub async fn get_pools(
     api: &GearApi,
     invariant: ProgramId,

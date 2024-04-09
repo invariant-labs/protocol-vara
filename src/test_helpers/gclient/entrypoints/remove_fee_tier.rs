@@ -3,7 +3,7 @@ use contracts::{FeeTier,InvariantError};
 use gstd::{prelude::*, codec::decode_from_bytes};
 use gclient::{EventListener, GearApi, EventProcessor};
 use io::*;
-
+#[allow(dead_code)]
 pub async fn remove_fee_tier(api: &GearApi, listener: &mut EventListener, invariant: ProgramId, fee_tier: FeeTier, expected_error: Option<InvariantError>) {
   let message_id = send_message(api, invariant, InvariantAction::RemoveFeeTier(fee_tier)).await;
   let res = listener.reply_bytes_on(message_id.into()).await.expect("Failed to get reply");

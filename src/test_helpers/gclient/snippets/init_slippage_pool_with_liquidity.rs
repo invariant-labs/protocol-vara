@@ -7,7 +7,7 @@ use contracts::{FeeTier, PoolKey};
 use decimal::*;
 use gclient::{EventListener, GearApi};
 use math::{liquidity::Liquidity, percentage::Percentage, sqrt_price::calculate_sqrt_price};
-
+#[allow(dead_code)]
 pub async fn init_slippage_pool_with_liquidity(
     admin_api: &GearApi,
     user_api: &GearApi,

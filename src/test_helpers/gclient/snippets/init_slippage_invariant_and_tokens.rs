@@ -7,7 +7,7 @@ use fungible_token_io::*;
 use gclient::{EventListener, GearApi};
 use io::*;
 use math::percentage::Percentage;
-
+#[allow(dead_code)]
 pub async fn init_slippage_invariant_and_tokens(
     api: &GearApi,
     listener: &mut EventListener,

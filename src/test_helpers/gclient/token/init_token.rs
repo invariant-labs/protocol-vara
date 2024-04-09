@@ -3,7 +3,7 @@ use gclient::{EventListener, EventProcessor, GearApi};
 use gstd::prelude::*;
 use fungible_token_io::InitConfig;
 
-
+#[allow(dead_code)]
 pub async fn init_token(api: &GearApi, listener: &mut EventListener, init: InitConfig) -> ProgramId {
   let init_payload = init.encode();
 
