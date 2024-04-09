@@ -1,7 +1,7 @@
 use crate::test_helpers::gtest::*;
 
-use gtest::*;
 use gstd::*;
+use gtest::*;
 
 #[test]
 fn test_init() {

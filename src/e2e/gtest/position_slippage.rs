@@ -64,7 +64,8 @@ fn test_position_slippage_zero_slippage_and_inside_range() {
 #[test]
 fn test_position_slippage_below_range() {
     let sys = System::new();
-    let (mut invariant, token_x_program, token_y_program) = init_slippage_invariant_and_tokens(&sys);
+    let (mut invariant, token_x_program, token_y_program) =
+        init_slippage_invariant_and_tokens(&sys);
     let token_x = ActorId::from(TOKEN_X_ID);
     let token_y = ActorId::from(TOKEN_Y_ID);
 
@@ -88,25 +89,18 @@ fn test_position_slippage_below_range() {
             slippage_limit_lower: limit_lower,
             slippage_limit_upper: limit_upper,
         },
-        InvariantError::PriceLimitReached
+        InvariantError::PriceLimitReached,
     );
 
-    let _lower_tick = get_tick(
-        &invariant,
-        pool_key,
-        -tick,
-    ).unwrap_err();
-    let _upper_tick = get_tick(
-        &invariant,
-        pool_key,
-        tick,
-    ).unwrap_err();
+    let _lower_tick = get_tick(&invariant, pool_key, -tick).unwrap_err();
+    let _upper_tick = get_tick(&invariant, pool_key, tick).unwrap_err();
 }
 
 #[test]
 fn test_position_slippage_above_range() {
     let sys = System::new();
-    let (mut invariant, token_x_program, token_y_program) = init_slippage_invariant_and_tokens(&sys);
+    let (mut invariant, token_x_program, token_y_program) =
+        init_slippage_invariant_and_tokens(&sys);
     let token_x = ActorId::from(TOKEN_X_ID);
     let token_y = ActorId::from(TOKEN_Y_ID);
 
@@ -130,17 +124,9 @@ fn test_position_slippage_above_range() {
             slippage_limit_lower: limit_lower,
             slippage_limit_upper: limit_upper,
         },
-        InvariantError::PriceLimitReached
+        InvariantError::PriceLimitReached,
     );
 
-    let _lower_tick = get_tick(
-        &invariant,
-        pool_key,
-        -tick,
-    ).unwrap_err();
-    let _upper_tick = get_tick(
-        &invariant,
-        pool_key,
-        tick,
-    ).unwrap_err();
+    let _lower_tick = get_tick(&invariant, pool_key, -tick).unwrap_err();
+    let _upper_tick = get_tick(&invariant, pool_key, tick).unwrap_err();
 }

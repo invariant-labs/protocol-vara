@@ -1,10 +1,11 @@
 pub mod test_init_tokens;
 pub mod init;
-pub mod add_pool;
 pub mod get_pool;
 pub mod get_pools;
 pub mod change_fee_receiver;
-pub mod change_fee_tiers;
+pub mod change_protocol_fee;
 pub mod create_pool;
 pub mod position;
 pub mod position_slippage;
+pub mod add_fee_tier;
+pub mod remove_fee_tier;

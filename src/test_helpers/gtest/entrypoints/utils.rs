@@ -14,10 +14,12 @@ static FILE_BACKUP_NR: AtomicU64 = AtomicU64::new(0);
 
 pub trait InvariantResult {
     fn emitted_events(&self) -> Vec<TestEvent>;
+    #[track_caller]
     #[must_use]
     fn events_eq(&self, expected: Vec<TestEvent>) -> bool;
 }
 pub trait RevertibleProgram {
+    #[track_caller]
     fn send_and_assert_panic<'a>(&'a mut self, from: u64, payload: impl Codec, error: InvariantError)->RunResult;
 }
 #[derive(Debug, Clone, PartialEq, Eq, Encode, Decode, TypeInfo)]
@@ -77,6 +79,7 @@ impl InvariantResult for RunResult {
             .map(TestEvent::from)
             .collect()
     }
+    #[track_caller]
     #[must_use]
     fn events_eq(&self, expected_events: Vec<TestEvent>) -> bool {
         if self.main_failed() {
@@ -156,6 +159,7 @@ impl InvariantResult for RunResult {
 }
 
 impl RevertibleProgram for Program<'_> {
+    #[track_caller]
     fn send_and_assert_panic<'a>(&'a mut self, from: u64, payload: impl Codec, error: InvariantError)->RunResult {
         // state is reverted manually to match the behavior of the runtime
         let path = std::format!("./target/tmp/invariant_memory_dump{}", FILE_BACKUP_NR.fetch_add(1, Ordering::Relaxed));

@@ -3,7 +3,7 @@ use gclient::GearApi;
 use gstd::prelude::*;
 use io::*;
 
-
+#[allow(dead_code)]
 pub async fn get_protocol_fee(
     api: &GearApi,
     invariant: ProgramId,

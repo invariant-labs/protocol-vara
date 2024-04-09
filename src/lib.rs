@@ -345,7 +345,7 @@ async fn main() {
                         .expect("Unable to reply");
                 }
                 Err(e) => {
-                    reply(InvariantEvent::ActionFailed(e), 0).expect("Unable to reply");
+                    reply_with_err(e);
                 }
             };
         }
@@ -353,7 +353,7 @@ async fn main() {
             match invariant.add_fee_tier(fee_tier) {
                 Ok(_fee_tier) => {}
                 Err(e) => {
-                    reply(InvariantEvent::ActionFailed(e), 0).expect("Unable to reply");
+                    reply_with_err(e);
                 }
             };
         }
@@ -361,7 +361,7 @@ async fn main() {
             match invariant.remove_fee_tier(fee_tier) {
                 Ok(_fee_tier) => {}
                 Err(e) => {
-                    reply(InvariantEvent::ActionFailed(e), 0).expect("Unable to reply");
+                    reply_with_err(e);
                 }
             };
         }
@@ -373,17 +373,17 @@ async fn main() {
             init_tick,
         } => {
             match invariant.create_pool(token_0, token_1, fee_tier, init_sqrt_price, init_tick) {
-            Ok(_) => {}
-            Err(e) => {
-                reply_with_err(e);
+                Ok(_) => {}
+                Err(e) => {
+                    reply_with_err(e);
+                }
             }
-        }
         }
         InvariantAction::ChangeFeeReceiver(pool_key, fee_receiver) => {
             match invariant.change_fee_receiver(pool_key, fee_receiver) {
                 Ok(_) => {}
                 Err(e) => {
-                    reply(InvariantEvent::ActionFailed(e), 0).expect("Unable to reply");
+                    reply_with_err(e);
                 }
             }
         }

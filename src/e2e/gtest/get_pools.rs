@@ -22,7 +22,7 @@ fn test_get_pools() {
         tick_spacing: 1,
     };
     let res = invariant.send(ADMIN, InvariantAction::AddFeeTier(fee_tier));
-    
+
     assert!(res.events_eq(vec![TestEvent::empty_invariant_response(ADMIN)]));
 
     let init_sqrt_price = calculate_sqrt_price(0).unwrap();
