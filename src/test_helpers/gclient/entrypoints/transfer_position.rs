@@ -3,7 +3,7 @@ use contracts::InvariantError;
 use gclient::{EventListener, EventProcessor, GearApi};
 use gstd::{codec::decode_from_bytes, prelude::*};
 use io::*;
-
+#[allow(dead_code)]
 pub async fn transfer_position(
     api: &GearApi,
     listener: &mut EventListener,

@@ -3,7 +3,7 @@ use contracts::PoolKey;
 use gclient::GearApi;
 use gstd::prelude::*;
 use io::*;
-
+#[allow(dead_code)]
 pub async fn is_tick_initialized(
     api: &GearApi,
     invariant: ProgramId,

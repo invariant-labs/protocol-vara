@@ -4,7 +4,7 @@ use gclient::GearApi;
 use gstd::prelude::*;
 use io::*;
 
-
+#[allow(dead_code)]
 pub async fn get_all_positions(
     api: &GearApi,
     invariant: ProgramId,

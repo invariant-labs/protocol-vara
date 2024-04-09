@@ -13,7 +13,7 @@ use contracts::{errors::InvariantError,
 };
 use decimal::*;
 use gstd::{
-    async_main, exec, msg::{self, reply}, prelude::*, ActorId
+    async_init, async_main, exec, msg::{self, reply}, prelude::*, ActorId
 };
 use io::*;
 use math::{check_tick, percentage::Percentage,
@@ -188,7 +188,7 @@ impl Invariant {
             current_block_number,
             pool_key.fee_tier.tick_spacing,
         )?;
-
+    
         self.pools.update(&pool_key, &pool)?;
 
         self.positions.add(&caller, &position);
@@ -205,7 +205,7 @@ impl Invariant {
             upper_tick: upper_tick.index,
             current_sqrt_price: pool.sqrt_price 
         });
-
+        
         self
             .transfer_tokens(&pool_key.token_x, None, &caller, &program, x.get())
             .await?;
@@ -415,8 +415,9 @@ static mut INVARIANT: Option<Invariant> = None;
 fn reply_with_err(err: InvariantError) {
     panic!("InvariantError: {:?}", err);
 }
-#[no_mangle]
-extern "C" fn init() {
+
+#[async_init]
+async fn init() {
     let init: InitInvariant = msg::load().expect("Unable to decode InitInvariant");
 
     let invariant = Invariant {
@@ -518,7 +519,7 @@ async fn main() {
                         .expect("Unable to reply");
                 }
                 Err(e) => {
-                    reply(InvariantEvent::ActionFailed(e), 0).expect("Unable to reply");
+                    reply_with_err(e);
                 }
             }
         }
@@ -526,7 +527,7 @@ async fn main() {
             match invariant.transfer_position(index, &receiver) {
                 Ok(_) => {}
                 Err(e) => {
-                    reply(InvariantEvent::ActionFailed(e), 0).expect("Unable to reply");
+                    reply_with_err(e);
                 }
             }
         }

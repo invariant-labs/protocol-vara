@@ -4,7 +4,7 @@ use gclient::{EventListener, EventProcessor, GearApi};
 use gstd::{codec::decode_from_bytes, prelude::*};
 use io::*;
 use math::token_amount::TokenAmount;
-
+#[allow(dead_code)]
 pub async fn remove_position(
     api: &GearApi,
     listener: &mut EventListener,

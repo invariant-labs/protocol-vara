@@ -1,5 +1,5 @@
 # Build 
-cargo build --release
+cargo build --release --features debug
 # Build token
 cargo build -p fungible-token --release
 
