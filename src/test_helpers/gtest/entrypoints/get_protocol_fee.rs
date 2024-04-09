@@ -3,6 +3,7 @@ use crate::test_helpers::gtest::consts::*;
 use gtest::*;
 use io::*;
 
+#[allow(dead_code)]
 pub fn get_protocol_fee(
     invariant: &Program,
 ) -> u128 {

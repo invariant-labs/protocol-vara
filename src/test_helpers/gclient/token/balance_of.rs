@@ -2,6 +2,7 @@ use gstd::ActorId;
 use gclient::GearApi;
 use fungible_token_io::*;
 
+#[allow(dead_code)]
 pub async fn balance_of(
   api: &GearApi,
   token: impl Into<[u8; 32]> + gstd::Copy,

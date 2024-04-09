@@ -1,6 +1,6 @@
 use contracts::*;
-use decimal::*;
 
+#[allow(dead_code)]
 pub fn pools_are_identical_no_timestamp(pool: &Pool, other_pool: &Pool) {
   let Pool {
       liquidity,

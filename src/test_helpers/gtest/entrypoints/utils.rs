@@ -14,6 +14,7 @@ static FILE_BACKUP_NR: AtomicU64 = AtomicU64::new(0);
 
 pub trait InvariantResult {
     fn emitted_events(&self) -> Vec<TestEvent>;
+    #[must_use]
     fn events_eq(&self, expected: Vec<TestEvent>) -> bool;
 }
 pub trait RevertibleProgram {
@@ -29,6 +30,7 @@ pub struct TestEvent {
 }
 
 impl TestEvent {
+    #[allow(dead_code)]
     pub fn decoded_event<T>(&self) -> Result<T, codec::Error>
     where
         T: Decode,
@@ -131,7 +133,7 @@ impl InvariantResult for RunResult {
                         Ok(decoded) => {
                             let decoded_expected = decoded_expected.unwrap();
                             if decoded != decoded_expected {
-                                println!("expected {:?}, got {:?}", decoded_expected, decoded);
+                                println!("expected {:?}\n, got {:?}", decoded_expected, decoded);
                                 return false;
                             }
                         }
@@ -140,9 +142,9 @@ impl InvariantResult for RunResult {
                     return false;
                 } else {
                     std::println!(
-                        "mismatched payloads: {:?} != {:?}",
-                        returned.payload,
-                        expected.payload
+                        "mismatched payloads: expected {:?}\n got {:?}",
+                        expected.payload,
+                        returned.payload
                     );
                 }
             }

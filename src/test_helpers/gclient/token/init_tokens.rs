@@ -4,6 +4,7 @@ use fungible_token_io::InitConfig;
 use gclient::{EventListener, GearApi};
 use gstd::prelude::*;
 
+#[allow(dead_code)]
 pub async fn init_tokens(
     api: &GearApi,
     listener: &mut EventListener,

@@ -3,6 +3,7 @@ use fungible_token_io::*;
 use gclient::{EventListener, EventProcessor, GearApi};
 use gstd::prelude::*;
 
+#[allow(dead_code)]
 pub async fn mint(
     api: &GearApi,
     listener: &mut EventListener,

@@ -1,7 +1,8 @@
 use contracts::*;
 use gtest::*;
-
 use io::*;
+
+#[allow(dead_code)]
 pub fn fee_tier_exists(
     invariant: &Program,
     fee_tier: FeeTier,

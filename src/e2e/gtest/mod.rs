@@ -7,3 +7,4 @@ pub mod change_fee_receiver;
 pub mod change_fee_tiers;
 pub mod create_pool;
 pub mod position;
+pub mod position_slippage;

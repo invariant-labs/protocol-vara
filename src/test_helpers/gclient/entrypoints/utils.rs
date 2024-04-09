@@ -1,7 +1,5 @@
 use gclient::GearApi;
 use gstd::prelude::*;
-use contracts::Pool;
-pub use crate::test_helpers::utils::pools_are_identical_no_timestamp;
 
 pub type MessageId = [u8; 32];
 pub type UserId = [u8; 32];

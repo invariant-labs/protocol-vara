@@ -11,6 +11,7 @@ pub use init_token::*;
 pub use init_tokens::*;
 #[allow(unused_imports)]
 pub use transfer::*;
+#[allow(unused_imports)]
 pub use balance_of::*;
 pub use approve::*;
 #[allow(unused_imports)]

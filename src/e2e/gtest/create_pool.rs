@@ -228,6 +228,7 @@ fn test_create_pool_init_sqrt_price_minimal_difference_from_tick() {
             init_tick,
         },
     );
+    assert!(!res.main_failed());
 
     assert_eq!(
         get_pool(&invariant, token_0, token_1, fee_tier)

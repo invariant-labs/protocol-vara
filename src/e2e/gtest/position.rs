@@ -21,7 +21,7 @@ fn test_create_position() {
     let token_0 = ActorId::from(TOKEN_X_ID);
     let token_1 = ActorId::from(TOKEN_Y_ID);
 
-    let fee_tier = FeeTier::new(Percentage::from_scale(5, 1), 100).unwrap();
+    let fee_tier = FeeTier::new(Percentage::from_scale(5, 1), 10).unwrap();
 
     let init_tick = 0;
     let init_sqrt_price = calculate_sqrt_price(init_tick).unwrap();
@@ -79,6 +79,34 @@ fn test_create_position() {
             slippage_limit_upper: pool.sqrt_price,
         },
     );
+    assert!(res.events_eq(vec![
+        TestEvent::invariant_response(
+            REGULAR_USER_1,
+            InvariantEvent::PositionCreatedEvent {
+                address: REGULAR_USER_1.into(),
+                pool_key,
+                liquidity_delta: Liquidity::new(10),
+                block_timestamp: sys.block_timestamp(),
+                lower_tick: -10,
+                upper_tick: 10,
+                current_sqrt_price: init_sqrt_price,
+            }
+        ),
+        TestEvent::invariant_response(
+            REGULAR_USER_1,
+            InvariantEvent::PositionCreatedReturn(Position {
+                pool_key,
+                liquidity: Liquidity::new(10),
+                lower_tick_index: -10,
+                upper_tick_index: 10,
+                fee_growth_inside_x: FeeGrowth::new(0),
+                fee_growth_inside_y: FeeGrowth::new(0),
+                last_block_number: sys.block_height() as u64,
+                tokens_owed_x: TokenAmount(0),
+                tokens_owed_y: TokenAmount(0)
+            })
+        )
+    ]));
 }
 
 #[test]
@@ -309,6 +337,7 @@ fn test_position_within_current_tick() {
             slippage_limit_upper: pool_state_before.sqrt_price,
         },
     );
+    assert!(!res.main_failed());
 
     let pool_state = get_pool(&invariant, token_x, token_y, fee_tier).unwrap();
 
@@ -417,7 +446,6 @@ fn test_position_above_current_tick() {
     let lower_tick_index = -22980;
     let upper_tick_index = 0;
     let liquidity_delta = Liquidity::from_integer(10_000);
-
 
     let res = invariant.send(
         REGULAR_USER_1,
@@ -567,7 +595,7 @@ fn test_create_position_not_enough_token_x() {
     let upper_tick_index = 8;
     let liquidity_delta = Liquidity::from_integer(10_000);
 
-    let res = invariant.send_and_assert_panic(
+    let _res = invariant.send_and_assert_panic(
         REGULAR_USER_1,
         InvariantAction::CreatePosition {
             pool_key,
@@ -577,7 +605,7 @@ fn test_create_position_not_enough_token_x() {
             slippage_limit_lower: pool_state_before.sqrt_price,
             slippage_limit_upper: pool_state_before.sqrt_price,
         },
-        InvariantError::TransferError
+        InvariantError::TransferError,
     );
 
     let pool_state = get_pool(&invariant, token_x, token_y, fee_tier).unwrap();
@@ -585,7 +613,6 @@ fn test_create_position_not_enough_token_x() {
     get_tick(&invariant, pool_key, lower_tick_index).unwrap_err();
     get_tick(&invariant, pool_key, upper_tick_index).unwrap_err();
     get_position(&invariant, REGULAR_USER_1.into(), 0).unwrap_err();
-
 
     let user_1_x = balance_of(&token_x_program, REGULAR_USER_1.into());
     let user_1_y = balance_of(&token_y_program, REGULAR_USER_1.into());
@@ -619,7 +646,6 @@ fn test_create_position_not_enough_token_y() {
 
     assert!(res.events_eq(vec![TestEvent::empty_invariant_response(ADMIN)]));
 
-    
     let res = invariant.send(
         REGULAR_USER_1,
         InvariantAction::CreatePool {
@@ -662,7 +688,7 @@ fn test_create_position_not_enough_token_y() {
     let upper_tick_index = 8;
     let liquidity_delta = Liquidity::from_integer(10_000);
 
-    let res = invariant.send_and_assert_panic(
+    let _res = invariant.send_and_assert_panic(
         REGULAR_USER_1,
         InvariantAction::CreatePosition {
             pool_key,
@@ -672,7 +698,7 @@ fn test_create_position_not_enough_token_y() {
             slippage_limit_lower: pool_state_before.sqrt_price,
             slippage_limit_upper: pool_state_before.sqrt_price,
         },
-        InvariantError::TransferError
+        InvariantError::TransferError,
     );
 
     let pool_state = get_pool(&invariant, token_x, token_y, fee_tier).unwrap();
