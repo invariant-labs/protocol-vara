@@ -1,4 +1,4 @@
-use gstd::{Decode, Encode, TypeInfo};
+use gstd::{Decode, Encode, TypeInfo, String, prelude::*};
 
 #[derive(Clone, Decode, Encode, TypeInfo, PartialEq, Eq, Debug)]
 #[codec(crate = gstd::codec)]
@@ -31,3 +31,10 @@ pub enum InvariantError {
   InvalidInitTick,
   InvalidInitSqrtPrice,
 }
+
+impl Into<String>for InvariantError {
+  fn into(self) -> String {
+      format!("InvariantError: {:?}", self)
+  }
+}
+ 

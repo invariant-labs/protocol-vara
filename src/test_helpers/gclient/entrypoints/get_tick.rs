@@ -4,6 +4,7 @@ use gclient::GearApi;
 use gstd::prelude::*;
 use io::*;
 
+#[allow(dead_code)]
 pub async fn get_tick(
     api: &GearApi,
     invariant: ProgramId,

@@ -3,7 +3,7 @@ use contracts::{InvariantError, PoolKey};
 use gclient::{EventListener, EventProcessor, GearApi};
 use gstd::{codec::decode_from_bytes, prelude::*, ActorId};
 use io::*;
-
+#[allow(dead_code)]
 pub async fn change_fee_receiver(
     api: &GearApi,
     listener: &mut EventListener,

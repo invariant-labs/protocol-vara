@@ -5,6 +5,7 @@ use gstd::{codec::decode_from_bytes, prelude::*};
 use io::*;
 use math::{liquidity::Liquidity, sqrt_price::SqrtPrice};
 
+#[allow(dead_code)]
 pub async fn create_position(
     api: &GearApi,
     listener: &mut EventListener,
