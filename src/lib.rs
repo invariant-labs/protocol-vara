@@ -5,21 +5,23 @@ mod e2e;
 #[cfg(test)]
 mod test_helpers;
 
-use contracts::{errors::InvariantError,
-    FeeTier, FeeTiers, Pool,
-    PoolKey, PoolKeys, Pools,
-    Position, Positions, Tick,
-    Tickmap, Ticks
+use contracts::{
+    errors::InvariantError, FeeTier, FeeTiers, Pool, PoolKey, PoolKeys, Pools, Position, Positions,
+    Tick, Tickmap, Ticks,
 };
 use decimal::*;
+use fungible_token_io::{FTAction, FTError, FTEvent};
 use gstd::{
-    async_init, async_main, exec, msg::{self, reply}, prelude::*, ActorId
+    async_init, async_main, exec,
+    msg::{self, reply},
+    prelude::*,
+    ActorId,
 };
 use io::*;
-use math::{check_tick, percentage::Percentage,
-    sqrt_price::SqrtPrice, liquidity::Liquidity,
-    token_amount::TokenAmount };
-use fungible_token_io::{FTAction, FTError, FTEvent};
+use math::{
+    check_tick, liquidity::Liquidity, percentage::Percentage, sqrt_price::SqrtPrice,
+    token_amount::TokenAmount,
+};
 
 #[derive(Default)]
 pub struct Invariant {
@@ -28,7 +30,7 @@ pub struct Invariant {
     pub pools: Pools,
     pub pool_keys: PoolKeys,
     pub positions: Positions,
-    pub ticks: Ticks,   
+    pub ticks: Ticks,
     pub tickmap: Tickmap,
     pub transaction_id: u64,
 }
@@ -59,7 +61,7 @@ impl Invariant {
         if !self.is_caller_admin() {
             return Err(InvariantError::NotAdmin);
         }
-    
+
         self.fee_tiers.add(&fee_tier)?;
         Ok(fee_tier)
     }
@@ -88,7 +90,7 @@ impl Invariant {
         fee_tier: FeeTier,
         init_sqrt_price: SqrtPrice,
         init_tick: i32,
-    )->Result<(),InvariantError> {
+    ) -> Result<(), InvariantError> {
         let current_timestamp = exec::block_timestamp();
 
         if !self.fee_tiers.contains(&fee_tier) {
@@ -121,17 +123,21 @@ impl Invariant {
         &self,
         token_0: ActorId,
         token_1: ActorId,
-        fee_tier: FeeTier
-    )->Result<Pool, InvariantError> {
+        fee_tier: FeeTier,
+    ) -> Result<Pool, InvariantError> {
         let pool_key = PoolKey::new(token_0, token_1, fee_tier)?;
         self.pools.get(&pool_key)
     }
 
-    pub fn get_pools(&self, size: u8, offset: u16) ->  Result<Vec<PoolKey>, InvariantError> {
+    pub fn get_pools(&self, size: u8, offset: u16) -> Result<Vec<PoolKey>, InvariantError> {
         self.pool_keys.get_all(size, offset)
     }
 
-    pub fn change_fee_receiver(&mut self, pool_key: PoolKey, fee_receiver: ActorId) -> Result<(), InvariantError> {
+    pub fn change_fee_receiver(
+        &mut self,
+        pool_key: PoolKey,
+        fee_receiver: ActorId,
+    ) -> Result<(), InvariantError> {
         if !self.is_caller_admin() {
             return Err(InvariantError::NotAdmin);
         }
@@ -139,7 +145,7 @@ impl Invariant {
         let mut pool = self.pools.get(&pool_key)?;
         pool.fee_receiver = fee_receiver;
         self.pools.update(&pool_key, &pool)?;
-        
+
         Ok(())
     }
 
@@ -188,7 +194,7 @@ impl Invariant {
             current_block_number,
             pool_key.fee_tier.tick_spacing,
         )?;
-    
+
         self.pools.update(&pool_key, &pool)?;
 
         self.positions.add(&caller, &position);
@@ -203,11 +209,10 @@ impl Invariant {
             liquidity_delta,
             lower_tick: lower_tick.index,
             upper_tick: upper_tick.index,
-            current_sqrt_price: pool.sqrt_price 
+            current_sqrt_price: pool.sqrt_price,
         });
-        
-        self
-            .transfer_tokens(&pool_key.token_x, None, &caller, &program, x.get())
+
+        self.transfer_tokens(&pool_key.token_x, None, &caller, &program, x.get())
             .await?;
 
         let second_transaction = self
@@ -228,7 +233,7 @@ impl Invariant {
     pub fn get_position(&self, owner_id: &ActorId, index: u32) -> Result<Position, InvariantError> {
         self.positions.get(owner_id, index).cloned()
     }
-    
+
     pub fn get_tick(&self, key: PoolKey, index: i32) -> Result<Tick, InvariantError> {
         self.ticks.get(key, index).cloned()
     }
@@ -253,48 +258,43 @@ impl Invariant {
             ..
         } = position;
 
-        let mut lower_tick = self
-            .ticks
-            .get(pool_key, lower_tick_index).cloned()?;
+        let mut lower_tick = self.ticks.get(pool_key, lower_tick_index).cloned()?;
 
-        let mut upper_tick = self
-            .ticks
-            .get(pool_key, upper_tick_index).cloned()?;
+        let mut upper_tick = self.ticks.get(pool_key, upper_tick_index).cloned()?;
 
         let pool = &mut self.pools.get(&pool_key)?;
 
-        let (amount_x, amount_y, remove_lower_tick, remove_upper_tick) = position
-            .remove(
-                pool,
-                current_timestamp,
-                &mut lower_tick,
-                &mut upper_tick,
-                pool_key.fee_tier.tick_spacing,
-            );
-        
+        let (amount_x, amount_y, remove_lower_tick, remove_upper_tick) = position.remove(
+            pool,
+            current_timestamp,
+            &mut lower_tick,
+            &mut upper_tick,
+            pool_key.fee_tier.tick_spacing,
+        );
+
         self.pools.update(&pool_key, pool)?;
 
         if remove_lower_tick {
             self.remove_tick(pool_key, lower_tick)?;
         } else {
-            self.ticks
-                .update(pool_key, lower_tick_index, lower_tick)?;
+            self.ticks.update(pool_key, lower_tick_index, lower_tick)?;
         }
 
         if remove_upper_tick {
             self.remove_tick(pool_key, upper_tick)?;
         } else {
-            self.ticks
-                .update(pool_key, upper_tick_index, upper_tick)?;
+            self.ticks.update(pool_key, upper_tick_index, upper_tick)?;
         }
 
         self.positions.remove(&caller, index)?;
 
         let token_x = pool_key.token_x;
         let token_y = pool_key.token_y;
-        
-        self.transfer_tokens(&token_x, None, &program, &caller, amount_x.get()).await?;
-        self.transfer_tokens(&token_y, None, &program, &caller, amount_y.get()).await?;
+
+        self.transfer_tokens(&token_x, None, &program, &caller, amount_x.get())
+            .await?;
+        self.transfer_tokens(&token_y, None, &program, &caller, amount_y.get())
+            .await?;
 
         self.emit_event(InvariantEvent::PositionRemovedEvent {
             block_timestamp: exec::block_timestamp(),
@@ -303,8 +303,8 @@ impl Invariant {
             liquidity: withdrawn_liquidity,
             lower_tick_index: lower_tick.index,
             upper_tick_index: upper_tick.index,
-            sqrt_price: pool.sqrt_price
-         });
+            sqrt_price: pool.sqrt_price,
+        });
         Ok((amount_x, amount_y))
     }
 
@@ -320,10 +320,7 @@ impl Invariant {
         Ok(())
     }
 
-    pub fn get_all_positions(
-        &self,
-        owner_id: &ActorId
-    ) -> Vec<Position> {
+    pub fn get_all_positions(&self, owner_id: &ActorId) -> Vec<Position> {
         self.positions.get_all(&owner_id)
     }
 
@@ -350,20 +347,17 @@ impl Invariant {
         .map_err(|_| InvariantError::TransferError)?
         .await
         .map_err(|_| InvariantError::TransferError)?;
-    
+
         match reply {
-            Ok(ft_event) => {
-                match ft_event {
-                    FTEvent::Transfer { from: _, to: _, amount: _ } => {
-                        return Ok(())
-                    },
-                    _ => return Err(InvariantError::TransferError)
-                }
-            }
-            Err(_ft_error) => {
-                return Err(InvariantError::TransferError)
-            }
-    
+            Ok(ft_event) => match ft_event {
+                FTEvent::Transfer {
+                    from: _,
+                    to: _,
+                    amount: _,
+                } => return Ok(()),
+                _ => return Err(InvariantError::TransferError),
+            },
+            Err(_ft_error) => return Err(InvariantError::TransferError),
         }
     }
 
@@ -469,14 +463,12 @@ async fn main() {
             fee_tier,
             init_sqrt_price,
             init_tick,
-        } => {
-            match invariant.create_pool(token_0, token_1, fee_tier, init_sqrt_price, init_tick) {
-                Ok(_) => {}
-                Err(e) => {
-                    reply_with_err(e);
-                }
+        } => match invariant.create_pool(token_0, token_1, fee_tier, init_sqrt_price, init_tick) {
+            Ok(_) => {}
+            Err(e) => {
+                reply_with_err(e);
             }
-        }
+        },
         InvariantAction::ChangeFeeReceiver(pool_key, fee_receiver) => {
             match invariant.change_fee_receiver(pool_key, fee_receiver) {
                 Ok(_) => {}
@@ -485,13 +477,13 @@ async fn main() {
                 }
             }
         }
-        InvariantAction::CreatePosition { 
+        InvariantAction::CreatePosition {
             pool_key,
             lower_tick,
             upper_tick,
             liquidity_delta,
             slippage_limit_lower,
-            slippage_limit_upper, 
+            slippage_limit_upper,
         } => {
             match invariant
                 .create_position(
@@ -505,7 +497,8 @@ async fn main() {
                 .await
             {
                 Ok(position) => {
-                    reply(InvariantEvent::PositionCreatedReturn(position), 0).expect("Unable to reply");
+                    reply(InvariantEvent::PositionCreatedReturn(position), 0)
+                        .expect("Unable to reply");
                 }
                 Err(e) => {
                     reply_with_err(e);
@@ -560,16 +553,14 @@ extern "C" fn state() {
                 }
             }
         }
-        InvariantStateQuery::GetPools(size, offset) => {
-            match invariant.get_pools(size, offset) {
-                Ok(pool_keys) => {
-                    reply(InvariantStateReply::Pools(pool_keys), 0).expect("Unable to reply");
-                }
-                Err(e) => {
-                    reply(InvariantStateReply::QueryFailed(e), 0).expect("Unable to reply");
-                }
+        InvariantStateQuery::GetPools(size, offset) => match invariant.get_pools(size, offset) {
+            Ok(pool_keys) => {
+                reply(InvariantStateReply::Pools(pool_keys), 0).expect("Unable to reply");
             }
-        }
+            Err(e) => {
+                reply(InvariantStateReply::QueryFailed(e), 0).expect("Unable to reply");
+            }
+        },
         InvariantStateQuery::GetPosition(owner_id, index) => {
             match invariant.get_position(&owner_id, index) {
                 Ok(position) => {
@@ -591,12 +582,20 @@ extern "C" fn state() {
             }
         }
         InvariantStateQuery::IsTickInitialized(pool_key, index) => {
-            reply(InvariantStateReply::IsTickInitialized(invariant.is_tick_initialized(pool_key, index)), 0)
-                .expect("Unable to reply");
+            reply(
+                InvariantStateReply::IsTickInitialized(
+                    invariant.is_tick_initialized(pool_key, index),
+                ),
+                0,
+            )
+            .expect("Unable to reply");
         }
         InvariantStateQuery::GetAllPositions(owner_id) => {
-            reply(InvariantStateReply::Positions(invariant.get_all_positions(&owner_id)), 0).expect("Unable to reply");    
+            reply(
+                InvariantStateReply::Positions(invariant.get_all_positions(&owner_id)),
+                0,
+            )
+            .expect("Unable to reply");
         }
     }
 }
-
