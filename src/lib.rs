@@ -158,6 +158,10 @@ impl Invariant {
         slippage_limit_lower: SqrtPrice,
         slippage_limit_upper: SqrtPrice,
     ) -> Result<Position, InvariantError> {
+        if exec::gas_available() < 28_000_000 * 2 {
+            return Err(InvariantError::NotEnoughGasToExecute);
+        }
+
         let caller = msg::source();
         let program = exec::program_id();
         let current_timestamp = exec::block_timestamp();
@@ -170,17 +174,8 @@ impl Invariant {
 
         let mut pool = self.pools.get(&pool_key)?;
 
-        let mut lower_tick = self
-            .ticks
-            .get(pool_key, lower_tick)
-            .cloned()
-            .unwrap_or_else(|_| Self::create_tick(self, pool_key, lower_tick).unwrap());
-
-        let mut upper_tick = self
-            .ticks
-            .get(pool_key, upper_tick)
-            .cloned()
-            .unwrap_or_else(|_| Self::create_tick(self, pool_key, upper_tick).unwrap());
+        let (mut lower_tick, should_add_lower) = self.get_or_create_tick(pool_key, lower_tick);
+        let (mut upper_tick, should_add_upper) = self.get_or_create_tick(pool_key, upper_tick);
 
         let (position, x, y) = Position::create(
             &mut pool,
@@ -194,23 +189,6 @@ impl Invariant {
             current_block_number,
             pool_key.fee_tier.tick_spacing,
         )?;
-
-        self.pools.update(&pool_key, &pool)?;
-
-        self.positions.add(&caller, &position);
-
-        self.ticks.update(pool_key, lower_tick.index, lower_tick)?;
-        self.ticks.update(pool_key, upper_tick.index, upper_tick)?;
-
-        self.emit_event(InvariantEvent::PositionCreatedEvent {
-            block_timestamp: exec::block_timestamp(),
-            address: msg::source(),
-            pool_key,
-            liquidity_delta,
-            lower_tick: lower_tick.index,
-            upper_tick: upper_tick.index,
-            current_sqrt_price: pool.sqrt_price,
-        });
 
         self.transfer_tokens(&pool_key.token_x, None, &caller, &program, x.get())
             .await?;
@@ -226,6 +204,36 @@ impl Invariant {
 
             return Err(e);
         }
+
+        if exec::gas_available() < 90000 * 2 {
+            return Err(InvariantError::NotEnoughGasToUpdate);
+        }
+
+        self.pools.update(&pool_key, &pool)?;
+
+        self.positions.add(&caller, &position);
+
+        if should_add_lower {
+            self.add_tick(pool_key, lower_tick)?;
+        } else {
+            self.ticks.update(pool_key, lower_tick.index, lower_tick)?;
+        }
+
+        if should_add_upper {
+            self.add_tick(pool_key, upper_tick)?;
+        } else {
+            self.ticks.update(pool_key, upper_tick.index, upper_tick)?;
+        }
+
+        self.emit_event(InvariantEvent::PositionCreatedEvent {
+            block_timestamp: exec::block_timestamp(),
+            address: msg::source(),
+            pool_key,
+            liquidity_delta,
+            lower_tick: lower_tick.index,
+            upper_tick: upper_tick.index,
+            current_sqrt_price: pool.sqrt_price,
+        });
 
         Ok(position)
     }
@@ -376,12 +384,25 @@ impl Invariant {
         let pool = self.pools.get(&pool_key)?;
 
         let tick = Tick::create(index, &pool, current_timestamp);
-        self.ticks.add(pool_key, index, tick)?;
-
-        self.tickmap
-            .flip(true, index, pool_key.fee_tier.tick_spacing, pool_key);
 
         Ok(tick)
+    }
+
+    fn get_or_create_tick(&mut self, pool_key: PoolKey, index: i32) -> (Tick, bool) {
+        if let Ok(tick) = self.ticks.get(pool_key, index).cloned() {
+            return (tick, false);
+        }
+
+        (self.create_tick(pool_key, index).unwrap(), true)
+    }
+
+    fn add_tick(&mut self, pool_key: PoolKey, tick: Tick) -> Result<(), InvariantError> {
+        self.ticks.add(pool_key, tick.index, tick)?;
+
+        self.tickmap
+            .flip(true, tick.index, pool_key.fee_tier.tick_spacing, pool_key);
+
+        Ok(())
     }
 
     fn remove_tick(&mut self, key: PoolKey, tick: Tick) -> Result<(), InvariantError> {

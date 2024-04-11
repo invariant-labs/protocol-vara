@@ -30,6 +30,8 @@ pub enum InvariantError {
   NotEmptyTickDeinitialization,
   InvalidInitTick,
   InvalidInitSqrtPrice,
+  NotEnoughGasToExecute,
+  NotEnoughGasToUpdate
 }
 
 impl Into<String>for InvariantError {
