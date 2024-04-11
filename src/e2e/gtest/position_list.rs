@@ -887,7 +887,7 @@ fn test_only_owner_can_transfer_position() {
 #[test]
 fn test_multiple_positions_on_same_tick() {
     let sys = System::new();
-    let mut invariant = init_invariant(&sys, Percentage::from_scale(6, 3).0 as u128);
+    let invariant = init_invariant(&sys, Percentage::from_scale(6, 3).0 as u128);
 
     let initial_amount = 10u128.pow(8);
     let (token_x_program, token_y_program) =
@@ -1174,7 +1174,7 @@ fn test_multiple_positions_on_same_tick() {
     assert_eq!(tick_10.liquidity_gross, Liquidity::new(500));
     assert_eq!(tick_10.liquidity_change, Liquidity::new(300));
     assert!(!tick_10.sign);
-    assert!(tick_20_bit);
+    assert!(tick_10_bit);
 
     // Check tick 20
     assert_eq!(tick_20.index, 20);
