@@ -206,6 +206,13 @@ impl Invariant {
         }
 
         if exec::gas_available() < 90000 * 2 {
+            self.transfer_tokens(&pool_key.token_x, None, &program, &caller, x.get())
+                .await
+                .ok();
+            self.transfer_tokens(&pool_key.token_y, None, &program, &caller, y.get())
+                .await
+                .ok();
+
             return Err(InvariantError::NotEnoughGasToUpdate);
         }
 
