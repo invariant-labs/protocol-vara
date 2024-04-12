@@ -718,3 +718,191 @@ fn test_create_position_not_enough_token_y() {
     assert_eq!(user_1_y, 1);
     assert_eq!(&pool_state, &pool_state_before);
 }
+
+#[test]
+fn test_create_position_insufficient_allowance_token_x() {
+    let sys = System::new();
+    sys.init_logger();
+
+    let mut invariant = init_invariant(&sys, 100);
+
+    let initial_balance = 100_000_000;
+    let (token_x_program, token_y_program) =
+        init_tokens_with_mint(&sys, (initial_balance, initial_balance));
+    let token_x = ActorId::from(TOKEN_X_ID);
+    let token_y = ActorId::from(TOKEN_Y_ID);
+
+    let fee_tier = FeeTier::new(Percentage::from_scale(2, 4), 4).unwrap();
+    let init_tick = 0;
+    let init_sqrt_price = calculate_sqrt_price(init_tick).unwrap();
+
+    let res = invariant.send(ADMIN, InvariantAction::AddFeeTier(fee_tier));
+
+    assert!(res.events_eq(vec![TestEvent::empty_invariant_response(ADMIN)]));
+
+    let res = invariant.send(
+        REGULAR_USER_1,
+        InvariantAction::CreatePool {
+            token_0: token_x,
+            token_1: token_y,
+            fee_tier,
+            init_sqrt_price,
+            init_tick,
+        },
+    );
+
+    assert!(res.events_eq(vec![TestEvent::empty_invariant_response(REGULAR_USER_1)]));
+
+    assert!(!token_x_program
+        .send(
+            REGULAR_USER_1,
+            FTAction::Approve {
+                tx_id: None,
+                to: INVARIANT_ID.into(),
+                amount: 3
+            }
+        )
+        .main_failed());
+
+    assert!(!token_y_program
+        .send(
+            REGULAR_USER_1,
+            FTAction::Approve {
+                tx_id: None,
+                to: INVARIANT_ID.into(),
+                amount: initial_balance
+            }
+        )
+        .main_failed());
+
+    let pool_key = PoolKey::new(token_x.into(), token_y.into(), fee_tier).unwrap();
+    let pool_state_before = get_pool(&invariant, token_x, token_y, fee_tier).unwrap();
+
+    let lower_tick_index = -8;
+    let upper_tick_index = 8;
+    let liquidity_delta = Liquidity::from_integer(10_000);
+
+    let _res = invariant.send_and_assert_panic(
+        REGULAR_USER_1,
+        InvariantAction::CreatePosition {
+            pool_key,
+            lower_tick: lower_tick_index,
+            upper_tick: upper_tick_index,
+            liquidity_delta,
+            slippage_limit_lower: pool_state_before.sqrt_price,
+            slippage_limit_upper: pool_state_before.sqrt_price,
+        },
+        InvariantError::TransferError,
+    );
+
+    let pool_state = get_pool(&invariant, token_x, token_y, fee_tier).unwrap();
+
+    get_tick(&invariant, pool_key, lower_tick_index).unwrap_err();
+    get_tick(&invariant, pool_key, upper_tick_index).unwrap_err();
+    get_position(&invariant, REGULAR_USER_1.into(), 0).unwrap_err();
+
+    let user_1_x = balance_of(&token_x_program, REGULAR_USER_1.into());
+    let user_1_y = balance_of(&token_y_program, REGULAR_USER_1.into());
+    let invariant_x = balance_of(&token_x_program, INVARIANT_ID.into());
+    let invariant_y = balance_of(&token_y_program, INVARIANT_ID.into());
+
+    assert_eq!(invariant_x, 0);
+    assert_eq!(invariant_y, 0);
+    assert_eq!(user_1_x, initial_balance);
+    assert_eq!(user_1_y, initial_balance);
+    assert_eq!(&pool_state, &pool_state_before);
+}
+
+#[test]
+fn test_create_position_insufficient_allowance_token_y() {
+    let sys = System::new();
+    sys.init_logger();
+
+    let mut invariant = init_invariant(&sys, 100);
+
+    let initial_balance = 100_000_000;
+    let (token_x_program, token_y_program) =
+        init_tokens_with_mint(&sys, (initial_balance, initial_balance));
+    let token_x = ActorId::from(TOKEN_X_ID);
+    let token_y = ActorId::from(TOKEN_Y_ID);
+
+    let fee_tier = FeeTier::new(Percentage::from_scale(2, 4), 4).unwrap();
+    let init_tick = 0;
+    let init_sqrt_price = calculate_sqrt_price(init_tick).unwrap();
+
+    let res = invariant.send(ADMIN, InvariantAction::AddFeeTier(fee_tier));
+
+    assert!(res.events_eq(vec![TestEvent::empty_invariant_response(ADMIN)]));
+
+    let res = invariant.send(
+        REGULAR_USER_1,
+        InvariantAction::CreatePool {
+            token_0: token_x,
+            token_1: token_y,
+            fee_tier,
+            init_sqrt_price,
+            init_tick,
+        },
+    );
+
+    assert!(res.events_eq(vec![TestEvent::empty_invariant_response(REGULAR_USER_1)]));
+
+    assert!(!token_x_program
+        .send(
+            REGULAR_USER_1,
+            FTAction::Approve {
+                tx_id: None,
+                to: INVARIANT_ID.into(),
+                amount: initial_balance
+            }
+        )
+        .main_failed());
+
+    assert!(!token_y_program
+        .send(
+            REGULAR_USER_1,
+            FTAction::Approve {
+                tx_id: None,
+                to: INVARIANT_ID.into(),
+                amount: 3
+            }
+        )
+        .main_failed());
+
+    let pool_key = PoolKey::new(token_x.into(), token_y.into(), fee_tier).unwrap();
+    let pool_state_before = get_pool(&invariant, token_x, token_y, fee_tier).unwrap();
+
+    let lower_tick_index = -8;
+    let upper_tick_index = 8;
+    let liquidity_delta = Liquidity::from_integer(10_000);
+
+    let _res = invariant.send_and_assert_panic(
+        REGULAR_USER_1,
+        InvariantAction::CreatePosition {
+            pool_key,
+            lower_tick: lower_tick_index,
+            upper_tick: upper_tick_index,
+            liquidity_delta,
+            slippage_limit_lower: pool_state_before.sqrt_price,
+            slippage_limit_upper: pool_state_before.sqrt_price,
+        },
+        InvariantError::TransferError,
+    );
+
+    let pool_state = get_pool(&invariant, token_x, token_y, fee_tier).unwrap();
+
+    get_tick(&invariant, pool_key, lower_tick_index).unwrap_err();
+    get_tick(&invariant, pool_key, upper_tick_index).unwrap_err();
+    get_position(&invariant, REGULAR_USER_1.into(), 0).unwrap_err();
+
+    let user_1_x = balance_of(&token_x_program, REGULAR_USER_1.into());
+    let user_1_y = balance_of(&token_y_program, REGULAR_USER_1.into());
+    let invariant_x = balance_of(&token_x_program, INVARIANT_ID.into());
+    let invariant_y = balance_of(&token_y_program, INVARIANT_ID.into());
+
+    assert_eq!(invariant_x, 0);
+    assert_eq!(invariant_y, 0);
+    assert_eq!(user_1_x, initial_balance);
+    assert_eq!(user_1_y, initial_balance);
+    assert_eq!(&pool_state, &pool_state_before);
+}
