@@ -1,7 +1,7 @@
 use crate::test_helpers::gtest::*;
+use decimal::*;
 use gtest::*;
 use math::percentage::Percentage;
-use decimal::*;
 
 pub fn init_slippage_invariant_and_tokens(sys: &System) -> (Program<'_>, Program<'_>, Program<'_>) {
     let protocol_fee = Percentage::from_scale(1, 2);

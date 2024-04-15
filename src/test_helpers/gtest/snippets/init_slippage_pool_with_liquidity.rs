@@ -6,8 +6,8 @@ use gstd::{prelude::*, ActorId};
 use gtest::*;
 use io::*;
 use math::{
-    liquidity::Liquidity, percentage::Percentage, sqrt_price::calculate_sqrt_price,
-    token_amount::TokenAmount, fee_growth::FeeGrowth
+    fee_growth::FeeGrowth, liquidity::Liquidity, percentage::Percentage,
+    sqrt_price::calculate_sqrt_price, token_amount::TokenAmount,
 };
 
 pub fn init_slippage_pool_with_liquidity(
@@ -18,7 +18,7 @@ pub fn init_slippage_pool_with_liquidity(
 ) -> PoolKey {
     let token_0 = ActorId::from(TOKEN_X_ID);
     let token_1 = ActorId::from(TOKEN_Y_ID);
-    
+
     let fee_tier = FeeTier {
         fee: Percentage::from_scale(6, 3),
         tick_spacing: 10,
@@ -26,7 +26,7 @@ pub fn init_slippage_pool_with_liquidity(
 
     let res = invariant.send(ADMIN, InvariantAction::AddFeeTier(fee_tier));
     assert!(res.events_eq(vec![TestEvent::empty_invariant_response(ADMIN)]));
-    
+
     let init_tick = 0;
     let init_sqrt_price = calculate_sqrt_price(init_tick).unwrap();
 
@@ -81,14 +81,17 @@ pub fn init_slippage_pool_with_liquidity(
     let slippage_limit_lower = pool_before.sqrt_price;
     let slippage_limit_upper = pool_before.sqrt_price;
 
-    let res = invariant.send(REGULAR_USER_1, InvariantAction::CreatePosition {
-        pool_key,
-        lower_tick,
-        upper_tick,
-        liquidity_delta: liquidity,
-        slippage_limit_lower,
-        slippage_limit_upper,
-    });
+    let res = invariant.send(
+        REGULAR_USER_1,
+        InvariantAction::CreatePosition {
+            pool_key,
+            lower_tick,
+            upper_tick,
+            liquidity_delta: liquidity,
+            slippage_limit_lower,
+            slippage_limit_upper,
+        },
+    );
 
     assert!(res.events_eq(vec![
         TestEvent::invariant_response(

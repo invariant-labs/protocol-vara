@@ -63,25 +63,6 @@ pub fn init_basic_swap(
 
     let pool_after = get_pool(&invariant, token_x, token_y, fee_tier).unwrap();
 
-    assert_eq!(pool_after.liquidity, pool_before.liquidity);
-    assert_eq!(pool_after.current_tick_index, lower_tick);
-    assert_ne!(pool_after.sqrt_price, pool_before.sqrt_price);
-
-    assert_eq!(balance_of(&token_x_program, REGULAR_USER_2), 0);
-    assert_eq!(balance_of(&token_y_program, REGULAR_USER_2), 993);
-
-    assert_eq!(balance_of(&token_x_program, INVARIANT_ID), 1500);
-    assert_eq!(balance_of(&token_y_program, INVARIANT_ID), 7);
-
-    assert_eq!(
-        pool_after.fee_growth_global_x,
-        FeeGrowth::new(50000000000000000000000)
-    );
-    assert_eq!(pool_after.fee_growth_global_y, FeeGrowth::new(0));
-
-    assert_eq!(pool_after.fee_protocol_token_x, TokenAmount::new(1));
-    assert_eq!(pool_after.fee_protocol_token_y, TokenAmount::new(0));
-
     assert!(res.events_eq(vec![
         TestEvent::invariant_response(
             REGULAR_USER_2,
@@ -110,4 +91,23 @@ pub fn init_basic_swap(
             })
         )
     ]));
+
+    assert_eq!(pool_after.liquidity, pool_before.liquidity);
+    assert_eq!(pool_after.current_tick_index, lower_tick);
+    assert_ne!(pool_after.sqrt_price, pool_before.sqrt_price);
+
+    assert_eq!(balance_of(&token_x_program, REGULAR_USER_2), 0);
+    assert_eq!(balance_of(&token_y_program, REGULAR_USER_2), 993);
+
+    assert_eq!(balance_of(&token_x_program, INVARIANT_ID), 1500);
+    assert_eq!(balance_of(&token_y_program, INVARIANT_ID), 7);
+
+    assert_eq!(
+        pool_after.fee_growth_global_x,
+        FeeGrowth::new(50000000000000000000000)
+    );
+    assert_eq!(pool_after.fee_growth_global_y, FeeGrowth::new(0));
+
+    assert_eq!(pool_after.fee_protocol_token_x, TokenAmount::new(1));
+    assert_eq!(pool_after.fee_protocol_token_y, TokenAmount::new(0));
 }

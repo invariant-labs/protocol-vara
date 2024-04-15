@@ -199,8 +199,7 @@ fn test_limits_big_deposit_and_swaps() {
     let mint_amount = 2u128.pow(76) - 1;
 
     let invariant = init_invariant(&sys, Percentage::from_scale(1, 2));
-    let (token_x_program, token_y_program) =
-        init_tokens_with_mint(&sys, (u128::MAX, u128::MAX));
+    let (token_x_program, token_y_program) = init_tokens_with_mint(&sys, (u128::MAX, u128::MAX));
 
     increase_allowance(&token_x_program, REGULAR_USER_1, INVARIANT_ID, u128::MAX).assert_success();
     increase_allowance(&token_y_program, REGULAR_USER_1, INVARIANT_ID, u128::MAX).assert_success();
@@ -314,9 +313,11 @@ fn test_limits_full_range_with_max_liquidity() {
         init_tokens_with_mint(&sys, (mint_amount, mint_amount));
     let invariant = init_invariant(&sys, Percentage::from_scale(1, 2));
 
-    increase_allowance(&token_x_program, REGULAR_USER_1, INVARIANT_ID, mint_amount).assert_success();
-    increase_allowance(&token_y_program, REGULAR_USER_1, INVARIANT_ID, mint_amount).assert_success();
-    
+    increase_allowance(&token_x_program, REGULAR_USER_1, INVARIANT_ID, mint_amount)
+        .assert_success();
+    increase_allowance(&token_y_program, REGULAR_USER_1, INVARIANT_ID, mint_amount)
+        .assert_success();
+
     let fee_tier = FeeTier::new(Percentage::from_scale(6, 3), 1).unwrap();
     invariant
         .send(ADMIN, InvariantAction::AddFeeTier(fee_tier))
@@ -346,17 +347,19 @@ fn test_limits_full_range_with_max_liquidity() {
     let liquidity_delta = Liquidity::new(2u128.pow(109) - 1);
     let slippage_limit_lower = pool.sqrt_price;
     let slippage_limit_upper = pool.sqrt_price;
-    invariant.send(
-        REGULAR_USER_1,
-        InvariantAction::CreatePosition {
-            pool_key,
-            lower_tick: -MAX_TICK,
-            upper_tick: MAX_TICK,
-            liquidity_delta,
-            slippage_limit_lower,
-            slippage_limit_upper,
-        },
-    ).assert_success();
+    invariant
+        .send(
+            REGULAR_USER_1,
+            InvariantAction::CreatePosition {
+                pool_key,
+                lower_tick: -MAX_TICK,
+                upper_tick: MAX_TICK,
+                liquidity_delta,
+                slippage_limit_lower,
+                slippage_limit_upper,
+            },
+        )
+        .assert_success();
 
     let contract_amount_x = balance_of(&token_x_program, INVARIANT_ID);
     let contract_amount_y = balance_of(&token_y_program, INVARIANT_ID);

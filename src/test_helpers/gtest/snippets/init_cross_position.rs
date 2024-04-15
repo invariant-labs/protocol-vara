@@ -1,10 +1,10 @@
 use crate::test_helpers::gtest::*;
-use gstd::ActorId;
-use io::*;
-use math::{percentage::Percentage, liquidity::Liquidity};
 use contracts::*;
-use gtest::*;
 use decimal::*;
+use gstd::ActorId;
+use gtest::*;
+use io::*;
+use math::{liquidity::Liquidity, percentage::Percentage};
 
 pub fn init_cross_position(
     invariant: &Program,
@@ -32,7 +32,7 @@ pub fn init_cross_position(
 
     let slippage_limit_lower = pool_before.sqrt_price;
     let slippage_limit_upper = pool_before.sqrt_price;
-    
+
     invariant
         .send(
             REGULAR_USER_1,
@@ -46,7 +46,7 @@ pub fn init_cross_position(
             },
         )
         .assert_success();
-    
+
     let pool_after = get_pool(invariant, token_x, token_y, fee_tier).unwrap();
 
     assert_eq!(pool_after.liquidity, pool_before.liquidity);
