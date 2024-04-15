@@ -10,7 +10,6 @@ use core::sync::atomic::{AtomicU64, Ordering};
 pub use crate::test_helpers::utils::pools_are_identical_no_timestamp;
 
 pub type ProgramId = [u8; 32];
-static FILE_BACKUP_NR: AtomicU64 = AtomicU64::new(0);
 
 pub trait InvariantResult {
     fn emitted_events(&self) -> Vec<TestEvent>;
@@ -161,12 +160,8 @@ impl InvariantResult for RunResult {
 impl RevertibleProgram for Program<'_> {
     #[track_caller]
     fn send_and_assert_panic<'a>(&'a mut self, from: u64, payload: impl Codec, error: InvariantError)->RunResult {
-        // state is reverted manually to match the behavior of the runtime
-        let path = std::format!("./target/tmp/invariant_memory_dump{}", FILE_BACKUP_NR.fetch_add(1, Ordering::Relaxed));
-        self.save_memory_dump(path.clone());
         let res = self.send(from, payload);
         res.assert_panicked_with(error);
-        self.load_memory_dump(path);
         res
     }
 }

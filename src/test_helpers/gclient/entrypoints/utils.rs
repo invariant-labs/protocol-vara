@@ -42,4 +42,3 @@ pub fn get_new_token(mut last_token_id: TokenId) -> TokenId {
     }
     last_token_id
 }
-

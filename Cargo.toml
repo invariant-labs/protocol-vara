@@ -27,11 +27,13 @@ tokio.workspace = true
 fungible-token.workspace = true
 fungible-token-io.workspace = true
 fungible-token-state.workspace = true
+gstd = {workspace=true, features=["debug"]}
 
 [features]
 binary-vendor = []
 wasm-opt = ["gear-wasm-builder/wasm-opt"]
 default = ["binary-vendor", "wasm-opt"]
+debug = ["gstd/debug"]
 
 [workspace]
 members = ["state", "xtask"]

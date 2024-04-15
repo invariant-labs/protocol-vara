@@ -2,7 +2,7 @@
 
 use gmeta::{In, InOut, Metadata};
 use gstd::{Decode, Encode, ActorId, TypeInfo, Vec};
-use math::types::{sqrt_price::SqrtPrice, liquidity::Liquidity};
+use math::{token_amount::TokenAmount, types::{liquidity::Liquidity, sqrt_price::SqrtPrice}};
 pub struct InvariantMetadata;
 use contracts::*;
 
@@ -54,7 +54,14 @@ pub enum InvariantAction {
         liquidity_delta: Liquidity,
         slippage_limit_lower: SqrtPrice,
         slippage_limit_upper: SqrtPrice,
-    }
+    },
+    RemovePosition {
+        position_id: u32
+    },
+    TransferPosition{
+        index: u32,
+        receiver: ActorId
+    },
 }
 
 #[derive(Clone, Decode, Encode, Debug, PartialEq, Eq, TypeInfo)]
@@ -72,6 +79,19 @@ pub enum InvariantEvent {
         upper_tick: i32,
         current_sqrt_price: SqrtPrice,
     },
+    PositionRemovedReturn(
+        TokenAmount,
+        TokenAmount
+    ),
+    PositionRemovedEvent{
+        block_timestamp: u64,
+        caller: ActorId,
+        pool_key: PoolKey,
+        liquidity: Liquidity,
+        lower_tick_index: i32,
+        upper_tick_index: i32,
+        sqrt_price: SqrtPrice
+    },
     ActionFailed(InvariantError),
 }
 
@@ -87,6 +107,7 @@ pub enum InvariantStateQuery {
     GetPosition(ActorId, u32),
     GetTick(PoolKey, i32),
     IsTickInitialized(PoolKey, i32),
+    GetAllPositions(ActorId),
 }
 
 #[derive(Encode, Decode, Clone, PartialEq, Eq, Debug, TypeInfo)]
@@ -99,6 +120,7 @@ pub enum InvariantStateReply {
     Pool(Pool),
     Pools(Vec<PoolKey>),
     Position(Position),
+    Positions(Vec<Position>),
     Tick(Tick),
     IsTickInitialized(bool),
     QueryFailed(InvariantError),
