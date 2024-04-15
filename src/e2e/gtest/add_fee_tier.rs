@@ -13,7 +13,7 @@ fn test_add_multiple_fee_tiers() {
     let sys = System::new();
     sys.init_logger();
 
-    let mut invariant = init_invariant(&sys, Percentage(100));
+    let invariant = init_invariant(&sys, Percentage(100));
 
     let first_fee_tier = FeeTier::new(Percentage::from_scale(2, 4), 1).unwrap();
     let second_fee_tier = FeeTier::new(Percentage::from_scale(2, 4), 2).unwrap();

@@ -16,11 +16,14 @@ pub trait InvariantResult {
     #[track_caller]
     #[must_use]
     fn events_eq(&self, expected: Vec<TestEvent>) -> bool;
+    #[track_caller]
+    fn assert_success(&self);
 }
 pub trait RevertibleProgram {
     #[track_caller]
     fn send_and_assert_panic<'a>(&'a mut self, from: u64, payload: impl Codec, error: InvariantError)->RunResult;
 }
+
 #[derive(Debug, Clone, PartialEq, Eq, Encode, Decode, TypeInfo)]
 #[codec(crate = gstd::codec)]
 #[scale_info(crate = gstd::scale_info)]
@@ -81,11 +84,7 @@ impl InvariantResult for RunResult {
     #[track_caller]
     #[must_use]
     fn events_eq(&self, expected_events: Vec<TestEvent>) -> bool {
-        if self.main_failed() {
-            self.assert_panicked_with(
-                "message used to get the actual error message in case of an unexpected panic",
-            )
-        }
+        self.assert_success();
 
         let events = self.emitted_events();
 
@@ -154,7 +153,14 @@ impl InvariantResult for RunResult {
 
         false
     }
-
+    #[track_caller]
+    fn assert_success(&self) {
+        if self.main_failed() {
+            self.assert_panicked_with(
+                "message used to get the actual error message in case of an unexpected panic"
+            );
+        }
+    }
 }
 
 impl RevertibleProgram for Program<'_> {
