@@ -36,7 +36,7 @@ pub struct Invariant {
 }
 
 impl Invariant {
-    pub fn change_protocol_fee(&mut self, protocol_fee: u128) -> Result<u128, InvariantError> {
+    pub fn change_protocol_fee(&mut self, protocol_fee: Percentage) -> Result<Percentage, InvariantError> {
         if !self.is_caller_admin() {
             return Err(InvariantError::NotAdmin);
         }
@@ -45,7 +45,7 @@ impl Invariant {
         Ok(self.config.protocol_fee)
     }
 
-    pub fn get_protocol_fee(&self) -> u128 {
+    pub fn get_protocol_fee(&self) -> Percentage {
         self.config.protocol_fee
     }
 

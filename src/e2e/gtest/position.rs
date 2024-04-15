@@ -15,7 +15,7 @@ fn test_create_position() {
     let sys = System::new();
     sys.init_logger();
 
-    let invariant = init_invariant(&sys, 100);
+    let invariant = init_invariant(&sys, Percentage(100));
 
     let (token_0_program, token_1_program) = init_tokens_with_mint(&sys, (500, 500));
     let token_0 = ActorId::from(TOKEN_X_ID);
@@ -114,7 +114,7 @@ fn test_position_below_current_tick() {
     let sys = System::new();
     sys.init_logger();
 
-    let invariant = init_invariant(&sys, 100);
+    let invariant = init_invariant(&sys, Percentage(100));
 
     let initial_balance = 10_000_000_000;
     let (token_x_program, token_y_program) =
@@ -266,7 +266,7 @@ fn test_position_within_current_tick() {
     let sys = System::new();
     sys.init_logger();
 
-    let invariant = init_invariant(&sys, 100);
+    let invariant = init_invariant(&sys, Percentage(100));
 
     let initial_balance = 100_000_000;
     let (token_x_program, token_y_program) =
@@ -390,7 +390,7 @@ fn test_position_above_current_tick() {
     let sys = System::new();
     sys.init_logger();
 
-    let invariant = init_invariant(&sys, 100);
+    let invariant = init_invariant(&sys, Percentage(100));
 
     let initial_balance = 100_000_000;
     let (token_x_program, token_y_program) =
@@ -538,7 +538,7 @@ fn test_create_position_not_enough_token_x() {
     let sys = System::new();
     sys.init_logger();
 
-    let mut invariant = init_invariant(&sys, 100);
+    let mut invariant = init_invariant(&sys, Percentage(100));
 
     let initial_balance = 100_000_000;
     let (token_x_program, token_y_program) = init_tokens_with_mint(&sys, (1, initial_balance));
@@ -631,7 +631,7 @@ fn test_create_position_not_enough_token_y() {
     let sys = System::new();
     sys.init_logger();
 
-    let mut invariant = init_invariant(&sys, 100);
+    let mut invariant = init_invariant(&sys, Percentage(100));
 
     let initial_balance = 100_000_000;
     let (token_x_program, token_y_program) = init_tokens_with_mint(&sys, (initial_balance, 1));
@@ -724,7 +724,7 @@ fn test_create_position_insufficient_allowance_token_x() {
     let sys = System::new();
     sys.init_logger();
 
-    let mut invariant = init_invariant(&sys, 100);
+    let mut invariant = init_invariant(&sys, Percentage(100));
 
     let initial_balance = 100_000_000;
     let (token_x_program, token_y_program) =
@@ -818,7 +818,7 @@ fn test_create_position_insufficient_allowance_token_y() {
     let sys = System::new();
     sys.init_logger();
 
-    let mut invariant = init_invariant(&sys, 100);
+    let mut invariant = init_invariant(&sys, Percentage(100));
 
     let initial_balance = 100_000_000;
     let (token_x_program, token_y_program) =

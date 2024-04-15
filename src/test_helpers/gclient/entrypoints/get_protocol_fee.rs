@@ -2,12 +2,13 @@ use crate::test_helpers::gclient::utils::*;
 use gclient::GearApi;
 use gstd::prelude::*;
 use io::*;
+use math::percentage::Percentage;
 
 #[allow(dead_code)]
 pub async fn get_protocol_fee(
     api: &GearApi,
     invariant: ProgramId,
-)-> u128{
+)-> Percentage {
     let payload = InvariantStateQuery::GetProtocolFee.encode();
     let state = api
         .read_state::<InvariantStateReply>(invariant.into(), payload)

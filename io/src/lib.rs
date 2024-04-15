@@ -2,7 +2,7 @@
 
 use gmeta::{In, InOut, Metadata};
 use gstd::{Decode, Encode, ActorId, TypeInfo, Vec};
-use math::{token_amount::TokenAmount, types::{liquidity::Liquidity, sqrt_price::SqrtPrice}};
+use math::{percentage::Percentage, token_amount::TokenAmount, types::{liquidity::Liquidity, sqrt_price::SqrtPrice}};
 pub struct InvariantMetadata;
 use contracts::*;
 
@@ -14,8 +14,6 @@ impl Metadata for InvariantMetadata {
     type Signal = ();
     type State = InOut<InvariantStateQuery, InvariantStateReply>;
 }
-
-
 
 #[derive(Decode, Encode, TypeInfo)]
 #[codec(crate = gstd::codec)]
@@ -29,14 +27,14 @@ pub struct InitInvariant {
 #[scale_info(crate = gstd::scale_info)]
 pub struct InvariantConfig {
     pub admin: ActorId,
-    pub protocol_fee: u128,
+    pub protocol_fee: Percentage,
 }
 
 #[derive(Clone, Decode, Encode, Debug, TypeInfo)]
 #[codec(crate = gstd::codec)]
 #[scale_info(crate = gstd::scale_info)]
 pub enum InvariantAction {
-    ChangeProtocolFee(u128),
+    ChangeProtocolFee(Percentage),
     AddFeeTier(FeeTier),
     RemoveFeeTier(FeeTier),
     CreatePool{
@@ -68,7 +66,7 @@ pub enum InvariantAction {
 #[codec(crate = gstd::codec)]
 #[scale_info(crate = gstd::scale_info)]
 pub enum InvariantEvent {
-    ProtocolFeeChanged(u128),
+    ProtocolFeeChanged(Percentage),
     PositionCreatedReturn(Position),
     PositionCreatedEvent{
         block_timestamp: u64,
@@ -114,7 +112,7 @@ pub enum InvariantStateQuery {
 #[codec(crate = gstd::codec)]
 #[scale_info(crate = gstd::scale_info)]
 pub enum InvariantStateReply {
-    ProtocolFee(u128),
+    ProtocolFee(Percentage),
     QueriedFeeTiers(Vec<FeeTier>),
     FeeTierExist(bool),
     Pool(Pool),
