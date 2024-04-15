@@ -355,6 +355,10 @@ impl Invariant {
         by_amount_in: bool,
         sqrt_price_limit: SqrtPrice,
     ) -> Result<CalculateSwapResult, InvariantError> {
+        if exec::gas_available() < 25000000 * 2 {
+            return Err(InvariantError::NotEnoughGasToExecute);
+        }
+
         let caller = msg::source();
         let program = exec::program_id();
 
@@ -397,16 +401,31 @@ impl Invariant {
                 calculate_swap_result.amount_in.get(),
             )
             .await?;
-            gstd::debug!("Transfered from");
-            self.transfer_tokens(
-                &pool_key.token_y,
-                None,
-                &program,
-                &caller,
-                calculate_swap_result.amount_out.get(),
-            )
-            .await?;
-            gstd::debug!("Transfered to");
+
+            let res = self
+                .transfer_tokens(
+                    &pool_key.token_y,
+                    None,
+                    &program,
+                    &caller,
+                    calculate_swap_result.amount_out.get(),
+                )
+                .await;
+
+            if let Err(err) = res {
+                self.transfer_tokens(
+                    &pool_key.token_x,
+                    None,
+                    &program,
+                    &caller,
+                    calculate_swap_result.amount_in.get(),
+                )
+                .await
+                .unwrap();
+
+                return Err(err);
+            }
+
             update(self)?;
         } else {
             self.transfer_tokens(
@@ -417,14 +436,29 @@ impl Invariant {
                 calculate_swap_result.amount_in.get(),
             )
             .await?;
-            self.transfer_tokens(
+            let res = self.transfer_tokens(
                 &pool_key.token_x,
                 None,
                 &program,
                 &caller,
                 calculate_swap_result.amount_out.get(),
             )
-            .await?;
+            .await;
+            
+            if let Err(err) = res {
+                self.transfer_tokens(
+                    &pool_key.token_y,
+                    None,
+                    &program,
+                    &caller,
+                    calculate_swap_result.amount_in.get(),
+                )
+                .await
+                .unwrap();
+
+                return Err(err);
+            }
+
             update(self)?;
         };
 
