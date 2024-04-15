@@ -4,7 +4,6 @@ extern crate alloc;
 mod e2e;
 #[cfg(test)]
 mod test_helpers;
-
 use contracts::{
     errors::InvariantError, FeeTier, FeeTiers, Pool, PoolKey, PoolKeys, Pools, Position, Positions,
     Tick, Tickmap, Ticks,
@@ -19,9 +18,11 @@ use gstd::{
 };
 use io::*;
 use math::{
-    check_tick, liquidity::Liquidity, percentage::Percentage, sqrt_price::SqrtPrice,
-    token_amount::TokenAmount,
+    check_tick, compute_swap_step, get_tick_at_sqrt_price, liquidity::Liquidity,
+    percentage::Percentage, sqrt_price::SqrtPrice, token_amount::TokenAmount, MAX_SQRT_PRICE,
+    MIN_SQRT_PRICE,
 };
+use traceable_result::*;
 
 #[derive(Default)]
 pub struct Invariant {
@@ -36,7 +37,10 @@ pub struct Invariant {
 }
 
 impl Invariant {
-    pub fn change_protocol_fee(&mut self, protocol_fee: Percentage) -> Result<Percentage, InvariantError> {
+    pub fn change_protocol_fee(
+        &mut self,
+        protocol_fee: Percentage,
+    ) -> Result<Percentage, InvariantError> {
         if !self.is_caller_admin() {
             return Err(InvariantError::NotAdmin);
         }
@@ -343,6 +347,102 @@ impl Invariant {
         self.positions.get_all(&owner_id)
     }
 
+    pub async fn swap(
+        &mut self,
+        pool_key: PoolKey,
+        x_to_y: bool,
+        amount: TokenAmount,
+        by_amount_in: bool,
+        sqrt_price_limit: SqrtPrice,
+    ) -> Result<CalculateSwapResult, InvariantError> {
+        let caller = msg::source();
+        let program = exec::program_id();
+
+        let calculate_swap_result =
+            self.calculate_swap(pool_key, x_to_y, amount, by_amount_in, sqrt_price_limit)?;
+
+        let mut crossed_tick_indexes: Vec<i32> = vec![];
+
+        for tick in calculate_swap_result.ticks.iter() {
+            crossed_tick_indexes.push(tick.index);
+        }
+
+        if !crossed_tick_indexes.is_empty() {
+            self.emit_event(InvariantEvent::CrossTickEvent {
+                timestamp: exec::block_timestamp(),
+                address: caller,
+                pool: pool_key,
+                indexes: crossed_tick_indexes,
+            });
+        }
+
+        let update = |invariant: &mut Self| {
+            for tick in calculate_swap_result.ticks.iter() {
+                invariant.ticks.update(pool_key, tick.index, *tick)?;
+            }
+
+            invariant
+                .pools
+                .update(&pool_key, &calculate_swap_result.pool)?;
+
+            Ok::<(), InvariantError>(())
+        };
+
+        if x_to_y {
+            self.transfer_tokens(
+                &pool_key.token_x,
+                None,
+                &caller,
+                &program,
+                calculate_swap_result.amount_in.get(),
+            )
+            .await?;
+            gstd::debug!("Transfered from");
+            self.transfer_tokens(
+                &pool_key.token_y,
+                None,
+                &program,
+                &caller,
+                calculate_swap_result.amount_out.get(),
+            )
+            .await?;
+            gstd::debug!("Transfered to");
+            update(self)?;
+        } else {
+            self.transfer_tokens(
+                &pool_key.token_y,
+                None,
+                &caller,
+                &program,
+                calculate_swap_result.amount_in.get(),
+            )
+            .await?;
+            self.transfer_tokens(
+                &pool_key.token_x,
+                None,
+                &program,
+                &caller,
+                calculate_swap_result.amount_out.get(),
+            )
+            .await?;
+            update(self)?;
+        };
+
+        self.emit_event(InvariantEvent::SwapEvent {
+            timestamp: exec::block_timestamp(),
+            address: caller,
+            pool: pool_key,
+            amount_in: calculate_swap_result.amount_in,
+            amount_out: calculate_swap_result.amount_out,
+            fee: calculate_swap_result.fee,
+            start_sqrt_price: calculate_swap_result.start_sqrt_price,
+            target_sqrt_price: calculate_swap_result.target_sqrt_price,
+            x_to_y,
+        });
+
+        Ok(calculate_swap_result)
+    }
+
     async fn transfer_tokens(
         &mut self,
         token_address: &ActorId,
@@ -378,6 +478,125 @@ impl Invariant {
             },
             Err(_ft_error) => return Err(InvariantError::TransferError),
         }
+    }
+
+    fn calculate_swap(
+        &self,
+        pool_key: PoolKey,
+        x_to_y: bool,
+        amount: TokenAmount,
+        by_amount_in: bool,
+        sqrt_price_limit: SqrtPrice,
+    ) -> Result<CalculateSwapResult, InvariantError> {
+        let current_timestamp = exec::block_timestamp();
+
+        if amount.is_zero() {
+            return Err(InvariantError::AmountIsZero);
+        }
+
+        let mut ticks: Vec<Tick> = vec![];
+
+        let mut pool = self.pools.get(&pool_key)?;
+
+        if x_to_y {
+            if pool.sqrt_price <= sqrt_price_limit
+                || sqrt_price_limit > SqrtPrice::new(MAX_SQRT_PRICE)
+            {
+                return Err(InvariantError::WrongLimit);
+            }
+        } else if pool.sqrt_price >= sqrt_price_limit
+            || sqrt_price_limit < SqrtPrice::new(MIN_SQRT_PRICE)
+        {
+            return Err(InvariantError::WrongLimit);
+        }
+
+        let mut remaining_amount = amount;
+
+        let mut total_amount_in = TokenAmount(0);
+        let mut total_amount_out = TokenAmount(0);
+
+        let event_start_sqrt_price = pool.sqrt_price;
+        let mut event_fee_amount = TokenAmount(0);
+
+        while !remaining_amount.is_zero() {
+            let (swap_limit, limiting_tick) = self.tickmap.get_closer_limit(
+                sqrt_price_limit,
+                x_to_y,
+                pool.current_tick_index,
+                pool_key.fee_tier.tick_spacing,
+                pool_key,
+            );
+            let result = unwrap!(compute_swap_step(
+                pool.sqrt_price,
+                swap_limit,
+                pool.liquidity,
+                remaining_amount,
+                by_amount_in,
+                pool_key.fee_tier.fee,
+            ));
+
+            // make remaining amount smaller
+            if by_amount_in {
+                remaining_amount -= result.amount_in + result.fee_amount;
+            } else {
+                remaining_amount -= result.amount_out;
+            }
+
+            unwrap!(pool.add_fee(result.fee_amount, x_to_y, self.config.protocol_fee));
+            event_fee_amount += result.fee_amount;
+
+            pool.sqrt_price = result.next_sqrt_price;
+
+            total_amount_in += result.amount_in + result.fee_amount;
+            total_amount_out += result.amount_out;
+
+            // Fail if price would go over swap limit
+            if pool.sqrt_price == sqrt_price_limit && !remaining_amount.is_zero() {
+                return Err(InvariantError::PriceLimitReached);
+            }
+
+            if let Some((tick_index, is_initialized)) = limiting_tick {
+                if is_initialized {
+                    let mut tick = self.ticks.get(pool_key, tick_index).cloned()?;
+
+                    let (amount_to_add, has_crossed) = pool.cross_tick(
+                        result,
+                        swap_limit,
+                        &mut tick,
+                        &mut remaining_amount,
+                        by_amount_in,
+                        x_to_y,
+                        current_timestamp,
+                        self.config.protocol_fee,
+                        pool_key.fee_tier,
+                    );
+
+                    total_amount_in += amount_to_add;
+                    if has_crossed {
+                        ticks.push(tick);
+                    }
+                }
+            } else {
+                pool.current_tick_index = unwrap!(get_tick_at_sqrt_price(
+                    result.next_sqrt_price,
+                    pool_key.fee_tier.tick_spacing
+                ));
+            }
+        }
+
+        if total_amount_out.get() == 0 {
+            return Err(InvariantError::NoGainSwap);
+        }
+
+        Ok(CalculateSwapResult {
+            amount_in: total_amount_in,
+            amount_out: total_amount_out,
+            start_sqrt_price: event_start_sqrt_price,
+            target_sqrt_price: pool.sqrt_price,
+            fee: event_fee_amount,
+            pool,
+            ticks,
+        })
     }
 
     fn generate_transaction_id(&mut self) -> u64 {
@@ -551,6 +770,25 @@ async fn main() {
         InvariantAction::TransferPosition { index, receiver } => {
             match invariant.transfer_position(index, &receiver) {
                 Ok(_) => {}
+                Err(e) => {
+                    reply_with_err(e);
+                }
+            }
+        }
+        InvariantAction::Swap {
+            pool_key,
+            x_to_y,
+            amount,
+            by_amount_in,
+            sqrt_price_limit,
+        } => {
+            match invariant
+                .swap(pool_key, x_to_y, amount, by_amount_in, sqrt_price_limit)
+                .await
+            {
+                Ok(result) => {
+                    reply(InvariantEvent::SwapReturn(result), 0).expect("Unable to reply");
+                }
                 Err(e) => {
                     reply_with_err(e);
                 }

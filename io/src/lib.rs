@@ -1,10 +1,15 @@
 #![no_std]
 
-use gmeta::{In, InOut, Metadata};
-use gstd::{Decode, Encode, ActorId, TypeInfo, Vec};
-use math::{percentage::Percentage, token_amount::TokenAmount, types::{liquidity::Liquidity, sqrt_price::SqrtPrice}};
-pub struct InvariantMetadata;
 use contracts::*;
+use gmeta::{In, InOut, Metadata};
+use gstd::{ActorId, Decode, Encode, TypeInfo, Vec};
+use math::{
+    percentage::Percentage,
+    token_amount::TokenAmount,
+    types::{liquidity::Liquidity, sqrt_price::SqrtPrice},
+};
+
+pub struct InvariantMetadata;
 
 impl Metadata for InvariantMetadata {
     type Init = In<InitInvariant>;
@@ -37,7 +42,7 @@ pub enum InvariantAction {
     ChangeProtocolFee(Percentage),
     AddFeeTier(FeeTier),
     RemoveFeeTier(FeeTier),
-    CreatePool{
+    CreatePool {
         token_0: ActorId,
         token_1: ActorId,
         fee_tier: FeeTier,
@@ -54,11 +59,18 @@ pub enum InvariantAction {
         slippage_limit_upper: SqrtPrice,
     },
     RemovePosition {
-        position_id: u32
+        position_id: u32,
     },
-    TransferPosition{
+    TransferPosition {
         index: u32,
-        receiver: ActorId
+        receiver: ActorId,
+    },
+    Swap {
+        pool_key: PoolKey,
+        x_to_y: bool,
+        amount: TokenAmount,
+        by_amount_in: bool,
+        sqrt_price_limit: SqrtPrice,
     },
 }
 
@@ -68,7 +80,7 @@ pub enum InvariantAction {
 pub enum InvariantEvent {
     ProtocolFeeChanged(Percentage),
     PositionCreatedReturn(Position),
-    PositionCreatedEvent{
+    PositionCreatedEvent {
         block_timestamp: u64,
         address: ActorId,
         pool_key: PoolKey,
@@ -77,19 +89,34 @@ pub enum InvariantEvent {
         upper_tick: i32,
         current_sqrt_price: SqrtPrice,
     },
-    PositionRemovedReturn(
-        TokenAmount,
-        TokenAmount
-    ),
-    PositionRemovedEvent{
+    PositionRemovedReturn(TokenAmount, TokenAmount),
+    PositionRemovedEvent {
         block_timestamp: u64,
         caller: ActorId,
         pool_key: PoolKey,
         liquidity: Liquidity,
         lower_tick_index: i32,
         upper_tick_index: i32,
-        sqrt_price: SqrtPrice
+        sqrt_price: SqrtPrice,
     },
+    CrossTickEvent {
+        timestamp: u64,
+        address: ActorId,
+        pool: PoolKey,
+        indexes: Vec<i32>,
+    },
+    SwapEvent {
+        timestamp: u64,
+        address: ActorId,
+        pool: PoolKey,
+        amount_in: TokenAmount,
+        amount_out: TokenAmount,
+        fee: TokenAmount,
+        start_sqrt_price: SqrtPrice,
+        target_sqrt_price: SqrtPrice,
+        x_to_y: bool,
+    },
+    SwapReturn(CalculateSwapResult),
     ActionFailed(InvariantError),
 }
 
@@ -124,3 +151,23 @@ pub enum InvariantStateReply {
     QueryFailed(InvariantError),
 }
 
+#[derive(Decode, Default, Encode, Clone, Debug, PartialEq, Eq, TypeInfo)]
+#[codec(crate = gstd::codec)]
+#[scale_info(crate = gstd::scale_info)]
+pub struct CalculateSwapResult {
+    pub amount_in: TokenAmount,
+    pub amount_out: TokenAmount,
+    pub start_sqrt_price: SqrtPrice,
+    pub target_sqrt_price: SqrtPrice,
+    pub fee: TokenAmount,
+    pub pool: Pool,
+    pub ticks: Vec<Tick>,
+}
+
+#[derive(Decode, Default, Encode, Clone, Debug, PartialEq, Eq, TypeInfo)]
+#[codec(crate = gstd::codec)]
+#[scale_info(crate = gstd::scale_info)]
+pub struct SwapHop {
+    pub pool_key: PoolKey,
+    pub x_to_y: bool,
+}
