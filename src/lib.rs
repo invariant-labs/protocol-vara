@@ -356,10 +356,6 @@ impl Invariant {
         by_amount_in: bool,
         sqrt_price_limit: SqrtPrice,
     ) -> Result<CalculateSwapResult, InvariantError> {
-        if exec::gas_available() < 25000000 * 2 {
-            return Err(InvariantError::NotEnoughGasToExecute);
-        }
-
         let caller = msg::source();
         let program = exec::program_id();
 
@@ -392,6 +388,10 @@ impl Invariant {
 
             Ok::<(), InvariantError>(())
         };
+
+        if exec::gas_available() < 25000000 * 2 {
+            return Err(InvariantError::NotEnoughGasToUpdate);
+        }
 
         if x_to_y {
             self.transfer_tokens(
