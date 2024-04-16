@@ -18,6 +18,7 @@ use gstd::{
 };
 use io::*;
 use math::{
+    is_enough_amount_to_change_price,
     check_tick, compute_swap_step, get_tick_at_sqrt_price, liquidity::Liquidity,
     percentage::Percentage, sqrt_price::SqrtPrice, token_amount::TokenAmount, MAX_SQRT_PRICE,
     MIN_SQRT_PRICE,
@@ -559,7 +560,7 @@ impl Invariant {
                 pool.current_tick_index,
                 pool_key.fee_tier.tick_spacing,
                 pool_key,
-            );
+            )?;
             let result = unwrap!(compute_swap_step(
                 pool.sqrt_price,
                 swap_limit,
@@ -567,6 +568,15 @@ impl Invariant {
                 remaining_amount,
                 by_amount_in,
                 pool_key.fee_tier.fee,
+            ));
+
+            let is_enough_amount_to_cross = unwrap!(is_enough_amount_to_change_price(
+                remaining_amount,
+                result.next_sqrt_price,
+                pool.liquidity,
+                pool_key.fee_tier.fee,
+                by_amount_in,
+                x_to_y,
             ));
 
             // make remaining amount smaller
@@ -609,6 +619,14 @@ impl Invariant {
                     if has_crossed {
                         ticks.push(tick);
                     }
+                } else {
+                    pool.current_tick_index = if x_to_y && is_enough_amount_to_cross {
+                        tick_index
+                            .checked_sub(pool_key.fee_tier.tick_spacing as i32)
+                            .unwrap()
+                    } else {
+                        tick_index
+                    };
                 }
             } else {
                 pool.current_tick_index = unwrap!(get_tick_at_sqrt_price(

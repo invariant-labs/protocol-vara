@@ -1,4 +1,4 @@
-use crate::PoolKey;
+use crate::{InvariantError, PoolKey};
 use gstd::collections::HashMap;
 use math::{
     types::sqrt_price::{calculate_sqrt_price, get_max_tick, SqrtPrice},
@@ -184,7 +184,7 @@ impl Tickmap {
         current_tick: i32,
         tick_spacing: u16,
         pool_key: PoolKey,
-    ) -> (SqrtPrice, Option<(i32, bool)>) {
+    ) -> Result<(SqrtPrice, Option<(i32, bool)>), InvariantError> {
         let closes_tick_index = if x_to_y {
             self.prev_initialized(current_tick, tick_spacing, pool_key)
         } else {
@@ -198,23 +198,25 @@ impl Tickmap {
                 if (x_to_y && sqrt_price > sqrt_price_limit)
                     || (!x_to_y && sqrt_price < sqrt_price_limit)
                 {
-                    (sqrt_price, Some((index, true)))
+                    Ok((sqrt_price, Some((index, true))))
                 } else {
-                    (sqrt_price_limit, None)
+                    Ok((sqrt_price_limit, None).into())
                 }
             }
             None => {
                 let index = get_search_limit(current_tick, tick_spacing, !x_to_y);
                 let sqrt_price = calculate_sqrt_price(index).unwrap();
 
-                assert!(current_tick != index, "LimitReached");
+                if current_tick == index {
+                    Err(InvariantError::TickLimitReached)?
+                }
 
                 if (x_to_y && sqrt_price > sqrt_price_limit)
                     || (!x_to_y && sqrt_price < sqrt_price_limit)
                 {
-                    (sqrt_price, Some((index, false)))
+                    Ok((sqrt_price, Some((index, false))))
                 } else {
-                    (sqrt_price_limit, None)
+                    Ok((sqrt_price_limit, None))
                 }
             }
         }
@@ -265,7 +267,7 @@ mod tests {
         tickmap.flip(true, 0, 1, pool_key);
         // tick limit closer
         {
-            let (result, from_tick) = tickmap.get_closer_limit(SqrtPrice::from_integer(5), true, 100, 1, pool_key);
+            let (result, from_tick) = tickmap.get_closer_limit(SqrtPrice::from_integer(5), true, 100, 1, pool_key).unwrap();
             let expected = SqrtPrice::from_integer(5);
             assert_eq!(result, expected);
             assert_eq!(from_tick, None);
@@ -273,7 +275,7 @@ mod tests {
         // trade limit closer
         {
             let (result, from_tick) =
-                tickmap.get_closer_limit(SqrtPrice::from_scale(1, 1), true, 100, 1, pool_key);
+                tickmap.get_closer_limit(SqrtPrice::from_scale(1, 1), true, 100, 1, pool_key).unwrap();
             let expected = SqrtPrice::from_integer(1);
             assert_eq!(result, expected);
             assert_eq!(from_tick, Some((0, true)));
@@ -281,7 +283,7 @@ mod tests {
         // other direction
         {
             let (result, from_tick) =
-                tickmap.get_closer_limit(SqrtPrice::from_integer(2), false, -5, 1, pool_key);
+                tickmap.get_closer_limit(SqrtPrice::from_integer(2), false, -5, 1, pool_key).unwrap();
             let expected = SqrtPrice::from_integer(1);
             assert_eq!(result, expected);
             assert_eq!(from_tick, Some((0, true)));
@@ -289,7 +291,7 @@ mod tests {
         // other direction
         {
             let (result, from_tick) =
-                tickmap.get_closer_limit(SqrtPrice::from_scale(1, 1), false, -100, 10, pool_key);
+                tickmap.get_closer_limit(SqrtPrice::from_scale(1, 1), false, -100, 10, pool_key).unwrap();
             let expected = SqrtPrice::from_scale(1, 1);
             assert_eq!(result, expected);
             assert_eq!(from_tick, None);
