@@ -13,7 +13,7 @@ fn test_get_pool() {
     let sys = System::new();
     sys.init_logger();
 
-    let invariant = init_invariant(&sys, 100);
+    let invariant = init_invariant(&sys, Percentage(100));
 
     let token_0 = ActorId::from([0x01; 32]);
     let token_1 = ActorId::from([0x02; 32]);

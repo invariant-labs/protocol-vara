@@ -10,3 +10,8 @@ pub mod position_slippage;
 pub mod add_fee_tier;
 pub mod remove_fee_tier;
 pub mod position_list;
+pub mod swap;
+pub mod slippage;
+pub mod cross_both_sides;
+pub mod cross;
+pub mod limits;

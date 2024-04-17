@@ -1,13 +1,12 @@
 extern crate std;
 
 use crate::test_helpers::gtest::consts::*;
+pub use crate::test_helpers::utils::pools_are_identical_no_timestamp;
 use contracts::InvariantError;
-use gstd::{codec::Codec, codec::decode_from_bytes, *};
+use gstd::{codec::decode_from_bytes, codec::Codec, *};
 use gtest::{CoreLog, Program, RunResult};
 use io::*;
 use std::println;
-use core::sync::atomic::{AtomicU64, Ordering};
-pub use crate::test_helpers::utils::pools_are_identical_no_timestamp;
 
 pub type ProgramId = [u8; 32];
 
@@ -16,11 +15,19 @@ pub trait InvariantResult {
     #[track_caller]
     #[must_use]
     fn events_eq(&self, expected: Vec<TestEvent>) -> bool;
+    #[track_caller]
+    fn assert_success(&self);
 }
 pub trait RevertibleProgram {
     #[track_caller]
-    fn send_and_assert_panic<'a>(&'a mut self, from: u64, payload: impl Codec, error: InvariantError)->RunResult;
+    fn send_and_assert_panic<'a>(
+        &'a mut self,
+        from: u64,
+        payload: impl Codec,
+        error: impl Into<String>,
+    ) -> RunResult;
 }
+
 #[derive(Debug, Clone, PartialEq, Eq, Encode, Decode, TypeInfo)]
 #[codec(crate = gstd::codec)]
 #[scale_info(crate = gstd::scale_info)]
@@ -81,11 +88,7 @@ impl InvariantResult for RunResult {
     #[track_caller]
     #[must_use]
     fn events_eq(&self, expected_events: Vec<TestEvent>) -> bool {
-        if self.main_failed() {
-            self.assert_panicked_with(
-                "message used to get the actual error message in case of an unexpected panic",
-            )
-        }
+        self.assert_success();
 
         let events = self.emitted_events();
 
@@ -112,7 +115,7 @@ impl InvariantResult for RunResult {
                 );
                 return false;
             }
-            
+
             if returned.destination != expected.destination {
                 std::println!(
                     "mismatched destinations: {:?} != {:?}",
@@ -121,7 +124,7 @@ impl InvariantResult for RunResult {
                 );
                 return false;
             }
-            
+
             if returned.payload != expected.payload {
                 let decoded_expected =
                     decode_from_bytes::<InvariantEvent>(expected.clone().payload.into());
@@ -154,14 +157,26 @@ impl InvariantResult for RunResult {
 
         false
     }
-
+    #[track_caller]
+    fn assert_success(&self) {
+        if self.main_failed() {
+            self.assert_panicked_with(
+                "message used to get the actual error message in case of an unexpected panic",
+            );
+        }
+    }
 }
 
 impl RevertibleProgram for Program<'_> {
     #[track_caller]
-    fn send_and_assert_panic<'a>(&'a mut self, from: u64, payload: impl Codec, error: InvariantError)->RunResult {
+    fn send_and_assert_panic<'a>(
+        &'a mut self,
+        from: u64,
+        payload: impl Codec,
+        error: impl Into<String>,
+    ) -> RunResult {
         let res = self.send(from, payload);
-        res.assert_panicked_with(error);
+        res.assert_panicked_with(error.into());
         res
     }
 }

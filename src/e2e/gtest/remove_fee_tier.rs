@@ -12,7 +12,7 @@ fn test_remove_fee_tier() {
     let sys = System::new();
     sys.init_logger();
 
-    let invariant = init_invariant(&sys, 100);
+    let invariant = init_invariant(&sys, Percentage(100));
 
     let fee_tier = FeeTier::new(Percentage::from_scale(2, 4), 1).unwrap();
     let res = invariant.send(ADMIN, InvariantAction::AddFeeTier(fee_tier));
@@ -29,7 +29,7 @@ fn remove_not_existing_fee_tier() {
     let sys = System::new();
     sys.init_logger();
 
-    let mut invariant = init_invariant(&sys, 100);
+    let mut invariant = init_invariant(&sys, Percentage(100));
 
     let fee_tier = FeeTier::new(Percentage::from_scale(2, 4), 1).unwrap();
     let _res = invariant.send_and_assert_panic(
@@ -44,7 +44,7 @@ fn test_remove_fee_tier_not_admin() {
     let sys = System::new();
     sys.init_logger();
 
-    let mut invariant = init_invariant(&sys, 100);
+    let mut invariant = init_invariant(&sys, Percentage(100));
 
     let fee_tier = FeeTier::new(Percentage::from_scale(2, 4), 1).unwrap();
     let res = invariant.send(ADMIN, InvariantAction::AddFeeTier(fee_tier));

@@ -13,7 +13,7 @@ use math::{
 #[test]
 fn test_remove_position_from_empty_list() {
     let sys = System::new();
-    let mut invariant = init_invariant(&sys, Percentage::from_scale(6, 3).0 as u128);
+    let mut invariant = init_invariant(&sys, Percentage::from_scale(6, 3));
 
     let token_x = ActorId::from(TOKEN_X_ID);
     let token_y = ActorId::from(TOKEN_Y_ID);
@@ -47,7 +47,7 @@ fn test_remove_position_from_empty_list() {
 #[test]
 fn test_add_multiple_positions() {
     let sys = System::new();
-    let invariant = init_invariant(&sys, Percentage::from_scale(6, 3).0 as u128);
+    let invariant = init_invariant(&sys, Percentage::from_scale(6, 3));
 
     let initial_amount = 10u128.pow(10);
     let (token_x_program, token_y_program) =
@@ -251,7 +251,7 @@ fn test_add_multiple_positions() {
 #[test]
 fn test_only_owner_can_modify_position_list() {
     let sys = System::new();
-    let mut invariant = init_invariant(&sys, Percentage::from_scale(6, 3).0 as u128);
+    let mut invariant = init_invariant(&sys, Percentage::from_scale(6, 3));
 
     let initial_amount = 10u128.pow(10);
     let (token_x_program, token_y_program) =
@@ -422,7 +422,7 @@ fn test_only_owner_can_modify_position_list() {
 #[test]
 fn test_transfer_position_ownership() {
     let sys = System::new();
-    let invariant = init_invariant(&sys, Percentage::from_scale(6, 3).0 as u128);
+    let invariant = init_invariant(&sys, Percentage::from_scale(6, 3));
 
     let initial_amount = 10u128.pow(10);
     let (token_x_program, token_y_program) =
@@ -745,7 +745,7 @@ fn test_transfer_position_ownership() {
 #[test]
 fn test_only_owner_can_transfer_position() {
     let sys = System::new();
-    let mut invariant = init_invariant(&sys, Percentage::from_scale(6, 3).0 as u128);
+    let mut invariant = init_invariant(&sys, Percentage::from_scale(6, 3));
 
     let initial_amount = 10u128.pow(10);
     let (token_x_program, token_y_program) =
@@ -887,7 +887,7 @@ fn test_only_owner_can_transfer_position() {
 #[test]
 fn test_multiple_positions_on_same_tick() {
     let sys = System::new();
-    let invariant = init_invariant(&sys, Percentage::from_scale(6, 3).0 as u128);
+    let invariant = init_invariant(&sys, Percentage::from_scale(6, 3));
 
     let initial_amount = 10u128.pow(8);
     let (token_x_program, token_y_program) =

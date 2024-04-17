@@ -31,7 +31,8 @@ pub enum InvariantError {
   InvalidInitTick,
   InvalidInitSqrtPrice,
   NotEnoughGasToExecute,
-  NotEnoughGasToUpdate
+  NotEnoughGasToUpdate,
+  TickLimitReached,
 }
 
 impl Into<String>for InvariantError {

@@ -17,7 +17,7 @@ pub async fn init_slippage_invariant_and_tokens(
     let init = InitInvariant {
         config: InvariantConfig {
             admin: get_api_user_id(api).into(),
-            protocol_fee: protocol_fee.0 as u128,
+            protocol_fee,
         },
     };
 

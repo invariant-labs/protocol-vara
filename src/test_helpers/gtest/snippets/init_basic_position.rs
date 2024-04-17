@@ -6,51 +6,32 @@ use gstd::{prelude::*, ActorId};
 use gtest::*;
 use io::*;
 use math::{
-    fee_growth::FeeGrowth, liquidity::Liquidity, percentage::Percentage,
-    sqrt_price::calculate_sqrt_price, token_amount::TokenAmount,
+    fee_growth::FeeGrowth, liquidity::Liquidity, percentage::Percentage, token_amount::TokenAmount,
 };
 
-pub fn init_slippage_pool_with_liquidity(
+pub fn init_basic_position(
     sys: &System,
     invariant: &Program<'_>,
-    token_0_program: &Program<'_>,
-    token_1_program: &Program<'_>,
-) -> PoolKey {
-    let token_0 = ActorId::from(TOKEN_X_ID);
-    let token_1 = ActorId::from(TOKEN_Y_ID);
+    token_x_program: &Program<'_>,
+    token_y_program: &Program<'_>,
+) {
+    let token_x = ActorId::from(TOKEN_X_ID);
+    let token_y = ActorId::from(TOKEN_Y_ID);
 
     let fee_tier = FeeTier {
         fee: Percentage::from_scale(6, 3),
         tick_spacing: 10,
     };
 
-    let res = invariant.send(ADMIN, InvariantAction::AddFeeTier(fee_tier));
-    assert!(res.events_eq(vec![TestEvent::empty_invariant_response(ADMIN)]));
-
-    let init_tick = 0;
-    let init_sqrt_price = calculate_sqrt_price(init_tick).unwrap();
-
-    let res = invariant.send(
-        REGULAR_USER_1,
-        InvariantAction::CreatePool {
-            token_0,
-            token_1,
-            fee_tier,
-            init_sqrt_price,
-            init_tick,
-        },
-    );
-    assert!(res.events_eq(vec![TestEvent::empty_invariant_response(REGULAR_USER_1)]));
-
     let mint_amount = 10u128.pow(10);
-    assert!(!token_0_program
+    assert!(!token_x_program
         .send(REGULAR_USER_1, FTAction::Mint(mint_amount))
         .main_failed());
-    assert!(!token_1_program
+    assert!(!token_y_program
         .send(REGULAR_USER_1, FTAction::Mint(mint_amount))
         .main_failed());
 
-    assert!(!token_0_program
+    assert!(!token_x_program
         .send(
             REGULAR_USER_1,
             FTAction::Approve {
@@ -60,7 +41,7 @@ pub fn init_slippage_pool_with_liquidity(
             }
         )
         .main_failed());
-    assert!(!token_1_program
+    assert!(!token_y_program
         .send(
             REGULAR_USER_1,
             FTAction::Approve {
@@ -71,12 +52,12 @@ pub fn init_slippage_pool_with_liquidity(
         )
         .main_failed());
 
-    let pool_key = PoolKey::new(token_0, token_1, fee_tier).unwrap();
-    let lower_tick = -1000;
-    let upper_tick = 1000;
-    let liquidity = Liquidity::from_integer(10u128.pow(10));
+    let pool_key = PoolKey::new(token_x, token_y, fee_tier).unwrap();
+    let lower_tick = -20;
+    let upper_tick = 10;
+    let liquidity = Liquidity::from_integer(1000000);
 
-    let pool_before = get_pool(&invariant, token_0, token_1, fee_tier).unwrap();
+    let pool_before = get_pool(&invariant, token_x, token_y, fee_tier).unwrap();
 
     let slippage_limit_lower = pool_before.sqrt_price;
     let slippage_limit_upper = pool_before.sqrt_price;
@@ -103,7 +84,7 @@ pub fn init_slippage_pool_with_liquidity(
                 block_timestamp: sys.block_timestamp(),
                 lower_tick,
                 upper_tick,
-                current_sqrt_price: init_sqrt_price,
+                current_sqrt_price: pool_before.sqrt_price,
             }
         ),
         TestEvent::invariant_response(
@@ -122,9 +103,7 @@ pub fn init_slippage_pool_with_liquidity(
         )
     ]));
 
-    let pool_after = get_pool(&invariant, token_0, token_1, fee_tier).unwrap();
+    let pool_after = get_pool(&invariant, token_x, token_y, fee_tier).unwrap();
 
     assert_eq!(pool_after.liquidity, liquidity);
-
-    pool_key
 }
