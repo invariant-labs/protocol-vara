@@ -379,7 +379,7 @@ fn test_swap_not_enough_liquidity_token_x() {
             by_amount_in: true,
             sqrt_price_limit: slippage,
         },
-        format!("tick not in range of <{}, {}>", MIN_TICK, MAX_TICK),
+        InvariantError::TickLimitReached,
     );
 
     let pool_after = get_pool(&invariant, token_x, token_y, fee_tier).unwrap();

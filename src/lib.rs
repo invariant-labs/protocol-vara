@@ -18,7 +18,6 @@ use gstd::{
 };
 use io::*;
 use math::{
-    is_enough_amount_to_change_price,
     check_tick, compute_swap_step, get_tick_at_sqrt_price, liquidity::Liquidity,
     percentage::Percentage, sqrt_price::SqrtPrice, token_amount::TokenAmount, MAX_SQRT_PRICE,
     MIN_SQRT_PRICE,
@@ -368,15 +367,6 @@ impl Invariant {
             crossed_tick_indexes.push(tick.index);
         }
 
-        if !crossed_tick_indexes.is_empty() {
-            self.emit_event(InvariantEvent::CrossTickEvent {
-                timestamp: exec::block_timestamp(),
-                address: caller,
-                pool: pool_key,
-                indexes: crossed_tick_indexes,
-            });
-        }
-
         let update = |invariant: &mut Self| {
             for tick in calculate_swap_result.ticks.iter() {
                 invariant.ticks.update(pool_key, tick.index, *tick)?;
@@ -437,15 +427,16 @@ impl Invariant {
                 calculate_swap_result.amount_in.get(),
             )
             .await?;
-            let res = self.transfer_tokens(
-                &pool_key.token_x,
-                None,
-                &program,
-                &caller,
-                calculate_swap_result.amount_out.get(),
-            )
-            .await;
-            
+            let res = self
+                .transfer_tokens(
+                    &pool_key.token_x,
+                    None,
+                    &program,
+                    &caller,
+                    calculate_swap_result.amount_out.get(),
+                )
+                .await;
+
             if let Err(err) = res {
                 self.transfer_tokens(
                     &pool_key.token_y,
@@ -462,6 +453,15 @@ impl Invariant {
 
             update(self)?;
         };
+
+        if !crossed_tick_indexes.is_empty() {
+            self.emit_event(InvariantEvent::CrossTickEvent {
+                timestamp: exec::block_timestamp(),
+                address: caller,
+                pool: pool_key,
+                indexes: crossed_tick_indexes,
+            });
+        }
 
         self.emit_event(InvariantEvent::SwapEvent {
             timestamp: exec::block_timestamp(),
@@ -570,15 +570,6 @@ impl Invariant {
                 pool_key.fee_tier.fee,
             ));
 
-            let is_enough_amount_to_cross = unwrap!(is_enough_amount_to_change_price(
-                remaining_amount,
-                result.next_sqrt_price,
-                pool.liquidity,
-                pool_key.fee_tier.fee,
-                by_amount_in,
-                x_to_y,
-            ));
-
             // make remaining amount smaller
             if by_amount_in {
                 remaining_amount -= result.amount_in + result.fee_amount;
@@ -598,41 +589,33 @@ impl Invariant {
             if pool.sqrt_price == sqrt_price_limit && !remaining_amount.is_zero() {
                 return Err(InvariantError::PriceLimitReached);
             }
+            let mut tick = None;
 
             if let Some((tick_index, is_initialized)) = limiting_tick {
                 if is_initialized {
-                    let mut tick = self.ticks.get(pool_key, tick_index).cloned()?;
-
-                    let (amount_to_add, has_crossed) = pool.cross_tick(
-                        result,
-                        swap_limit,
-                        &mut tick,
-                        &mut remaining_amount,
-                        by_amount_in,
-                        x_to_y,
-                        current_timestamp,
-                        self.config.protocol_fee,
-                        pool_key.fee_tier,
-                    );
-
-                    total_amount_in += amount_to_add;
-                    if has_crossed {
-                        ticks.push(tick);
-                    }
-                } else {
-                    pool.current_tick_index = if x_to_y && is_enough_amount_to_cross {
-                        tick_index
-                            .checked_sub(pool_key.fee_tier.tick_spacing as i32)
-                            .unwrap()
-                    } else {
-                        tick_index
-                    };
+                    tick = self.ticks.get(pool_key, tick_index).cloned()?.into()
                 }
-            } else {
-                pool.current_tick_index = unwrap!(get_tick_at_sqrt_price(
-                    result.next_sqrt_price,
-                    pool_key.fee_tier.tick_spacing
-                ));
+            };
+
+            let (amount_to_add, amount_after_tick_update, has_crossed) = pool.update_tick(
+                result,
+                tick.as_mut(),
+                swap_limit,
+                remaining_amount,
+                by_amount_in,
+                x_to_y,
+                current_timestamp,
+                self.config.protocol_fee,
+                pool_key.fee_tier,
+            );
+
+            remaining_amount = amount_after_tick_update;
+            total_amount_in += amount_to_add;
+
+            if let Some(tick) = tick {
+                if has_crossed {
+                    ticks.push(tick)
+                }
             }
         }
 
