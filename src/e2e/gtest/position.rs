@@ -114,6 +114,79 @@ fn test_create_position() {
 }
 
 #[test]
+fn test_position_same_upper_and_lower_tick() {
+    let sys = System::new();
+    sys.init_logger();
+
+    let mut invariant = init_invariant(&sys, Percentage(100));
+
+    let (token_0_program, token_1_program) = init_tokens_with_mint(&sys, (500, 500));
+    let token_0 = ActorId::from(TOKEN_X_ID);
+    let token_1 = ActorId::from(TOKEN_Y_ID);
+
+    let fee_tier = FeeTier::new(Percentage::from_scale(5, 1), 10).unwrap();
+
+    let init_tick = 0;
+    let init_sqrt_price = calculate_sqrt_price(init_tick).unwrap();
+
+    let res = invariant.send(ADMIN, InvariantAction::AddFeeTier(fee_tier));
+
+    assert!(res.events_eq(vec![TestEvent::empty_invariant_response(ADMIN)]));
+
+    let res = invariant.send(
+        REGULAR_USER_1,
+        InvariantAction::CreatePool {
+            token_0,
+            token_1,
+            fee_tier,
+            init_sqrt_price,
+            init_tick,
+        },
+    );
+
+    assert!(res.events_eq(vec![TestEvent::empty_invariant_response(REGULAR_USER_1)]));
+
+    assert!(!token_0_program
+        .send(
+            REGULAR_USER_1,
+            FTAction::Approve {
+                tx_id: None,
+                to: INVARIANT_ID.into(),
+                amount: 500
+            }
+        )
+        .main_failed());
+
+    assert!(!token_1_program
+        .send(
+            REGULAR_USER_1,
+            FTAction::Approve {
+                tx_id: None,
+                to: INVARIANT_ID.into(),
+                amount: 500
+            }
+        )
+        .main_failed());
+
+    let pool_key = PoolKey::new(token_0.into(), token_1.into(), fee_tier).unwrap();
+    let pool = get_pool(&invariant, token_0, token_1, fee_tier).unwrap();
+
+    let _res = invariant.send_and_assert_panic(
+        REGULAR_USER_1,
+        InvariantAction::CreatePosition {
+            pool_key,
+            lower_tick: 10,
+            upper_tick: 10,
+            liquidity_delta: Liquidity::new(10),
+            slippage_limit_lower: pool.sqrt_price,
+            slippage_limit_upper: pool.sqrt_price,
+        },
+        InvariantError::InvalidTickIndex,
+    );
+    get_position(&invariant, REGULAR_USER_1.into(), 0).unwrap_err();
+}
+
+#[test]
 fn test_position_below_current_tick() {
     let sys = System::new();
     sys.init_logger();
@@ -1088,17 +1161,20 @@ fn test_remove_position() {
     let upper_tick = get_tick(&invariant, pool_key, lower_tick_index);
     let lower_tick_bit = is_tick_initialized(&invariant, pool_key, lower_tick_index);
     let upper_tick_bit = is_tick_initialized(&invariant, pool_key, upper_tick_index);
-    let dex_x = balance_of(&token_x_program, INVARIANT_ID);
-    let dex_y = balance_of(&token_y_program, INVARIANT_ID);
+    let invariant_x = balance_of(&token_x_program, INVARIANT_ID);
+    let invariant_y = balance_of(&token_y_program, INVARIANT_ID);
     let expected_withdrawn_x = 499;
     let expected_withdrawn_y = 999;
     let expected_fee_x = 0;
 
     assert_eq!(
-        invariant_x_before_remove - dex_x,
+        invariant_x_before_remove - invariant_x,
         expected_withdrawn_x + expected_fee_x
     );
-    assert_eq!(invariant_y_before_remove - dex_y, expected_withdrawn_y);
+    assert_eq!(
+        invariant_y_before_remove - invariant_y,
+        expected_withdrawn_y
+    );
 
     // Check ticks
     assert_eq!(lower_tick, Err(InvariantError::TickNotFound));
