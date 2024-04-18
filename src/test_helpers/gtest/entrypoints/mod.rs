@@ -11,6 +11,7 @@ pub mod fee_tier_exists;
 pub mod get_tick;
 pub mod get_all_positions;
 pub mod is_tick_initialized;
+pub mod quote;
 
 pub use utils::*;
 pub use init_invariant::*;
@@ -23,3 +24,4 @@ pub use fee_tier_exists::*;
 pub use get_tick::*;
 pub use get_all_positions::*;
 pub use is_tick_initialized::*;
+pub use quote::*;

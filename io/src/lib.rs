@@ -72,6 +72,13 @@ pub enum InvariantAction {
         by_amount_in: bool,
         sqrt_price_limit: SqrtPrice,
     },
+    Quote {
+        pool_key: PoolKey,
+        x_to_y: bool,
+        amount: TokenAmount,
+        by_amount_in: bool,
+        sqrt_price_limit: SqrtPrice,
+    },
 }
 
 #[derive(Clone, Decode, Encode, Debug, PartialEq, Eq, TypeInfo)]
@@ -117,6 +124,7 @@ pub enum InvariantEvent {
         x_to_y: bool,
     },
     SwapReturn(CalculateSwapResult),
+    Quote(QuoteResult),
     ActionFailed(InvariantError),
 }
 
@@ -170,4 +178,14 @@ pub struct CalculateSwapResult {
 pub struct SwapHop {
     pub pool_key: PoolKey,
     pub x_to_y: bool,
+}
+
+#[derive(Decode, Default, Encode, Clone, Debug, PartialEq, Eq, TypeInfo)]
+#[codec(crate = gstd::codec)]
+#[scale_info(crate = gstd::scale_info)]
+pub struct QuoteResult {
+    pub amount_in: TokenAmount,
+    pub amount_out: TokenAmount,
+    pub target_sqrt_price: SqrtPrice,
+    pub ticks: Vec<Tick>,
 }

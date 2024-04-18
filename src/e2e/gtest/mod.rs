@@ -15,3 +15,6 @@ pub mod slippage;
 pub mod cross_both_sides;
 pub mod cross;
 pub mod limits;
+pub mod max_tick_cross;
+pub mod multiple_swap;
+pub mod liquidity_gap;

@@ -18,9 +18,8 @@ use gstd::{
 };
 use io::*;
 use math::{
-    check_tick, compute_swap_step, get_tick_at_sqrt_price, liquidity::Liquidity,
-    percentage::Percentage, sqrt_price::SqrtPrice, token_amount::TokenAmount, MAX_SQRT_PRICE,
-    MIN_SQRT_PRICE,
+    check_tick, compute_swap_step, liquidity::Liquidity, percentage::Percentage,
+    sqrt_price::SqrtPrice, token_amount::TokenAmount, MAX_SQRT_PRICE, MIN_SQRT_PRICE,
 };
 use traceable_result::*;
 
@@ -174,6 +173,10 @@ impl Invariant {
         // liquidity delta = 0 => return
         if liquidity_delta == Liquidity::new(0) {
             return Err(InvariantError::ZeroLiquidity);
+        }
+
+        if lower_tick == upper_tick {
+            return Err(InvariantError::InvalidTickIndex);
         }
 
         let mut pool = self.pools.get(&pool_key)?;
@@ -476,6 +479,60 @@ impl Invariant {
         });
 
         Ok(calculate_swap_result)
+    }
+
+    pub fn quote(
+        &self,
+        pool_key: PoolKey,
+        x_to_y: bool,
+        amount: TokenAmount,
+        by_amount_in: bool,
+        sqrt_price_limit: SqrtPrice,
+    ) -> Result<QuoteResult, InvariantError> {
+        let calculate_swap_result =
+            self.calculate_swap(pool_key, x_to_y, amount, by_amount_in, sqrt_price_limit)?;
+
+        Ok(QuoteResult {
+            amount_in: calculate_swap_result.amount_in,
+            amount_out: calculate_swap_result.amount_out,
+            target_sqrt_price: calculate_swap_result.pool.sqrt_price,
+            ticks: calculate_swap_result.ticks,
+        })
+    }
+
+    pub fn quote_route(
+        &mut self,
+        amount_in: TokenAmount,
+        swaps: Vec<SwapHop>,
+    ) -> Result<TokenAmount, InvariantError> {
+        let amount_out = self.route(amount_in, swaps)?;
+
+        Ok(amount_out)
+    }
+
+    pub fn route(
+        &mut self,
+        amount_in: TokenAmount,
+        swaps: Vec<SwapHop>,
+    ) -> Result<TokenAmount, InvariantError> {
+        let mut next_swap_amount = amount_in;
+
+        for swap in swaps.iter() {
+            let SwapHop { pool_key, x_to_y } = *swap;
+
+            let sqrt_price_limit = if x_to_y {
+                SqrtPrice::new(MIN_SQRT_PRICE)
+            } else {
+                SqrtPrice::new(MAX_SQRT_PRICE)
+            };
+
+            let result =
+                self.calculate_swap(pool_key, x_to_y, next_swap_amount, true, sqrt_price_limit)?;
+
+            next_swap_amount = result.amount_out;
+        }
+
+        Ok(next_swap_amount)
     }
 
     async fn transfer_tokens(
@@ -829,6 +886,20 @@ async fn main() {
                 }
             }
         }
+        InvariantAction::Quote {
+            pool_key,
+            x_to_y,
+            amount,
+            by_amount_in,
+            sqrt_price_limit,
+        } => match invariant.quote(pool_key, x_to_y, amount, by_amount_in, sqrt_price_limit) {
+            Ok(result) => {
+                reply(InvariantEvent::Quote(result), 0).expect("Unable to reply");
+            }
+            Err(e) => {
+                reply_with_err(e);
+            }
+        },
     }
 }
 #[no_mangle]
