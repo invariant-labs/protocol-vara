@@ -33,6 +33,7 @@ pub enum InvariantError {
   NotEnoughGasToExecute,
   NotEnoughGasToUpdate,
   TickLimitReached,
+  InvalidTickIndex
 }
 
 impl Into<String>for InvariantError {
