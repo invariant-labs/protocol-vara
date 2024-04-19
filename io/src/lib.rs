@@ -79,6 +79,9 @@ pub enum InvariantAction {
         by_amount_in: bool,
         sqrt_price_limit: SqrtPrice,
     },
+    ClaimFee{
+        position_id: u32,
+    },
 }
 
 #[derive(Clone, Decode, Encode, Debug, PartialEq, Eq, TypeInfo)]
@@ -125,6 +128,7 @@ pub enum InvariantEvent {
     },
     SwapReturn(CalculateSwapResult),
     Quote(QuoteResult),
+    ClaimFee(TokenAmount, TokenAmount),
     ActionFailed(InvariantError),
 }
 

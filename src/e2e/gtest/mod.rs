@@ -18,3 +18,4 @@ pub mod limits;
 pub mod max_tick_cross;
 pub mod multiple_swap;
 pub mod liquidity_gap;
+pub mod claim;
