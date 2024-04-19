@@ -535,6 +535,59 @@ impl Invariant {
         Ok(next_swap_amount)
     }
 
+    pub async fn claim_fee(
+        &mut self,
+        index: u32,
+    ) -> Result<(TokenAmount, TokenAmount), InvariantError> {
+        if exec::gas_available() < 20258935 * 2  {
+            return Err(InvariantError::NotEnoughGasToExecute);
+        }
+
+        let caller = msg::source();
+        let current_timestamp = exec::block_timestamp();
+        let program = exec::program_id();
+
+        let mut position = self.positions.get(&caller, index).cloned()?;
+
+        let mut lower_tick = self
+            .ticks
+            .get(position.pool_key, position.lower_tick_index)
+            .cloned()?;
+
+        let mut upper_tick = self
+            .ticks
+            .get(position.pool_key, position.upper_tick_index)
+            .cloned()?;
+
+        let mut pool = self.pools.get(&position.pool_key)?;
+
+        let (x, y) = position.claim_fee(
+            &mut pool,
+            &mut upper_tick,
+            &mut lower_tick,
+            current_timestamp,
+        );
+
+        self.positions.update(&caller, index, &position)?;
+        self.pools.update(&position.pool_key, &pool)?;
+        self.ticks
+            .update(position.pool_key, upper_tick.index, upper_tick)?;
+        self.ticks
+            .update(position.pool_key, lower_tick.index, lower_tick)?;
+
+        if x.get() > 0 {
+            self.transfer_tokens(&position.pool_key.token_x, None, &program, &caller, x.get())
+                .await?
+        }
+
+        if y.get() > 0 {
+            self.transfer_tokens(&position.pool_key.token_y, None, &program, &caller, y.get())
+                .await?;
+        }
+
+        Ok((x, y))
+    }
+
     async fn transfer_tokens(
         &mut self,
         token_address: &ActorId,
@@ -895,6 +948,14 @@ async fn main() {
         } => match invariant.quote(pool_key, x_to_y, amount, by_amount_in, sqrt_price_limit) {
             Ok(result) => {
                 reply(InvariantEvent::Quote(result), 0).expect("Unable to reply");
+            }
+            Err(e) => {
+                reply_with_err(e);
+            }
+        },
+        InvariantAction::ClaimFee { position_id } => match invariant.claim_fee(position_id).await {
+            Ok((amount_x, amount_y)) => {
+                reply(InvariantEvent::ClaimFee(amount_x, amount_y), 0).expect("Unable to reply");
             }
             Err(e) => {
                 reply_with_err(e);
