@@ -19,3 +19,5 @@ pub mod max_tick_cross;
 pub mod multiple_swap;
 pub mod liquidity_gap;
 pub mod claim;
+pub mod protocol_fee;
+pub mod interaction_with_pool_on_remove_fee_tier;
