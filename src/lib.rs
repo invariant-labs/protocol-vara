@@ -539,9 +539,10 @@ impl Invariant {
         &mut self,
         index: u32,
     ) -> Result<(TokenAmount, TokenAmount), InvariantError> {
-        if exec::gas_available() < 90000 * 2 {
-            return Err(InvariantError::NotEnoughGasToUpdate);
+        if exec::gas_available() < 20258935 * 2  {
+            return Err(InvariantError::NotEnoughGasToExecute);
         }
+
         let caller = msg::source();
         let current_timestamp = exec::block_timestamp();
         let program = exec::program_id();
