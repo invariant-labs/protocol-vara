@@ -79,6 +79,10 @@ pub enum InvariantAction {
         by_amount_in: bool,
         sqrt_price_limit: SqrtPrice,
     },
+    QuoteRoute {
+        amount_in: TokenAmount,
+        swaps: Vec<SwapHop>,
+    },
     ClaimFee {
         position_id: u32,
     },
@@ -129,6 +133,7 @@ pub enum InvariantEvent {
     },
     SwapReturn(CalculateSwapResult),
     Quote(QuoteResult),
+    QuoteRoute(TokenAmount),
     ClaimFee(TokenAmount, TokenAmount),
     ActionFailed(InvariantError),
 }
