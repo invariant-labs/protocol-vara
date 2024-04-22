@@ -999,6 +999,16 @@ async fn main() {
                 reply_with_err(e);
             }
         },
+        InvariantAction::QuoteRoute { amount_in, swaps } => {
+            match invariant.quote_route(amount_in, swaps) {
+                Ok(amount_out) => {
+                    reply(InvariantEvent::QuoteRoute(amount_out), 0).expect("Unable to reply");
+                }
+                Err(e) => {
+                    reply_with_err(e);
+                }
+            }
+        }
         InvariantAction::WithdrawProtocolFee(pool_key) => {
             match invariant.withdraw_protocol_fee(pool_key).await {
                 Ok(_) => {}
