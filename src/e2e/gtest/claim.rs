@@ -65,8 +65,6 @@ fn test_claim_not_owner() {
     init_basic_position(&sys, &invariant, &token_x_program, &token_y_program);
     init_basic_swap(&sys, &invariant, &token_x_program, &token_y_program);
 
-    let fee_tier = FeeTier::new(Percentage::from_scale(6, 3), 10).unwrap();
-
     let _res = invariant.send_and_assert_panic(
         REGULAR_USER_2,
         InvariantAction::ClaimFee { position_id: 0 },

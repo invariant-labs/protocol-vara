@@ -79,9 +79,10 @@ pub enum InvariantAction {
         by_amount_in: bool,
         sqrt_price_limit: SqrtPrice,
     },
-    ClaimFee{
+    ClaimFee {
         position_id: u32,
     },
+    WithdrawProtocolFee(PoolKey),
 }
 
 #[derive(Clone, Decode, Encode, Debug, PartialEq, Eq, TypeInfo)]

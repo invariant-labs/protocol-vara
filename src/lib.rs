@@ -539,7 +539,7 @@ impl Invariant {
         &mut self,
         index: u32,
     ) -> Result<(TokenAmount, TokenAmount), InvariantError> {
-        if exec::gas_available() < 20258935 * 2  {
+        if exec::gas_available() < 20258935 * 2 {
             return Err(InvariantError::NotEnoughGasToExecute);
         }
 
@@ -586,6 +586,44 @@ impl Invariant {
         }
 
         Ok((x, y))
+    }
+
+    pub async fn withdraw_protocol_fee(&mut self, pool_key: PoolKey) -> Result<(), InvariantError> {
+        if exec::gas_available() < 25_000_000 * 2 {
+            return Err(InvariantError::NotEnoughGasToExecute);
+        }
+
+        let caller = msg::source();
+        let program = exec::program_id();
+
+        let mut pool = self.pools.get(&pool_key)?;
+
+        if pool.fee_receiver != caller {
+            return Err(InvariantError::NotFeeReceiver);
+        }
+
+        let (fee_protocol_token_x, fee_protocol_token_y) = pool.withdraw_protocol_fee(pool_key);
+        self.pools.update(&pool_key, &pool)?;
+
+        self.transfer_tokens(
+            &pool_key.token_x,
+            None,
+            &program,
+            &caller,
+            fee_protocol_token_x.get(),
+        )
+        .await?;
+
+        self.transfer_tokens(
+            &pool_key.token_y,
+            None,
+            &program,
+            &caller,
+            fee_protocol_token_y.get(),
+        )
+        .await?;
+
+        Ok(())
     }
 
     async fn transfer_tokens(
@@ -961,6 +999,14 @@ async fn main() {
                 reply_with_err(e);
             }
         },
+        InvariantAction::WithdrawProtocolFee(pool_key) => {
+            match invariant.withdraw_protocol_fee(pool_key).await {
+                Ok(_) => {}
+                Err(e) => {
+                    reply_with_err(e);
+                }
+            }
+        }
     }
 }
 #[no_mangle]
