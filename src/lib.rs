@@ -6,7 +6,7 @@ mod e2e;
 mod test_helpers;
 use contracts::{
     errors::InvariantError, FeeTier, FeeTiers, Pool, PoolKey, PoolKeys, Pools, Position, Positions,
-    Tick, Tickmap, Ticks,
+    Tick, Tickmap, Ticks, UpdatePoolTick,
 };
 use decimal::*;
 use fungible_token_io::{FTAction, FTError, FTEvent};
@@ -737,17 +737,23 @@ impl Invariant {
             if pool.sqrt_price == sqrt_price_limit && !remaining_amount.is_zero() {
                 return Err(InvariantError::PriceLimitReached);
             }
-            let mut tick = None;
 
-            if let Some((tick_index, is_initialized)) = limiting_tick {
-                if is_initialized {
-                    tick = self.ticks.get(pool_key, tick_index).cloned()?.into()
+            let mut tick_update = {
+                if let Some((tick_index, is_initialized)) = limiting_tick {
+                    if is_initialized {
+                        let tick = self.ticks.get(pool_key, tick_index).cloned()?;
+                        UpdatePoolTick::TickInitialized(tick)
+                    } else {
+                        UpdatePoolTick::TickUninitialized(tick_index)
+                    }
+                } else {
+                    UpdatePoolTick::NoTick
                 }
             };
 
             let (amount_to_add, amount_after_tick_update, has_crossed) = pool.update_tick(
                 result,
-                tick.as_mut(),
+                &mut tick_update,
                 swap_limit,
                 remaining_amount,
                 by_amount_in,
@@ -760,7 +766,7 @@ impl Invariant {
             remaining_amount = amount_after_tick_update;
             total_amount_in += amount_to_add;
 
-            if let Some(tick) = tick {
+            if let UpdatePoolTick::TickInitialized(tick) = tick_update {
                 if has_crossed {
                     ticks.push(tick)
                 }
