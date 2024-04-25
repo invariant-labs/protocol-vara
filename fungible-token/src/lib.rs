@@ -9,7 +9,11 @@ use gstd::{
 mod tests;
 
 const ZERO_ID: ActorId = ActorId::new([0u8; 32]);
-type Config = ();
+#[derive(Debug, Clone, Default)]
+struct Config {
+    #[allow(dead_code)]
+    pub fail_next_transfer: bool
+}
 type ValidUntil = u64;
 type TxId = u64;
 const VALIDITY_PERIOD: u64 = 3000 * 10;
@@ -32,7 +36,8 @@ struct FungibleToken {
     /// A map of accounts to their transaction IDs.
     account_to_tx_ids: HashMap<ActorId, HashSet<TxId>>,
     /// Configuration parameters for the fungible token contract.
-    _config: Config,
+    #[allow(dead_code)]
+    config: Config,
 }
 
 static mut FUNGIBLE_TOKEN: Option<FungibleToken> = None;
@@ -80,6 +85,15 @@ impl FungibleToken {
     /// Executed on receiving `fungible-token-messages::TransferInput` or `fungible-token-messages::TransferFromInput`.
     /// Transfers `amount` tokens from `sender` account to `recipient` account.
     fn transfer(&mut self, tx_id: Option<u64>, from: &ActorId, to: &ActorId, amount: u128)->Result<(), FTError> {
+        #[cfg(feature = "test")]
+        {
+            let fail = &mut self.config.fail_next_transfer;
+            if *fail {
+                *fail = false;
+                panic!("Test panic")
+            }
+        }
+
         if from == &ZERO_ID || to == &ZERO_ID {
             Err(FTError::ZeroAddress)?
         };
@@ -182,7 +196,7 @@ fn common_state() -> IoFungibleToken {
         decimals,
         tx_ids: _,
         account_to_tx_ids: _,
-        _config: _
+        config: _
     } = state.clone();
 
     let balances = balances.iter().map(|(k, v)| (*k, *v)).collect();
@@ -264,6 +278,13 @@ extern fn handle() {
         FTAction::BalanceOf(account) => {
             let balance = ft.balances.get(&account).unwrap_or(&0);
             msg::reply::<FTEvent>(FTEvent::Balance(*balance), 0).unwrap();
+        }
+        FTAction::FailNextTransfer => {
+            #[cfg(feature="test")]
+            {
+                let fail = &mut ft.config.fail_next_transfer;
+                *fail = true;
+            }
         }
     }
 }

@@ -16,3 +16,6 @@ gtest.workspace = true
 [build-dependencies]
 fungible-token-io.workspace = true
 gear-wasm-builder.workspace = true
+
+[features]
+test = []
