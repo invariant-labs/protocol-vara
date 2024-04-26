@@ -772,7 +772,7 @@ fn test_swap_transfer_fail_token_x() {
     let slippage = SqrtPrice::new(MAX_SQRT_PRICE);
 
     token_x_program
-        .send(REGULAR_USER_2, FTAction::FailNextTransfer)
+        .send(REGULAR_USER_2, FTAction::SetFailTransferFlag(true))
         .assert_success();
 
     let _res = invariant.send_and_assert_error(
@@ -844,7 +844,7 @@ fn test_swap_transfer_fail_token_y() {
     let slippage = SqrtPrice::new(MIN_SQRT_PRICE);
 
     token_y_program
-        .send(REGULAR_USER_2, FTAction::FailNextTransfer)
+        .send(REGULAR_USER_2, FTAction::SetFailTransferFlag(true))
         .assert_success();
 
     let _res = invariant.send_and_assert_error(

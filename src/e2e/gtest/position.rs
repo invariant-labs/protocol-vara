@@ -1362,7 +1362,7 @@ fn test_remove_position_token_x_transfer_fail() {
 
     // Burn all token x to fail transfer
     token_x_program
-        .send(REGULAR_USER_2, FTAction::FailNextTransfer)
+        .send(REGULAR_USER_2, FTAction::SetFailTransferFlag(true))
         .assert_success();
     // Remove position
     invariant.send_and_assert_error(
@@ -1569,7 +1569,7 @@ fn test_remove_position_token_y_transfer_fail() {
 
     // Burn all token x to fail transfer
     token_y_program
-        .send(REGULAR_USER_2, FTAction::FailNextTransfer)
+        .send(REGULAR_USER_2, FTAction::SetFailTransferFlag(true))
         .assert_success();
     // Remove position
     invariant.send_and_assert_error(

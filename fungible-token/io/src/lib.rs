@@ -50,7 +50,7 @@ pub enum FTAction {
     BalanceOf(ActorId),
     Mint(u128),
     Burn(u128),
-    FailNextTransfer,
+    SetFailTransferFlag(bool),
 }
 
 #[derive(Debug, Encode, Decode, TypeInfo)]

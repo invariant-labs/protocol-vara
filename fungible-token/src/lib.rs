@@ -12,7 +12,7 @@ const ZERO_ID: ActorId = ActorId::new([0u8; 32]);
 #[derive(Debug, Clone, Default)]
 struct Config {
     #[allow(dead_code)]
-    pub fail_next_transfer: bool
+    pub fail_transfer: bool
 }
 type ValidUntil = u64;
 type TxId = u64;
@@ -87,9 +87,7 @@ impl FungibleToken {
     fn transfer(&mut self, tx_id: Option<u64>, from: &ActorId, to: &ActorId, amount: u128)->Result<(), FTError> {
         #[cfg(feature = "test")]
         {
-            let fail = &mut self.config.fail_next_transfer;
-            if *fail {
-                *fail = false;
+            if self.config.fail_transfer {
                 panic!("Test panic")
             }
         }
@@ -279,11 +277,10 @@ extern fn handle() {
             let balance = ft.balances.get(&account).unwrap_or(&0);
             msg::reply::<FTEvent>(FTEvent::Balance(*balance), 0).unwrap();
         }
-        FTAction::FailNextTransfer => {
+        FTAction::SetFailTransferFlag(fail) => {
             #[cfg(feature="test")]
             {
-                let fail = &mut ft.config.fail_next_transfer;
-                *fail = true;
+                ft.config.fail_transfer = fail;
             }
         }
     }
