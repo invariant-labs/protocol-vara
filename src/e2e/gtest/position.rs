@@ -779,7 +779,7 @@ fn test_create_position_not_enough_token_y() {
     );
 
     assert_eq!(
-        vec![(ActorId::from(TOKEN_Y_ID), TokenAmount(4))],
+        vec![(ActorId::from(TOKEN_X_ID), TokenAmount(4))],
         get_user_balances(&invariant, REGULAR_USER_1.into())
     );
 
