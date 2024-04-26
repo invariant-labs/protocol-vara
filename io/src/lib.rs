@@ -87,12 +87,16 @@ pub enum InvariantAction {
         position_id: u32,
     },
     WithdrawProtocolFee(PoolKey),
+    ClaimLostTokens {
+        token: ActorId,
+    },
 }
 
 #[derive(Clone, Decode, Encode, Debug, PartialEq, Eq, TypeInfo)]
 #[codec(crate = gstd::codec)]
 #[scale_info(crate = gstd::scale_info)]
 pub enum InvariantEvent {
+    ActionFailed(InvariantError),
     ProtocolFeeChanged(Percentage),
     PositionCreatedReturn(Position),
     PositionCreatedEvent {
@@ -135,7 +139,6 @@ pub enum InvariantEvent {
     Quote(QuoteResult),
     QuoteRoute(TokenAmount),
     ClaimFee(TokenAmount, TokenAmount),
-    ActionFailed(InvariantError),
 }
 
 #[derive(Clone, Decode, Encode, Debug, TypeInfo)]
@@ -151,12 +154,14 @@ pub enum InvariantStateQuery {
     GetTick(PoolKey, i32),
     IsTickInitialized(PoolKey, i32),
     GetAllPositions(ActorId),
+    GetUserBalances(ActorId),
 }
 
 #[derive(Encode, Decode, Clone, PartialEq, Eq, Debug, TypeInfo)]
 #[codec(crate = gstd::codec)]
 #[scale_info(crate = gstd::scale_info)]
 pub enum InvariantStateReply {
+    QueryFailed(InvariantError),
     ProtocolFee(Percentage),
     QueriedFeeTiers(Vec<FeeTier>),
     FeeTierExist(bool),
@@ -166,7 +171,7 @@ pub enum InvariantStateReply {
     Positions(Vec<Position>),
     Tick(Tick),
     IsTickInitialized(bool),
-    QueryFailed(InvariantError),
+    UserBalances(Vec<(ActorId, TokenAmount)>),
 }
 
 #[derive(Decode, Default, Encode, Clone, Debug, PartialEq, Eq, TypeInfo)]

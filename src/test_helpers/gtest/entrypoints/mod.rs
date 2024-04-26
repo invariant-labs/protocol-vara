@@ -13,6 +13,7 @@ pub mod get_all_positions;
 pub mod is_tick_initialized;
 pub mod quote;
 pub mod claim_fee;
+pub mod get_user_balances;
 
 pub use utils::*;
 pub use init_invariant::*;
@@ -27,3 +28,4 @@ pub use get_all_positions::*;
 pub use is_tick_initialized::*;
 pub use quote::*;
 pub use claim_fee::*;
+pub use get_user_balances::*;

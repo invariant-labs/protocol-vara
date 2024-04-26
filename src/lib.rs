@@ -11,7 +11,9 @@ use contracts::{
 use decimal::*;
 use fungible_token_io::{FTAction, FTError, FTEvent};
 use gstd::{
-    async_init, async_main, exec,
+    async_init, async_main,
+    collections::HashMap,
+    exec,
     msg::{self, reply},
     prelude::*,
     ActorId,
@@ -23,6 +25,17 @@ use math::{
 };
 use traceable_result::*;
 
+// TODO: Update once the SDK tests are in place and proper measurement is possible
+pub const TRANSFER_GAS_LIMIT: u64 = 5_000_000 * 2;
+pub const TRANSFER_REPLY_HANDLING_COST: u64 = 6_000_000 * 2;
+pub const BALANCE_CHANGE_COST: u64 = 100_000 * 2;
+pub const TRANSFER_COST: u64 =
+    TRANSFER_GAS_LIMIT + TRANSFER_REPLY_HANDLING_COST + BALANCE_CHANGE_COST;
+pub const CREATE_POSITION_COST: u64 = 100_000 * 2;
+pub const SWAP_UPDATE_COST: u64 = 100_000 * 2;
+pub const REMOVE_POSITION_COST: u64 = 100_000 * 2;
+pub const WITHDRAW_PROTOCOL_FEE_COST: u64 = 100_000 * 2;
+
 #[derive(Default)]
 pub struct Invariant {
     pub config: InvariantConfig,
@@ -33,6 +46,12 @@ pub struct Invariant {
     pub ticks: Ticks,
     pub tickmap: Tickmap,
     pub transaction_id: u64,
+    pub balances: HashMap<ActorId, HashMap<ActorId, TokenAmount>>,
+}
+pub enum TransferError {
+    FailedToSendMessage,
+    RecoverableFTError,
+    UnRecoverableFTError,
 }
 
 impl Invariant {
@@ -161,7 +180,7 @@ impl Invariant {
         slippage_limit_lower: SqrtPrice,
         slippage_limit_upper: SqrtPrice,
     ) -> Result<Position, InvariantError> {
-        if exec::gas_available() < 28_000_000 * 2 {
+        if exec::gas_available() < CREATE_POSITION_COST + 2 * TRANSFER_COST {
             return Err(InvariantError::NotEnoughGasToExecute);
         }
 
@@ -198,29 +217,18 @@ impl Invariant {
         )?;
 
         self.transfer_tokens(&pool_key.token_x, None, &caller, &program, x.get())
-            .await?;
+            .await
+            .map_err(|_| InvariantError::TransferError)?;
 
-        let second_transaction = self
+        let res = self
             .transfer_tokens(&pool_key.token_y, None, &caller, &program, y.get())
             .await;
 
-        if let Err(e) = second_transaction {
-            self.transfer_tokens(&pool_key.token_x, None, &program, &caller, x.get())
-                .await
+        if let Err(_err) = res {
+            self.increase_token_balance(&caller, &pool_key.token_x, x)
                 .unwrap();
 
-            return Err(e);
-        }
-
-        if exec::gas_available() < 90000 * 2 {
-            self.transfer_tokens(&pool_key.token_x, None, &program, &caller, x.get())
-                .await
-                .ok();
-            self.transfer_tokens(&pool_key.token_y, None, &program, &caller, y.get())
-                .await
-                .ok();
-
-            return Err(InvariantError::NotEnoughGasToUpdate);
+            reply_with_err_and_exit(InvariantError::RecoverableTransferError);
         }
 
         self.pools.update(&pool_key, &pool)?;
@@ -267,12 +275,11 @@ impl Invariant {
         &mut self,
         index: u32,
     ) -> Result<(TokenAmount, TokenAmount), InvariantError> {
-        if exec::gas_available() < 18809156 * 2 {
+        if exec::gas_available() < REMOVE_POSITION_COST + 2 * TRANSFER_COST {
             return Err(InvariantError::NotEnoughGasToExecute);
         }
 
         let caller = msg::source();
-        let program = exec::program_id();
         let current_timestamp = exec::block_timestamp();
 
         let mut position = self.positions.get(&caller, index).cloned()?;
@@ -317,9 +324,7 @@ impl Invariant {
         let token_x = pool_key.token_x;
         let token_y = pool_key.token_y;
 
-        self.transfer_tokens(&token_x, None, &program, &caller, amount_x.get())
-            .await?;
-        self.transfer_tokens(&token_y, None, &program, &caller, amount_y.get())
+        self.withdraw_token_pair(&caller, &(token_x, amount_x), &(token_y, amount_y))
             .await?;
 
         self.emit_event(InvariantEvent::PositionRemovedEvent {
@@ -331,6 +336,7 @@ impl Invariant {
             upper_tick_index: upper_tick.index,
             sqrt_price: pool.sqrt_price,
         });
+
         Ok((amount_x, amount_y))
     }
 
@@ -382,80 +388,43 @@ impl Invariant {
             Ok::<(), InvariantError>(())
         };
 
-        if exec::gas_available() < 25000000 * 2 {
-            return Err(InvariantError::NotEnoughGasToUpdate);
+        if exec::gas_available() < SWAP_UPDATE_COST + 2 * TRANSFER_COST {
+            return Err(InvariantError::NotEnoughGasToExecute);
         }
 
-        if x_to_y {
-            self.transfer_tokens(
-                &pool_key.token_x,
-                None,
-                &caller,
-                &program,
-                calculate_swap_result.amount_in.get(),
-            )
-            .await?;
-
-            let res = self
-                .transfer_tokens(
-                    &pool_key.token_y,
-                    None,
-                    &program,
-                    &caller,
-                    calculate_swap_result.amount_out.get(),
-                )
-                .await;
-
-            if let Err(err) = res {
-                self.transfer_tokens(
-                    &pool_key.token_x,
-                    None,
-                    &program,
-                    &caller,
-                    calculate_swap_result.amount_in.get(),
-                )
-                .await
-                .unwrap();
-
-                return Err(err);
-            }
-
-            update(self)?;
+        let (swapped_token, returned_token) = if x_to_y {
+            (&pool_key.token_x, &pool_key.token_y)
         } else {
-            self.transfer_tokens(
-                &pool_key.token_y,
-                None,
-                &caller,
-                &program,
-                calculate_swap_result.amount_in.get(),
-            )
-            .await?;
-            let res = self
-                .transfer_tokens(
-                    &pool_key.token_x,
-                    None,
-                    &program,
-                    &caller,
-                    calculate_swap_result.amount_out.get(),
-                )
-                .await;
-
-            if let Err(err) = res {
-                self.transfer_tokens(
-                    &pool_key.token_y,
-                    None,
-                    &program,
-                    &caller,
-                    calculate_swap_result.amount_in.get(),
-                )
-                .await
-                .unwrap();
-
-                return Err(err);
-            }
-
-            update(self)?;
+            (&pool_key.token_y, &pool_key.token_x)
         };
+
+        self.transfer_tokens(
+            swapped_token,
+            None,
+            &caller,
+            &program,
+            calculate_swap_result.amount_in.get(),
+        )
+        .await
+        .map_err(|_| InvariantError::TransferError)?;
+
+        let res = self
+            .transfer_tokens(
+                &returned_token,
+                None,
+                &program,
+                &caller,
+                calculate_swap_result.amount_out.get(),
+            )
+            .await;
+
+        if let Err(_err) = res {
+            self.increase_token_balance(&caller, &swapped_token, calculate_swap_result.amount_in)?;
+
+            reply_with_err_and_exit(InvariantError::RecoverableTransferError);
+        }
+
+        update(self)?;
 
         if !crossed_tick_indexes.is_empty() {
             self.emit_event(InvariantEvent::CrossTickEvent {
@@ -539,13 +508,8 @@ impl Invariant {
         &mut self,
         index: u32,
     ) -> Result<(TokenAmount, TokenAmount), InvariantError> {
-        if exec::gas_available() < 20258935 * 2 {
-            return Err(InvariantError::NotEnoughGasToExecute);
-        }
-
         let caller = msg::source();
         let current_timestamp = exec::block_timestamp();
-        let program = exec::program_id();
 
         let mut position = self.positions.get(&caller, index).cloned()?;
 
@@ -575,26 +539,44 @@ impl Invariant {
         self.ticks
             .update(position.pool_key, lower_tick.index, lower_tick)?;
 
-        if x.get() > 0 {
-            self.transfer_tokens(&position.pool_key.token_x, None, &program, &caller, x.get())
-                .await?
+        if x.get() == 0 && y.get() == 0 {
+            return Ok((x, y));
         }
 
-        if y.get() > 0 {
-            self.transfer_tokens(&position.pool_key.token_y, None, &program, &caller, y.get())
-                .await?;
+        if x.get() > 0 && y.get() > 0 {
+            if exec::gas_available() < 2 * TRANSFER_COST {
+                return Err(InvariantError::NotEnoughGasToExecute);
+            }
+
+            self.withdraw_token_pair(
+                &caller,
+                &(position.pool_key.token_x, x),
+                &(position.pool_key.token_y, y),
+            )
+            .await?;
+        } else {
+            let (token, amount) = if x.get() > 0 {
+                (position.pool_key.token_x, x)
+            } else {
+                (position.pool_key.token_y, y)
+            };
+
+            if exec::gas_available() < TRANSFER_COST {
+                return Err(InvariantError::NotEnoughGasToExecute);
+            }
+
+            self.withdraw_single_token(&token, &caller, amount).await?;
         }
 
         Ok((x, y))
     }
 
     pub async fn withdraw_protocol_fee(&mut self, pool_key: PoolKey) -> Result<(), InvariantError> {
-        if exec::gas_available() < 25_000_000 * 2 {
+        if exec::gas_available() < WITHDRAW_PROTOCOL_FEE_COST + 2 * TRANSFER_COST {
             return Err(InvariantError::NotEnoughGasToExecute);
         }
 
         let caller = msg::source();
-        let program = exec::program_id();
 
         let mut pool = self.pools.get(&pool_key)?;
 
@@ -602,26 +584,85 @@ impl Invariant {
             return Err(InvariantError::NotFeeReceiver);
         }
 
-        let (fee_protocol_token_x, fee_protocol_token_y) = pool.withdraw_protocol_fee(pool_key);
+        let (amount_x, amount_y) = pool.withdraw_protocol_fee(pool_key);
         self.pools.update(&pool_key, &pool)?;
 
-        self.transfer_tokens(
-            &pool_key.token_x,
-            None,
-            &program,
+        if exec::gas_available() < 2 * TRANSFER_COST {
+            return Err(InvariantError::NotEnoughGasToExecute);
+        }
+
+        self.withdraw_token_pair(
             &caller,
-            fee_protocol_token_x.get(),
+            &(pool_key.token_x, amount_x),
+            &(pool_key.token_y, amount_y),
         )
         .await?;
 
-        self.transfer_tokens(
-            &pool_key.token_y,
-            None,
-            &program,
-            &caller,
-            fee_protocol_token_y.get(),
-        )
-        .await?;
+        Ok(())
+    }
+
+    pub async fn claim_lost_tokens(&mut self, token: &ActorId) -> Result<(), InvariantError> {
+        let caller = msg::source();
+        let (balance, remove_balance) = {
+            let token_balances = self
+                .balances
+                .get_mut(&caller)
+                .ok_or(InvariantError::NoBalanceForTheToken)?;
+
+            let balance = *token_balances
+                .get(token)
+                .ok_or(InvariantError::NoBalanceForTheToken)?;
+
+            token_balances.remove(token).unwrap();
+
+            (balance, token_balances.is_empty())
+        };
+
+        if remove_balance {
+            self.balances.remove(&caller);
+        }
+
+        if exec::gas_available() < TRANSFER_COST {
+            return Err(InvariantError::NotEnoughGasToExecute);
+        }
+
+        self.withdraw_single_token(token, &caller, balance).await?;
+
+        Ok(())
+    }
+
+    pub fn get_user_balances(&self, user: &ActorId) -> Vec<(ActorId, TokenAmount)> {
+        self.balances
+            .get(user)
+            .cloned()
+            .unwrap_or_default()
+            .iter()
+            .map(|(k, v)| (*k, *v))
+            .collect()
+    }
+
+    fn increase_token_balance(
+        &mut self,
+        source: &ActorId,
+        token: &ActorId,
+        amount: TokenAmount,
+    ) -> Result<(), InvariantError> {
+        let token_balances = self.balances.get_mut(source);
+        if let Some(token_balances) = token_balances {
+            let token_balance = token_balances.get_mut(token);
+            if let Some(token_balance) = token_balance {
+                token_balance.0 = token_balance
+                    .0
+                    .checked_add(amount.0)
+                    .ok_or(InvariantError::FailedToChangeTokenBalance)?
+            } else {
+                token_balances.insert(*token, amount);
+            }
+        } else {
+            let mut token_balances = HashMap::new();
+            token_balances.insert(*token, amount);
+            self.balances.insert(*source, token_balances);
+        }
 
         Ok(())
     }
@@ -633,9 +674,9 @@ impl Invariant {
         from: &ActorId,
         to: &ActorId,
         amount_tokens: u128,
-    ) -> Result<(), InvariantError> {
+    ) -> Result<(), TransferError> {
         let tx_id = tx_id.or(self.generate_transaction_id().into());
-        let reply = msg::send_for_reply_as::<_, Result<FTEvent, FTError>>(
+        let reply = msg::send_with_gas_for_reply_as::<_, Result<FTEvent, FTError>>(
             *token_address,
             FTAction::Transfer {
                 tx_id,
@@ -643,12 +684,15 @@ impl Invariant {
                 to: *to,
                 amount: amount_tokens,
             },
+            TRANSFER_GAS_LIMIT,
             0,
-            0,
+            TRANSFER_REPLY_HANDLING_COST,
         )
-        .map_err(|_| InvariantError::TransferError)?
+        // Sending the message does not save the state so we must use a different error type
+        .map_err(|_| TransferError::FailedToSendMessage)?
         .await
-        .map_err(|_| InvariantError::TransferError)?;
+        // This error occurs in cases when the program panics
+        .map_err(|_| TransferError::RecoverableFTError)?;
 
         match reply {
             Ok(ft_event) => match ft_event {
@@ -657,10 +701,102 @@ impl Invariant {
                     to: _,
                     amount: _,
                 } => return Ok(()),
-                _ => return Err(InvariantError::TransferError),
+                // Token doesn't match the GRC-20 standard
+                _ => return Err(TransferError::UnRecoverableFTError),
             },
-            Err(_ft_error) => return Err(InvariantError::TransferError),
+            Err(ft_error) => match ft_error {
+                FTError::NotEnoughBalance | FTError::NotAllowedToTransfer => {
+                    return Err(TransferError::RecoverableFTError)
+                }
+                FTError::TxAlreadyExists | FTError::ZeroAddress => {
+                    return Err(TransferError::UnRecoverableFTError)
+                }
+            },
         }
+    }
+
+    async fn withdraw_single_token(
+        &mut self,
+        token: &ActorId,
+        caller: &ActorId,
+        balance: TokenAmount,
+    ) -> Result<(), InvariantError> {
+        let res = self
+            .transfer_tokens(&token, None, &exec::program_id(), &caller, balance.get())
+            .await;
+
+        if let Err(err) = res {
+            match err {
+                TransferError::RecoverableFTError => {
+                    self.increase_token_balance(&caller, &token, balance)
+                        .unwrap();
+
+                    reply_with_err_and_exit(InvariantError::RecoverableTransferError)
+                }
+                TransferError::FailedToSendMessage => {
+                    return Err(InvariantError::TransferError);
+                }
+                _ => {
+                    return Err(InvariantError::UnrecoverableTransferError);
+                }
+            }
+        }
+
+        Ok(())
+    }
+    async fn withdraw_token_pair(
+        &mut self,
+        caller: &ActorId,
+        token_x: &(ActorId, TokenAmount),
+        token_y: &(ActorId, TokenAmount),
+    ) -> Result<(), InvariantError> {
+        let program = exec::program_id();
+
+        let first_transaction = self
+            .transfer_tokens(&token_x.0, None, &program, &caller, token_x.1.get())
+            .await;
+
+        if let Err(err) = first_transaction {
+            match err {
+                TransferError::FailedToSendMessage => {
+                    // It is still possible to revert the state at this point
+                    return Err(InvariantError::TransferError);
+                }
+                TransferError::RecoverableFTError => {
+                    self.increase_token_balance(&caller, &token_x.0, token_x.1)
+                        .unwrap();
+                    self.increase_token_balance(&caller, &token_y.0, token_y.1)
+                        .unwrap();
+
+                    reply_with_err_and_exit(InvariantError::RecoverableTransferError);
+                }
+                TransferError::UnRecoverableFTError => {
+                    self.increase_token_balance(&caller, &token_y.0, token_y.1)
+                        .unwrap();
+
+                    reply_with_err_and_exit(InvariantError::RecoverableTransferError);
+                }
+            }
+        }
+
+        let second_transaction = self
+            .transfer_tokens(&token_y.0, None, &program, &caller, token_y.1.get())
+            .await;
+        if let Err(err) = second_transaction {
+            match err {
+                TransferError::RecoverableFTError | TransferError::FailedToSendMessage => {
+                    self.increase_token_balance(&caller, &token_y.0, token_y.1)
+                        .unwrap();
+
+                    reply_with_err_and_exit(InvariantError::RecoverableTransferError)
+                }
+                TransferError::UnRecoverableFTError => {
+                    return Err(InvariantError::UnrecoverableTransferError);
+                }
+            }
+        }
+
+        Ok(())
     }
 
     fn calculate_swap(
@@ -850,6 +986,11 @@ fn reply_with_err(err: InvariantError) {
     panic!("InvariantError: {:?}", err);
 }
 
+fn reply_with_err_and_exit(err: InvariantError) {
+    reply(InvariantEvent::ActionFailed(err), 0).expect("Failed to send reply");
+    exec::leave();
+}
+
 #[async_init]
 async fn init() {
     let init: InitInvariant = msg::load().expect("Unable to decode InitInvariant");
@@ -1023,6 +1164,14 @@ async fn main() {
                 }
             }
         }
+        InvariantAction::ClaimLostTokens { token } => {
+            match invariant.claim_lost_tokens(&token).await {
+                Ok(_) => {}
+                Err(e) => {
+                    reply_with_err(e);
+                }
+            }
+        }
     }
 }
 #[no_mangle]
@@ -1092,6 +1241,13 @@ extern "C" fn state() {
         InvariantStateQuery::GetAllPositions(owner_id) => {
             reply(
                 InvariantStateReply::Positions(invariant.get_all_positions(&owner_id)),
+                0,
+            )
+            .expect("Unable to reply");
+        }
+        InvariantStateQuery::GetUserBalances(user) => {
+            reply(
+                InvariantStateReply::UserBalances(invariant.get_user_balances(&user)),
                 0,
             )
             .expect("Unable to reply");

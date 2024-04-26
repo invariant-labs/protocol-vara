@@ -21,3 +21,4 @@ pub mod liquidity_gap;
 pub mod claim;
 pub mod protocol_fee;
 pub mod interaction_with_pool_on_remove_fee_tier;
+pub mod claim_lost_tokens;
