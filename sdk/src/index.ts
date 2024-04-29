@@ -1,7 +1,9 @@
-import { GearApi } from '@gear-js/api'
+import { GearApi, GearKeyring } from '@gear-js/api'
+import { LOCAL } from './consts.js'
+import { FungibleToken } from './fungilbe_token.js'
 async function connect() {
   const gearApi = await GearApi.create({
-    providerAddress: 'wss://testnet.vara.network'
+    providerAddress: LOCAL
   })
 
   const [chain, nodeName, nodeVersion] = await Promise.all([
@@ -17,6 +19,11 @@ async function connect() {
       `New block with number: ${header.number.toNumber()} and hash: ${header.hash.toHex()}`
     )
   })
+
+  const admin = await GearKeyring.fromSuri('//Alice')
+
+  const token = await FungibleToken.deploy(gearApi, admin, 'Test Token', 'TT', 18n)
+  console.log(token)
 }
 
 connect().catch(console.error)
