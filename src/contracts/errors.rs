@@ -23,6 +23,8 @@ pub enum InvariantError {
   PoolKeyAlreadyExist,
   UnauthorizedFeeReceiver,
   ZeroLiquidity,
+  RecoverableTransferError,
+  UnrecoverableTransferError,
   TransferError,
   TokensAreSame,
   AmountUnderMinimumAmountOut,
@@ -31,9 +33,10 @@ pub enum InvariantError {
   InvalidInitTick,
   InvalidInitSqrtPrice,
   NotEnoughGasToExecute,
-  NotEnoughGasToUpdate,
   TickLimitReached,
-  InvalidTickIndex
+  InvalidTickIndex,
+  NoBalanceForTheToken,
+  FailedToChangeTokenBalance,
 }
 
 impl Into<String>for InvariantError {
