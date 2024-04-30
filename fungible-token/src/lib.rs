@@ -51,13 +51,12 @@ impl FungibleToken {
             .and_modify(|balance| *balance += amount)
             .or_insert(amount);
         self.total_supply += amount;
-        msg::reply(
-            FTEvent::Transfer {
-                from: ZERO_ID,
-                to: source,
-                amount,
-            },
-            0,
+        reply(
+            Ok(FTEvent::Transfer {
+                            from: ZERO_ID,
+                            to: source,
+                            amount,
+                        })
         )
         .unwrap();
     }
@@ -72,13 +71,12 @@ impl FungibleToken {
             .and_modify(|balance| *balance -= amount);
         self.total_supply -= amount;
 
-        msg::reply(
-            FTEvent::Transfer {
+        reply(
+            Ok(FTEvent::Transfer {
                 from: source,
                 to: ZERO_ID,
                 amount,
-            },
-            0,
+            }),
         )
         .unwrap();
     }
@@ -218,11 +216,11 @@ fn static_mut_state() -> &'static mut FungibleToken {
 
 #[no_mangle]
 extern fn state() {
-    reply(common_state())
+    msg::reply(common_state(), 0)
         .expect("Failed to encode or reply with `<AppMetadata as Metadata>::State` from `state()`");
 }
 
-fn reply(payload: impl Encode) -> GstdResult<MessageId> {
+fn reply(payload: Result<FTEvent, FTError>) -> GstdResult<MessageId> {
     msg::reply(payload, 0)
 }
 
@@ -234,36 +232,34 @@ extern fn handle() {
         FTAction::Transfer { tx_id, from, to, amount } => {
             match ft.transfer(tx_id, &from, &to, amount) {
                 Ok(_) => {
-                    msg::reply::<Result::<FTEvent, FTError>>(
+                    reply(
                         Ok(FTEvent::Transfer {
                             from: from,
                             to: to,
                             amount,
                         }),
-                        0,
                     )
                     .expect("Unable to reply");
                 }
                 Err(e) => {
-                    msg::reply::<Result::<FTEvent, FTError>>(Err(e), 0).expect("Unable to reply");
+                    reply(Err(e)).expect("Unable to reply");
                 }
             }
         }
         FTAction::Approve { tx_id, to, amount } => {
             match ft.approve(tx_id, &to, amount) {
                 Ok(_) => {
-                    msg::reply::<Result<FTEvent, FTError>>(
+                    reply(
                         Ok(FTEvent::Approve {
                             from: msg::source(),
                             to,
                             amount,
-                        }),
-                        0,
+                        })
                     )
                     .expect("Unable to reply");
                 }
                 Err(e) => {
-                    msg::reply::<Result::<FTEvent, FTError>>(Err(e), 0).expect("Unable to reply");
+                    reply(Err(e)).expect("Unable to reply");
                 }
             }
         }
@@ -275,7 +271,7 @@ extern fn handle() {
         }
         FTAction::BalanceOf(account) => {
             let balance = ft.balances.get(&account).unwrap_or(&0);
-            msg::reply::<FTEvent>(FTEvent::Balance(*balance), 0).unwrap();
+            reply(Ok(FTEvent::Balance(*balance))).unwrap();
         }
         FTAction::SetFailTransferFlag(fail) => {
             #[cfg(feature="test")]
