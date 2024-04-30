@@ -26,6 +26,13 @@ pub trait RevertibleProgram {
         payload: impl Codec,
         error: impl Into<String>,
     ) -> RunResult;
+    #[track_caller]
+    fn send_and_assert_error<'a>(
+        &'a mut self,
+        from: u64,
+        payload: impl Codec,
+        error: InvariantError,
+    ) -> RunResult;
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Encode, Decode, TypeInfo)]
@@ -163,6 +170,13 @@ impl InvariantResult for RunResult {
             self.assert_panicked_with(
                 "message used to get the actual error message in case of an unexpected panic",
             );
+        } else if let Some(event) = self.emitted_events().last() {
+            if let Ok(inv_event) = decode_from_bytes::<InvariantEvent>(event.payload.clone().into())
+            {
+                if let InvariantEvent::ActionFailed(error) = inv_event {
+                    panic!("Unexpected error: {:?}", error)
+                }
+            }
         }
     }
 }
@@ -177,6 +191,24 @@ impl RevertibleProgram for Program<'_> {
     ) -> RunResult {
         let res = self.send(from, payload);
         res.assert_panicked_with(error.into());
+        res
+    }
+    #[track_caller]
+    fn send_and_assert_error<'a>(
+        &'a mut self,
+        from: u64,
+        payload: impl Codec,
+        error: InvariantError,
+    ) -> RunResult {
+        let res = self.send(from, payload);
+        if let Some(event) = res.emitted_events().last() {
+            if let Ok(inv_event) = decode_from_bytes::<InvariantEvent>(event.payload.clone().into())
+            {
+                if let InvariantEvent::ActionFailed(inv_error) = inv_event {
+                    assert_eq!(inv_error, error)
+                }
+            }
+        }
         res
     }
 }
