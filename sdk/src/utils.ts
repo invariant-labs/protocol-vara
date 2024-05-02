@@ -1,4 +1,4 @@
-import { ProgramMetadata, UserMessageSent } from '@gear-js/api'
+import { HumanTypesRepr, ProgramMetadata, UserMessageSent } from '@gear-js/api'
 import { readFile } from 'fs/promises'
 import path from 'path'
 import { ISubmittableResult } from '@polkadot/types/types'
@@ -61,18 +61,31 @@ export type FungibleTokenResponse = {
   data: string
 }
 
-export const assertProcessed = (res: FungibleTokenResponse) => {
-  if (res.status !== UserMessageStatus.ProcessedSuccessfully) {
-    throw new Error(`Expected to be processed`)
+// these functions should used to unify HumanProgramMetadataReprRustV1 and V2 interfaces
+export const getStateInput = (meta: ProgramMetadata): number | null => {
+  const state = meta.types.state
+  if (typeof state === 'object') {
+    return (state as HumanTypesRepr).input
+  } else {
+    throw new Error('State input is not available in metadata V1')
   }
 }
-export const assertPanicked = (res: FungibleTokenResponse) => {
-  if (res.status !== UserMessageStatus.Panicked) {
-    throw new Error(`Expected panic`)
+export const getStateOutput = (meta: ProgramMetadata) => {
+  const state = meta.types.state
+  if (typeof state === 'object') {
+    return (state as HumanTypesRepr).output
+  } else {
+    return state as number
   }
 }
-export const assertProcessedWithError = (res: FungibleTokenResponse) => {
-  if (res.status !== UserMessageStatus.ProcessedWithError) {
-    throw new Error(`Expected to be processed with error`)
-  }
+
+export enum MetaDataTypes {
+  u128 = 'u128',
+  u64 = 'u64',
+  u8 = 'u8',
+  OptionU64 = 'Option<u64>'
+}
+
+export const createTypeByName = (meta: ProgramMetadata, type: MetaDataTypes, payload: any) => {
+  return meta.createType(meta.getTypeIndexByName(type)!, payload);
 }

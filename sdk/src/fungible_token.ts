@@ -4,13 +4,25 @@ import {
   FungibleTokenResponse,
   UserMessageStatus,
   Uint8ArrayToHexStr,
-  getDeploymentData
+  getDeploymentData,
+  MetaDataTypes,
+  getStateInput
 } from './utils.js'
 import { FUNGIBLE_TOKEN_GAS_LIMIT } from './consts.js'
 import { ISubmittableResult } from '@polkadot/types/types'
 import { MessageSendOptions } from '@gear-js/api'
 import { Codec } from '@polkadot/types/types'
 import { EventListener } from './event_listener.js'
+export type BalanceEntry = [Uint8Array, number]
+export type AllowanceEntry = [Uint8Array, BalanceEntry]
+export type FungibleTokenState = {
+  name: string
+  symbol: string
+  totalSupply: number
+  balances: Array<BalanceEntry>
+  allowances: Array<AllowanceEntry>
+  decimals: number
+}
 
 export class FungibleToken {
   gasLimit: bigint
@@ -43,6 +55,26 @@ export class FungibleToken {
 
     if (meta.types.handle.output === null) {
       throw new Error('Metadata does not contain handle output type')
+    }
+
+    if (getStateInput(meta) === null) {
+      throw new Error('Metadata does not contain state input type')
+    }
+
+    if (meta.getTypeIndexByName(MetaDataTypes.u128) === null) {
+      throw new Error('Metadata does not contain u128 type')
+    }
+
+    if (meta.getTypeIndexByName(MetaDataTypes.u64) === null) {
+      throw new Error('Metadata does not contain u64 type')
+    }
+
+    if (meta.getTypeIndexByName(MetaDataTypes.OptionU64) === null) {
+      throw new Error('Metadata does not contain Option<u64> type')
+    }
+
+    if (meta.getTypeIndexByName(MetaDataTypes.u8) === null) {
+      throw new Error('Metadata does not contain u8 type')
     }
   }
   static async deploy(
@@ -182,5 +214,61 @@ export class FungibleToken {
     const handle = this.meta.createType(inputType, { Approve: { txId, amount, to } })
 
     return this.sendMessage(signer, handle, inputType)
+  }
+
+  async readState(payload: any, responseTypeIndex: string): Promise<Codec> {
+    const encodedPayload = this.meta.createType(getStateInput(this.meta)!, payload).toU8a()
+    const readProgramParams = {
+      programId: this.programId,
+      payload: encodedPayload
+    }
+
+      const state = await this.api.programState.read(
+        readProgramParams,
+        this.meta,
+        this.meta.getTypeIndexByName(responseTypeIndex)!
+      )
+      return state
+  }
+
+  async balanceOf(account: Uint8Array) {
+    return this.readState({ balanceOf: account }, MetaDataTypes.u128)
+  }
+
+  async decimals() {
+    return this.readState('decimals', MetaDataTypes.u8)
+  }
+
+  async allowance(spender: Uint8Array, account: Uint8Array) {
+    return this.readState(
+      {
+        allowance: {
+          spender,
+          account
+        }
+      },
+      MetaDataTypes.u128
+    )
+  }
+
+  async getTxValidityTime(account: Uint8Array, txId: bigint): Promise<Codec | null> {
+    const option = await this.readState(
+      {
+        getTxValidityTime: {
+          account,
+          txId
+        }
+      },
+      MetaDataTypes.OptionU64
+    )
+    if ((option as any).isNone) {
+      return null
+    } else {
+      return (option as any).unwrap()
+    }
+  }
+
+  async totalSupply() {
+    return this.readState('TotalSupply', MetaDataTypes.u128)
   }
 }
