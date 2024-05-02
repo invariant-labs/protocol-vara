@@ -1,6 +1,6 @@
 #![no_std]
 
-use gmeta::{In, InOut, Metadata, Out};
+use gmeta::{In, InOut, Metadata};
 use gstd::{prelude::*, ActorId};
 
 pub struct FungibleTokenMetadata;
@@ -11,7 +11,7 @@ impl Metadata for FungibleTokenMetadata {
     type Others = ();
     type Reply = ();
     type Signal = ();
-    type State = Out<IoFungibleToken>;
+    type State = InOut<FTStateQuery, FTStateReply>;
 }
 
 #[derive(Debug, Default, Decode, Encode, Clone, TypeInfo)]
@@ -81,4 +81,32 @@ pub struct IoFungibleToken {
     pub balances: Vec<(ActorId, u128)>,
     pub allowances: Vec<(ActorId, Vec<(ActorId, u128)>)>,
     pub decimals: u8,
+}
+#[derive(Debug, Encode, Decode, TypeInfo)]
+#[codec(crate = gstd::codec)]
+#[scale_info(crate = gstd::scale_info)]
+pub enum FTStateQuery {
+    // Standard defined queries (keep in the exact same order unless the standard changes!)
+    Allowance { spender: ActorId, account: ActorId },
+    BalanceOf { account: ActorId },
+    Decimals,
+    GetTxValidityTime { account: ActorId, tx_id: u64 },
+    Name,
+    TotalSupply,
+    // Non Standard queries
+    FullState,
+}
+#[derive(Debug, Encode, Decode, TypeInfo)]
+#[codec(crate = gstd::codec)]
+#[scale_info(crate = gstd::scale_info)]
+pub enum FTStateReply {
+    // Standard defined queries (keep in the exact same order unless the standard changes!)
+    Allowance(u128),
+    BalanceOf(u128),
+    Decimals(u8),
+    TxValidityTime(Option<u64>),
+    Name(String),
+    TotalSupply(u128),
+    // Non Standard queries
+    FullState(IoFungibleToken),
 }
