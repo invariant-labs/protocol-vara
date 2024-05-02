@@ -189,8 +189,7 @@ impl FungibleToken {
     }
 }
 
-fn common_state() -> IoFungibleToken {
-    let state = static_mut_state();
+fn common_state(state: FungibleToken) -> IoFungibleToken {
     let FungibleToken {
         name,
         symbol,
@@ -201,7 +200,7 @@ fn common_state() -> IoFungibleToken {
         tx_ids: _,
         account_to_tx_ids: _,
         config: _,
-    } = state.clone();
+    } = state;
 
     let balances = balances.iter().map(|(k, v)| (*k, *v)).collect();
     let allowances = allowances
@@ -223,7 +222,7 @@ fn static_mut_state() -> &'static mut FungibleToken {
 }
 
 fn static_state() -> FungibleToken {
-    unsafe { FUNGIBLE_TOKEN.clone().expect("State uninitialized") }
+    unsafe { FUNGIBLE_TOKEN.take().expect("State uninitialized") }
 }
 
 #[no_mangle]
@@ -233,22 +232,21 @@ extern "C" fn state() {
 
     match query {
         FTStateQuery::Name => {
-            msg::reply(FTStateReply::Name(state.name), 0).expect("Unable to reply");
+            msg::reply(state.name, 0).expect("Unable to reply");
         }
         FTStateQuery::GetTxValidityTime { account, tx_id } => {
             let valid = state.tx_ids.get(&(account, tx_id)).copied();
-            msg::reply(FTStateReply::TxValidityTime(valid), 0).expect("Unable to reply");
+            msg::reply(valid, 0).expect("Unable to reply");
         }
         FTStateQuery::Decimals => {
-            let state = common_state();
-            msg::reply(FTStateReply::Decimals(state.decimals), 0).expect("Unable to reply");
+            msg::reply(state.decimals, 0).expect("Unable to reply");
         }
         FTStateQuery::TotalSupply => {
-            msg::reply(FTStateReply::TotalSupply(state.total_supply), 0).expect("Unable to reply");
+            msg::reply(state.total_supply, 0).expect("Unable to reply");
         }
         FTStateQuery::BalanceOf { account } => {
             let balance = state.balances.get(&account).copied().unwrap_or(0);
-            msg::reply(FTStateReply::BalanceOf(balance), 0).expect("Unable to reply");
+            msg::reply(balance, 0).expect("Unable to reply");
         }
         FTStateQuery::Allowance { spender, account } => {
             let allowance = state
@@ -257,11 +255,11 @@ extern "C" fn state() {
                 .and_then(|m| m.get(&spender))
                 .copied()
                 .unwrap_or(0);
-            msg::reply(FTStateReply::Allowance(allowance), 0).expect("Unable to reply");
+            msg::reply(allowance, 0).expect("Unable to reply");
         }
         FTStateQuery::FullState => {
-            let state = common_state();
-            msg::reply(FTStateReply::FullState(state), 0).expect("Unable to reply");
+            let state = common_state(state);
+            msg::reply(state, 0).expect("Unable to reply");
         }
     }
 }

@@ -11,7 +11,7 @@ impl Metadata for FungibleTokenMetadata {
     type Others = ();
     type Reply = ();
     type Signal = ();
-    type State = InOut<FTStateQuery, FTStateReply>;
+    type State = In<FTStateQuery>;
 }
 
 #[derive(Debug, Default, Decode, Encode, Clone, TypeInfo)]
@@ -95,18 +95,4 @@ pub enum FTStateQuery {
     TotalSupply,
     // Non Standard queries
     FullState,
-}
-#[derive(Debug, Encode, Decode, TypeInfo)]
-#[codec(crate = gstd::codec)]
-#[scale_info(crate = gstd::scale_info)]
-pub enum FTStateReply {
-    // Standard defined queries (keep in the exact same order unless the standard changes!)
-    Allowance(u128),
-    BalanceOf(u128),
-    Decimals(u8),
-    TxValidityTime(Option<u64>),
-    Name(String),
-    TotalSupply(u128),
-    // Non Standard queries
-    FullState(IoFungibleToken),
 }
