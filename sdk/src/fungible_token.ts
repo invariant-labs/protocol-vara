@@ -1,3 +1,4 @@
+import { u128, u64, u8 } from '@polkadot/types/primitive'
 import { GearApi, HexString, ProgramMetadata } from '@gear-js/api'
 import { KeyringPair } from '@polkadot/keyring/types'
 import {
@@ -11,6 +12,7 @@ import {
 import { FUNGIBLE_TOKEN_GAS_LIMIT } from './consts.js'
 import { ISubmittableResult } from '@polkadot/types/types'
 import { MessageSendOptions } from '@gear-js/api'
+import { Option } from '@polkadot/types/codec'
 import { Codec } from '@polkadot/types/types'
 import { EventListener } from './event_listener.js'
 export type BalanceEntry = [Uint8Array, number]
@@ -162,7 +164,7 @@ export class FungibleToken {
     if (details.isSome && details.unwrap().code.isError) {
       return {
         status: UserMessageStatus.Panicked,
-        data: String.fromCharCode(...returnMessage.data.message.payload)
+        data: JSON.parse(String.fromCharCode(...returnMessage.data.message.payload))
       }
     }
     const readableResponse = this.meta.createType(
@@ -223,24 +225,29 @@ export class FungibleToken {
       payload: encodedPayload
     }
 
-      const state = await this.api.programState.read(
-        readProgramParams,
-        this.meta,
-        this.meta.getTypeIndexByName(responseTypeIndex)!
-      )
-      return state
+    const state = await this.api.programState.read(
+      readProgramParams,
+      this.meta,
+      this.meta.getTypeIndexByName(responseTypeIndex)!
+    )
+    return state
   }
 
-  async balanceOf(account: Uint8Array) {
-    return this.readState({ balanceOf: account }, MetaDataTypes.u128)
+  async balanceOf(account: Uint8Array): Promise<bigint> {
+    const response = (await this.readState(
+      { balanceOf: account },
+      MetaDataTypes.u128
+    )) as any as u128
+    return response.toBigInt()
   }
 
-  async decimals() {
-    return this.readState('decimals', MetaDataTypes.u8)
+  async decimals(): Promise<bigint> {
+    const response = (await this.readState('decimals', MetaDataTypes.u8)) as any as u8
+    return response.toBigInt()
   }
 
-  async allowance(spender: Uint8Array, account: Uint8Array) {
-    return this.readState(
+  async allowance(spender: Uint8Array, account: Uint8Array): Promise<bigint> {
+    const response = (await this.readState(
       {
         allowance: {
           spender,
@@ -248,11 +255,13 @@ export class FungibleToken {
         }
       },
       MetaDataTypes.u128
-    )
+    )) as any as u128
+
+    return response.toBigInt()
   }
 
-  async getTxValidityTime(account: Uint8Array, txId: bigint): Promise<Codec | null> {
-    const option = await this.readState(
+  async getTxValidityTime(account: Uint8Array, txId: bigint): Promise<bigint | null> {
+    const option = (await this.readState(
       {
         getTxValidityTime: {
           account,
@@ -260,15 +269,13 @@ export class FungibleToken {
         }
       },
       MetaDataTypes.OptionU64
-    )
-    if ((option as any).isNone) {
-      return null
-    } else {
-      return (option as any).unwrap()
-    }
+    )) as any as Option<u64>
+
+    return option.isSome ? option.unwrap().toBigInt() : null
   }
 
-  async totalSupply() {
-    return this.readState('TotalSupply', MetaDataTypes.u128)
+  async totalSupply(): Promise<bigint> {
+    const response = await this.readState('totalSupply', MetaDataTypes.u128)
+    return (response as any as u128).toBigInt()
   }
 }

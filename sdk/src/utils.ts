@@ -58,7 +58,7 @@ export enum UserMessageStatus {
 
 export type FungibleTokenResponse = {
   status: UserMessageStatus
-  data: string
+  data: JSON
 }
 
 // these functions should used to unify HumanProgramMetadataReprRustV1 and V2 interfaces
@@ -87,5 +87,5 @@ export enum MetaDataTypes {
 }
 
 export const createTypeByName = (meta: ProgramMetadata, type: MetaDataTypes, payload: any) => {
-  return meta.createType(meta.getTypeIndexByName(type)!, payload);
+  return meta.createType(meta.getTypeIndexByName(type)!, payload)
 }
