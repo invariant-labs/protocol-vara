@@ -1,3 +1,4 @@
+import { Percentage } from './wasm/pkg/invariant_vara_wasm.js'
 import { GearApi, GearKeyring } from '@gear-js/api'
 import { LOCAL } from './consts.js'
 import { FungibleToken } from './fungible-token.js'
