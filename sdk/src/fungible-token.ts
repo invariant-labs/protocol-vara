@@ -14,7 +14,7 @@ import { ISubmittableResult } from '@polkadot/types/types'
 import { MessageSendOptions } from '@gear-js/api'
 import { Option } from '@polkadot/types/codec'
 import { Codec } from '@polkadot/types/types'
-import { EventListener } from './event_listener.js'
+import { EventListener } from './event-listener.js'
 export type BalanceEntry = [Uint8Array, number]
 export type AllowanceEntry = [Uint8Array, BalanceEntry]
 export type FungibleTokenState = {

@@ -1,9 +1,9 @@
 import { GearApi, GearKeyring } from '@gear-js/api'
 import { LOCAL } from './consts.js'
-import { FungibleToken } from './fungible_token.js'
+import { FungibleToken } from './fungible-token.js'
 import { Uint8ArrayToHexStr, UserMessageStatus } from './utils.js'
 import assert from 'assert'
-import { EventListener } from './event_listener.js'
+import { EventListener } from './event-listener.js'
 async function connect() {
   const gearApi = await GearApi.create({
     providerAddress: LOCAL
@@ -72,7 +72,7 @@ async function connect() {
   {
     const res = await token.transfer(admin, user.addressRaw, admin.addressRaw, 300n)
     assert.strictEqual(res.status, UserMessageStatus.ProcessedWithError)
-    assert.strictEqual(res.data, { err: 'NotAllowedToTransfer' })
+    assert.deepStrictEqual(res.data, { err: 'NotAllowedToTransfer' })
   }
   {
     const res = await token.approve(user, admin.addressRaw, 300n)
@@ -82,6 +82,10 @@ async function connect() {
     const res = await token.transfer(admin, user.addressRaw, admin.addressRaw, 100n)
     assert.strictEqual(res.status, UserMessageStatus.ProcessedSuccessfully)
   }
+  process.exit(0)
 }
 
-connect().catch(console.error)
+connect().catch(reason => {
+  console.error(reason)
+  process.exit(1)
+})
