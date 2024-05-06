@@ -39,7 +39,7 @@ rustup target add wasm32-unknown-unknown --toolchain nightly-2024-01-25
 
 #### Instal Gear node
 ```
-curl https://get.gear.rs/gear-v1.1.0-x86_64-unknown-linux-gnu.tar.xz | tar Jx
+curl https://get.gear.rs/gear-v1.3.0-x86_64-unknown-linux-gnu.tar.xz | tar Jx
 ```
 
 ## Build protocol
@@ -53,4 +53,14 @@ chmod +x tests.sh
 ```
 ```bash
 ./tests.sh
+```
+
+## Running local node
+run it in the desired location as dev 
+```bash
+path/to/node/gear --dev
+```
+or run it through CI in sdk folder
+```bash
+npm run node:local
 ```
