@@ -2,7 +2,12 @@
 
 use fungible_token_io::*;
 use gstd::{
-    collections::{HashMap, HashSet}, errors::Result as GstdResult, exec::block_timestamp, msg, prelude::*, ActorId, MessageId
+    collections::{HashMap, HashSet},
+    errors::Result as GstdResult,
+    exec::block_timestamp,
+    msg,
+    prelude::*,
+    ActorId, MessageId,
 };
 
 #[cfg(test)]
@@ -12,7 +17,7 @@ const ZERO_ID: ActorId = ActorId::new([0u8; 32]);
 #[derive(Debug, Clone, Default)]
 struct Config {
     #[allow(dead_code)]
-    pub fail_transfer: bool
+    pub fail_transfer: bool,
 }
 type ValidUntil = u64;
 type TxId = u64;
@@ -31,7 +36,7 @@ struct FungibleToken {
     balances: HashMap<ActorId, u128>,
     /// A map that records how much an authorized spender is allowed to transfer from a user's account
     allowances: HashMap<ActorId, HashMap<ActorId, u128>>,
-	/// A map of executed transactions to the time they are valid.
+    /// A map of executed transactions to the time they are valid.
     tx_ids: HashMap<(ActorId, TxId), ValidUntil>,
     /// A map of accounts to their transaction IDs.
     account_to_tx_ids: HashMap<ActorId, HashSet<TxId>>,
@@ -51,14 +56,11 @@ impl FungibleToken {
             .and_modify(|balance| *balance += amount)
             .or_insert(amount);
         self.total_supply += amount;
-        msg::reply(
-            FTEvent::Transfer {
-                from: ZERO_ID,
-                to: source,
-                amount,
-            },
-            0,
-        )
+        reply(Ok(FTEvent::Transfer {
+            from: ZERO_ID,
+            to: source,
+            amount,
+        }))
         .unwrap();
     }
     /// Executed on receiving `fungible-token-messages::BurnInput`.
@@ -72,19 +74,22 @@ impl FungibleToken {
             .and_modify(|balance| *balance -= amount);
         self.total_supply -= amount;
 
-        msg::reply(
-            FTEvent::Transfer {
-                from: source,
-                to: ZERO_ID,
-                amount,
-            },
-            0,
-        )
+        reply(Ok(FTEvent::Transfer {
+            from: source,
+            to: ZERO_ID,
+            amount,
+        }))
         .unwrap();
     }
     /// Executed on receiving `fungible-token-messages::TransferInput` or `fungible-token-messages::TransferFromInput`.
     /// Transfers `amount` tokens from `sender` account to `recipient` account.
-    fn transfer(&mut self, tx_id: Option<u64>, from: &ActorId, to: &ActorId, amount: u128)->Result<(), FTError> {
+    fn transfer(
+        &mut self,
+        tx_id: Option<u64>,
+        from: &ActorId,
+        to: &ActorId,
+        amount: u128,
+    ) -> Result<(), FTError> {
         #[cfg(feature = "test")]
         {
             if self.config.fail_transfer {
@@ -119,7 +124,7 @@ impl FungibleToken {
     }
 
     /// Executed on receiving `fungible-token-messages::ApproveInput`.
-    fn approve(&mut self, tx_id: Option<u64>, to: &ActorId, amount: u128)->Result<(), FTError> {
+    fn approve(&mut self, tx_id: Option<u64>, to: &ActorId, amount: u128) -> Result<(), FTError> {
         if to == &ZERO_ID {
             Err(FTError::ZeroAddress)?
         }
@@ -155,7 +160,7 @@ impl FungibleToken {
         false
     }
 
-    fn tx_exits(&self, tx_id: Option<u64>)->bool {
+    fn tx_exits(&self, tx_id: Option<u64>) -> bool {
         let current_time = block_timestamp();
         let source = msg::source();
         if let Some(tx_id) = tx_id {
@@ -177,14 +182,14 @@ impl FungibleToken {
                 new_tx_ids.insert(tx_id);
                 self.account_to_tx_ids.insert(source, new_tx_ids);
             }
-        
-            self.tx_ids.insert((source, tx_id), current_time + VALIDITY_PERIOD);
+
+            self.tx_ids
+                .insert((source, tx_id), current_time + VALIDITY_PERIOD);
         }
     }
 }
 
-fn common_state() -> IoFungibleToken {
-    let state = static_mut_state();
+fn common_state(state: FungibleToken) -> IoFungibleToken {
     let FungibleToken {
         name,
         symbol,
@@ -194,8 +199,8 @@ fn common_state() -> IoFungibleToken {
         decimals,
         tx_ids: _,
         account_to_tx_ids: _,
-        config: _
-    } = state.clone();
+        config: _,
+    } = state;
 
     let balances = balances.iter().map(|(k, v)| (*k, *v)).collect();
     let allowances = allowances
@@ -216,57 +221,89 @@ fn static_mut_state() -> &'static mut FungibleToken {
     unsafe { FUNGIBLE_TOKEN.get_or_insert(Default::default()) }
 }
 
-#[no_mangle]
-extern fn state() {
-    reply(common_state())
-        .expect("Failed to encode or reply with `<AppMetadata as Metadata>::State` from `state()`");
+fn static_state() -> FungibleToken {
+    unsafe { FUNGIBLE_TOKEN.take().expect("State uninitialized") }
 }
 
-fn reply(payload: impl Encode) -> GstdResult<MessageId> {
+#[no_mangle]
+extern "C" fn state() {
+    let query = msg::load::<FTStateQuery>().expect("Failed to decode message");
+    let state = static_state();
+
+    match query {
+        FTStateQuery::Name => {
+            msg::reply(state.name, 0).expect("Unable to reply");
+        }
+        FTStateQuery::GetTxValidityTime { account, tx_id } => {
+            let valid = state.tx_ids.get(&(account, tx_id)).copied();
+            msg::reply(valid, 0).expect("Unable to reply");
+        }
+        FTStateQuery::Decimals => {
+            msg::reply(state.decimals, 0).expect("Unable to reply");
+        }
+        FTStateQuery::TotalSupply => {
+            msg::reply(state.total_supply, 0).expect("Unable to reply");
+        }
+        FTStateQuery::BalanceOf { account } => {
+            let balance = state.balances.get(&account).copied().unwrap_or(0);
+            msg::reply(balance, 0).expect("Unable to reply");
+        }
+        FTStateQuery::Allowance { spender, account } => {
+            let allowance = state
+                .allowances
+                .get(&account)
+                .and_then(|m| m.get(&spender))
+                .copied()
+                .unwrap_or(0);
+            msg::reply(allowance, 0).expect("Unable to reply");
+        }
+        FTStateQuery::FullState => {
+            let state = common_state(state);
+            msg::reply(state, 0).expect("Unable to reply");
+        }
+    }
+}
+
+fn reply(payload: Result<FTEvent, FTError>) -> GstdResult<MessageId> {
     msg::reply(payload, 0)
 }
 
 #[no_mangle]
-extern fn handle() {
+extern "C" fn handle() {
     let action: FTAction = msg::load().expect("Could not load Action");
     let ft: &mut FungibleToken = unsafe { FUNGIBLE_TOKEN.get_or_insert(Default::default()) };
     match action {
-        FTAction::Transfer { tx_id, from, to, amount } => {
-            match ft.transfer(tx_id, &from, &to, amount) {
-                Ok(_) => {
-                    msg::reply::<Result::<FTEvent, FTError>>(
-                        Ok(FTEvent::Transfer {
-                            from: from,
-                            to: to,
-                            amount,
-                        }),
-                        0,
-                    )
-                    .expect("Unable to reply");
-                }
-                Err(e) => {
-                    msg::reply::<Result::<FTEvent, FTError>>(Err(e), 0).expect("Unable to reply");
-                }
+        FTAction::Transfer {
+            tx_id,
+            from,
+            to,
+            amount,
+        } => match ft.transfer(tx_id, &from, &to, amount) {
+            Ok(_) => {
+                reply(Ok(FTEvent::Transfer {
+                    from: from,
+                    to: to,
+                    amount,
+                }))
+                .expect("Unable to reply");
             }
-        }
-        FTAction::Approve { tx_id, to, amount } => {
-            match ft.approve(tx_id, &to, amount) {
-                Ok(_) => {
-                    msg::reply::<Result<FTEvent, FTError>>(
-                        Ok(FTEvent::Approve {
-                            from: msg::source(),
-                            to,
-                            amount,
-                        }),
-                        0,
-                    )
-                    .expect("Unable to reply");
-                }
-                Err(e) => {
-                    msg::reply::<Result::<FTEvent, FTError>>(Err(e), 0).expect("Unable to reply");
-                }
+            Err(e) => {
+                reply(Err(e)).expect("Unable to reply");
             }
-        }
+        },
+        FTAction::Approve { tx_id, to, amount } => match ft.approve(tx_id, &to, amount) {
+            Ok(_) => {
+                reply(Ok(FTEvent::Approve {
+                    from: msg::source(),
+                    to,
+                    amount,
+                }))
+                .expect("Unable to reply");
+            }
+            Err(e) => {
+                reply(Err(e)).expect("Unable to reply");
+            }
+        },
         FTAction::Mint(amount) => {
             ft.mint(amount);
         }
@@ -275,10 +312,11 @@ extern fn handle() {
         }
         FTAction::BalanceOf(account) => {
             let balance = ft.balances.get(&account).unwrap_or(&0);
-            msg::reply::<FTEvent>(FTEvent::Balance(*balance), 0).unwrap();
+            reply(Ok(FTEvent::Balance(*balance))).unwrap();
         }
+        #[allow(unused_variables)]
         FTAction::SetFailTransferFlag(fail) => {
-            #[cfg(feature="test")]
+            #[cfg(feature = "test")]
             {
                 ft.config.fail_transfer = fail;
             }
@@ -287,7 +325,7 @@ extern fn handle() {
 }
 
 #[no_mangle]
-extern fn init() {
+extern "C" fn init() {
     let config: InitConfig = msg::load().expect("Unable to decode InitConfig");
     let ft = FungibleToken {
         name: config.name,
@@ -296,26 +334,4 @@ extern fn init() {
         ..Default::default()
     };
     unsafe { FUNGIBLE_TOKEN = Some(ft) };
-}
-
-#[derive(Debug, Encode, Decode, TypeInfo)]
-#[codec(crate = gstd::codec)]
-#[scale_info(crate = gstd::scale_info)]
-pub enum State {
-    Name,
-    Symbol,
-    Decimals,
-    TotalSupply,
-    BalanceOf(ActorId),
-}
-
-#[derive(Debug, Encode, Decode, TypeInfo)]
-#[codec(crate = gstd::codec)]
-#[scale_info(crate = gstd::scale_info)]
-pub enum StateReply {
-    Name(String),
-    Symbol(String),
-    Decimals(u8),
-    TotalSupply(u128),
-    Balance(u128),
 }

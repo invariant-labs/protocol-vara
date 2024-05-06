@@ -22,12 +22,12 @@ fn init_with_mint(sys: &System) {
     let res = ft.send(USERS[0], FTAction::Mint(1000000));
     assert!(res.contains(&(
         USERS[0],
-        FTEvent::Transfer {
+        Ok::<FTEvent, FTError>(FTEvent::Transfer {
             from: 0.into(),
             to: USERS[0].into(),
             amount: 1000000,
         }
-        .encode()
+        ).encode()
     )));
 }
 
@@ -37,7 +37,7 @@ fn mint() {
     init_with_mint(&sys);
     let ft = sys.get_program(1);
     let res = ft.send(USERS[0], FTAction::BalanceOf(USERS[0].into()));
-    assert!(res.contains(&(USERS[0], FTEvent::Balance(1000000).encode())));
+    assert!(res.contains(&(USERS[0], Ok::<FTEvent, FTError>(FTEvent::Balance(1000000)).encode())));
 }
 
 #[test]
@@ -48,15 +48,15 @@ fn burn() {
     let res = ft.send(USERS[0], FTAction::Burn(1000));
     assert!(res.contains(&(
         USERS[0],
-        FTEvent::Transfer {
+        Ok::<FTEvent, FTError>(FTEvent::Transfer {
             from: USERS[0].into(),
             to: 0.into(),
             amount: 1000,
-        }
+        })
         .encode()
     )));
     let res = ft.send(USERS[0], FTAction::BalanceOf(USERS[0].into()));
-    assert!(res.contains(&(USERS[0], FTEvent::Balance(999000).encode())));
+    assert!(res.contains(&(USERS[0], Ok::<FTEvent, FTError>(FTEvent::Balance(999000)).encode())));
 }
 
 #[test]
@@ -94,9 +94,9 @@ fn transfer() {
 
     // check that the balance of `USER[0]` decreased and the balance of `USER[1]` increased
     let res = ft.send(USERS[0], FTAction::BalanceOf(USERS[0].into()));
-    assert!(res.contains(&(USERS[0], FTEvent::Balance(999500).encode())));
+    assert!(res.contains(&(USERS[0], Ok::<FTEvent, FTError>(FTEvent::Balance(999500)).encode())));
     let res = ft.send(USERS[0], FTAction::BalanceOf(USERS[1].into()));
-    assert!(res.contains(&(USERS[0], FTEvent::Balance(500).encode())));
+    assert!(res.contains(&(USERS[0], Ok::<FTEvent, FTError>(FTEvent::Balance(500)).encode())));
 }
 
 #[test]
@@ -206,9 +206,9 @@ fn approve_and_transfer() {
 
     // check that the balance of `USER[0]` decreased and the balance of `USER[1]` increased
     let res = ft.send(USERS[0], FTAction::BalanceOf(USERS[0].into()));
-    assert!(res.contains(&(USERS[0], FTEvent::Balance(999800).encode())));
+    assert!(res.contains(&(USERS[0], Ok::<FTEvent, FTError>(FTEvent::Balance(999800)).encode())));
     let res = ft.send(USERS[0], FTAction::BalanceOf(USERS[2].into()));
-    assert!(res.contains(&(USERS[0], FTEvent::Balance(200).encode())));
+    assert!(res.contains(&(USERS[0], Ok::<FTEvent, FTError>(FTEvent::Balance(200)).encode())));
 
     // must fail since not enough allowance
     let res = ft.send(

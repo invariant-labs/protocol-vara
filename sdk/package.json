@@ -22,6 +22,7 @@
   "scripts": {
     "build": "npx tsc",
     "lint": "eslint . --ext .ts",
+    "node:local": "cargo xtask node && ../target/tmp/gear --dev",
     "start": "npx tsc && node --experimental-wasm-modules target/index.js"
   },
   "dependencies": {
