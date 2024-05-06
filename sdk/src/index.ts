@@ -72,6 +72,7 @@ async function connect() {
   {
     const res = await token.transfer(admin, user.addressRaw, admin.addressRaw, 300n)
     assert.strictEqual(res.status, UserMessageStatus.ProcessedWithError)
+    assert.strictEqual(res.data, { err: 'NotAllowedToTransfer' })
   }
   {
     const res = await token.approve(user, admin.addressRaw, 300n)

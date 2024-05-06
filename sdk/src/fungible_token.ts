@@ -6,8 +6,8 @@ import {
   UserMessageStatus,
   Uint8ArrayToHexStr,
   getDeploymentData,
-  MetaDataTypes,
-  getStateInput
+  getStateInput,
+  FungibleTokenMetaTypes
 } from './utils.js'
 import { FUNGIBLE_TOKEN_GAS_LIMIT } from './consts.js'
 import { ISubmittableResult } from '@polkadot/types/types'
@@ -27,12 +27,12 @@ export type FungibleTokenState = {
 }
 
 export class FungibleToken {
-  gasLimit: bigint
-  readonly api: GearApi
-  readonly meta: ProgramMetadata
+  private readonly gasLimit: bigint
+  private readonly api: GearApi
+  private readonly meta: ProgramMetadata
   readonly programId: HexString
-  readonly eventListener: EventListener
-  constructor(
+  private readonly eventListener: EventListener
+  private constructor(
     api: GearApi,
     eventListener: EventListener,
     meta: ProgramMetadata,
@@ -63,21 +63,11 @@ export class FungibleToken {
       throw new Error('Metadata does not contain state input type')
     }
 
-    if (meta.getTypeIndexByName(MetaDataTypes.u128) === null) {
-      throw new Error('Metadata does not contain u128 type')
-    }
-
-    if (meta.getTypeIndexByName(MetaDataTypes.u64) === null) {
-      throw new Error('Metadata does not contain u64 type')
-    }
-
-    if (meta.getTypeIndexByName(MetaDataTypes.OptionU64) === null) {
-      throw new Error('Metadata does not contain Option<u64> type')
-    }
-
-    if (meta.getTypeIndexByName(MetaDataTypes.u8) === null) {
-      throw new Error('Metadata does not contain u8 type')
-    }
+    Object.values(FungibleTokenMetaTypes).forEach(name => {
+      if (meta.getTypeIndexByName(name) === null) {
+        throw new Error(`Metadata does not contain ${name} type`)
+      }
+    })
   }
   static async deploy(
     api: GearApi,
@@ -130,7 +120,7 @@ export class FungibleToken {
     }
   }
 
-  async sendMessage(
+  private async sendMessage(
     user: KeyringPair,
     payload: Codec,
     inputType: number
@@ -138,7 +128,7 @@ export class FungibleToken {
     const message: MessageSendOptions = {
       payload: payload.toU8a(),
       gasLimit: this.gasLimit,
-      destination: `${this.programId}`
+      destination: this.programId
     }
     const extrinsic = await this.api.message.send(message, this.meta, inputType)
 
@@ -164,7 +154,7 @@ export class FungibleToken {
     if (details.isSome && details.unwrap().code.isError) {
       return {
         status: UserMessageStatus.Panicked,
-        data: JSON.parse(String.fromCharCode(...returnMessage.data.message.payload))
+        panic: String.fromCharCode(...returnMessage.data.message.payload)
       }
     }
     const readableResponse = this.meta.createType(
@@ -174,9 +164,9 @@ export class FungibleToken {
     const json: any = readableResponse.toJSON()
     const err = json['err']
     if (err !== undefined && err !== null) {
-      return { status: UserMessageStatus.ProcessedWithError, data: err }
+      return { status: UserMessageStatus.ProcessedWithError, data: json }
     }
-    return { status: UserMessageStatus.ProcessedSuccessfully, data: json['ok'] }
+    return { status: UserMessageStatus.ProcessedSuccessfully, data: json }
   }
 
   async mint(signer: KeyringPair, amount: bigint): Promise<FungibleTokenResponse> {
@@ -217,8 +207,7 @@ export class FungibleToken {
 
     return this.sendMessage(signer, handle, inputType)
   }
-
-  async readState(payload: any, responseTypeIndex: string): Promise<Codec> {
+  private async readState(payload: any, responseTypeIndex: FungibleTokenMetaTypes): Promise<Codec> {
     const encodedPayload = this.meta.createType(getStateInput(this.meta)!, payload).toU8a()
     const readProgramParams = {
       programId: this.programId,
@@ -236,13 +225,13 @@ export class FungibleToken {
   async balanceOf(account: Uint8Array): Promise<bigint> {
     const response = (await this.readState(
       { balanceOf: account },
-      MetaDataTypes.u128
+      FungibleTokenMetaTypes.u128
     )) as any as u128
     return response.toBigInt()
   }
 
   async decimals(): Promise<bigint> {
-    const response = (await this.readState('decimals', MetaDataTypes.u8)) as any as u8
+    const response = (await this.readState('decimals', FungibleTokenMetaTypes.u8)) as any as u8
     return response.toBigInt()
   }
 
@@ -254,7 +243,7 @@ export class FungibleToken {
           account
         }
       },
-      MetaDataTypes.u128
+      FungibleTokenMetaTypes.u128
     )) as any as u128
 
     return response.toBigInt()
@@ -268,14 +257,14 @@ export class FungibleToken {
           txId
         }
       },
-      MetaDataTypes.OptionU64
+      FungibleTokenMetaTypes.OptionU64
     )) as any as Option<u64>
 
     return option.isSome ? option.unwrap().toBigInt() : null
   }
 
   async totalSupply(): Promise<bigint> {
-    const response = await this.readState('totalSupply', MetaDataTypes.u128)
+    const response = await this.readState('totalSupply', FungibleTokenMetaTypes.u128)
     return (response as any as u128).toBigInt()
   }
 }
