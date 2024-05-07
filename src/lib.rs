@@ -539,33 +539,30 @@ impl Invariant {
         self.ticks
             .update(position.pool_key, lower_tick.index, lower_tick)?;
 
-        if x.get() == 0 && y.get() == 0 {
-            return Ok((x, y));
+        let both_positive = x.get() > 0 && y.get() > 0;
+
+        let required_gas = if both_positive {
+            2 * TRANSFER_COST
+        } else {
+            TRANSFER_COST
+        };
+        if exec::gas_available() < required_gas {
+            return Err(InvariantError::NotEnoughGasToExecute);
         }
 
-        if x.get() > 0 && y.get() > 0 {
-            if exec::gas_available() < 2 * TRANSFER_COST {
-                return Err(InvariantError::NotEnoughGasToExecute);
-            }
-
+        if both_positive {
             self.withdraw_token_pair(
                 &caller,
                 &(position.pool_key.token_x, x),
                 &(position.pool_key.token_y, y),
             )
             .await?;
-        } else {
-            let (token, amount) = if x.get() > 0 {
-                (position.pool_key.token_x, x)
-            } else {
-                (position.pool_key.token_y, y)
-            };
-
-            if exec::gas_available() < TRANSFER_COST {
-                return Err(InvariantError::NotEnoughGasToExecute);
-            }
-
-            self.withdraw_single_token(&token, &caller, amount).await?;
+        } else if x.get() > 0 {
+            self.withdraw_single_token(&position.pool_key.token_x, &caller, x)
+                .await?;
+        } else if y.get() > 0 {
+            self.withdraw_single_token(&position.pool_key.token_y, &caller, y)
+                .await?;
         }
 
         Ok((x, y))
@@ -647,22 +644,16 @@ impl Invariant {
         token: &ActorId,
         amount: TokenAmount,
     ) -> Result<(), InvariantError> {
-        let token_balances = self.balances.get_mut(source);
-        if let Some(token_balances) = token_balances {
-            let token_balance = token_balances.get_mut(token);
-            if let Some(token_balance) = token_balance {
-                token_balance.0 = token_balance
-                    .0
-                    .checked_add(amount.0)
-                    .ok_or(InvariantError::FailedToChangeTokenBalance)?
-            } else {
-                token_balances.insert(*token, amount);
-            }
-        } else {
-            let mut token_balances = HashMap::new();
-            token_balances.insert(*token, amount);
-            self.balances.insert(*source, token_balances);
-        }
+        let token_balance: &mut TokenAmount = self
+            .balances
+            .entry(*source)
+            .or_insert(HashMap::new())
+            .entry(*token)
+            .or_insert(TokenAmount(0));
+
+        *token_balance = token_balance
+            .checked_add(amount)
+            .map_err(|_| InvariantError::FailedToChangeTokenBalance)?;
 
         Ok(())
     }
