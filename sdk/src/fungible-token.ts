@@ -115,9 +115,20 @@ export class FungibleToken {
 
     if (res.isError) {
       throw new Error(res.dispatchError?.toString())
-    } else {
-      return new FungibleToken(api, eventListener, metadata, programId, FUNGIBLE_TOKEN_GAS_LIMIT)
     }
+    const returnMessage = eventListener.getByFinalizedResult(res)
+
+    if (returnMessage === undefined) {
+      throw new Error('No init event found')
+    }
+
+    const details = returnMessage.data.message.details
+
+    if (details.isSome && details.unwrap().code.isError) {
+      throw new Error(`Failed to upload invariant: ${returnMessage.data.message}`)
+    }
+
+    return new FungibleToken(api, eventListener, metadata, programId, FUNGIBLE_TOKEN_GAS_LIMIT)
   }
 
   private async sendMessage(
