@@ -1,9 +1,9 @@
-import { Percentage } from './wasm/pkg/invariant_vara_wasm.js'
 import { GearApi, GearKeyring } from '@gear-js/api'
 import { LOCAL } from './consts.js'
 import { FungibleToken } from './fungible-token.js'
 import { Uint8ArrayToHexStr, UserMessageStatus } from './utils.js'
 import assert from 'assert'
+import { Invariant } from './invariant.js'
 import { EventListener } from './event-listener.js'
 async function connect() {
   const gearApi = await GearApi.create({
@@ -28,6 +28,15 @@ async function connect() {
   const user = await GearKeyring.fromSuri('//Alice')
   const eventListener = new EventListener(gearApi)
   eventListener.listen()
+
+  Invariant.deploy(
+    gearApi,
+    eventListener,
+    admin,
+    10000000000n,
+    `0x${Uint8ArrayToHexStr(admin.publicKey)}`
+  )
+
   const token = await FungibleToken.deploy(gearApi, eventListener, admin, 'Test Token', 'TT', 18n)
   console.log('TokenId', token.programId)
   console.log('AdminId', Uint8ArrayToHexStr(admin.publicKey))
