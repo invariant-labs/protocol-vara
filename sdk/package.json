@@ -23,16 +23,26 @@
     "build": "npx tsc",
     "lint": "eslint . --ext .ts",
     "node:local": "cargo xtask node && ../target/tmp/gear --dev",
-    "start": "npx tsc && node --experimental-wasm-modules target/index.js"
+    "node:local:stop": "lsof -i :9944 | grep gear | tr -s ' ' | cut -d ' ' -f 2 | head -1 | xargs -r kill -9",
+    "start": "npx tsc && node --experimental-wasm-modules target/index.js",
+    "wasm:build": "cd ./src/wasm && wasm-pack build",
+    "test:local": "npm run test:fungible-token && npm run test:invariant",
+    "test:fungible-token": "mocha --config mocharc.json ./tests/fungible-token.test.ts",
+    "test:invariant": "mocha --config mocharc.json ./tests/invariant.test.ts"
   },
   "dependencies": {
     "@gear-js/api": "^0.38.0",
-    "ts-node": "^10.9.2",
     "typescript": "^5.4.5"
   },
   "devDependencies": {
+    "@types/chai": "^4.3.11",
+    "@types/mocha": "^10.0.6",
     "@typescript-eslint/eslint-plugin": "^6.16.0",
     "@typescript-eslint/parser": "^6.16.0",
-    "eslint": "^8.56.0"
+    "chai": "^5.0.0",
+    "eslint": "^8.56.0",
+    "ts-mocha": "^10.0.0",
+    "ts-node": "^10.9.2",
+    "wasm-pack": "^0.12.1"
   }
 }
