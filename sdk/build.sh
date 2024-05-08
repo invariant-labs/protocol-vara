@@ -1,6 +1,6 @@
 #!/bin/bash
 
-npm i &
-npm run lint &
-npm run wasm:build &
-npm run build &
+npm install &&
+npm run lint &&
+npm run wasm:build &&
+npm run build

@@ -1,6 +1,8 @@
 #!/bin/bash
 
-npm run node:local & 
+npm run node:local &
+# node can crash if it recieves a message too early
+sleep 2
 npm run test:local &
 test_pid=$!
 

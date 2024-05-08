@@ -52,8 +52,24 @@ jobs:
           chmod +x tests.sh
           ./tests.sh
         shell: bash
-      - name: Build SDK
+  sdk_tests:
+    name: Run SDK tests
+    runs-on: ubuntu-latest
 
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v3
+
+      - name: Install prerequisites
+        run: sudo apt install -y build-essential
+
+      - name: Install Gear node
+        run: |
+          mkdir -p target/tmp &&
+          cd target/tmp &&
+          curl https://get.gear.rs/gear-v1.3.0-x86_64-unknown-linux-gnu.tar.xz | tar Jx
+
+      - name: Build SDK
         working-directory: ./sdk
         run: |
           chmod +x build.sh

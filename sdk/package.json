@@ -22,7 +22,7 @@
   "scripts": {
     "build": "npx tsc",
     "lint": "eslint . --ext .ts",
-    "node:local": "cargo xtask node && ../target/tmp/gear --dev",
+    "node:local": "../target/tmp/gear --dev",
     "node:local:stop": "lsof -i :9944 | grep gear | tr -s ' ' | cut -d ' ' -f 2 | head -1 | xargs -r kill -9",
     "start": "npx tsc && node --experimental-wasm-modules target/index.js",
     "wasm:build": "cd ./src/wasm && wasm-pack build",

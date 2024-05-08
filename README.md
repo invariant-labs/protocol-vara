@@ -60,6 +60,7 @@ path/to/node/gear --dev
 ```
 or run it through CI in sdk folder
 ```bash
+cargo xtask node
 npm run node:local
 ```
 
