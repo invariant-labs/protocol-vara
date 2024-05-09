@@ -22,8 +22,8 @@ jobs:
 
       - name: Install Rust toolchain
         run: |
-            rustup install nightly-2024-01-25
-            rustup target add wasm32-unknown-unknown --toolchain nightly-2024-01-25
+          rustup install nightly-2024-01-25
+          rustup target add wasm32-unknown-unknown --toolchain nightly-2024-01-25
 
       - name: Build
         run: cargo build --release
@@ -35,21 +35,50 @@ jobs:
     steps:
       - name: Checkout source code
         uses: actions/checkout@v3
-  
+
       - name: Install prerequisites
         run: sudo apt install -y build-essential clang cmake curl
-  
+
       - name: Install Rust toolchain
         run: |
-            rustup install nightly-2024-01-25
-            rustup target add wasm32-unknown-unknown --toolchain nightly-2024-01-25
-  
-      - name: Instal Gear node 
+          rustup install nightly-2024-01-25
+          rustup target add wasm32-unknown-unknown --toolchain nightly-2024-01-25
+
+      - name: Instal Gear node
         run: curl https://get.gear.rs/gear-v1.1.0-x86_64-unknown-linux-gnu.tar.xz | tar Jx
-  
+
       - name: Run tests script (with building)
         run: |
           chmod +x tests.sh
           ./tests.sh
         shell: bash
-   
+  sdk_tests:
+    name: Run SDK tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v3
+
+      - name: Install prerequisites
+        run: sudo apt install -y build-essential
+
+      - name: Install Gear node
+        run: |
+          mkdir -p target/tmp &&
+          cd target/tmp &&
+          curl https://get.gear.rs/gear-v1.3.0-x86_64-unknown-linux-gnu.tar.xz | tar Jx
+
+      - name: Build SDK
+        working-directory: ./sdk
+        run: |
+          chmod +x build.sh
+          ./build.sh
+        shell: bash
+
+      - name: Test SDK
+        working-directory: ./sdk
+        run: |
+          chmod +x tests.sh
+          ./tests.sh
+        shell: bash

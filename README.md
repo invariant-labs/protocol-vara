@@ -50,8 +50,6 @@ cargo build --release
 ## Run tests
 ```bash
 chmod +x tests.sh
-```
-```bash
 ./tests.sh
 ```
 
@@ -62,5 +60,18 @@ path/to/node/gear --dev
 ```
 or run it through CI in sdk folder
 ```bash
+cargo xtask node
 npm run node:local
+```
+
+## SDK
+To build SDK go to the dedicated folder [SDK](https://github.com/invariant-labs/protocol-vara/tree/master/sdk)
+- Build sdk
+```bash
+chmod +x build.sh
+./build.sh
+```
+- Run sdk tests
+```bash
+./tests.sh
 ```

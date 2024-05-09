@@ -10,7 +10,8 @@
     "outDir": "./target",
     "moduleResolution": "bundler",
     "baseUrl": "./",
+    "types": ["mocha", "chai"],
     "declaration": true
   },
-  "exclude": ["./target"]
+  "exclude": ["./tests", "./target"]
 }

@@ -3,8 +3,9 @@ import { U8aFixed } from '@polkadot/types/codec'
 import { ISubmittableResult } from '@polkadot/types/types'
 import { getMessageId } from './utils.js'
 export class EventListener {
-  readonly api: GearApi
+  private readonly api: GearApi
   readonly messages: Array<UserMessageSent> = []
+
   constructor(api: GearApi) {
     this.api = api
   }

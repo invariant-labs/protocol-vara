@@ -1,8 +1,39 @@
-import { HumanTypesRepr, ProgramMetadata, UserMessageSent } from '@gear-js/api'
+import {
+  GearApi,
+  GearApiOptions,
+  HumanTypesRepr,
+  ProgramMetadata,
+  UserMessageSent
+} from '@gear-js/api'
 import { readFile } from 'fs/promises'
 import path from 'path'
 import { ISubmittableResult } from '@polkadot/types/types'
 import { U8aFixed } from '@polkadot/types/codec'
+
+export const initGearApi = async (gearApiOptions: GearApiOptions | undefined) => {
+  const gearApi = await GearApi.create(gearApiOptions)
+
+  const [chain, nodeName, nodeVersion] = await Promise.all([
+    gearApi.chain(),
+    gearApi.nodeName(),
+    gearApi.nodeVersion()
+  ])
+
+  console.log(`You are connected to chain ${chain} using ${nodeName} v${nodeVersion}`)
+
+  return gearApi
+}
+
+// returns usnub function
+export const subscribeToNewHeads = async (api: GearApi): Promise<VoidFunction> => {
+  return await api.blocks.subscribeNewHeads(header => {
+    console.log(
+      `New block with number: ${header.number.toNumber()} and hash: ${header.hash.toHex()}`
+    )
+  })
+
+}
+
 
 export const getDeploymentData = async (
   contractName: string
