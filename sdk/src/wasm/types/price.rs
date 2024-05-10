@@ -3,13 +3,12 @@ use core::convert::{TryFrom, TryInto};
 use decimal::*;
 use js_sys::BigInt;
 use serde::{Deserialize, Serialize};
-
 use tsify::Tsify;
-use wasm_bindgen::prelude::*;
+use wasm_bindgen::{prelude::wasm_bindgen, JsValue};
 
-#[decimal(12)]
+#[decimal(24)]
 #[derive(Default, Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Serialize, Deserialize, Tsify)]
 #[tsify(into_wasm_abi, from_wasm_abi)]
-pub struct Percentage(#[tsify(type = "bigint")] pub u64);
+pub struct Price(#[tsify(type = "bigint")] pub u128);
 
-decimal_ops!(Percentage);
+decimal_ops!(Price);
