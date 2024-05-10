@@ -3,8 +3,13 @@ use js_sys::BigInt;
 use wasm_bindgen::prelude::*;
 use wasm_wrapper::wasm_wrapper;
 
-pub use math::{MAX_TICK, MIN_TICK, MAX_SQRT_PRICE, MIN_SQRT_PRICE, TICK_SEARCH_RANGE};
+pub const MAX_TICK: i32 = 221_818;
+pub const MIN_TICK: i32 = -MAX_TICK;
 
+pub const MAX_SQRT_PRICE: u128 = 65535383934512647000000000000;
+pub const MIN_SQRT_PRICE: u128 = 15258932000000000000;
+
+pub const TICK_SEARCH_RANGE: i32 = 256;
 pub const CHUNK_SIZE: i32 = 64;
 
 #[wasm_wrapper]
