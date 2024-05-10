@@ -2,3 +2,4 @@ target
 .vscode
 gear
 .binpath
+sdk/src/wasm/pkg

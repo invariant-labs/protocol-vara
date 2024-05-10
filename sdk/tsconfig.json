@@ -13,5 +13,6 @@
     "types": ["mocha", "chai"],
     "declaration": true
   },
-  "exclude": ["./tests", "./target"]
+  "exclude": ["./tests", "./target"],
+  "include": ["./src/wasm/pkg/*"]
 }
