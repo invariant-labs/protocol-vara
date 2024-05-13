@@ -52,3 +52,13 @@ macro_rules! convert {
         serde_wasm_bindgen::from_value($value)
     }};
 }
+
+#[macro_export]
+macro_rules! resolve {
+    ($result:expr) => {{
+        match $result {
+            Ok(value) => Ok(serde_wasm_bindgen::to_value(&value)?),
+            Err(error) => Err(JsValue::from_str(&error.to_string())),
+        }
+    }};
+}

@@ -6,6 +6,9 @@
   ],
   "description": "",
   "type": "module",
+  "workspaces": [
+    "src/wasm/pkg"
+  ],
   "main": "target/index.js",
   "keywords": [
     "VARA",
@@ -25,7 +28,7 @@
     "node:local": "../target/tmp/gear --dev",
     "node:local:stop": "lsof -i :9944 | grep gear | tr -s ' ' | cut -d ' ' -f 2 | head -1 | xargs -r kill -9",
     "start": "npx tsc && node --experimental-wasm-modules target/index.js",
-    "wasm:build": "cd ./src/wasm && wasm-pack build",
+    "wasm:build": "cd ./src/wasm && wasm-pack build && rm ./pkg/.gitignore",
     "test:local": "npm run test:fungible-token && npm run test:invariant",
     "test:fungible-token": "mocha --config mocharc.json ./tests/fungible-token.test.ts",
     "test:invariant": "mocha --config mocharc.json ./tests/invariant.test.ts"
