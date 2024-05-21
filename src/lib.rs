@@ -20,8 +20,12 @@ use gstd::{
 };
 use io::*;
 use math::{
-    check_tick, compute_swap_step, liquidity::Liquidity, percentage::Percentage,
-    sqrt_price::SqrtPrice, token_amount::TokenAmount, MAX_SQRT_PRICE, MIN_SQRT_PRICE,
+    check_tick, compute_swap_step,
+    liquidity::Liquidity,
+    percentage::Percentage,
+    sqrt_price::{get_max_tick, get_min_tick, SqrtPrice},
+    token_amount::TokenAmount,
+    MAX_SQRT_PRICE, MIN_SQRT_PRICE,
 };
 use traceable_result::*;
 
@@ -820,6 +824,12 @@ impl Invariant {
             return Err(InvariantError::WrongLimit);
         }
 
+        let tick_limit = if x_to_y {
+            get_min_tick(pool_key.fee_tier.tick_spacing)
+        } else {
+            get_max_tick(pool_key.fee_tier.tick_spacing)
+        };
+
         let mut remaining_amount = amount;
 
         let mut total_amount_in = TokenAmount(0);
@@ -897,6 +907,15 @@ impl Invariant {
                 if has_crossed {
                     ticks.push(tick)
                 }
+            }
+
+            let reached_tick_limit = match x_to_y {
+                true => pool.current_tick_index <= tick_limit,
+                false => pool.current_tick_index >= tick_limit,
+            };
+
+            if reached_tick_limit {
+                return Err(InvariantError::TickLimitReached);
             }
         }
 

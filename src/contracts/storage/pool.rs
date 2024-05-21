@@ -178,7 +178,7 @@ impl Pool {
         let tick_index = match tick {
             UpdatePoolTick::TickInitialized(tick) => {
                 if !x_to_y || is_enough_amount_to_cross {
-                    let _ = tick.cross(self, current_timestamp);
+                    tick.cross(self, current_timestamp).unwrap();
                     has_crossed = true;
                 } else if !remaining_amount.is_zero() {
                     if by_amount_in {
