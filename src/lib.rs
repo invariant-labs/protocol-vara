@@ -380,18 +380,6 @@ impl Invariant {
             crossed_tick_indexes.push(tick.index);
         }
 
-        let update = |invariant: &mut Self| {
-            for tick in calculate_swap_result.ticks.iter() {
-                invariant.ticks.update(pool_key, tick.index, *tick)?;
-            }
-
-            invariant
-                .pools
-                .update(&pool_key, &calculate_swap_result.pool)?;
-
-            Ok::<(), InvariantError>(())
-        };
-
         if exec::gas_available() < SWAP_UPDATE_COST + 2 * TRANSFER_COST {
             return Err(InvariantError::NotEnoughGasToExecute);
         }
@@ -428,7 +416,11 @@ impl Invariant {
             reply_with_err_and_exit(InvariantError::RecoverableTransferError);
         }
 
-        update(self)?;
+        for tick in calculate_swap_result.ticks.iter() {
+            self.ticks.update(pool_key, tick.index, *tick)?;
+        }
+
+        self.pools.update(&pool_key, &calculate_swap_result.pool)?;
 
         if !crossed_tick_indexes.is_empty() {
             self.emit_event(InvariantEvent::CrossTickEvent {
