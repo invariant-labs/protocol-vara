@@ -1,7 +1,6 @@
 use crate::test_helpers::gtest::*;
 use contracts::*;
 use decimal::*;
-use fungible_token_io::*;
 use gstd::{prelude::*, ActorId};
 use gtest::*;
 use io::*;
@@ -13,8 +12,8 @@ use math::{
 pub fn init_slippage_pool_with_liquidity(
     sys: &System,
     invariant: &Program<'_>,
-    token_0_program: &Program<'_>,
-    token_1_program: &Program<'_>,
+    token_x_program: &Program<'_>,
+    token_y_program: &Program<'_>,
 ) -> PoolKey {
     let token_0 = ActorId::from(TOKEN_X_ID);
     let token_1 = ActorId::from(TOKEN_Y_ID);
@@ -43,33 +42,13 @@ pub fn init_slippage_pool_with_liquidity(
     assert!(res.events_eq(vec![TestEvent::empty_invariant_response(REGULAR_USER_1)]));
 
     let mint_amount = 10u128.pow(10);
-    assert!(!token_0_program
-        .send(REGULAR_USER_1, FTAction::Mint(mint_amount))
-        .main_failed());
-    assert!(!token_1_program
-        .send(REGULAR_USER_1, FTAction::Mint(mint_amount))
-        .main_failed());
+    mint(&token_x_program, REGULAR_USER_1, mint_amount).assert_success();
+    mint(&token_y_program, REGULAR_USER_1, mint_amount).assert_success();
 
-    assert!(!token_0_program
-        .send(
-            REGULAR_USER_1,
-            FTAction::Approve {
-                tx_id: None,
-                to: INVARIANT_ID.into(),
-                amount: mint_amount
-            }
-        )
-        .main_failed());
-    assert!(!token_1_program
-        .send(
-            REGULAR_USER_1,
-            FTAction::Approve {
-                tx_id: None,
-                to: INVARIANT_ID.into(),
-                amount: mint_amount
-            }
-        )
-        .main_failed());
+    increase_allowance(&token_x_program, REGULAR_USER_1, INVARIANT_ID, mint_amount)
+        .assert_success();
+    increase_allowance(&token_y_program, REGULAR_USER_1, INVARIANT_ID, mint_amount)
+        .assert_success();
 
     let pool_key = PoolKey::new(token_0, token_1, fee_tier).unwrap();
     let lower_tick = -1000;

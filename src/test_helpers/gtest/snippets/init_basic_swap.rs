@@ -1,7 +1,6 @@
 use crate::test_helpers::gtest::*;
 use contracts::*;
 use decimal::*;
-use fungible_token_io::*;
 use gstd::{prelude::*, ActorId};
 use gtest::*;
 use io::*;
@@ -25,20 +24,14 @@ pub fn init_basic_swap(
     let lower_tick = -20;
 
     let amount = 1000;
-    assert!(!token_x_program
-        .send(REGULAR_USER_2, FTAction::Mint(amount))
-        .main_failed());
-
-    assert!(!token_x_program
-        .send(
-            REGULAR_USER_2,
-            FTAction::Approve {
-                tx_id: None,
-                to: INVARIANT_ID.into(),
-                amount
-            }
-        )
-        .main_failed());
+    mint(&token_x_program, REGULAR_USER_2, amount).assert_success();
+    increase_allowance(
+        &token_x_program,
+        REGULAR_USER_2,
+        INVARIANT_ID,
+        amount,
+    )
+    .assert_success();
 
     assert_eq!(balance_of(&token_x_program, REGULAR_USER_2), amount);
 

@@ -1,0 +1,16 @@
+[package]
+name = "gear-erc20-wasm"
+version.workspace = true
+edition.workspace = true
+license = "GPL-3.0"
+
+[dependencies]
+gear-erc20.workspace = true
+
+[build-dependencies]
+gear-erc20.workspace = true
+gear-wasm-builder.workspace = true
+sails-idl-gen.workspace = true
+
+[features]
+test = ["gear-erc20/test"]

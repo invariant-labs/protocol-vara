@@ -1,7 +1,7 @@
 [package]
 name = "invariant"
-version = "0.1.0"
-edition = "2021"
+version.workspace = true
+edition.workspace = true
 
 [dependencies]
 gstd.workspace = true
@@ -11,8 +11,6 @@ decimal.workspace = true
 io.workspace = true
 contracts.workspace = true
 gear-core.workspace = true
-fungible-token-io.workspace = true
-fungible-token-state.workspace = true
 
 [build-dependencies]
 gear-wasm-builder.workspace = true
@@ -24,9 +22,6 @@ state.workspace = true
 gtest.workspace = true
 gclient.workspace = true
 tokio.workspace = true
-fungible-token.workspace = true
-fungible-token-io.workspace = true
-fungible-token-state.workspace = true
 gstd = {workspace=true, features=["debug"]}
 
 [features]
@@ -36,7 +31,9 @@ default = ["binary-vendor", "wasm-opt"]
 debug = ["gstd/debug"]
 
 [workspace]
-members = ["state", "xtask"]
+members = ["state", "xtask", "gear-erc20/app", "gear-erc20/wasm" ]
+package.version = "0.1.0"
+package.edition = "2021"
 
 [workspace.dependencies]
 # Library dependencies
@@ -46,23 +43,28 @@ traceable_result.path = "calc/traceable_result"
 contracts.path = "src/contracts"
 
 # Local contracts
-fungible-token.path = "fungible-token"
+gear-erc20.path = "gear-erc20/app"
+gear-erc20-wasm.path = "gear-erc20/wasm"
 
 # Contract dependencies
 state.path = "state"
 io.path = "io"
-fungible-token-io.path = "fungible-token/io"
-fungible-token-state.path = "fungible-token/state"
 
 # Gear dependencies
-gstd = "1.1.1"
-gear-wasm-builder = "1.1.1"
-gmeta = "1.1.1"
-gear-core = "1.1.1"
-gtest = { git = "https://github.com/gear-tech/gear.git", tag = "v1.1.1" }
-gclient = { git = "https://github.com/gear-tech/gear.git", tag = "v1.1.1" }
+gstd = "1.4.1"
+gear-wasm-builder = "1.4.1"
+gmeta = "1.4.1"
+gear-core = { git = "https://github.com/gear-tech/gear.git", tag = "v1.4.1" }
+gtest = { git = "https://github.com/gear-tech/gear.git", tag = "v1.4.1" }
+gclient = { git = "https://github.com/gear-tech/gear.git", tag = "v1.4.1" }
+sails-idl-gen = { git = "https://github.com/gear-tech/sails", rev = "51b731ef8f064a23c6c98fa92d06eeafe44d3f9d" }
+sails-rtl = { git = "https://github.com/gear-tech/sails", rev = "51b731ef8f064a23c6c98fa92d06eeafe44d3f9d" }
 
 # External
-tokio = { version = "1", features = ["full"] }
+tokio = { version = "1.36", features = ["full"] }
 xshell = "0.2"
 anyhow = "1"
+
+log = "*"
+env_logger = "*"
+primitive-types = { version = "*", default-features = false }

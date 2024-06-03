@@ -9,8 +9,9 @@ pub async fn approve(
     listener: &mut EventListener,
     token: ProgramId,
     to: impl Into<[u8; 32]> + Copy,
-    amount: u128
+    amount: u128,
 ) -> Result<(), String> {
+    unimplemented!();
     let message_id = send_message(
         api,
         token,

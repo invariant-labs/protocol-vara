@@ -1,9 +1,5 @@
-# Build 
-cargo build --release --features debug
-# Build token
-cargo build -p fungible-token --release --features test
-
+./build.sh dev
 # Download node binary
 cargo xtask node
 # Run tests with backtrace
-RUST_BACKTRACE=1 cargo test --workspace
+RUST_BACKTRACE=1 cargo test --workspace --features gear-erc20/test

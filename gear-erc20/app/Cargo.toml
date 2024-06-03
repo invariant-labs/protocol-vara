@@ -1,0 +1,25 @@
+[package]
+name = "gear-erc20"
+version.workspace = true
+edition.workspace = true
+license = "GPL-3.0"
+
+[dependencies]
+gstd.workspace = true
+primitive-types.workspace = true
+log.workspace = true
+sails-rtl.workspace = true
+
+[dev-dependencies]
+env_logger.workspace = true
+gclient.workspace = true
+gtest.workspace = true
+gear-core.workspace = true
+tokio = "1"
+
+[build-dependencies]
+gear-wasm-builder.workspace = true
+
+[features]
+default = []
+test = ["gstd/debug"]

@@ -9,7 +9,6 @@ use contracts::{
     Tick, Tickmap, Ticks, UpdatePoolTick,
 };
 use decimal::*;
-use fungible_token_io::{FTAction, FTError, FTEvent};
 use gstd::{
     async_init, async_main,
     collections::HashMap,
@@ -30,8 +29,8 @@ use math::{
 use traceable_result::*;
 
 // TODO: Update once the SDK tests are in place and proper measurement is possible
-pub const TRANSFER_GAS_LIMIT: u64 = 5_000_000 * 2;
-pub const TRANSFER_REPLY_HANDLING_COST: u64 = 6_000_000 * 2;
+pub const TRANSFER_GAS_LIMIT: u64 = 1_600_000_000 * 2;
+pub const TRANSFER_REPLY_HANDLING_COST: u64 = 16_000_000 * 2;
 pub const BALANCE_CHANGE_COST: u64 = 100_000 * 2;
 pub const TRANSFER_COST: u64 =
     TRANSFER_GAS_LIMIT + TRANSFER_REPLY_HANDLING_COST + BALANCE_CHANGE_COST;
@@ -52,6 +51,7 @@ pub struct Invariant {
     pub transaction_id: u64,
     pub balances: HashMap<ActorId, HashMap<ActorId, TokenAmount>>,
 }
+#[derive(Debug)]
 pub enum TransferError {
     FailedToSendMessage,
     RecoverableFTError,
@@ -657,20 +657,32 @@ impl Invariant {
     async fn transfer_tokens(
         &mut self,
         token_address: &ActorId,
-        tx_id: Option<u64>,
+        _tx_id: Option<u64>,
         from: &ActorId,
         to: &ActorId,
         amount_tokens: u128,
     ) -> Result<(), TransferError> {
-        let tx_id = tx_id.or(self.generate_transaction_id().into());
-        let reply = msg::send_with_gas_for_reply_as::<_, Result<FTEvent, FTError>>(
+        if amount_tokens == 0 {
+            return Ok(());
+        }
+        if from == to {
+            return Err(TransferError::UnRecoverableFTError);
+        }
+
+        let service_name = "Erc20".encode();
+        let action = "TransferFrom".encode();
+        let offset = service_name.len() + action.len();
+        
+        let request = [
+            service_name,
+            action,            
+            from.encode(),
+            to.encode(),
+            [amount_tokens, 0u128].encode(),
+        ].concat();
+        let reply = msg::send_bytes_with_gas_for_reply::<_>(
             *token_address,
-            FTAction::Transfer {
-                tx_id,
-                from: *from,
-                to: *to,
-                amount: amount_tokens,
-            },
+            request,
             TRANSFER_GAS_LIMIT,
             0,
             TRANSFER_REPLY_HANDLING_COST,
@@ -681,24 +693,13 @@ impl Invariant {
         // This error occurs in cases when the program panics
         .map_err(|_| TransferError::RecoverableFTError)?;
 
-        match reply {
-            Ok(ft_event) => match ft_event {
-                FTEvent::Transfer {
-                    from: _,
-                    to: _,
-                    amount: _,
-                } => return Ok(()),
-                // Token doesn't match the GRC-20 standard
-                _ => return Err(TransferError::UnRecoverableFTError),
-            },
-            Err(ft_error) => match ft_error {
-                FTError::NotEnoughBalance | FTError::NotAllowedToTransfer => {
-                    return Err(TransferError::RecoverableFTError)
-                }
-                FTError::TxAlreadyExists | FTError::ZeroAddress => {
-                    return Err(TransferError::UnRecoverableFTError)
-                }
-            },
+        let response = <bool>::decode(&mut &reply[offset..]).map_err(|_| TransferError::UnRecoverableFTError)?;
+    
+        if response {
+            return Ok(())
+        } else {
+            // can only happen if to == from or value == 0
+            return Err(TransferError::UnRecoverableFTError)
         }
     }
 
@@ -924,12 +925,6 @@ impl Invariant {
             pool,
             ticks,
         })
-    }
-
-    fn generate_transaction_id(&mut self) -> u64 {
-        let transaction_id = self.transaction_id;
-        self.transaction_id = self.transaction_id.wrapping_add(1);
-        transaction_id
     }
 
     fn create_tick(&mut self, pool_key: PoolKey, index: i32) -> Result<Tick, InvariantError> {

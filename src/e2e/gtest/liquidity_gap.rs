@@ -2,7 +2,6 @@ use crate::test_helpers::gtest::*;
 
 use contracts::*;
 use decimal::*;
-use fungible_token_io::FTAction;
 use gstd::*;
 use gtest::*;
 use io::*;
@@ -29,12 +28,8 @@ fn test_liquidity_gap() {
 
     let (token_x_program, token_y_program) = init_tokens(&sys);
 
-    token_x_program
-        .send(REGULAR_USER_1, FTAction::Mint(mint_amount))
-        .assert_success();
-    token_y_program
-        .send(REGULAR_USER_1, FTAction::Mint(mint_amount))
-        .assert_success();
+    mint(&token_x_program, REGULAR_USER_1, mint_amount).assert_success();
+    mint(&token_y_program, REGULAR_USER_1, mint_amount).assert_success();
 
     increase_allowance(&token_x_program, REGULAR_USER_1, INVARIANT_ID, mint_amount)
         .assert_success();
@@ -89,9 +84,8 @@ fn test_liquidity_gap() {
 
     let swap_amount = TokenAmount::new(10067);
 
-    token_x_program
-        .send(REGULAR_USER_2, FTAction::Mint(swap_amount.get()))
-        .assert_success();
+    mint(&token_x_program, REGULAR_USER_2, swap_amount.get()).assert_success();
+
     increase_allowance(
         &token_x_program,
         REGULAR_USER_2,
@@ -177,7 +171,8 @@ fn test_liquidity_gap() {
 
     let swap_amount = TokenAmount::new(5000);
 
-    token_x_program.send(REGULAR_USER_2, FTAction::Mint(swap_amount.get()));
+    mint(&token_x_program, REGULAR_USER_2, swap_amount.get()).assert_success();
+
     increase_allowance(
         &token_x_program,
         REGULAR_USER_2,

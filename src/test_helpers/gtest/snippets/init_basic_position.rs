@@ -1,7 +1,6 @@
 use crate::test_helpers::gtest::*;
 use contracts::*;
 use decimal::*;
-use fungible_token_io::*;
 use gstd::{prelude::*, ActorId};
 use gtest::*;
 use io::*;
@@ -24,33 +23,13 @@ pub fn init_basic_position(
     };
 
     let mint_amount = 10u128.pow(10);
-    assert!(!token_x_program
-        .send(REGULAR_USER_1, FTAction::Mint(mint_amount))
-        .main_failed());
-    assert!(!token_y_program
-        .send(REGULAR_USER_1, FTAction::Mint(mint_amount))
-        .main_failed());
+    mint(&token_x_program, REGULAR_USER_1, mint_amount).assert_success();
+    mint(&token_y_program, REGULAR_USER_1, mint_amount).assert_success();
 
-    assert!(!token_x_program
-        .send(
-            REGULAR_USER_1,
-            FTAction::Approve {
-                tx_id: None,
-                to: INVARIANT_ID.into(),
-                amount: mint_amount
-            }
-        )
-        .main_failed());
-    assert!(!token_y_program
-        .send(
-            REGULAR_USER_1,
-            FTAction::Approve {
-                tx_id: None,
-                to: INVARIANT_ID.into(),
-                amount: mint_amount
-            }
-        )
-        .main_failed());
+    increase_allowance(&token_x_program, REGULAR_USER_1, INVARIANT_ID, mint_amount)
+        .assert_success();
+    increase_allowance(&token_y_program, REGULAR_USER_1, INVARIANT_ID, mint_amount)
+        .assert_success();
 
     let pool_key = PoolKey::new(token_x, token_y, fee_tier).unwrap();
     let lower_tick = -20;

@@ -1,7 +1,6 @@
 use crate::test_helpers::gtest::*;
 use contracts::*;
 use decimal::*;
-use fungible_token_io::FTAction;
 use gstd::{prelude::*, ActorId};
 use gtest::*;
 use io::*;
@@ -33,12 +32,8 @@ pub fn multiple_swap(x_to_y: bool) {
         .send(ADMIN, InvariantAction::AddFeeTier(fee_tier))
         .assert_success();
 
-    token_x_program
-        .send(REGULAR_USER_1, FTAction::Mint(u128::MAX))
-        .assert_success();
-    token_y_program
-        .send(REGULAR_USER_1, FTAction::Mint(u128::MAX))
-        .assert_success();
+    mint(&token_x_program, REGULAR_USER_1, u128::MAX).assert_success();
+    mint(&token_y_program, REGULAR_USER_1, u128::MAX).assert_success();
 
     let init_tick = 0;
     let init_sqrt_price = calculate_sqrt_price(init_tick).unwrap();
@@ -94,16 +89,12 @@ pub fn multiple_swap(x_to_y: bool) {
         .assert_success();
 
     if x_to_y {
-        token_x_program
-            .send(REGULAR_USER_2, FTAction::Mint(amount))
-            .assert_success();
+        mint(&token_x_program, REGULAR_USER_2, amount).assert_success();
 
         assert_eq!(balance_of(&token_x_program, REGULAR_USER_2), amount);
         increase_allowance(&token_x_program, REGULAR_USER_2, INVARIANT_ID, amount);
     } else {
-        token_y_program
-            .send(REGULAR_USER_2, FTAction::Mint(amount))
-            .assert_success();
+        mint(&token_y_program, REGULAR_USER_2, amount).assert_success();
         assert_eq!(balance_of(&token_y_program, REGULAR_USER_2), amount);
         increase_allowance(&token_y_program, REGULAR_USER_2, INVARIANT_ID, amount);
     }

@@ -1,7 +1,6 @@
 use crate::test_helpers::gtest::*;
 use contracts::*;
 use decimal::*;
-use fungible_token_io::FTAction;
 use gstd::*;
 use gtest::*;
 use io::InvariantAction;
@@ -26,12 +25,8 @@ fn max_tick_cross() {
 
     init_basic_pool(&invariant, &token_x, &token_y);
 
-    token_x_program
-        .send(REGULAR_USER_1, FTAction::Mint(mint_amount))
-        .assert_success();
-    token_y_program
-        .send(REGULAR_USER_1, FTAction::Mint(mint_amount))
-        .assert_success();
+    mint(&token_x_program, REGULAR_USER_1, mint_amount).assert_success();
+    mint(&token_y_program, REGULAR_USER_1, mint_amount).assert_success();
 
     increase_allowance(&token_x_program, REGULAR_USER_1, INVARIANT_ID, mint_amount)
         .assert_success();
@@ -70,9 +65,7 @@ fn max_tick_cross() {
     assert_eq!(pool.liquidity, liquidity);
 
     let amount = 760_000;
-    token_x_program
-        .send(REGULAR_USER_2, FTAction::Mint(amount))
-        .assert_success();
+    mint(&token_x_program, REGULAR_USER_2, amount).assert_success();
     assert_eq!(balance_of(&token_x_program, REGULAR_USER_2), amount);
 
     increase_allowance(&token_x_program, REGULAR_USER_2, INVARIANT_ID, amount).assert_success();

@@ -1,17 +1,14 @@
-use fungible_token_io::*;
+use super::U256;
+use crate::{send_request, test_helpers::gtest::*};
 use gtest::*;
 
-use crate::test_helpers::gtest::*;
-
-pub fn increase_allowance(token: &Program, from: u64, to: u64, amount: u128) -> RunResult {
-    let current_allowance = allowance(token, from, to);
-    let res = token.send(
-        from,
-        FTAction::Approve {
-            tx_id: None,
-            to: to.into(),
-            amount: amount + current_allowance,
-        },
-    );
-    res
+pub fn increase_allowance(token: &Program, owner: u64, spender: u64, amount: u128) -> RunResult {
+    let current_allowance = allowance(token, owner, spender);
+    send_request!(
+        token: token,
+        user: owner,
+        service_name: "Erc20",
+        action: "Approve",
+        payload: (ActorId::from(spender), U256::from(current_allowance + amount))
+    )
 }

@@ -1,17 +1,16 @@
-use fungible_token_io::*;
+use crate::{send_query, test_helpers::gtest::REGULAR_USER_1};
 use gtest::*;
 
-pub fn allowance(token: &Program, from: u64, to: u64) -> u128 {
-    let state: IoFungibleToken = token.read_state(FTStateQuery::FullState).expect("Failed to read state");
-    let allowances = state.allowances.iter().find(|(k, _)| *k == from.into());
+use super::U256;
 
-    if let Some(allowances) = allowances {
-        return allowances
-            .1
-            .iter()
-            .find(|(k, _)| *k == to.into())
-            .unwrap_or(&(to.into(), 0))
-            .1;
-    }
-    0
+pub fn allowance(token: &Program, owner: u64, spender: u64) -> u128 {
+    send_query!(
+      token: token,
+      user: REGULAR_USER_1,
+      service_name: "Erc20",
+      action: "Allowance",
+      payload: (ActorId::from(owner), ActorId::from(spender)),
+      response_type: U256
+    )
+    .0
 }

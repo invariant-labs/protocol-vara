@@ -1,7 +1,6 @@
 use crate::test_helpers::gtest::*;
 use contracts::*;
 use decimal::*;
-use fungible_token_io::*;
 use gstd::{prelude::*, ActorId};
 use gtest::*;
 use io::*;
@@ -74,22 +73,20 @@ fn test_add_multiple_positions() {
     );
     assert!(res.events_eq(vec![TestEvent::empty_invariant_response(REGULAR_USER_1)]));
 
-    token_x_program.send(
+    increase_allowance(
+        &token_x_program,
         REGULAR_USER_1,
-        FTAction::Approve {
-            tx_id: None,
-            to: INVARIANT_ID.into(),
-            amount: initial_amount,
-        },
-    );
-    token_y_program.send(
+        INVARIANT_ID,
+        initial_amount,
+    )
+    .assert_success();
+    increase_allowance(
+        &token_y_program,
         REGULAR_USER_1,
-        FTAction::Approve {
-            tx_id: None,
-            to: INVARIANT_ID.into(),
-            amount: initial_amount,
-        },
-    );
+        INVARIANT_ID,
+        initial_amount,
+    )
+    .assert_success();
 
     let pool_key = PoolKey::new(token_x, token_y, fee_tier).unwrap();
     let tick_indexes = [-9780, -42, 0, 9, 276, 32343, -50001];
@@ -281,26 +278,20 @@ fn test_only_owner_can_modify_position_list() {
         )
         .main_failed());
 
-    assert!(!token_x_program
-        .send(
-            REGULAR_USER_1,
-            FTAction::Approve {
-                tx_id: None,
-                to: INVARIANT_ID.into(),
-                amount: initial_amount
-            }
-        )
-        .main_failed());
-    assert!(!token_y_program
-        .send(
-            REGULAR_USER_1,
-            FTAction::Approve {
-                tx_id: None,
-                to: INVARIANT_ID.into(),
-                amount: initial_amount
-            }
-        )
-        .main_failed());
+    increase_allowance(
+        &token_x_program,
+        REGULAR_USER_1,
+        INVARIANT_ID,
+        initial_amount,
+    )
+    .assert_success();
+    increase_allowance(
+        &token_y_program,
+        REGULAR_USER_1,
+        INVARIANT_ID,
+        initial_amount,
+    )
+    .assert_success();
 
     let pool_key = PoolKey::new(token_x, token_y, fee_tier).unwrap();
     let tick_indexes = [-9780, -42, 0, 9, 276, 32343, -50001];
@@ -452,26 +443,20 @@ fn test_transfer_position_ownership() {
         )
         .main_failed());
 
-    assert!(!token_x_program
-        .send(
-            REGULAR_USER_1,
-            FTAction::Approve {
-                tx_id: None,
-                to: INVARIANT_ID.into(),
-                amount: initial_amount
-            }
-        )
-        .main_failed());
-    assert!(!token_y_program
-        .send(
-            REGULAR_USER_1,
-            FTAction::Approve {
-                tx_id: None,
-                to: INVARIANT_ID.into(),
-                amount: initial_amount
-            }
-        )
-        .main_failed());
+    increase_allowance(
+        &token_x_program,
+        REGULAR_USER_1,
+        INVARIANT_ID,
+        initial_amount,
+    )
+    .assert_success();
+    increase_allowance(
+        &token_y_program,
+        REGULAR_USER_1,
+        INVARIANT_ID,
+        initial_amount,
+    )
+    .assert_success();
 
     let pool_key = PoolKey::new(token_x, token_y, fee_tier).unwrap();
     let tick_indexes = [-9780, -42, 0, 9, 276, 32343, -50001];
@@ -775,26 +760,20 @@ fn test_only_owner_can_transfer_position() {
         )
         .main_failed());
 
-    assert!(!token_x_program
-        .send(
-            REGULAR_USER_1,
-            FTAction::Approve {
-                tx_id: None,
-                to: INVARIANT_ID.into(),
-                amount: initial_amount
-            }
-        )
-        .main_failed());
-    assert!(!token_y_program
-        .send(
-            REGULAR_USER_1,
-            FTAction::Approve {
-                tx_id: None,
-                to: INVARIANT_ID.into(),
-                amount: initial_amount
-            }
-        )
-        .main_failed());
+    increase_allowance(
+        &token_x_program,
+        REGULAR_USER_1,
+        INVARIANT_ID,
+        initial_amount,
+    )
+    .assert_success();
+    increase_allowance(
+        &token_y_program,
+        REGULAR_USER_1,
+        INVARIANT_ID,
+        initial_amount,
+    )
+    .assert_success();
 
     let pool_key = PoolKey::new(token_x, token_y, fee_tier).unwrap();
     let tick_indexes = [-9780, -42, 0, 9, 276, 32343, -50001];
@@ -917,26 +896,20 @@ fn test_multiple_positions_on_same_tick() {
         )
         .main_failed());
 
-    assert!(!token_x_program
-        .send(
-            REGULAR_USER_1,
-            FTAction::Approve {
-                tx_id: None,
-                to: INVARIANT_ID.into(),
-                amount: initial_amount
-            }
-        )
-        .main_failed());
-    assert!(!token_y_program
-        .send(
-            REGULAR_USER_1,
-            FTAction::Approve {
-                tx_id: None,
-                to: INVARIANT_ID.into(),
-                amount: initial_amount
-            }
-        )
-        .main_failed());
+    increase_allowance(
+        &token_x_program,
+        REGULAR_USER_1,
+        INVARIANT_ID,
+        initial_amount,
+    )
+    .assert_success();
+    increase_allowance(
+        &token_y_program,
+        REGULAR_USER_1,
+        INVARIANT_ID,
+        initial_amount,
+    )
+    .assert_success();
 
     let pool_key = PoolKey::new(token_x, token_y, fee_tier).unwrap();
     let lower_tick_index = -10;
