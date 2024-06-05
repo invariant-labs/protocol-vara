@@ -50,7 +50,7 @@ jobs:
       - name: Run tests script (with building)
         run: |
           chmod +x tests.sh
-          ./tests.sh
+          ./tests.sh --release
         shell: bash
   sdk_tests:
     name: Run SDK tests
