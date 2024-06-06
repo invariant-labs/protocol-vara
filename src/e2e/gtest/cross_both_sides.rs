@@ -1,7 +1,6 @@
 use crate::test_helpers::gtest::*;
 use contracts::*;
 use decimal::*;
-use fungible_token_io::*;
 use gstd::{prelude::*, ActorId};
 use gtest::*;
 use io::*;
@@ -112,12 +111,8 @@ fn test_cross_both_sides() {
         + min_amount_to_cross_from_tick_price.get()
         + crossing_amount_by_amount_out.get();
 
-    token_x_program
-        .send(REGULAR_USER_1, FTAction::Mint(mint_amount))
-        .assert_success();
-    token_y_program
-        .send(REGULAR_USER_1, FTAction::Mint(mint_amount))
-        .assert_success();
+    mint(&token_x_program, REGULAR_USER_1, mint_amount).assert_success();
+    mint(&token_y_program, REGULAR_USER_1, mint_amount).assert_success();
 
     increase_allowance(
         &token_y_program,
@@ -187,12 +182,9 @@ fn test_cross_both_sides() {
     let massive_x = 10u128.pow(19);
     let massive_y = 10u128.pow(19);
 
-    token_x_program
-        .send(REGULAR_USER_1, FTAction::Mint(massive_x))
-        .assert_success();
-    token_y_program
-        .send(REGULAR_USER_1, FTAction::Mint(massive_y))
-        .assert_success();
+    mint(&token_x_program, REGULAR_USER_1, massive_x).assert_success();
+
+    mint(&token_y_program, REGULAR_USER_1, massive_y).assert_success();
 
     increase_allowance(
         &token_y_program,
@@ -332,26 +324,10 @@ fn test_cross_both_sides_not_cross_case() {
     let lower_tick_index = -10;
     let upper_tick_index = 10;
 
-    token_x_program
-        .send(
-            REGULAR_USER_1,
-            FTAction::Approve {
-                tx_id: None,
-                to: INVARIANT_ID.into(),
-                amount: mint_amount,
-            },
-        )
+    increase_allowance(&token_x_program, REGULAR_USER_1, INVARIANT_ID, mint_amount)
         .assert_success();
 
-    token_y_program
-        .send(
-            REGULAR_USER_1,
-            FTAction::Approve {
-                tx_id: None,
-                to: INVARIANT_ID.into(),
-                amount: mint_amount,
-            },
-        )
+    increase_allowance(&token_y_program, REGULAR_USER_1, INVARIANT_ID, mint_amount)
         .assert_success();
 
     let liquidity_delta = Liquidity::new(20006000000000);
@@ -400,33 +376,13 @@ fn test_cross_both_sides_not_cross_case() {
         + min_amount_to_cross_from_tick_price.get()
         + crossing_amount_by_amount_out.get();
 
-    token_x_program
-        .send(REGULAR_USER_1, FTAction::Mint(mint_amount))
-        .assert_success();
-    token_y_program
-        .send(REGULAR_USER_1, FTAction::Mint(mint_amount))
+    mint(&token_x_program, REGULAR_USER_1, mint_amount).assert_success();
+    mint(&token_y_program, REGULAR_USER_1, mint_amount).assert_success();
+
+    increase_allowance(&token_x_program, REGULAR_USER_1, INVARIANT_ID, mint_amount)
         .assert_success();
 
-    token_x_program
-        .send(
-            REGULAR_USER_1,
-            FTAction::Approve {
-                tx_id: None,
-                to: INVARIANT_ID.into(),
-                amount: mint_amount,
-            },
-        )
-        .assert_success();
-
-    token_y_program
-        .send(
-            REGULAR_USER_1,
-            FTAction::Approve {
-                tx_id: None,
-                to: INVARIANT_ID.into(),
-                amount: mint_amount,
-            },
-        )
+    increase_allowance(&token_y_program, REGULAR_USER_1, INVARIANT_ID, mint_amount)
         .assert_success();
 
     let pool_before = get_pool(&invariant, token_x, token_y, fee_tier).unwrap();

@@ -1,7 +1,6 @@
 use crate::test_helpers::gtest::*;
 use contracts::*;
 use decimal::*;
-use fungible_token_io::FTAction;
 use gstd::{prelude::*, ActorId};
 use gtest::*;
 use io::*;
@@ -21,7 +20,7 @@ fn test_create_position() {
 
     let invariant = init_invariant(&sys, Percentage(100));
 
-    let (token_0_program, token_1_program) = init_tokens_with_mint(&sys, (500, 500));
+    let (token_x_program, token_y_program) = init_tokens_with_mint(&sys, (500, 500));
     let token_0 = ActorId::from(TOKEN_X_ID);
     let token_1 = ActorId::from(TOKEN_Y_ID);
 
@@ -47,27 +46,9 @@ fn test_create_position() {
 
     assert!(res.events_eq(vec![TestEvent::empty_invariant_response(REGULAR_USER_1)]));
 
-    assert!(!token_0_program
-        .send(
-            REGULAR_USER_1,
-            FTAction::Approve {
-                tx_id: None,
-                to: INVARIANT_ID.into(),
-                amount: 500
-            }
-        )
-        .main_failed());
+    increase_allowance(&token_x_program, REGULAR_USER_1, INVARIANT_ID, 500).assert_success();
 
-    assert!(!token_1_program
-        .send(
-            REGULAR_USER_1,
-            FTAction::Approve {
-                tx_id: None,
-                to: INVARIANT_ID.into(),
-                amount: 500
-            }
-        )
-        .main_failed());
+    increase_allowance(&token_y_program, REGULAR_USER_1, INVARIANT_ID, 500).assert_success();
 
     let pool_key = PoolKey::new(token_0.into(), token_1.into(), fee_tier).unwrap();
     let pool = get_pool(&invariant, token_0, token_1, fee_tier).unwrap();
@@ -120,7 +101,7 @@ fn test_position_same_upper_and_lower_tick() {
 
     let mut invariant = init_invariant(&sys, Percentage(100));
 
-    let (token_0_program, token_1_program) = init_tokens_with_mint(&sys, (500, 500));
+    let (token_x_program, token_y_program) = init_tokens_with_mint(&sys, (500, 500));
     let token_0 = ActorId::from(TOKEN_X_ID);
     let token_1 = ActorId::from(TOKEN_Y_ID);
 
@@ -146,27 +127,9 @@ fn test_position_same_upper_and_lower_tick() {
 
     assert!(res.events_eq(vec![TestEvent::empty_invariant_response(REGULAR_USER_1)]));
 
-    assert!(!token_0_program
-        .send(
-            REGULAR_USER_1,
-            FTAction::Approve {
-                tx_id: None,
-                to: INVARIANT_ID.into(),
-                amount: 500
-            }
-        )
-        .main_failed());
+    increase_allowance(&token_x_program, REGULAR_USER_1, INVARIANT_ID, 500).assert_success();
 
-    assert!(!token_1_program
-        .send(
-            REGULAR_USER_1,
-            FTAction::Approve {
-                tx_id: None,
-                to: INVARIANT_ID.into(),
-                amount: 500
-            }
-        )
-        .main_failed());
+    increase_allowance(&token_y_program, REGULAR_USER_1, INVARIANT_ID, 500).assert_success();
 
     let pool_key = PoolKey::new(token_0.into(), token_1.into(), fee_tier).unwrap();
     let pool = get_pool(&invariant, token_0, token_1, fee_tier).unwrap();
@@ -221,27 +184,21 @@ fn test_position_below_current_tick() {
 
     assert!(res.events_eq(vec![TestEvent::empty_invariant_response(REGULAR_USER_1)]));
 
-    assert!(!token_x_program
-        .send(
-            REGULAR_USER_1,
-            FTAction::Approve {
-                tx_id: None,
-                to: INVARIANT_ID.into(),
-                amount: initial_balance
-            }
-        )
-        .main_failed());
+    increase_allowance(
+        &token_x_program,
+        REGULAR_USER_1,
+        INVARIANT_ID,
+        initial_balance,
+    )
+    .assert_success();
 
-    assert!(!token_y_program
-        .send(
-            REGULAR_USER_1,
-            FTAction::Approve {
-                tx_id: None,
-                to: INVARIANT_ID.into(),
-                amount: initial_balance
-            }
-        )
-        .main_failed());
+    increase_allowance(
+        &token_y_program,
+        REGULAR_USER_1,
+        INVARIANT_ID,
+        initial_balance,
+    )
+    .assert_success();
 
     let pool_key = PoolKey::new(token_x.into(), token_y.into(), fee_tier).unwrap();
     let pool_state_before = get_pool(&invariant, token_x, token_y, fee_tier).unwrap();
@@ -374,27 +331,21 @@ fn test_position_within_current_tick() {
 
     assert!(res.events_eq(vec![TestEvent::empty_invariant_response(REGULAR_USER_1)]));
 
-    assert!(!token_x_program
-        .send(
-            REGULAR_USER_1,
-            FTAction::Approve {
-                tx_id: None,
-                to: INVARIANT_ID.into(),
-                amount: initial_balance
-            }
-        )
-        .main_failed());
+    increase_allowance(
+        &token_x_program,
+        REGULAR_USER_1,
+        INVARIANT_ID,
+        initial_balance,
+    )
+    .assert_success();
 
-    assert!(!token_y_program
-        .send(
-            REGULAR_USER_1,
-            FTAction::Approve {
-                tx_id: None,
-                to: INVARIANT_ID.into(),
-                amount: initial_balance
-            }
-        )
-        .main_failed());
+    increase_allowance(
+        &token_y_program,
+        REGULAR_USER_1,
+        INVARIANT_ID,
+        initial_balance,
+    )
+    .assert_success();
 
     let pool_key = PoolKey::new(token_x.into(), token_y.into(), fee_tier).unwrap();
     let pool_state_before = get_pool(&invariant, token_x, token_y, fee_tier).unwrap();
@@ -495,27 +446,21 @@ fn test_position_above_current_tick() {
 
     assert!(res.events_eq(vec![TestEvent::empty_invariant_response(REGULAR_USER_1)]));
 
-    assert!(!token_x_program
-        .send(
-            REGULAR_USER_1,
-            FTAction::Approve {
-                tx_id: None,
-                to: INVARIANT_ID.into(),
-                amount: initial_balance
-            }
-        )
-        .main_failed());
+    increase_allowance(
+        &token_x_program,
+        REGULAR_USER_1,
+        INVARIANT_ID,
+        initial_balance,
+    )
+    .assert_success();
 
-    assert!(!token_y_program
-        .send(
-            REGULAR_USER_1,
-            FTAction::Approve {
-                tx_id: None,
-                to: INVARIANT_ID.into(),
-                amount: initial_balance
-            }
-        )
-        .main_failed());
+    increase_allowance(
+        &token_y_program,
+        REGULAR_USER_1,
+        INVARIANT_ID,
+        initial_balance,
+    )
+    .assert_success();
 
     let pool_key = PoolKey::new(token_x.into(), token_y.into(), fee_tier).unwrap();
     let pool_state_before = get_pool(&invariant, token_x, token_y, fee_tier).unwrap();
@@ -643,27 +588,21 @@ fn test_create_position_not_enough_token_x() {
 
     assert!(res.events_eq(vec![TestEvent::empty_invariant_response(REGULAR_USER_1)]));
 
-    assert!(!token_x_program
-        .send(
-            REGULAR_USER_1,
-            FTAction::Approve {
-                tx_id: None,
-                to: INVARIANT_ID.into(),
-                amount: initial_balance
-            }
-        )
-        .main_failed());
+    increase_allowance(
+        &token_x_program,
+        REGULAR_USER_1,
+        INVARIANT_ID,
+        initial_balance,
+    )
+    .assert_success();
 
-    assert!(!token_y_program
-        .send(
-            REGULAR_USER_1,
-            FTAction::Approve {
-                tx_id: None,
-                to: INVARIANT_ID.into(),
-                amount: initial_balance
-            }
-        )
-        .main_failed());
+    increase_allowance(
+        &token_y_program,
+        REGULAR_USER_1,
+        INVARIANT_ID,
+        initial_balance,
+    )
+    .assert_success();
 
     let pool_key = PoolKey::new(token_x.into(), token_y.into(), fee_tier).unwrap();
     let pool_state_before = get_pool(&invariant, token_x, token_y, fee_tier).unwrap();
@@ -736,27 +675,21 @@ fn test_create_position_not_enough_token_y() {
 
     assert!(res.events_eq(vec![TestEvent::empty_invariant_response(REGULAR_USER_1)]));
 
-    assert!(!token_x_program
-        .send(
-            REGULAR_USER_1,
-            FTAction::Approve {
-                tx_id: None,
-                to: INVARIANT_ID.into(),
-                amount: initial_balance
-            }
-        )
-        .main_failed());
+    increase_allowance(
+        &token_x_program,
+        REGULAR_USER_1,
+        INVARIANT_ID,
+        initial_balance,
+    )
+    .assert_success();
 
-    assert!(!token_y_program
-        .send(
-            REGULAR_USER_1,
-            FTAction::Approve {
-                tx_id: None,
-                to: INVARIANT_ID.into(),
-                amount: initial_balance
-            }
-        )
-        .main_failed());
+    increase_allowance(
+        &token_y_program,
+        REGULAR_USER_1,
+        INVARIANT_ID,
+        initial_balance,
+    )
+    .assert_success();
 
     let pool_key = PoolKey::new(token_x.into(), token_y.into(), fee_tier).unwrap();
     let pool_state_before = get_pool(&invariant, token_x, token_y, fee_tier).unwrap();
@@ -835,27 +768,15 @@ fn test_create_position_insufficient_allowance_token_x() {
 
     assert!(res.events_eq(vec![TestEvent::empty_invariant_response(REGULAR_USER_1)]));
 
-    assert!(!token_x_program
-        .send(
-            REGULAR_USER_1,
-            FTAction::Approve {
-                tx_id: None,
-                to: INVARIANT_ID.into(),
-                amount: 3
-            }
-        )
-        .main_failed());
+    increase_allowance(&token_x_program, REGULAR_USER_1, INVARIANT_ID, 3).assert_success();
 
-    assert!(!token_y_program
-        .send(
-            REGULAR_USER_1,
-            FTAction::Approve {
-                tx_id: None,
-                to: INVARIANT_ID.into(),
-                amount: initial_balance
-            }
-        )
-        .main_failed());
+    increase_allowance(
+        &token_y_program,
+        REGULAR_USER_1,
+        INVARIANT_ID,
+        initial_balance,
+    )
+    .assert_success();
 
     let pool_key = PoolKey::new(token_x.into(), token_y.into(), fee_tier).unwrap();
     let pool_state_before = get_pool(&invariant, token_x, token_y, fee_tier).unwrap();
@@ -929,27 +850,15 @@ fn test_create_position_insufficient_allowance_token_y() {
 
     assert!(res.events_eq(vec![TestEvent::empty_invariant_response(REGULAR_USER_1)]));
 
-    assert!(!token_x_program
-        .send(
-            REGULAR_USER_1,
-            FTAction::Approve {
-                tx_id: None,
-                to: INVARIANT_ID.into(),
-                amount: initial_balance
-            }
-        )
-        .main_failed());
+    increase_allowance(
+        &token_x_program,
+        REGULAR_USER_1,
+        INVARIANT_ID,
+        initial_balance,
+    )
+    .assert_success();
 
-    assert!(!token_y_program
-        .send(
-            REGULAR_USER_1,
-            FTAction::Approve {
-                tx_id: None,
-                to: INVARIANT_ID.into(),
-                amount: 3
-            }
-        )
-        .main_failed());
+    increase_allowance(&token_y_program, REGULAR_USER_1, INVARIANT_ID, 3).assert_success();
 
     let pool_key = PoolKey::new(token_x.into(), token_y.into(), fee_tier).unwrap();
     let pool_state_before = get_pool(&invariant, token_x, token_y, fee_tier).unwrap();
@@ -1034,12 +943,8 @@ fn test_remove_position() {
     let upper_tick_index = 10;
     let liquidity_delta = Liquidity::from_integer(1_000_000);
 
-    token_x_program
-        .send(REGULAR_USER_1, FTAction::Mint(initial_mint))
-        .assert_success();
-    token_y_program
-        .send(REGULAR_USER_1, FTAction::Mint(initial_mint))
-        .assert_success();
+    mint(&token_x_program, REGULAR_USER_1, initial_mint).assert_success();
+    mint(&token_y_program, REGULAR_USER_1, initial_mint).assert_success();
 
     increase_allowance(&token_x_program, REGULAR_USER_1, INVARIANT_ID, initial_mint)
         .assert_success();
@@ -1106,9 +1011,7 @@ fn test_remove_position() {
     assert!(position_state.upper_tick_index == incorrect_upper_tick_index);
 
     let amount = 1000;
-    token_x_program
-        .send(REGULAR_USER_2, FTAction::Mint(amount))
-        .assert_success();
+    mint(&token_x_program, REGULAR_USER_2, amount).assert_success();
     assert_eq!(balance_of(&token_x_program, REGULAR_USER_2), amount);
 
     increase_allowance(&token_x_program, REGULAR_USER_2, INVARIANT_ID, amount).assert_success();
@@ -1239,12 +1142,8 @@ fn test_remove_position_token_x_transfer_fail() {
     let upper_tick_index = 10;
     let liquidity_delta = Liquidity::from_integer(1_000_000);
 
-    token_x_program
-        .send(REGULAR_USER_1, FTAction::Mint(initial_mint))
-        .assert_success();
-    token_y_program
-        .send(REGULAR_USER_1, FTAction::Mint(initial_mint))
-        .assert_success();
+    mint(&token_x_program, REGULAR_USER_1, initial_mint).assert_success();
+    mint(&token_y_program, REGULAR_USER_1, initial_mint).assert_success();
 
     increase_allowance(&token_x_program, REGULAR_USER_1, INVARIANT_ID, initial_mint)
         .assert_success();
@@ -1311,9 +1210,7 @@ fn test_remove_position_token_x_transfer_fail() {
     assert!(position_state.upper_tick_index == incorrect_upper_tick_index);
 
     let amount = 1000;
-    token_x_program
-        .send(REGULAR_USER_2, FTAction::Mint(amount))
-        .assert_success();
+    mint(&token_x_program, REGULAR_USER_2, amount).assert_success();
     assert_eq!(balance_of(&token_x_program, REGULAR_USER_2), amount);
 
     increase_allowance(&token_x_program, REGULAR_USER_2, INVARIANT_ID, amount).assert_success();
@@ -1361,9 +1258,8 @@ fn test_remove_position_token_x_transfer_fail() {
     let invariant_y_before_remove = balance_of(&token_y_program, INVARIANT_ID);
 
     // Burn all token x to fail transfer
-    token_x_program
-        .send(REGULAR_USER_2, FTAction::SetFailTransferFlag(true))
-        .assert_success();
+    set_transfer_fail(&token_x_program, true).assert_success();
+
     // Remove position
     invariant.send_and_assert_error(
         REGULAR_USER_1,
@@ -1446,12 +1342,8 @@ fn test_remove_position_token_y_transfer_fail() {
     let upper_tick_index = 10;
     let liquidity_delta = Liquidity::from_integer(1_000_000);
 
-    token_x_program
-        .send(REGULAR_USER_1, FTAction::Mint(initial_mint))
-        .assert_success();
-    token_y_program
-        .send(REGULAR_USER_1, FTAction::Mint(initial_mint))
-        .assert_success();
+    mint(&token_x_program, REGULAR_USER_1, initial_mint).assert_success();
+    mint(&token_y_program, REGULAR_USER_1, initial_mint).assert_success();
 
     increase_allowance(&token_x_program, REGULAR_USER_1, INVARIANT_ID, initial_mint)
         .assert_success();
@@ -1518,9 +1410,7 @@ fn test_remove_position_token_y_transfer_fail() {
     assert!(position_state.upper_tick_index == incorrect_upper_tick_index);
 
     let amount = 1000;
-    token_x_program
-        .send(REGULAR_USER_2, FTAction::Mint(amount))
-        .assert_success();
+    mint(&token_x_program, REGULAR_USER_2, amount).assert_success();
     assert_eq!(balance_of(&token_x_program, REGULAR_USER_2), amount);
 
     increase_allowance(&token_x_program, REGULAR_USER_2, INVARIANT_ID, amount).assert_success();
@@ -1568,9 +1458,8 @@ fn test_remove_position_token_y_transfer_fail() {
     let invariant_y_before_remove = balance_of(&token_y_program, INVARIANT_ID);
 
     // Burn all token x to fail transfer
-    token_y_program
-        .send(REGULAR_USER_2, FTAction::SetFailTransferFlag(true))
-        .assert_success();
+    set_transfer_fail(&token_y_program, true).assert_success();
+
     // Remove position
     invariant.send_and_assert_error(
         REGULAR_USER_1,

@@ -22,8 +22,8 @@ jobs:
 
       - name: Install Rust toolchain
         run: |
-          rustup install nightly-2024-01-25
-          rustup target add wasm32-unknown-unknown --toolchain nightly-2024-01-25
+          rustup install 1.74.1
+          rustup target add wasm32-unknown-unknown
 
       - name: Build
         run: cargo build --release
@@ -41,8 +41,8 @@ jobs:
 
       - name: Install Rust toolchain
         run: |
-          rustup install nightly-2024-01-25
-          rustup target add wasm32-unknown-unknown --toolchain nightly-2024-01-25
+          rustup install 1.74.1
+          rustup target add wasm32-unknown-unknown
 
       - name: Instal Gear node
         run: curl https://get.gear.rs/gear-v1.1.0-x86_64-unknown-linux-gnu.tar.xz | tar Jx
@@ -50,7 +50,7 @@ jobs:
       - name: Run tests script (with building)
         run: |
           chmod +x tests.sh
-          ./tests.sh
+          ./tests.sh --release
         shell: bash
   sdk_tests:
     name: Run SDK tests

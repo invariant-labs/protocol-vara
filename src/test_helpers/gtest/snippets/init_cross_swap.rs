@@ -1,7 +1,6 @@
 use crate::test_helpers::gtest::*;
 use contracts::*;
 use decimal::*;
-use fungible_token_io::*;
 use gstd::*;
 use gtest::*;
 use io::*;
@@ -21,9 +20,7 @@ pub fn init_cross_swap(invariant: &Program, token_x_program: &Program, token_y_p
 
     let amount = 1000;
 
-    token_x_program
-        .send(REGULAR_USER_2, FTAction::Mint(amount))
-        .assert_success();
+    mint(&token_x_program, REGULAR_USER_2, amount).assert_success();
 
     assert_eq!(balance_of(token_x_program, REGULAR_USER_2), amount);
     assert_eq!(balance_of(token_x_program, INVARIANT_ID), 500);

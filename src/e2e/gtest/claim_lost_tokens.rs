@@ -3,7 +3,6 @@ use crate::test_helpers::gtest::*;
 
 use contracts::*;
 use decimal::*;
-use fungible_token_io::*;
 use gstd::*;
 use gtest::*;
 use io::*;
@@ -30,9 +29,7 @@ fn test_swap_transfer_fail_token_x() {
     let pool_key = PoolKey::new(token_x, token_y, fee_tier).unwrap();
 
     let amount = 500;
-    assert!(!token_y_program
-        .send(REGULAR_USER_2, FTAction::Mint(amount))
-        .main_failed());
+    mint(&token_y_program, REGULAR_USER_2, amount).assert_success();
 
     increase_allowance(&token_y_program, REGULAR_USER_2, INVARIANT_ID, amount).assert_success();
 
@@ -46,9 +43,7 @@ fn test_swap_transfer_fail_token_x() {
     let swap_amount = TokenAmount::new(amount);
     let slippage = SqrtPrice::new(MAX_SQRT_PRICE);
 
-    token_x_program
-        .send(REGULAR_USER_2, FTAction::SetFailTransferFlag(true))
-        .assert_success();
+    set_transfer_fail(&token_x_program, true).assert_success();
 
     let _res = invariant.send_and_assert_error(
         REGULAR_USER_2,
@@ -117,9 +112,7 @@ fn test_claim_lost_tokens_after_swap_token_y() {
     let pool_key = PoolKey::new(token_x, token_y, fee_tier).unwrap();
 
     let amount = 500;
-    assert!(!token_x_program
-        .send(REGULAR_USER_2, FTAction::Mint(amount))
-        .main_failed());
+    mint(&token_x_program, REGULAR_USER_2, amount).assert_success();
 
     increase_allowance(&token_x_program, REGULAR_USER_2, INVARIANT_ID, amount).assert_success();
 
@@ -133,9 +126,8 @@ fn test_claim_lost_tokens_after_swap_token_y() {
     let swap_amount = TokenAmount::new(amount);
     let slippage = SqrtPrice::new(MIN_SQRT_PRICE);
 
-    token_y_program
-        .send(REGULAR_USER_2, FTAction::SetFailTransferFlag(true))
-        .assert_success();
+    set_transfer_fail(&token_y_program, true).assert_success();
+
 
     let _res = invariant.send_and_assert_error(
         REGULAR_USER_2,

@@ -1,7 +1,6 @@
 use crate::test_helpers::gtest::*;
 use contracts::*;
 use decimal::*;
-use fungible_token_io::FTAction;
 use gstd::{prelude::*, ActorId};
 use gtest::*;
 use io::*;
@@ -47,9 +46,7 @@ fn test_swap_not_enough_tokens_x() {
     let pool_key = PoolKey::new(token_x, token_y, fee_tier).unwrap();
 
     let amount = 1000;
-    assert!(!token_x_program
-        .send(REGULAR_USER_2, FTAction::Mint(amount - 1))
-        .main_failed());
+    mint(&token_x_program, REGULAR_USER_2, amount - 1).assert_success();
 
     increase_allowance(&token_x_program, REGULAR_USER_2, INVARIANT_ID, amount).assert_success();
 
@@ -110,9 +107,7 @@ fn test_swap_insufficient_allowance_token_x() {
     let pool_key = PoolKey::new(token_x, token_y, fee_tier).unwrap();
 
     let amount = 1000;
-    assert!(!token_x_program
-        .send(REGULAR_USER_2, FTAction::Mint(amount))
-        .main_failed());
+    mint(&token_x_program, REGULAR_USER_2, amount).assert_success();
 
     increase_allowance(&token_x_program, REGULAR_USER_2, INVARIANT_ID, amount - 1).assert_success();
 
@@ -174,9 +169,7 @@ fn test_swap_not_enough_tokens_y() {
     let pool_key = PoolKey::new(token_x, token_y, fee_tier).unwrap();
 
     let amount = 500;
-    assert!(!token_y_program
-        .send(REGULAR_USER_2, FTAction::Mint(amount - 1))
-        .main_failed());
+    mint(&token_y_program, REGULAR_USER_2, amount - 1).assert_success();
 
     increase_allowance(&token_y_program, REGULAR_USER_2, INVARIANT_ID, amount).assert_success();
 
@@ -237,9 +230,7 @@ fn test_swap_insufficient_allowance_token_y() {
     let pool_key = PoolKey::new(token_x, token_y, fee_tier).unwrap();
 
     let amount = 500;
-    assert!(!token_y_program
-        .send(REGULAR_USER_2, FTAction::Mint(amount))
-        .main_failed());
+    mint(&token_y_program, REGULAR_USER_2, amount).assert_success();
 
     increase_allowance(&token_y_program, REGULAR_USER_2, INVARIANT_ID, amount - 1).assert_success();
 
@@ -300,9 +291,7 @@ fn test_swap_not_enough_liquidity_token_y() {
     let pool_key = PoolKey::new(token_x, token_y, fee_tier).unwrap();
 
     let amount = 1000;
-    assert!(!token_y_program
-        .send(REGULAR_USER_2, FTAction::Mint(amount))
-        .main_failed());
+    mint(&token_y_program, REGULAR_USER_2, amount).assert_success();
 
     increase_allowance(&token_y_program, REGULAR_USER_2, INVARIANT_ID, amount).assert_success();
 
@@ -361,9 +350,7 @@ fn test_swap_not_enough_liquidity_token_x() {
     let pool_key = PoolKey::new(token_x, token_y, fee_tier).unwrap();
 
     let amount = 2000;
-    assert!(!token_x_program
-        .send(REGULAR_USER_2, FTAction::Mint(amount))
-        .main_failed());
+    mint(&token_x_program, REGULAR_USER_2, amount).assert_success();
 
     increase_allowance(&token_x_program, REGULAR_USER_2, INVARIANT_ID, amount).assert_success();
 
@@ -437,32 +424,22 @@ fn test_swap_x_to_y() {
         )
         .assert_success();
 
-    token_x_program
-        .send(REGULAR_USER_1, FTAction::Mint(initial_amount))
-        .assert_success();
-    token_y_program
-        .send(REGULAR_USER_1, FTAction::Mint(initial_amount))
-        .assert_success();
-    token_x_program
-        .send(
-            REGULAR_USER_1,
-            FTAction::Approve {
-                tx_id: None,
-                to: INVARIANT_ID.into(),
-                amount: initial_amount,
-            },
-        )
-        .assert_success();
-    token_y_program
-        .send(
-            REGULAR_USER_1,
-            FTAction::Approve {
-                tx_id: None,
-                to: INVARIANT_ID.into(),
-                amount: initial_amount,
-            },
-        )
-        .assert_success();
+    mint(&token_x_program, REGULAR_USER_1, initial_amount).assert_success();
+    mint(&token_y_program, REGULAR_USER_1, initial_amount).assert_success();
+    increase_allowance(
+        &token_x_program,
+        REGULAR_USER_1,
+        INVARIANT_ID,
+        initial_amount,
+    )
+    .assert_success();
+    increase_allowance(
+        &token_y_program,
+        REGULAR_USER_1,
+        INVARIANT_ID,
+        initial_amount,
+    )
+    .assert_success();
 
     let pool_key = PoolKey::new(token_x, token_y, fee_tier).unwrap();
 
@@ -508,9 +485,8 @@ fn test_swap_x_to_y() {
     let swap_amount = TokenAmount(amount);
     assert_eq!(balance_of(&token_x_program, INVARIANT_ID), 500);
     assert_eq!(balance_of(&token_y_program, INVARIANT_ID), 2499);
-    token_x_program
-        .send(REGULAR_USER_2, FTAction::Mint(amount))
-        .assert_success();
+    mint(&token_x_program, REGULAR_USER_2, amount).assert_success();
+
     increase_allowance(&token_x_program, REGULAR_USER_2, INVARIANT_ID, amount).assert_success();
 
     let before_invariant_x = balance_of(&token_x_program, INVARIANT_ID);
@@ -607,12 +583,10 @@ fn test_swap_y_to_x() {
         )
         .assert_success();
 
-    token_x_program
-        .send(REGULAR_USER_1, FTAction::Mint(initial_amount))
-        .assert_success();
-    token_y_program
-        .send(REGULAR_USER_1, FTAction::Mint(initial_amount))
-        .assert_success();
+    mint(&token_x_program, REGULAR_USER_1, initial_amount).assert_success();
+    mint(&token_y_program, REGULAR_USER_1, initial_amount).assert_success();
+    assert_eq!(balance_of(&token_y_program, REGULAR_USER_1), initial_amount);
+    assert_eq!(balance_of(&token_x_program, REGULAR_USER_1), initial_amount);
 
     increase_allowance(
         &token_x_program,
@@ -672,9 +646,8 @@ fn test_swap_y_to_x() {
     let amount = 1000;
     let swap_amount = TokenAmount(amount);
 
-    token_y_program
-        .send(REGULAR_USER_2, FTAction::Mint(amount))
-        .assert_success();
+    mint(&token_y_program, REGULAR_USER_2, amount).assert_success();
+
     increase_allowance(&token_y_program, REGULAR_USER_2, INVARIANT_ID, amount).assert_success();
 
     let before_invariant_x = balance_of(&token_x_program, INVARIANT_ID);
@@ -755,9 +728,7 @@ fn test_swap_transfer_fail_token_x() {
     let pool_key = PoolKey::new(token_x, token_y, fee_tier).unwrap();
 
     let amount = 500;
-    assert!(!token_y_program
-        .send(REGULAR_USER_2, FTAction::Mint(amount))
-        .main_failed());
+    mint(&token_y_program, REGULAR_USER_2, amount).assert_success();
 
     increase_allowance(&token_y_program, REGULAR_USER_2, INVARIANT_ID, amount).assert_success();
 
@@ -771,9 +742,8 @@ fn test_swap_transfer_fail_token_x() {
     let swap_amount = TokenAmount::new(amount);
     let slippage = SqrtPrice::new(MAX_SQRT_PRICE);
 
-    token_x_program
-        .send(REGULAR_USER_2, FTAction::SetFailTransferFlag(true))
-        .assert_success();
+    set_transfer_fail(&token_x_program, true).assert_success();
+
 
     let _res = invariant.send_and_assert_error(
         REGULAR_USER_2,
@@ -827,9 +797,7 @@ fn test_swap_transfer_fail_token_y() {
     let pool_key = PoolKey::new(token_x, token_y, fee_tier).unwrap();
 
     let amount = 500;
-    assert!(!token_x_program
-        .send(REGULAR_USER_2, FTAction::Mint(amount))
-        .main_failed());
+    mint(&token_x_program, REGULAR_USER_2, amount).assert_success();
 
     increase_allowance(&token_x_program, REGULAR_USER_2, INVARIANT_ID, amount).assert_success();
 
@@ -843,9 +811,7 @@ fn test_swap_transfer_fail_token_y() {
     let swap_amount = TokenAmount::new(amount);
     let slippage = SqrtPrice::new(MIN_SQRT_PRICE);
 
-    token_y_program
-        .send(REGULAR_USER_2, FTAction::SetFailTransferFlag(true))
-        .assert_success();
+    set_transfer_fail(&token_y_program, true).assert_success();
 
     let _res = invariant.send_and_assert_error(
         REGULAR_USER_2,

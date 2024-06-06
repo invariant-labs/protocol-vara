@@ -1,7 +1,6 @@
 use crate::test_helpers::gtest::*;
 use contracts::*;
 use decimal::*;
-use fungible_token_io::*;
 use gstd::{prelude::*, ActorId};
 use gtest::*;
 use io::*;
@@ -24,16 +23,13 @@ fn test_basic_slippage() {
 
     let amount = 10u128.pow(8);
     let swap_amount = TokenAmount(amount);
-    token_x_program
-        .send(
-            REGULAR_USER_1,
-            FTAction::Approve {
-                tx_id: None,
-                to: INVARIANT_ID.into(),
-                amount,
-            },
-        )
-        .assert_success();
+    increase_allowance(
+        &token_x_program,
+        REGULAR_USER_1,
+        INVARIANT_ID,
+        swap_amount.get(),
+    )
+    .assert_success();
 
     let target_sqrt_price = SqrtPrice::new(1009940000000000000000001);
     invariant
@@ -115,9 +111,7 @@ fn test_swap_exact_limit() {
 
     let amount = 1000;
 
-    token_x_program
-        .send(REGULAR_USER_2, FTAction::Mint(amount))
-        .assert_success();
+    mint(&token_x_program, REGULAR_USER_2, amount).assert_success();
 
     let amount_x = balance_of(&token_x_program, REGULAR_USER_2);
     assert_eq!(amount_x, amount);

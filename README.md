@@ -43,8 +43,15 @@ curl https://get.gear.rs/gear-v1.3.0-x86_64-unknown-linux-gnu.tar.xz | tar Jx
 ```
 
 ## Build protocol
+in release mode
 ```bash
-cargo build --release
+chmod +x build.sh
+./build.sh
+```
+for tests
+```bash
+chmod +x build.sh
+./build.sh dev
 ```
 
 ## Run tests
