@@ -37,6 +37,7 @@ pub enum InvariantError {
   InvalidTickIndex,
   NoBalanceForTheToken,
   FailedToChangeTokenBalance,
+  ReplyHandlingFailed,
 }
 
 impl Into<String>for InvariantError {

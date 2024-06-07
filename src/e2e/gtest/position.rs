@@ -621,7 +621,7 @@ fn test_create_position_not_enough_token_x() {
             slippage_limit_lower: pool_state_before.sqrt_price,
             slippage_limit_upper: pool_state_before.sqrt_price,
         },
-        InvariantError::TransferError,
+        InvariantError::RecoverableTransferError,
     );
 
     let pool_state = get_pool(&invariant, token_x, token_y, fee_tier).unwrap();
@@ -635,10 +635,17 @@ fn test_create_position_not_enough_token_x() {
     let invariant_x = balance_of(&token_x_program, INVARIANT_ID.into());
     let invariant_y = balance_of(&token_y_program, INVARIANT_ID.into());
 
+    let deposited_y = 4;
+
+    assert_eq!(
+        vec![(ActorId::from(TOKEN_Y_ID), TokenAmount(deposited_y))],
+        get_user_balances(&invariant, REGULAR_USER_1.into())
+    );
+
     assert_eq!(invariant_x, 0);
-    assert_eq!(invariant_y, 0);
+    assert_eq!(invariant_y, deposited_y);
     assert_eq!(user_1_x, 1);
-    assert_eq!(user_1_y, initial_balance);
+    assert_eq!(user_1_y, initial_balance - deposited_y);
     assert_eq!(&pool_state, &pool_state_before);
 }
 
@@ -795,7 +802,7 @@ fn test_create_position_insufficient_allowance_token_x() {
             slippage_limit_lower: pool_state_before.sqrt_price,
             slippage_limit_upper: pool_state_before.sqrt_price,
         },
-        InvariantError::TransferError,
+        InvariantError::RecoverableTransferError,
     );
 
     let pool_state = get_pool(&invariant, token_x, token_y, fee_tier).unwrap();
@@ -809,10 +816,17 @@ fn test_create_position_insufficient_allowance_token_x() {
     let invariant_x = balance_of(&token_x_program, INVARIANT_ID.into());
     let invariant_y = balance_of(&token_y_program, INVARIANT_ID.into());
 
+    let deposited_y = 4;
+
+    assert_eq!(
+        vec![(ActorId::from(TOKEN_Y_ID), TokenAmount(deposited_y))],
+        get_user_balances(&invariant, REGULAR_USER_1.into())
+    );
+
     assert_eq!(invariant_x, 0);
-    assert_eq!(invariant_y, 0);
+    assert_eq!(invariant_y, deposited_y);
     assert_eq!(user_1_x, initial_balance);
-    assert_eq!(user_1_y, initial_balance);
+    assert_eq!(user_1_y, initial_balance - deposited_y);
     assert_eq!(&pool_state, &pool_state_before);
 }
 
@@ -1253,9 +1267,11 @@ fn test_remove_position_token_x_transfer_fail() {
     assert_eq!(amount_x, 0);
     assert_eq!(amount_y, 993);
 
-    // pre load dex balances
+    // pre load balances
     let invariant_x_before_remove = balance_of(&token_x_program, INVARIANT_ID);
     let invariant_y_before_remove = balance_of(&token_y_program, INVARIANT_ID);
+    let user_x_before_remove = balance_of(&token_x_program, REGULAR_USER_1);
+    let user_y_before_remove = balance_of(&token_y_program, REGULAR_USER_1);
 
     // Burn all token x to fail transfer
     set_transfer_fail(&token_x_program, true).assert_success();
@@ -1270,10 +1286,7 @@ fn test_remove_position_token_x_transfer_fail() {
     );
 
     assert_eq!(
-        vec![
-            (ActorId::from(TOKEN_X_ID), TokenAmount(499)),
-            (ActorId::from(TOKEN_Y_ID), TokenAmount(999))
-        ],
+        vec![(ActorId::from(TOKEN_X_ID), TokenAmount(499))],
         get_user_balances(&invariant, REGULAR_USER_1.into())
     );
 
@@ -1283,11 +1296,19 @@ fn test_remove_position_token_x_transfer_fail() {
     let upper_tick = get_tick(&invariant, pool_key, lower_tick_index);
     let lower_tick_bit = is_tick_initialized(&invariant, pool_key, lower_tick_index);
     let upper_tick_bit = is_tick_initialized(&invariant, pool_key, upper_tick_index);
+
     let invariant_x = balance_of(&token_x_program, INVARIANT_ID);
     let invariant_y = balance_of(&token_y_program, INVARIANT_ID);
+    let user_x = balance_of(&token_x_program, REGULAR_USER_1);
+    let user_y = balance_of(&token_y_program, REGULAR_USER_1);
+
+    let return_amount = 999;
+
+    assert_eq!(user_x_before_remove, user_x);
+    assert_eq!(user_y_before_remove + return_amount, user_y);
 
     assert_eq!(invariant_x_before_remove, invariant_x);
-    assert_eq!(invariant_y_before_remove, invariant_y);
+    assert_eq!(invariant_y_before_remove - return_amount, invariant_y);
 
     // Check ticks
     assert_eq!(lower_tick, Err(InvariantError::TickNotFound));

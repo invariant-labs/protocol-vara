@@ -9,13 +9,14 @@ use contracts::{
     Tick, Tickmap, Ticks, UpdatePoolTick,
 };
 use decimal::*;
+use futures;
 use gstd::{
-    async_init, async_main,
+    async_main,
     collections::HashMap,
     exec,
-    msg::{self, reply},
+    msg::{self, reply, CodecMessageFuture},
     prelude::*,
-    ActorId,
+    ActorId, MessageId,
 };
 use io::*;
 use math::{
@@ -30,7 +31,7 @@ use traceable_result::*;
 
 // TODO: Update once the SDK tests are in place and proper measurement is possible
 pub const TRANSFER_GAS_LIMIT: u64 = 1_600_000_000 * 2;
-pub const TRANSFER_REPLY_HANDLING_COST: u64 = 16_000_000 * 2;
+pub const TRANSFER_REPLY_HANDLING_COST: u64 = 1_600_000_000 * 2;
 pub const BALANCE_CHANGE_COST: u64 = 100_000 * 2;
 pub const TRANSFER_COST: u64 =
     TRANSFER_GAS_LIMIT + TRANSFER_REPLY_HANDLING_COST + BALANCE_CHANGE_COST;
@@ -38,6 +39,30 @@ pub const CREATE_POSITION_COST: u64 = 100_000 * 2;
 pub const SWAP_UPDATE_COST: u64 = 100_000 * 2;
 pub const REMOVE_POSITION_COST: u64 = 100_000 * 2;
 pub const WITHDRAW_PROTOCOL_FEE_COST: u64 = 100_000 * 2;
+
+type TokenTransferResponse = (String, String, bool);
+
+#[derive(Debug, Clone)]
+pub struct AwaitingTransfer {
+    account: ActorId,
+    amount: TokenAmount,
+    transfer_type: TransferType,
+}
+
+#[derive(Debug, Clone, Copy)]
+pub enum TransferState {
+    Awaiting,
+    Success,
+    Failure,
+    InvalidReply,
+}
+
+#[derive(Debug, Clone, Copy)]
+pub enum TransferType {
+    Deposit,
+    Withdrawal,
+    WithdrawalSwap,
+}
 
 #[derive(Default)]
 pub struct Invariant {
@@ -48,14 +73,8 @@ pub struct Invariant {
     pub positions: Positions,
     pub ticks: Ticks,
     pub tickmap: Tickmap,
-    pub transaction_id: u64,
     pub balances: HashMap<ActorId, HashMap<ActorId, TokenAmount>>,
-}
-#[derive(Debug)]
-pub enum TransferError {
-    FailedToSendMessage,
-    RecoverableFTError,
-    UnRecoverableFTError,
+    pub awaiting_transfers: HashMap<(MessageId, ActorId), AwaitingTransfer>,
 }
 
 impl Invariant {
@@ -189,7 +208,6 @@ impl Invariant {
         }
 
         let caller = msg::source();
-        let program = exec::program_id();
         let current_timestamp = exec::block_timestamp();
         let current_block_number = exec::block_height() as u64;
 
@@ -220,20 +238,8 @@ impl Invariant {
             pool_key.fee_tier.tick_spacing,
         )?;
 
-        self.transfer_tokens(&pool_key.token_x, None, &caller, &program, x.get())
-            .await
-            .map_err(|_| InvariantError::TransferError)?;
-
-        let res = self
-            .transfer_tokens(&pool_key.token_y, None, &caller, &program, y.get())
-            .await;
-
-        if let Err(_err) = res {
-            self.increase_token_balance(&caller, &pool_key.token_x, x)
-                .unwrap();
-
-            reply_with_err_and_exit(InvariantError::RecoverableTransferError);
-        }
+        self.deposit_token_pair(&caller, &(pool_key.token_x, x), &(pool_key.token_y, y))
+            .await?;
 
         self.pools.update(&pool_key, &pool)?;
 
@@ -369,7 +375,6 @@ impl Invariant {
         sqrt_price_limit: SqrtPrice,
     ) -> Result<CalculateSwapResult, InvariantError> {
         let caller = msg::source();
-        let program = exec::program_id();
 
         let calculate_swap_result =
             self.calculate_swap(pool_key, x_to_y, amount, by_amount_in, sqrt_price_limit)?;
@@ -390,31 +395,12 @@ impl Invariant {
             (&pool_key.token_y, &pool_key.token_x)
         };
 
-        self.transfer_tokens(
-            swapped_token,
-            None,
+        self.swap_token_pair(
             &caller,
-            &program,
-            calculate_swap_result.amount_in.get(),
+            &(*swapped_token, calculate_swap_result.amount_in),
+            &(*returned_token, calculate_swap_result.amount_out),
         )
-        .await
-        .map_err(|_| InvariantError::TransferError)?;
-
-        let res = self
-            .transfer_tokens(
-                &returned_token,
-                None,
-                &program,
-                &caller,
-                calculate_swap_result.amount_out.get(),
-            )
-            .await;
-
-        if let Err(_err) = res {
-            self.increase_token_balance(&caller, &swapped_token, calculate_swap_result.amount_in)?;
-
-            reply_with_err_and_exit(InvariantError::RecoverableTransferError);
-        }
+        .await?;
 
         for tick in calculate_swap_result.ticks.iter() {
             self.ticks.update(pool_key, tick.index, *tick)?;
@@ -504,10 +490,10 @@ impl Invariant {
         &mut self,
         index: u32,
     ) -> Result<(TokenAmount, TokenAmount), InvariantError> {
-        let caller = msg::source();
+        let caller = &msg::source();
         let current_timestamp = exec::block_timestamp();
 
-        let mut position = self.positions.get(&caller, index).cloned()?;
+        let mut position = self.positions.get(caller, index).cloned()?;
 
         let mut lower_tick = self
             .ticks
@@ -528,7 +514,7 @@ impl Invariant {
             current_timestamp,
         );
 
-        self.positions.update(&caller, index, &position)?;
+        self.positions.update(caller, index, &position)?;
         self.pools.update(&position.pool_key, &pool)?;
         self.ticks
             .update(position.pool_key, upper_tick.index, upper_tick)?;
@@ -546,20 +532,12 @@ impl Invariant {
             return Err(InvariantError::NotEnoughGasToExecute);
         }
 
-        if both_positive {
-            self.withdraw_token_pair(
-                &caller,
-                &(position.pool_key.token_x, x),
-                &(position.pool_key.token_y, y),
-            )
-            .await?;
-        } else if x.get() > 0 {
-            self.withdraw_single_token(&position.pool_key.token_x, &caller, x)
-                .await?;
-        } else if y.get() > 0 {
-            self.withdraw_single_token(&position.pool_key.token_y, &caller, y)
-                .await?;
-        }
+        self.withdraw_token_pair(
+            &caller,
+            &(position.pool_key.token_x, x),
+            &(position.pool_key.token_y, y),
+        )
+        .await?;
 
         Ok((x, y))
     }
@@ -596,30 +574,14 @@ impl Invariant {
 
     pub async fn claim_lost_tokens(&mut self, token: &ActorId) -> Result<(), InvariantError> {
         let caller = msg::source();
-        let (balance, remove_balance) = {
-            let token_balances = self
-                .balances
-                .get_mut(&caller)
-                .ok_or(InvariantError::NoBalanceForTheToken)?;
-
-            let balance = *token_balances
-                .get(token)
-                .ok_or(InvariantError::NoBalanceForTheToken)?;
-
-            token_balances.remove(token).unwrap();
-
-            (balance, token_balances.is_empty())
-        };
-
-        if remove_balance {
-            self.balances.remove(&caller);
-        }
+        let balance = self.decrease_token_balance(token, &caller, None)?;
 
         if exec::gas_available() < TRANSFER_COST {
             return Err(InvariantError::NotEnoughGasToExecute);
         }
 
-        self.withdraw_single_token(token, &caller, balance).await?;
+        self.transfer_single_token(token, &caller, balance, TransferType::Withdrawal)
+            .await?;
 
         Ok(())
     }
@@ -634,15 +596,91 @@ impl Invariant {
             .collect()
     }
 
+    async fn deposit_token_pair(
+        &mut self,
+        caller: &ActorId,
+        token_x: &(ActorId, TokenAmount),
+        token_y: &(ActorId, TokenAmount),
+    ) -> Result<(), InvariantError> {
+        let transfer_type = TransferType::Deposit;
+        if !token_x.1.is_zero() && !token_y.1.is_zero() {
+            self.transfer_token_pair(caller, token_x, token_y, transfer_type)
+                .await?;
+        } else if !token_x.1.is_zero() {
+            self.transfer_single_token(&token_x.0, caller, token_x.1, transfer_type)
+                .await?;
+        } else if !token_y.1.is_zero() {
+            self.transfer_single_token(&token_y.0, caller, token_y.1, transfer_type)
+                .await?;
+        }
+
+        if !token_x.1.is_zero() {
+            self.decrease_token_balance(&token_x.0, caller, token_x.1.into())?;
+        }
+
+        if !token_y.1.is_zero() {
+            self.decrease_token_balance(&token_y.0, caller, token_y.1.into())?;
+        }
+
+        Ok(())
+    }
+
+    async fn withdraw_token_pair(
+        &mut self,
+        caller: &ActorId,
+        token_x: &(ActorId, TokenAmount),
+        token_y: &(ActorId, TokenAmount),
+    ) -> Result<(), InvariantError> {
+        let transfer_type = TransferType::Withdrawal;
+        if !token_x.1.is_zero() && !token_y.1.is_zero() {
+            self.transfer_token_pair(caller, token_x, token_y, transfer_type)
+                .await?;
+        } else if !token_x.1.is_zero() {
+            self.transfer_single_token(&token_x.0, caller, token_x.1, transfer_type)
+                .await?;
+        } else if !token_y.1.is_zero() {
+            self.transfer_single_token(&token_y.0, caller, token_y.1, transfer_type)
+                .await?;
+        }
+
+        Ok(())
+    }
+
+    async fn swap_token_pair(
+        &mut self,
+        caller: &ActorId,
+        swapped_token: &(ActorId, TokenAmount),
+        returned_token: &(ActorId, TokenAmount),
+    ) -> Result<(), InvariantError> {
+        self.transfer_single_token(
+            &swapped_token.0,
+            caller,
+            swapped_token.1,
+            TransferType::Deposit,
+        )
+        .await?;
+
+        self.transfer_single_token(
+            &returned_token.0,
+            caller,
+            returned_token.1,
+            TransferType::WithdrawalSwap,
+        )
+        .await?;
+
+        self.decrease_token_balance(&swapped_token.0, caller, swapped_token.1.into())?;
+        Ok(())
+    }
+
     fn increase_token_balance(
         &mut self,
-        source: &ActorId,
         token: &ActorId,
+        caller: &ActorId,
         amount: TokenAmount,
     ) -> Result<(), InvariantError> {
         let token_balance: &mut TokenAmount = self
             .balances
-            .entry(*source)
+            .entry(*caller)
             .or_insert(HashMap::new())
             .entry(*token)
             .or_insert(TokenAmount(0));
@@ -654,135 +692,206 @@ impl Invariant {
         Ok(())
     }
 
-    async fn transfer_tokens(
+    fn decrease_token_balance(
+        &mut self,
+        token: &ActorId,
+        caller: &ActorId,
+        amount: Option<TokenAmount>,
+    ) -> Result<TokenAmount, InvariantError> {
+        let (balance, remove_balance) = {
+            let token_balances = self
+                .balances
+                .get_mut(caller)
+                .ok_or(InvariantError::NoBalanceForTheToken)?;
+
+            let balance = token_balances
+                .get_mut(token)
+                .ok_or(InvariantError::NoBalanceForTheToken)?;
+
+            if matches!(amount, Some(amount) if amount != *balance) {
+                let amount = amount.unwrap();
+
+                *balance = balance
+                    .checked_sub(amount)
+                    .map_err(|_| InvariantError::FailedToChangeTokenBalance)?;
+
+                (amount, false)
+            } else {
+                let old_balance = token_balances.remove(token).unwrap();
+
+                (old_balance, token_balances.is_empty())
+            }
+        };
+
+        if remove_balance {
+            self.balances.remove(caller);
+        }
+
+        Ok(balance)
+    }
+
+    async fn transfer_single_token(
+        &mut self,
+        token: &ActorId,
+        caller: &ActorId,
+        amount: TokenAmount,
+        transfer_type: TransferType,
+    ) -> Result<(), InvariantError> {
+        let program_id = &exec::program_id();
+        let (from, to) = match transfer_type {
+            TransferType::Deposit => (caller, program_id),
+            TransferType::Withdrawal | TransferType::WithdrawalSwap => (program_id, caller),
+        };
+
+        let message = self
+            .send_transfer_token_message(token, from, to, amount, transfer_type)
+            .map_err(|_| InvariantError::TransferError)?;
+
+        let message_id = message.waiting_reply_to;
+
+        let message = message.await;
+
+        let transfer_check =
+            self.handle_transfer_result(message, message_id, *token, transfer_type);
+
+        if transfer_check == Err(InvariantError::ReplyHandlingFailed) {
+            reply_with_err_and_leave(InvariantError::ReplyHandlingFailed);
+        }
+
+        transfer_check
+    }
+
+    async fn transfer_token_pair(
+        &mut self,
+        caller: &ActorId,
+        token_x: &(ActorId, TokenAmount),
+        token_y: &(ActorId, TokenAmount),
+        transfer_type: TransferType,
+    ) -> Result<(), InvariantError> {
+        let program = &exec::program_id();
+
+        let (from, to) = match transfer_type {
+            TransferType::Deposit => (caller, program),
+            TransferType::Withdrawal | TransferType::WithdrawalSwap => (program, caller),
+        };
+
+        let token_x_message =
+            self.send_transfer_token_message(&token_x.0, from, to, token_x.1, transfer_type)?;
+
+        let token_y_message =
+            self.send_transfer_token_message(&token_y.0, from, to, token_y.1, transfer_type)?;
+
+        let token_x_message_id = token_x_message.waiting_reply_to;
+        let token_y_message_id = token_y_message.waiting_reply_to;
+
+        let (token_x_message, token_y_message) = futures::join!(token_x_message, token_y_message);
+
+        let token_x_check = self.handle_transfer_result(
+            token_x_message,
+            token_x_message_id,
+            token_x.0,
+            transfer_type,
+        );
+        let token_y_check = self.handle_transfer_result(
+            token_y_message,
+            token_y_message_id,
+            token_y.0,
+            transfer_type,
+        );
+
+        if token_x_check == Err(InvariantError::ReplyHandlingFailed)
+            || token_y_check == Err(InvariantError::ReplyHandlingFailed)
+        {
+            reply_with_err_and_leave(InvariantError::ReplyHandlingFailed);
+        }
+
+        match (token_x_check, token_y_check) {
+            (Err(_), Ok(_)) | (Ok(_), Err(_)) => Err(InvariantError::RecoverableTransferError),
+            (Err(_), Err(_)) => Err(InvariantError::UnrecoverableTransferError),
+            _ => Ok(()),
+        }
+    }
+
+    fn send_transfer_token_message(
         &mut self,
         token_address: &ActorId,
-        _tx_id: Option<u64>,
         from: &ActorId,
         to: &ActorId,
-        amount_tokens: u128,
-    ) -> Result<(), TransferError> {
-        if amount_tokens == 0 {
-            return Ok(());
+        amount: TokenAmount,
+        transfer_type: TransferType,
+    ) -> Result<CodecMessageFuture<TokenTransferResponse>, InvariantError> {
+        if amount == TokenAmount(0) {
+            return Err(InvariantError::TransferError);
         }
         if from == to {
-            return Err(TransferError::UnRecoverableFTError);
+            return Err(InvariantError::TransferError);
         }
 
         let service_name = "Erc20".encode();
         let action = "TransferFrom".encode();
-        let offset = service_name.len() + action.len();
-        
+
         let request = [
             service_name,
-            action,            
+            action,
             from.encode(),
             to.encode(),
-            [amount_tokens, 0u128].encode(),
-        ].concat();
-        let reply = msg::send_bytes_with_gas_for_reply::<_>(
+            [amount.get(), 0u128].encode(),
+        ]
+        .concat();
+
+        let message = msg::send_bytes_with_gas_for_reply_as::<_, TokenTransferResponse>(
             *token_address,
             request,
             TRANSFER_GAS_LIMIT,
             0,
             TRANSFER_REPLY_HANDLING_COST,
         )
-        // Sending the message does not save the state so we must use a different error type
-        .map_err(|_| TransferError::FailedToSendMessage)?
-        .await
-        // This error occurs in cases when the program panics
-        .map_err(|_| TransferError::RecoverableFTError)?;
+        .map_err(|_| InvariantError::TransferError)?;
 
-        let response = <bool>::decode(&mut &reply[offset..]).map_err(|_| TransferError::UnRecoverableFTError)?;
-    
-        if response {
-            return Ok(())
-        } else {
-            // can only happen if to == from or value == 0
-            return Err(TransferError::UnRecoverableFTError)
-        }
+        let account = match transfer_type {
+            TransferType::Deposit => *from,
+            TransferType::Withdrawal | TransferType::WithdrawalSwap => *to,
+        };
+
+        self.awaiting_transfers.insert(
+            (message.waiting_reply_to, *token_address),
+            AwaitingTransfer {
+                transfer_type,
+                account,
+                amount,
+            },
+        );
+
+        Ok(message)
     }
 
-    async fn withdraw_single_token(
+    fn handle_transfer_result(
         &mut self,
-        token: &ActorId,
-        caller: &ActorId,
-        balance: TokenAmount,
+        message: Result<TokenTransferResponse, gstd::errors::Error>,
+        message_id: MessageId,
+        token: ActorId,
+        transfer_type: TransferType,
     ) -> Result<(), InvariantError> {
-        let res = self
-            .transfer_tokens(&token, None, &exec::program_id(), &caller, balance.get())
-            .await;
-
-        if let Err(err) = res {
-            match err {
-                TransferError::RecoverableFTError => {
-                    self.increase_token_balance(&caller, &token, balance)
-                        .unwrap();
-
-                    reply_with_err_and_exit(InvariantError::RecoverableTransferError)
-                }
-                TransferError::FailedToSendMessage => {
-                    return Err(InvariantError::TransferError);
-                }
-                _ => {
-                    return Err(InvariantError::UnrecoverableTransferError);
-                }
-            }
+        if self
+            .awaiting_transfers
+            .remove(&(message_id, token))
+            .is_some()
+        {
+            return Err(InvariantError::ReplyHandlingFailed);
         }
 
-        Ok(())
-    }
-    async fn withdraw_token_pair(
-        &mut self,
-        caller: &ActorId,
-        token_x: &(ActorId, TokenAmount),
-        token_y: &(ActorId, TokenAmount),
-    ) -> Result<(), InvariantError> {
-        let program = exec::program_id();
-
-        let first_transaction = self
-            .transfer_tokens(&token_x.0, None, &program, &caller, token_x.1.get())
-            .await;
-
-        if let Err(err) = first_transaction {
-            match err {
-                TransferError::FailedToSendMessage => {
-                    // It is still possible to revert the state at this point
-                    return Err(InvariantError::TransferError);
-                }
-                TransferError::RecoverableFTError => {
-                    self.increase_token_balance(&caller, &token_x.0, token_x.1)
-                        .unwrap();
-                    self.increase_token_balance(&caller, &token_y.0, token_y.1)
-                        .unwrap();
-
-                    reply_with_err_and_exit(InvariantError::RecoverableTransferError);
-                }
-                TransferError::UnRecoverableFTError => {
-                    self.increase_token_balance(&caller, &token_y.0, token_y.1)
-                        .unwrap();
-
-                    reply_with_err_and_exit(InvariantError::RecoverableTransferError);
-                }
+        let err: InvariantError = match transfer_type {
+            TransferType::Deposit => InvariantError::UnrecoverableTransferError,
+            TransferType::Withdrawal | TransferType::WithdrawalSwap => {
+                InvariantError::RecoverableTransferError
             }
-        }
+        };
 
-        let second_transaction = self
-            .transfer_tokens(&token_y.0, None, &program, &caller, token_y.1.get())
-            .await;
-        if let Err(err) = second_transaction {
-            match err {
-                TransferError::RecoverableFTError | TransferError::FailedToSendMessage => {
-                    self.increase_token_balance(&caller, &token_y.0, token_y.1)
-                        .unwrap();
+        let message = message.map_err(|_| err.clone())?;
 
-                    reply_with_err_and_exit(InvariantError::RecoverableTransferError)
-                }
-                TransferError::UnRecoverableFTError => {
-                    return Err(InvariantError::UnrecoverableTransferError);
-                }
-            }
-        }
+        if !message.2 {
+            return Err(err);
+        };
 
         Ok(())
     }
@@ -983,13 +1092,168 @@ fn reply_with_err(err: InvariantError) {
     panic!("InvariantError: {:?}", err);
 }
 
-fn reply_with_err_and_exit(err: InvariantError) {
+fn reply_with_err_and_leave(err: InvariantError) {
     reply(InvariantEvent::ActionFailed(err), 0).expect("Failed to send reply");
     exec::leave();
 }
 
-#[async_init]
-async fn init() {
+fn signal_handler() {
+    if exec::program_id() == msg::source() {
+        return;
+    }
+
+    let invariant = unsafe { INVARIANT.as_mut().unwrap() };
+    let token = msg::source();
+    #[cfg(feature = "test")]
+    let message_with_error = msg::reply_to().unwrap();
+    #[cfg(not(feature = "test"))]
+    let message_with_error = msg::signal_from().unwrap();
+
+    let (update_values, message_exists) = {
+        let message_record = invariant
+            .awaiting_transfers
+            .get(&(message_with_error, token));
+        let update_values = message_record.and_then(
+            |AwaitingTransfer {
+                 transfer_type,
+                 account,
+                 amount,
+             }| {
+                // Only failure on withdrawal needs to stored, since in case of deposit failure the amount is not deducted from users account
+                if matches!(transfer_type, &TransferType::Withdrawal) {
+                    Some((*account, token, *amount))
+                } else {
+                    None
+                }
+            },
+        );
+
+        (update_values, message_record.is_some())
+    };
+
+    if let Some((account, token, amount)) = update_values {
+        if let Err(e) = invariant.increase_token_balance(&token, &account, amount) {
+            gstd::debug!(
+                "Failed to increase balance, {:?}, {:?}, {:?}, {:?}",
+                account,
+                &token,
+                amount,
+                e
+            )
+        }
+    }
+
+    if message_exists
+        && invariant
+            .awaiting_transfers
+            .remove(&(message_with_error, token))
+            .is_none()
+    {
+        gstd::debug!(
+            "Failed to remove transfer {:?}, {:?}",
+            message_with_error,
+            token
+        );
+    }
+
+    gstd::debug!("Signal handling finished");
+}
+
+fn reply_handler() {
+    let invariant = unsafe { INVARIANT.as_mut().unwrap() };
+    let token = msg::source();
+    let message_with_error = msg::reply_to().unwrap();
+
+    let msg_data: Result<(String, String, bool), gstd::errors::Error> = msg::load();
+
+    let (update_values, message_exists) = {
+        let message = invariant
+            .awaiting_transfers
+            .get(&(message_with_error, token));
+
+        let update_values = message.and_then(
+            |AwaitingTransfer {
+                 transfer_type,
+                 account,
+                 amount,
+             }| {
+                if let Ok((_, _, message_result)) = msg_data {
+                    match transfer_type {
+                        TransferType::Deposit => {
+                            if message_result {
+                                Some((*account, token, *amount))
+                            } else {
+                                None
+                            }
+                        }
+                        TransferType::Withdrawal => {
+                            if !message_result {
+                                Some((*account, token, *amount))
+                            } else {
+                                None
+                            }
+                        }
+                        TransferType::WithdrawalSwap => {
+                            // in case of withdrawal in swap we don't need to update the balance since we keep the token balance from the deposit
+                            // this way we don't have to update the state between the two transfers
+                            None
+                        }
+                    }
+                } else {
+                    gstd::debug!("Invalid message");
+
+                    None
+                }
+            },
+        );
+
+        (update_values, message.is_some())
+    };
+
+    if let Some((account, token, amount)) = update_values {
+        if let Err(e) = invariant.increase_token_balance(&token, &account, amount) {
+            gstd::debug!(
+                "Failed to increase balance, {:?}, {:?}, {:?}, {:?}",
+                account,
+                &token,
+                amount,
+                e
+            )
+        }
+    }
+
+    if message_exists {
+        if invariant
+            .awaiting_transfers
+            .remove(&(message_with_error, token))
+            .is_none()
+        {
+            gstd::debug!(
+                "Failed to remove transfer {:?}, {:?}",
+                message_with_error,
+                token
+            );
+        }
+    }
+
+    gstd::debug!("Reply handling finished");
+}
+
+// this is necessary to test custom handle_signal entrypoint with gtest
+// since handle_signal appears to be handled in handle_reply
+#[cfg(feature = "test")]
+pub fn reply_and_signal_handler() {
+    if msg::load::<(String, String, bool)>().is_ok() {
+        reply_handler()
+    } else if msg::load::<String>().is_ok() {
+        signal_handler()
+    } else {
+        gstd::debug!("Unknown message type")
+    }
+}
+
+#[no_mangle]
+extern "C" fn init() {
     let init: InitInvariant = msg::load().expect("Unable to decode InitInvariant");
 
     let invariant = Invariant {
@@ -1001,11 +1265,13 @@ async fn init() {
         INVARIANT = Some(invariant);
     }
 }
-//'handle' endpoint
-#[async_main]
+//'handle' entrypoint
+// this is necessary to test custom handle_signal entrypoint with gtest
+#[cfg_attr(feature = "test", async_main(handle_reply = reply_and_signal_handler))]
+#[cfg_attr(not(feature = "test"), async_main(handle_reply = reply_handler, handle_signal = signal_handler))]
 async fn main() {
     let action: InvariantAction = msg::load().expect("Unable to decode InvariantAction");
-    let invariant = unsafe { INVARIANT.get_or_insert(Default::default()) };
+    let invariant = unsafe { INVARIANT.as_mut().expect("State uninitialized") };
 
     match action {
         InvariantAction::ChangeProtocolFee(protocol_fee) => {

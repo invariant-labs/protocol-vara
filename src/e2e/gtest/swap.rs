@@ -69,7 +69,7 @@ fn test_swap_not_enough_tokens_x() {
             by_amount_in: true,
             sqrt_price_limit: slippage,
         },
-        InvariantError::TransferError,
+        InvariantError::UnrecoverableTransferError,
     );
 
     let pool_after = get_pool(&invariant, token_x, token_y, fee_tier).unwrap();
@@ -130,7 +130,7 @@ fn test_swap_insufficient_allowance_token_x() {
             by_amount_in: true,
             sqrt_price_limit: slippage,
         },
-        InvariantError::TransferError,
+        InvariantError::UnrecoverableTransferError,
     );
 
     let pool_after = get_pool(&invariant, token_x, token_y, fee_tier).unwrap();
@@ -192,7 +192,7 @@ fn test_swap_not_enough_tokens_y() {
             by_amount_in: true,
             sqrt_price_limit: slippage,
         },
-        InvariantError::TransferError,
+        InvariantError::UnrecoverableTransferError,
     );
 
     let pool_after = get_pool(&invariant, token_x, token_y, fee_tier).unwrap();
@@ -253,7 +253,7 @@ fn test_swap_insufficient_allowance_token_y() {
             by_amount_in: true,
             sqrt_price_limit: slippage,
         },
-        InvariantError::TransferError,
+        InvariantError::UnrecoverableTransferError,
     );
 
     let pool_after = get_pool(&invariant, token_x, token_y, fee_tier).unwrap();
@@ -743,7 +743,6 @@ fn test_swap_transfer_fail_token_x() {
     let slippage = SqrtPrice::new(MAX_SQRT_PRICE);
 
     set_transfer_fail(&token_x_program, true).assert_success();
-
 
     let _res = invariant.send_and_assert_error(
         REGULAR_USER_2,

@@ -7,9 +7,9 @@ use gstd::{ext, format, msg, ActorId, Decode, Encode, String, TypeInfo, Vec};
 use primitive_types::U256;
 use sails_rtl::gstd::events::{EventTrigger, GStdEventTrigger};
 use sails_rtl::gstd::gservice;
-use storage::{AllowancesStorage, BalancesStorage, MetaStorage, TotalSupplyStorage};
 #[cfg(feature = "test")]
 use storage::TransferFailStorage;
+use storage::{AllowancesStorage, BalancesStorage, MetaStorage, TotalSupplyStorage};
 
 pub use utils::*;
 
@@ -54,11 +54,12 @@ impl<X> Service<X> {
         let _res = TotalSupplyStorage::default();
         debug_assert!(_res.is_ok());
 
-        #[cfg(feature = "test")] {
+        #[cfg(feature = "test")]
+        {
             let _res = TransferFailStorage::default();
             debug_assert!(_res.is_ok());
         }
-            
+
         Self(PhantomData)
     }
 }
@@ -159,6 +160,7 @@ where
     ) -> bool {
         #[cfg(feature = "test")]
         {
+            gstd::debug!("[ERC-20] TransferFrom {:?}", (from, to, value));
             if *TransferFailStorage::as_ref() {
                 panic!("Manually forced panic");
             }
@@ -217,5 +219,3 @@ where
         }
     }
 }
-
- 

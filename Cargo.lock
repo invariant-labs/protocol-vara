@@ -3919,6 +3919,7 @@ version = "0.1.0"
 dependencies = [
  "contracts",
  "decimal",
+ "futures",
  "gclient",
  "gear-core 1.4.1 (git+https://github.com/gear-tech/gear.git?tag=v1.4.1)",
  "gear-wasm-builder",
