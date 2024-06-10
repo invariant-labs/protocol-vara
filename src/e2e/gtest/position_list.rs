@@ -95,7 +95,7 @@ fn test_add_multiple_positions() {
     let pool_state = get_pool(&invariant, token_x, token_y, fee_tier).unwrap();
 
     // Open positions
-    assert!(!invariant
+    invariant
         .send(
             REGULAR_USER_1,
             InvariantAction::CreatePosition {
@@ -104,12 +104,12 @@ fn test_add_multiple_positions() {
                 upper_tick: tick_indexes[1],
                 liquidity_delta,
                 slippage_limit_lower: pool_state.sqrt_price,
-                slippage_limit_upper: pool_state.sqrt_price
-            }
+                slippage_limit_upper: pool_state.sqrt_price,
+            },
         )
-        .main_failed());
+        .assert_success();
 
-    assert!(!invariant
+    invariant
         .send(
             REGULAR_USER_1,
             InvariantAction::CreatePosition {
@@ -118,12 +118,12 @@ fn test_add_multiple_positions() {
                 upper_tick: tick_indexes[1],
                 liquidity_delta,
                 slippage_limit_lower: pool_state.sqrt_price,
-                slippage_limit_upper: pool_state.sqrt_price
-            }
+                slippage_limit_upper: pool_state.sqrt_price,
+            },
         )
-        .main_failed());
+        .assert_success();
 
-    assert!(!invariant
+    invariant
         .send(
             REGULAR_USER_1,
             InvariantAction::CreatePosition {
@@ -132,12 +132,12 @@ fn test_add_multiple_positions() {
                 upper_tick: tick_indexes[2],
                 liquidity_delta,
                 slippage_limit_lower: pool_state.sqrt_price,
-                slippage_limit_upper: pool_state.sqrt_price
-            }
+                slippage_limit_upper: pool_state.sqrt_price,
+            },
         )
-        .main_failed());
+        .assert_success();
 
-    assert!(!invariant
+    invariant
         .send(
             REGULAR_USER_1,
             InvariantAction::CreatePosition {
@@ -146,24 +146,24 @@ fn test_add_multiple_positions() {
                 upper_tick: tick_indexes[4],
                 liquidity_delta,
                 slippage_limit_lower: pool_state.sqrt_price,
-                slippage_limit_upper: pool_state.sqrt_price
-            }
+                slippage_limit_upper: pool_state.sqrt_price,
+            },
         )
-        .main_failed());
+        .assert_success();
 
     //Remove middle position
 
     let position_index_to_remove = 2;
     let mut position_list_before = get_all_positions(&invariant, REGULAR_USER_1.into());
     let last_position = position_list_before.last().unwrap();
-    assert!(!invariant
+    invariant
         .send(
             REGULAR_USER_1,
             InvariantAction::RemovePosition {
-                position_id: position_index_to_remove
-            }
+                position_id: position_index_to_remove,
+            },
         )
-        .main_failed());
+        .assert_success();
 
     let position_list_after = get_all_positions(&invariant, REGULAR_USER_1.into());
     let tested_position = position_list_after[position_index_to_remove as usize];
@@ -174,7 +174,7 @@ fn test_add_multiple_positions() {
     // Add position in place of the removed one
     let position_list_before = get_all_positions(&invariant, REGULAR_USER_1.into());
 
-    assert!(!invariant
+    invariant
         .send(
             REGULAR_USER_1,
             InvariantAction::CreatePosition {
@@ -183,10 +183,10 @@ fn test_add_multiple_positions() {
                 upper_tick: tick_indexes[2],
                 liquidity_delta,
                 slippage_limit_lower: pool_state.sqrt_price,
-                slippage_limit_upper: pool_state.sqrt_price
-            }
+                slippage_limit_upper: pool_state.sqrt_price,
+            },
         )
-        .main_failed());
+        .assert_success();
     let mut position_list_after = get_all_positions(&invariant, REGULAR_USER_1.into());
     assert_eq!(position_list_before.len() + 1, position_list_after.len());
     position_list_after.pop();
@@ -196,14 +196,14 @@ fn test_add_multiple_positions() {
     let mut position_list_before = get_all_positions(&invariant, REGULAR_USER_1.into());
     let position_to_remove = position_list_before.len() - 1;
 
-    assert!(!invariant
+    invariant
         .send(
             REGULAR_USER_1,
             InvariantAction::RemovePosition {
-                position_id: position_to_remove as u32
-            }
+                position_id: position_to_remove as u32,
+            },
         )
-        .main_failed());
+        .assert_success();
     let position_list_after = get_all_positions(&invariant, REGULAR_USER_1.into());
     assert_eq!(position_list_before.len() - 1, position_list_after.len());
     position_list_before.pop();
@@ -213,14 +213,14 @@ fn test_add_multiple_positions() {
     let list_len_before = get_all_positions(&invariant, REGULAR_USER_1.into()).len();
 
     for i in (0..list_len_before).rev() {
-        assert!(!invariant
+        invariant
             .send(
                 REGULAR_USER_1,
                 InvariantAction::RemovePosition {
-                    position_id: i as u32
-                }
+                    position_id: i as u32,
+                },
             )
-            .main_failed());
+            .assert_success();
     }
 
     let list_len_after = get_all_positions(&invariant, REGULAR_USER_1.into()).len();
@@ -229,7 +229,7 @@ fn test_add_multiple_positions() {
     // Add position to cleared list
     let position_list_before = get_all_positions(&invariant, REGULAR_USER_1.into());
     assert_eq!(position_list_before.len(), 0);
-    assert!(!invariant
+    invariant
         .send(
             REGULAR_USER_1,
             InvariantAction::CreatePosition {
@@ -238,10 +238,10 @@ fn test_add_multiple_positions() {
                 upper_tick: tick_indexes[1],
                 liquidity_delta,
                 slippage_limit_lower: pool_state.sqrt_price,
-                slippage_limit_upper: pool_state.sqrt_price
-            }
+                slippage_limit_upper: pool_state.sqrt_price,
+            },
         )
-        .main_failed());
+        .assert_success();
     let position_list_after = get_all_positions(&invariant, REGULAR_USER_1.into());
     assert_eq!(position_list_after.len(), 1);
 }
@@ -261,11 +261,11 @@ fn test_only_owner_can_modify_position_list() {
 
     let fee_tier = FeeTier::new(Percentage::from_scale(2, 4), 3).unwrap();
 
-    assert!(!invariant
+    invariant
         .send(ADMIN, InvariantAction::AddFeeTier(fee_tier))
-        .main_failed());
+        .assert_success();
 
-    assert!(!invariant
+    invariant
         .send(
             ADMIN,
             InvariantAction::CreatePool {
@@ -273,10 +273,10 @@ fn test_only_owner_can_modify_position_list() {
                 token_1: token_y,
                 fee_tier,
                 init_sqrt_price,
-                init_tick
-            }
+                init_tick,
+            },
         )
-        .main_failed());
+        .assert_success();
 
     increase_allowance(
         &token_x_program,
@@ -300,7 +300,7 @@ fn test_only_owner_can_modify_position_list() {
     let pool_state = get_pool(&invariant, token_x, token_y, fee_tier).unwrap();
 
     // Open positions
-    assert!(!invariant
+    invariant
         .send(
             REGULAR_USER_1,
             InvariantAction::CreatePosition {
@@ -309,12 +309,12 @@ fn test_only_owner_can_modify_position_list() {
                 upper_tick: tick_indexes[1],
                 liquidity_delta,
                 slippage_limit_lower: pool_state.sqrt_price,
-                slippage_limit_upper: pool_state.sqrt_price
-            }
+                slippage_limit_upper: pool_state.sqrt_price,
+            },
         )
-        .main_failed());
+        .assert_success();
 
-    assert!(!invariant
+    invariant
         .send(
             REGULAR_USER_1,
             InvariantAction::CreatePosition {
@@ -323,12 +323,12 @@ fn test_only_owner_can_modify_position_list() {
                 upper_tick: tick_indexes[1],
                 liquidity_delta,
                 slippage_limit_lower: pool_state.sqrt_price,
-                slippage_limit_upper: pool_state.sqrt_price
-            }
+                slippage_limit_upper: pool_state.sqrt_price,
+            },
         )
-        .main_failed());
+        .assert_success();
 
-    assert!(!invariant
+    invariant
         .send(
             REGULAR_USER_1,
             InvariantAction::CreatePosition {
@@ -337,12 +337,12 @@ fn test_only_owner_can_modify_position_list() {
                 upper_tick: tick_indexes[2],
                 liquidity_delta,
                 slippage_limit_lower: pool_state.sqrt_price,
-                slippage_limit_upper: pool_state.sqrt_price
-            }
+                slippage_limit_upper: pool_state.sqrt_price,
+            },
         )
-        .main_failed());
+        .assert_success();
 
-    assert!(!invariant
+    invariant
         .send(
             REGULAR_USER_1,
             InvariantAction::CreatePosition {
@@ -351,24 +351,24 @@ fn test_only_owner_can_modify_position_list() {
                 upper_tick: tick_indexes[4],
                 liquidity_delta,
                 slippage_limit_lower: pool_state.sqrt_price,
-                slippage_limit_upper: pool_state.sqrt_price
-            }
+                slippage_limit_upper: pool_state.sqrt_price,
+            },
         )
-        .main_failed());
+        .assert_success();
 
     //Remove middle position
 
     let position_index_to_remove = 2;
     let mut position_list_before = get_all_positions(&invariant, REGULAR_USER_1.into());
     let last_position = position_list_before.last().unwrap();
-    assert!(!invariant
+    invariant
         .send(
             REGULAR_USER_1,
             InvariantAction::RemovePosition {
-                position_id: position_index_to_remove
-            }
+                position_id: position_index_to_remove,
+            },
         )
-        .main_failed());
+        .assert_success();
 
     let position_list_after = get_all_positions(&invariant, REGULAR_USER_1.into());
     let tested_position = position_list_after[position_index_to_remove as usize];
@@ -379,7 +379,7 @@ fn test_only_owner_can_modify_position_list() {
     // Add position in place of the removed one
     let position_list_before = get_all_positions(&invariant, REGULAR_USER_1.into());
 
-    assert!(!invariant
+    invariant
         .send(
             REGULAR_USER_1,
             InvariantAction::CreatePosition {
@@ -388,10 +388,10 @@ fn test_only_owner_can_modify_position_list() {
                 upper_tick: tick_indexes[2],
                 liquidity_delta,
                 slippage_limit_lower: pool_state.sqrt_price,
-                slippage_limit_upper: pool_state.sqrt_price
-            }
+                slippage_limit_upper: pool_state.sqrt_price,
+            },
         )
-        .main_failed());
+        .assert_success();
     let mut position_list_after = get_all_positions(&invariant, REGULAR_USER_1.into());
     assert_eq!(position_list_before.len() + 1, position_list_after.len());
     position_list_after.pop();
@@ -426,11 +426,11 @@ fn test_transfer_position_ownership() {
 
     let fee_tier = FeeTier::new(Percentage::from_scale(2, 4), 3).unwrap();
 
-    assert!(!invariant
+    invariant
         .send(ADMIN, InvariantAction::AddFeeTier(fee_tier))
-        .main_failed());
+        .assert_success();
 
-    assert!(!invariant
+    invariant
         .send(
             ADMIN,
             InvariantAction::CreatePool {
@@ -438,10 +438,10 @@ fn test_transfer_position_ownership() {
                 token_1: token_y,
                 fee_tier,
                 init_sqrt_price,
-                init_tick
-            }
+                init_tick,
+            },
         )
-        .main_failed());
+        .assert_success();
 
     increase_allowance(
         &token_x_program,
@@ -465,7 +465,7 @@ fn test_transfer_position_ownership() {
     let pool_state = get_pool(&invariant, token_x, token_y, fee_tier).unwrap();
 
     // Open positions
-    assert!(!invariant
+    invariant
         .send(
             REGULAR_USER_1,
             InvariantAction::CreatePosition {
@@ -474,12 +474,12 @@ fn test_transfer_position_ownership() {
                 upper_tick: tick_indexes[1],
                 liquidity_delta,
                 slippage_limit_lower: pool_state.sqrt_price,
-                slippage_limit_upper: pool_state.sqrt_price
-            }
+                slippage_limit_upper: pool_state.sqrt_price,
+            },
         )
-        .main_failed());
+        .assert_success();
 
-    assert!(!invariant
+    invariant
         .send(
             REGULAR_USER_1,
             InvariantAction::CreatePosition {
@@ -488,12 +488,12 @@ fn test_transfer_position_ownership() {
                 upper_tick: tick_indexes[1],
                 liquidity_delta,
                 slippage_limit_lower: pool_state.sqrt_price,
-                slippage_limit_upper: pool_state.sqrt_price
-            }
+                slippage_limit_upper: pool_state.sqrt_price,
+            },
         )
-        .main_failed());
+        .assert_success();
 
-    assert!(!invariant
+    invariant
         .send(
             REGULAR_USER_1,
             InvariantAction::CreatePosition {
@@ -502,12 +502,12 @@ fn test_transfer_position_ownership() {
                 upper_tick: tick_indexes[2],
                 liquidity_delta,
                 slippage_limit_lower: pool_state.sqrt_price,
-                slippage_limit_upper: pool_state.sqrt_price
-            }
+                slippage_limit_upper: pool_state.sqrt_price,
+            },
         )
-        .main_failed());
+        .assert_success();
 
-    assert!(!invariant
+    invariant
         .send(
             REGULAR_USER_1,
             InvariantAction::CreatePosition {
@@ -516,10 +516,10 @@ fn test_transfer_position_ownership() {
                 upper_tick: tick_indexes[4],
                 liquidity_delta,
                 slippage_limit_lower: pool_state.sqrt_price,
-                slippage_limit_upper: pool_state.sqrt_price
-            }
+                slippage_limit_upper: pool_state.sqrt_price,
+            },
         )
-        .main_failed());
+        .assert_success();
 
     // Transfer first position
     let transferred_index = 0;
@@ -743,11 +743,11 @@ fn test_only_owner_can_transfer_position() {
 
     let fee_tier = FeeTier::new(Percentage::from_scale(2, 4), 3).unwrap();
 
-    assert!(!invariant
+    invariant
         .send(ADMIN, InvariantAction::AddFeeTier(fee_tier))
-        .main_failed());
+        .assert_success();
 
-    assert!(!invariant
+    invariant
         .send(
             ADMIN,
             InvariantAction::CreatePool {
@@ -755,10 +755,10 @@ fn test_only_owner_can_transfer_position() {
                 token_1: token_y,
                 fee_tier,
                 init_sqrt_price,
-                init_tick
-            }
+                init_tick,
+            },
         )
-        .main_failed());
+        .assert_success();
 
     increase_allowance(
         &token_x_program,
@@ -782,7 +782,7 @@ fn test_only_owner_can_transfer_position() {
     let pool_state = get_pool(&invariant, token_x, token_y, fee_tier).unwrap();
 
     // Open positions
-    assert!(!invariant
+    invariant
         .send(
             REGULAR_USER_1,
             InvariantAction::CreatePosition {
@@ -791,12 +791,12 @@ fn test_only_owner_can_transfer_position() {
                 upper_tick: tick_indexes[1],
                 liquidity_delta,
                 slippage_limit_lower: pool_state.sqrt_price,
-                slippage_limit_upper: pool_state.sqrt_price
-            }
+                slippage_limit_upper: pool_state.sqrt_price,
+            },
         )
-        .main_failed());
+        .assert_success();
 
-    assert!(!invariant
+    invariant
         .send(
             REGULAR_USER_1,
             InvariantAction::CreatePosition {
@@ -805,12 +805,12 @@ fn test_only_owner_can_transfer_position() {
                 upper_tick: tick_indexes[1],
                 liquidity_delta,
                 slippage_limit_lower: pool_state.sqrt_price,
-                slippage_limit_upper: pool_state.sqrt_price
-            }
+                slippage_limit_upper: pool_state.sqrt_price,
+            },
         )
-        .main_failed());
+        .assert_success();
 
-    assert!(!invariant
+    invariant
         .send(
             REGULAR_USER_1,
             InvariantAction::CreatePosition {
@@ -819,12 +819,12 @@ fn test_only_owner_can_transfer_position() {
                 upper_tick: tick_indexes[2],
                 liquidity_delta,
                 slippage_limit_lower: pool_state.sqrt_price,
-                slippage_limit_upper: pool_state.sqrt_price
-            }
+                slippage_limit_upper: pool_state.sqrt_price,
+            },
         )
-        .main_failed());
+        .assert_success();
 
-    assert!(!invariant
+    invariant
         .send(
             REGULAR_USER_1,
             InvariantAction::CreatePosition {
@@ -833,10 +833,10 @@ fn test_only_owner_can_transfer_position() {
                 upper_tick: tick_indexes[4],
                 liquidity_delta,
                 slippage_limit_lower: pool_state.sqrt_price,
-                slippage_limit_upper: pool_state.sqrt_price
-            }
+                slippage_limit_upper: pool_state.sqrt_price,
+            },
         )
-        .main_failed());
+        .assert_success();
 
     // Transfer first position
     let transferred_index = 0;
@@ -879,11 +879,11 @@ fn test_multiple_positions_on_same_tick() {
 
     let fee_tier = FeeTier::new(Percentage::from_scale(2, 4), 10).unwrap();
 
-    assert!(!invariant
+    invariant
         .send(ADMIN, InvariantAction::AddFeeTier(fee_tier))
-        .main_failed());
+        .assert_success();
 
-    assert!(!invariant
+    invariant
         .send(
             ADMIN,
             InvariantAction::CreatePool {
@@ -891,10 +891,10 @@ fn test_multiple_positions_on_same_tick() {
                 token_1: token_y,
                 fee_tier,
                 init_sqrt_price,
-                init_tick
-            }
+                init_tick,
+            },
         )
-        .main_failed());
+        .assert_success();
 
     increase_allowance(
         &token_x_program,
@@ -920,7 +920,7 @@ fn test_multiple_positions_on_same_tick() {
     let pool_state = get_pool(&invariant, token_x, token_y, fee_tier).unwrap();
 
     // Open positions
-    assert!(!invariant
+    invariant
         .send(
             REGULAR_USER_1,
             InvariantAction::CreatePosition {
@@ -929,14 +929,14 @@ fn test_multiple_positions_on_same_tick() {
                 upper_tick: upper_tick_index,
                 liquidity_delta,
                 slippage_limit_lower: pool_state.sqrt_price,
-                slippage_limit_upper: pool_state.sqrt_price
-            }
+                slippage_limit_upper: pool_state.sqrt_price,
+            },
         )
-        .main_failed());
+        .assert_success();
 
     let first_position = get_position(&invariant, REGULAR_USER_1.into(), 0).unwrap();
 
-    assert!(!invariant
+    invariant
         .send(
             REGULAR_USER_1,
             InvariantAction::CreatePosition {
@@ -945,14 +945,14 @@ fn test_multiple_positions_on_same_tick() {
                 upper_tick: upper_tick_index,
                 liquidity_delta,
                 slippage_limit_lower: pool_state.sqrt_price,
-                slippage_limit_upper: pool_state.sqrt_price
-            }
+                slippage_limit_upper: pool_state.sqrt_price,
+            },
         )
-        .main_failed());
+        .assert_success();
 
     let second_position = get_position(&invariant, REGULAR_USER_1.into(), 1).unwrap();
 
-    assert!(!invariant
+    invariant
         .send(
             REGULAR_USER_1,
             InvariantAction::CreatePosition {
@@ -961,10 +961,10 @@ fn test_multiple_positions_on_same_tick() {
                 upper_tick: upper_tick_index,
                 liquidity_delta,
                 slippage_limit_lower: pool_state.sqrt_price,
-                slippage_limit_upper: pool_state.sqrt_price
-            }
+                slippage_limit_upper: pool_state.sqrt_price,
+            },
         )
-        .main_failed());
+        .assert_success();
 
     let third_position = get_position(&invariant, REGULAR_USER_1.into(), 2).unwrap();
 
@@ -1038,7 +1038,7 @@ fn test_multiple_positions_on_same_tick() {
     let pool_state = get_pool(&invariant, token_x, token_y, fee_tier).unwrap();
 
     // Open positions
-    assert!(!invariant
+    invariant
         .send(
             REGULAR_USER_1,
             InvariantAction::CreatePosition {
@@ -1047,10 +1047,10 @@ fn test_multiple_positions_on_same_tick() {
                 upper_tick: upper_tick_index,
                 liquidity_delta,
                 slippage_limit_lower: pool_state.sqrt_price,
-                slippage_limit_upper: pool_state.sqrt_price
-            }
+                slippage_limit_upper: pool_state.sqrt_price,
+            },
         )
-        .main_failed());
+        .assert_success();
 
     let first_position = get_position(&invariant, REGULAR_USER_1.into(), 0).unwrap();
 
@@ -1065,7 +1065,7 @@ fn test_multiple_positions_on_same_tick() {
     let lower_tick_index = -20;
     let upper_tick_index = -10;
 
-    assert!(!invariant
+    invariant
         .send(
             REGULAR_USER_1,
             InvariantAction::CreatePosition {
@@ -1074,10 +1074,10 @@ fn test_multiple_positions_on_same_tick() {
                 upper_tick: upper_tick_index,
                 liquidity_delta,
                 slippage_limit_lower: pool_state.sqrt_price,
-                slippage_limit_upper: pool_state.sqrt_price
-            }
+                slippage_limit_upper: pool_state.sqrt_price,
+            },
         )
-        .main_failed());
+        .assert_success();
 
     let second_position = get_position(&invariant, REGULAR_USER_1.into(), 4).unwrap();
 
@@ -1092,7 +1092,7 @@ fn test_multiple_positions_on_same_tick() {
     let lower_tick_index = 10;
     let upper_tick_index = 20;
 
-    assert!(!invariant
+    invariant
         .send(
             REGULAR_USER_1,
             InvariantAction::CreatePosition {
@@ -1101,10 +1101,10 @@ fn test_multiple_positions_on_same_tick() {
                 upper_tick: upper_tick_index,
                 liquidity_delta,
                 slippage_limit_lower: pool_state.sqrt_price,
-                slippage_limit_upper: pool_state.sqrt_price
-            }
+                slippage_limit_upper: pool_state.sqrt_price,
+            },
         )
-        .main_failed());
+        .assert_success();
 
     let third_position = get_position(&invariant, REGULAR_USER_1.into(), 5).unwrap();
 

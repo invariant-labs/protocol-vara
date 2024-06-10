@@ -11,6 +11,7 @@ decimal.workspace = true
 io.workspace = true
 contracts.workspace = true
 gear-core.workspace = true
+futures = { version = "0.3.30", features = ["async-await"], default-features = false }
 
 [build-dependencies]
 gear-wasm-builder.workspace = true
@@ -28,7 +29,7 @@ gstd = {workspace=true, features=["debug"]}
 binary-vendor = []
 wasm-opt = ["gear-wasm-builder/wasm-opt"]
 default = ["binary-vendor", "wasm-opt"]
-debug = ["gstd/debug"]
+test = ["gstd/debug"]
 
 [workspace]
 members = ["state", "xtask", "gear-erc20/app", "gear-erc20/wasm" ]
