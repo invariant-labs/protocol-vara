@@ -61,7 +61,6 @@ pub enum TransferState {
 pub enum TransferType {
     Deposit,
     Withdrawal,
-    WithdrawalSwap,
 }
 
 #[derive(Default)]
@@ -395,12 +394,20 @@ impl Invariant {
             (&pool_key.token_y, &pool_key.token_x)
         };
 
-        self.swap_token_pair(
+        self.transfer_single_token(
+            &swapped_token,
             &caller,
-            &(*swapped_token, calculate_swap_result.amount_in),
-            &(*returned_token, calculate_swap_result.amount_out),
+            calculate_swap_result.amount_in,
+            TransferType::Deposit,
         )
         .await?;
+
+        // State update is performed immediately after the deposit since we have the tokens required for the swap
+        self.decrease_token_balance(
+            &swapped_token,
+            &caller,
+            calculate_swap_result.amount_in.into(),
+        )?;
 
         for tick in calculate_swap_result.ticks.iter() {
             self.ticks.update(pool_key, tick.index, *tick)?;
@@ -428,6 +435,16 @@ impl Invariant {
             target_sqrt_price: calculate_swap_result.target_sqrt_price,
             x_to_y,
         });
+
+        // if sending message fails the state will be dropped and the swap will be reverted along with balance decrease
+        // otherwise if message is awaited the error will be caught and balance stored in the storage of the contract
+        self.transfer_single_token(
+            &returned_token,
+            &caller,
+            calculate_swap_result.amount_out,
+            TransferType::Withdrawal,
+        )
+        .await?;
 
         Ok(calculate_swap_result)
     }
@@ -646,32 +663,6 @@ impl Invariant {
         Ok(())
     }
 
-    async fn swap_token_pair(
-        &mut self,
-        caller: &ActorId,
-        swapped_token: &(ActorId, TokenAmount),
-        returned_token: &(ActorId, TokenAmount),
-    ) -> Result<(), InvariantError> {
-        self.transfer_single_token(
-            &swapped_token.0,
-            caller,
-            swapped_token.1,
-            TransferType::Deposit,
-        )
-        .await?;
-
-        self.transfer_single_token(
-            &returned_token.0,
-            caller,
-            returned_token.1,
-            TransferType::WithdrawalSwap,
-        )
-        .await?;
-
-        self.decrease_token_balance(&swapped_token.0, caller, swapped_token.1.into())?;
-        Ok(())
-    }
-
     fn increase_token_balance(
         &mut self,
         token: &ActorId,
@@ -740,7 +731,7 @@ impl Invariant {
         let program_id = &exec::program_id();
         let (from, to) = match transfer_type {
             TransferType::Deposit => (caller, program_id),
-            TransferType::Withdrawal | TransferType::WithdrawalSwap => (program_id, caller),
+            TransferType::Withdrawal => (program_id, caller),
         };
 
         let message = self
@@ -772,7 +763,7 @@ impl Invariant {
 
         let (from, to) = match transfer_type {
             TransferType::Deposit => (caller, program),
-            TransferType::Withdrawal | TransferType::WithdrawalSwap => (program, caller),
+            TransferType::Withdrawal => (program, caller),
         };
 
         let token_x_message =
@@ -850,7 +841,7 @@ impl Invariant {
 
         let account = match transfer_type {
             TransferType::Deposit => *from,
-            TransferType::Withdrawal | TransferType::WithdrawalSwap => *to,
+            TransferType::Withdrawal => *to,
         };
 
         self.awaiting_transfers.insert(
@@ -882,9 +873,7 @@ impl Invariant {
 
         let err: InvariantError = match transfer_type {
             TransferType::Deposit => InvariantError::UnrecoverableTransferError,
-            TransferType::Withdrawal | TransferType::WithdrawalSwap => {
-                InvariantError::RecoverableTransferError
-            }
+            TransferType::Withdrawal => InvariantError::RecoverableTransferError,
         };
 
         let message = message.map_err(|_| err.clone())?;
@@ -1139,7 +1128,7 @@ fn signal_handler() {
                 &token,
                 amount,
                 e
-            )
+            );
         }
     }
 
@@ -1193,11 +1182,6 @@ fn reply_handler() {
                                 None
                             }
                         }
-                        TransferType::WithdrawalSwap => {
-                            // in case of withdrawal in swap we don't need to update the balance since we keep the token balance from the deposit
-                            // this way we don't have to update the state between the two transfers
-                            None
-                        }
                     }
                 } else {
                     gstd::debug!("Invalid message");
@@ -1218,7 +1202,7 @@ fn reply_handler() {
                 &token,
                 amount,
                 e
-            )
+            );
         }
     }
 

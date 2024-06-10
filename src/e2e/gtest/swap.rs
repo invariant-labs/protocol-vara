@@ -744,7 +744,7 @@ fn test_swap_transfer_fail_token_x() {
 
     set_transfer_fail(&token_x_program, true).assert_success();
 
-    let _res = invariant.send_and_assert_error(
+    let res = invariant.send_and_assert_error(
         REGULAR_USER_2,
         InvariantAction::Swap {
             pool_key,
@@ -756,26 +756,22 @@ fn test_swap_transfer_fail_token_x() {
         InvariantError::RecoverableTransferError,
     );
 
+    assert_eq!(res.emitted_events().len(), 2);
+
     let pool_after = get_pool(&invariant, token_x, token_y, fee_tier).unwrap();
 
-    assert_eq!(pool_before, pool_after);
+    assert_ne!(pool_before, pool_after);
 
     assert_eq!(balance_of(&token_x_program, REGULAR_USER_2), 0);
     assert_eq!(balance_of(&token_y_program, REGULAR_USER_2), 0);
-
+    let swap_outcome = 496;
     assert_eq!(
-        vec![(ActorId::from(TOKEN_Y_ID), swap_amount)],
+        vec![(ActorId::from(TOKEN_X_ID), TokenAmount(swap_outcome))],
         get_user_balances(&invariant, REGULAR_USER_2)
     );
 
     assert_eq!(balance_of(&token_x_program, INVARIANT_ID), 500);
     assert_eq!(balance_of(&token_y_program, INVARIANT_ID), 1000 + 500);
-
-    assert_eq!(pool_after.fee_growth_global_x, FeeGrowth::new(0));
-    assert_eq!(pool_after.fee_growth_global_y, FeeGrowth::new(0));
-
-    assert_eq!(pool_after.fee_protocol_token_x, TokenAmount::new(0));
-    assert_eq!(pool_after.fee_protocol_token_y, TokenAmount::new(0));
 }
 
 #[test]
@@ -812,7 +808,7 @@ fn test_swap_transfer_fail_token_y() {
 
     set_transfer_fail(&token_y_program, true).assert_success();
 
-    let _res = invariant.send_and_assert_error(
+    let res = invariant.send_and_assert_error(
         REGULAR_USER_2,
         InvariantAction::Swap {
             pool_key,
@@ -824,15 +820,18 @@ fn test_swap_transfer_fail_token_y() {
         InvariantError::RecoverableTransferError,
     );
 
+    assert_eq!(res.emitted_events().len(), 2);
+
     let pool_after = get_pool(&invariant, token_x, token_y, fee_tier).unwrap();
 
-    assert_eq!(pool_before, pool_after);
+    assert_ne!(pool_before, pool_after);
 
     assert_eq!(balance_of(&token_x_program, REGULAR_USER_2), 0);
     assert_eq!(balance_of(&token_y_program, REGULAR_USER_2), 0);
 
+    let swap_outcome = 496;
     assert_eq!(
-        vec![(ActorId::from(TOKEN_X_ID), swap_amount)],
+        vec![(ActorId::from(TOKEN_Y_ID), TokenAmount(swap_outcome))],
         get_user_balances(&invariant, REGULAR_USER_2)
     );
 
@@ -841,10 +840,4 @@ fn test_swap_transfer_fail_token_y() {
         500 + swap_amount.get()
     );
     assert_eq!(balance_of(&token_y_program, INVARIANT_ID), 1000);
-
-    assert_eq!(pool_after.fee_growth_global_x, FeeGrowth::new(0));
-    assert_eq!(pool_after.fee_growth_global_y, FeeGrowth::new(0));
-
-    assert_eq!(pool_after.fee_protocol_token_x, TokenAmount::new(0));
-    assert_eq!(pool_after.fee_protocol_token_y, TokenAmount::new(0));
 }
