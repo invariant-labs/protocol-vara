@@ -27,8 +27,8 @@ fn test_remove_position_from_empty_list() {
     let res = invariant.send(
         REGULAR_USER_1,
         InvariantAction::CreatePool {
-            token_0: token_x,
-            token_1: token_y,
+            token_x,
+            token_y,
             fee_tier,
             init_sqrt_price,
             init_tick,
@@ -64,8 +64,8 @@ fn test_add_multiple_positions() {
     let res = invariant.send(
         REGULAR_USER_1,
         InvariantAction::CreatePool {
-            token_0: token_x,
-            token_1: token_y,
+            token_x,
+            token_y,
             fee_tier,
             init_sqrt_price,
             init_tick,
@@ -87,6 +87,17 @@ fn test_add_multiple_positions() {
         initial_amount,
     )
     .assert_success();
+
+    deposit_token_pair(
+        &invariant,
+        REGULAR_USER_1,
+        token_x,
+        initial_amount,
+        token_y,
+        initial_amount,
+        None::<&str>,
+    )
+    .unwrap();
 
     let pool_key = PoolKey::new(token_x, token_y, fee_tier).unwrap();
     let tick_indexes = [-9780, -42, 0, 9, 276, 32343, -50001];
@@ -269,8 +280,8 @@ fn test_only_owner_can_modify_position_list() {
         .send(
             ADMIN,
             InvariantAction::CreatePool {
-                token_0: token_x,
-                token_1: token_y,
+                token_x,
+                token_y,
                 fee_tier,
                 init_sqrt_price,
                 init_tick,
@@ -292,6 +303,17 @@ fn test_only_owner_can_modify_position_list() {
         initial_amount,
     )
     .assert_success();
+
+    deposit_token_pair(
+        &invariant,
+        REGULAR_USER_1,
+        token_x,
+        initial_amount,
+        token_y,
+        initial_amount,
+        None::<&str>,
+    )
+    .unwrap();
 
     let pool_key = PoolKey::new(token_x, token_y, fee_tier).unwrap();
     let tick_indexes = [-9780, -42, 0, 9, 276, 32343, -50001];
@@ -434,8 +456,8 @@ fn test_transfer_position_ownership() {
         .send(
             ADMIN,
             InvariantAction::CreatePool {
-                token_0: token_x,
-                token_1: token_y,
+                token_x,
+                token_y,
                 fee_tier,
                 init_sqrt_price,
                 init_tick,
@@ -457,6 +479,17 @@ fn test_transfer_position_ownership() {
         initial_amount,
     )
     .assert_success();
+
+    deposit_token_pair(
+        &invariant,
+        REGULAR_USER_1,
+        token_x,
+        initial_amount,
+        token_y,
+        initial_amount,
+        None::<&str>,
+    )
+    .unwrap();
 
     let pool_key = PoolKey::new(token_x, token_y, fee_tier).unwrap();
     let tick_indexes = [-9780, -42, 0, 9, 276, 32343, -50001];
@@ -751,8 +784,8 @@ fn test_only_owner_can_transfer_position() {
         .send(
             ADMIN,
             InvariantAction::CreatePool {
-                token_0: token_x,
-                token_1: token_y,
+                token_x,
+                token_y,
                 fee_tier,
                 init_sqrt_price,
                 init_tick,
@@ -774,6 +807,17 @@ fn test_only_owner_can_transfer_position() {
         initial_amount,
     )
     .assert_success();
+
+    deposit_token_pair(
+        &invariant,
+        REGULAR_USER_1,
+        token_x,
+        initial_amount,
+        token_y,
+        initial_amount,
+        None::<&str>,
+    )
+    .unwrap();
 
     let pool_key = PoolKey::new(token_x, token_y, fee_tier).unwrap();
     let tick_indexes = [-9780, -42, 0, 9, 276, 32343, -50001];
@@ -887,8 +931,8 @@ fn test_multiple_positions_on_same_tick() {
         .send(
             ADMIN,
             InvariantAction::CreatePool {
-                token_0: token_x,
-                token_1: token_y,
+                token_x,
+                token_y,
                 fee_tier,
                 init_sqrt_price,
                 init_tick,
@@ -910,6 +954,17 @@ fn test_multiple_positions_on_same_tick() {
         initial_amount,
     )
     .assert_success();
+
+    deposit_token_pair(
+        &invariant,
+        REGULAR_USER_1,
+        token_x,
+        initial_amount,
+        token_y,
+        initial_amount,
+        None::<&str>,
+    )
+    .unwrap();
 
     let pool_key = PoolKey::new(token_x, token_y, fee_tier).unwrap();
     let lower_tick_index = -10;

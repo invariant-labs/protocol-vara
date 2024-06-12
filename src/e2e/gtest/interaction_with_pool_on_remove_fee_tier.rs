@@ -34,8 +34,8 @@ fn test_interaction_with_pool_on_removed_fee_tier() {
     invariant.send_and_assert_panic(
         REGULAR_USER_1,
         InvariantAction::CreatePool {
-            token_0: token_x,
-            token_1: token_y,
+            token_x,
+            token_y,
             fee_tier,
             init_sqrt_price,
             init_tick,
@@ -110,8 +110,8 @@ fn test_interaction_with_pool_on_removed_fee_tier() {
     invariant.send_and_assert_panic(
         REGULAR_USER_1,
         InvariantAction::CreatePool {
-            token_0: token_x,
-            token_1: token_y,
+            token_x,
+            token_y,
             fee_tier,
             init_sqrt_price,
             init_tick,

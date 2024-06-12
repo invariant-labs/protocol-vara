@@ -207,6 +207,12 @@ impl RevertibleProgram for Program<'_> {
                 if let InvariantEvent::ActionFailed(inv_error) = inv_event {
                     assert_eq!(inv_error, error)
                 }
+                else {
+                    panic!("Invalid Event {:?}", inv_event)
+                }
+            }
+            else {
+                panic!("Unexpected event: {:?}", event)
             }
         }
         res

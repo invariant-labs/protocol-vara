@@ -6,7 +6,7 @@ use gstd::*;
 use gtest::*;
 use io::*;
 use math::{
-    get_delta_y,
+    get_delta_x, get_delta_y,
     liquidity::Liquidity,
     percentage::Percentage,
     sqrt_price::{calculate_sqrt_price, get_max_tick, SqrtPrice},
@@ -60,8 +60,8 @@ fn test_limits_big_deposit_both_tokens() {
         .send(
             REGULAR_USER_1,
             InvariantAction::CreatePool {
-                token_0: token_x,
-                token_1: token_y,
+                token_x,
+                token_y,
                 fee_tier,
                 init_sqrt_price,
                 init_tick,
@@ -81,7 +81,14 @@ fn test_limits_big_deposit_both_tokens() {
     )
     .unwrap()
     .l;
-    let y = get_delta_y(
+    let y: TokenAmount = get_delta_y(
+        calculate_sqrt_price(lower_tick).unwrap(),
+        pool.sqrt_price,
+        liquidity_delta,
+        true,
+    )
+    .unwrap();
+    let x: TokenAmount = get_delta_x(
         calculate_sqrt_price(lower_tick).unwrap(),
         pool.sqrt_price,
         liquidity_delta,
@@ -92,6 +99,18 @@ fn test_limits_big_deposit_both_tokens() {
     let pool_key = PoolKey::new(token_x, token_y, fee_tier).unwrap();
     let slippage_limit_lower = pool.sqrt_price;
     let slippage_limit_upper = pool.sqrt_price;
+
+    deposit_token_pair(
+        &invariant,
+        REGULAR_USER_1,
+        token_x,
+        x.get(),
+        token_y,
+        y.get(),
+        None::<&str>,
+    )
+    .unwrap();
+
     invariant
         .send(
             REGULAR_USER_1,
@@ -105,6 +124,17 @@ fn test_limits_big_deposit_both_tokens() {
             },
         )
         .assert_success();
+
+    withdraw_token_pair(
+        &invariant,
+        REGULAR_USER_1,
+        token_x,
+        None,
+        token_y,
+        None,
+        None::<&str>,
+    )
+    .unwrap();
 
     let user_amount_x = balance_of(&token_x_program, REGULAR_USER_1);
     let user_amount_y = balance_of(&token_y_program, REGULAR_USER_1);
@@ -146,8 +176,8 @@ fn test_deposit_limits_at_upper_limit() {
         .send(
             REGULAR_USER_1,
             InvariantAction::CreatePool {
-                token_0: token_x,
-                token_1: token_y,
+                token_x,
+                token_y,
                 fee_tier,
                 init_sqrt_price,
                 init_tick,
@@ -174,6 +204,18 @@ fn test_deposit_limits_at_upper_limit() {
     let pool_key = PoolKey::new(token_x, token_y, fee_tier).unwrap();
     let slippage_limit_lower = pool.sqrt_price;
     let slippage_limit_upper = pool.sqrt_price;
+
+    deposit_token_pair(
+        &invariant,
+        REGULAR_USER_1,
+        token_x,
+        mint_amount,
+        token_y,
+        mint_amount,
+        None::<&str>,
+    )
+    .unwrap();
+
     invariant
         .send(
             REGULAR_USER_1,
@@ -216,8 +258,8 @@ fn test_limits_big_deposit_and_swaps() {
         .send(
             REGULAR_USER_1,
             InvariantAction::CreatePool {
-                token_0: token_x,
-                token_1: token_y,
+                token_x,
+                token_y,
                 fee_tier,
                 init_sqrt_price,
                 init_tick,
@@ -252,6 +294,17 @@ fn test_limits_big_deposit_and_swaps() {
     let slippage_limit_lower = pool.sqrt_price;
     let slippage_limit_upper = pool.sqrt_price;
 
+    deposit_token_pair(
+        &invariant,
+        REGULAR_USER_1,
+        token_x,
+        u128::MAX,
+        token_y,
+        u128::MAX,
+        None::<&str>,
+    )
+    .unwrap();
+
     invariant
         .send(
             REGULAR_USER_1,
@@ -266,6 +319,17 @@ fn test_limits_big_deposit_and_swaps() {
         )
         .assert_success();
 
+    withdraw_token_pair(
+        &invariant,
+        REGULAR_USER_1,
+        token_x,
+        None,
+        token_y,
+        None,
+        None::<&str>,
+    )
+    .unwrap();
+
     let user_amount_x = balance_of(&token_x_program, REGULAR_USER_1);
     let user_amount_y = balance_of(&token_y_program, REGULAR_USER_1);
     assert_eq!(user_amount_x, u128::MAX - pos_amount);
@@ -277,6 +341,32 @@ fn test_limits_big_deposit_and_swaps() {
     assert_eq!(contract_amount_y, y.get());
 
     let swap_amount = TokenAmount(mint_amount / 8);
+
+    increase_allowance(
+        &token_x_program,
+        REGULAR_USER_1,
+        INVARIANT_ID,
+        user_amount_x,
+    )
+    .assert_success();
+    increase_allowance(
+        &token_y_program,
+        REGULAR_USER_1,
+        INVARIANT_ID,
+        user_amount_y,
+    )
+    .assert_success();
+
+    deposit_token_pair(
+        &invariant,
+        REGULAR_USER_1,
+        token_x,
+        user_amount_x,
+        token_y,
+        user_amount_y,
+        None::<&str>,
+    )
+    .unwrap();
 
     for i in 1..=4 {
         let (_, sqrt_price_limit) = if i % 2 == 0 {
@@ -330,8 +420,8 @@ fn test_limits_full_range_with_max_liquidity() {
         .send(
             REGULAR_USER_1,
             InvariantAction::CreatePool {
-                token_0: token_x,
-                token_1: token_y,
+                token_x,
+                token_y,
                 fee_tier,
                 init_sqrt_price,
                 init_tick,
@@ -347,6 +437,18 @@ fn test_limits_full_range_with_max_liquidity() {
     let liquidity_delta = Liquidity::new(2u128.pow(109) - 1);
     let slippage_limit_lower = pool.sqrt_price;
     let slippage_limit_upper = pool.sqrt_price;
+
+    deposit_token_pair(
+        &invariant,
+        REGULAR_USER_1,
+        token_x,
+        mint_amount,
+        token_y,
+        mint_amount,
+        None::<&str>,
+    )
+    .unwrap();
+
     invariant
         .send(
             REGULAR_USER_1,
@@ -360,6 +462,17 @@ fn test_limits_full_range_with_max_liquidity() {
             },
         )
         .assert_success();
+
+    withdraw_token_pair(
+        &invariant,
+        REGULAR_USER_1,
+        token_x,
+        None,
+        token_y,
+        None,
+        None::<&str>,
+    )
+    .unwrap();
 
     let contract_amount_x = balance_of(&token_x_program, INVARIANT_ID);
     let contract_amount_y = balance_of(&token_y_program, INVARIANT_ID);

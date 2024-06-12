@@ -31,8 +31,8 @@ fn test_get_pools() {
     let res = invariant.send(
         REGULAR_USER_1,
         InvariantAction::CreatePool {
-            token_0,
-            token_1,
+            token_x: token_0,
+            token_y: token_1,
             fee_tier,
             init_sqrt_price,
             init_tick,

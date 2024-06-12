@@ -32,8 +32,8 @@ pub fn init_slippage_pool_with_liquidity(
     let res = invariant.send(
         REGULAR_USER_1,
         InvariantAction::CreatePool {
-            token_0,
-            token_1,
+            token_x: token_0,
+            token_y: token_1,
             fee_tier,
             init_sqrt_price,
             init_tick,
@@ -50,6 +50,16 @@ pub fn init_slippage_pool_with_liquidity(
     increase_allowance(&token_y_program, REGULAR_USER_1, INVARIANT_ID, mint_amount)
         .assert_success();
 
+    assert_eq!(
+        deposit_single_token(&invariant, REGULAR_USER_1, TOKEN_Y_ID, mint_amount, None::<&str>),
+        Some(TokenAmount(mint_amount))
+    );
+    assert_eq!(
+        deposit_single_token(&invariant, REGULAR_USER_1, TOKEN_X_ID, mint_amount, None::<&str>),
+        Some(TokenAmount(mint_amount))
+    );
+
+        
     let pool_key = PoolKey::new(token_0, token_1, fee_tier).unwrap();
     let lower_tick = -1000;
     let upper_tick = 1000;
@@ -104,6 +114,9 @@ pub fn init_slippage_pool_with_liquidity(
     let pool_after = get_pool(&invariant, token_0, token_1, fee_tier).unwrap();
 
     assert_eq!(pool_after.liquidity, liquidity);
+
+    assert!(withdraw_single_token(invariant, REGULAR_USER_1, TOKEN_X_ID, None, None::<&str>).is_some());
+    assert!(withdraw_single_token(invariant, REGULAR_USER_1, TOKEN_Y_ID, None, None::<&str>).is_some());
 
     pool_key
 }

@@ -33,6 +33,28 @@ fn max_tick_cross() {
     increase_allowance(&token_y_program, REGULAR_USER_1, INVARIANT_ID, mint_amount)
         .assert_success();
 
+    assert_eq!(
+        deposit_single_token(
+            &invariant,
+            REGULAR_USER_1,
+            TOKEN_X_ID,
+            mint_amount,
+            None::<&str>
+        ),
+        Some(TokenAmount(mint_amount))
+    );
+
+    assert_eq!(
+        deposit_single_token(
+            &invariant,
+            REGULAR_USER_1,
+            TOKEN_Y_ID,
+            mint_amount,
+            None::<&str>
+        ),
+        Some(TokenAmount(mint_amount))
+    );
+
     let liquidity = Liquidity::from_integer(10000000);
 
     let tick_spacing = 10;
@@ -69,6 +91,17 @@ fn max_tick_cross() {
     assert_eq!(balance_of(&token_x_program, REGULAR_USER_2), amount);
 
     increase_allowance(&token_x_program, REGULAR_USER_2, INVARIANT_ID, amount).assert_success();
+
+    assert_eq!(
+        deposit_single_token(
+            &invariant,
+            REGULAR_USER_2,
+            TOKEN_X_ID,
+            amount,
+            None::<&str>
+        ),
+        Some(TokenAmount(amount))
+    );
 
     let pool_before = get_pool(&invariant, token_x, token_y, pool_key.fee_tier).unwrap();
 

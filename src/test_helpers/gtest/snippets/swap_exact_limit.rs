@@ -32,6 +32,23 @@ pub fn swap_exact_limit(
     )
     .unwrap();
 
+    let (swapped_token, returned_token) = if x_to_y {
+        (pool_key.token_x, pool_key.token_y)
+    } else {
+        (pool_key.token_y, pool_key.token_x)
+    };
+    
+    assert_eq!(
+        deposit_single_token(
+            &invariant,
+            from,
+            swapped_token,
+            quote_result.amount_in.get(),
+            None::<&str>
+        ),
+        Some(quote_result.amount_in)
+    );
+
     invariant
         .send(
             from,
@@ -44,4 +61,15 @@ pub fn swap_exact_limit(
             },
         )
         .assert_success();
+
+    assert_eq!(
+        withdraw_single_token(
+            &invariant,
+            from,
+            returned_token,
+            quote_result.amount_out.get().into(),
+            None::<&str>
+        ),
+        Some(quote_result.amount_out)
+    );
 }

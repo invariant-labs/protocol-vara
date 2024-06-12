@@ -31,6 +31,12 @@ pub fn init_cross_swap(invariant: &Program, token_x_program: &Program, token_y_p
     let pool_before = get_pool(invariant, token_x, token_y, fee_tier).unwrap();
 
     let swap_amount = TokenAmount::new(amount);
+    
+    assert_eq!(
+        deposit_single_token(&invariant, REGULAR_USER_2, TOKEN_X_ID, swap_amount.get(), None::<&str>),
+        Some(swap_amount)
+    );
+
     let slippage = SqrtPrice::new(MIN_SQRT_PRICE);
     invariant
         .send(
@@ -44,6 +50,11 @@ pub fn init_cross_swap(invariant: &Program, token_x_program: &Program, token_y_p
             },
         )
         .assert_success();
+
+
+    assert!(withdraw_single_token(invariant, REGULAR_USER_2, TOKEN_X_ID, None, InvariantError::NoBalanceForTheToken.into()).is_none());
+    assert!(withdraw_single_token(invariant, REGULAR_USER_2 , TOKEN_Y_ID, None, None::<&str>).is_some());
+
     let pool_after = get_pool(invariant, token_x, token_y, fee_tier).unwrap();
 
     let position_liquidity = Liquidity::from_integer(1000000);
@@ -68,4 +79,5 @@ pub fn init_cross_swap(invariant: &Program, token_x_program: &Program, token_y_p
 
     assert_eq!(pool_after.fee_protocol_token_x, TokenAmount::new(2));
     assert_eq!(pool_after.fee_protocol_token_y, TokenAmount::new(0));
+
 }

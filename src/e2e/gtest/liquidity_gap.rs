@@ -50,8 +50,8 @@ fn test_liquidity_gap() {
         .send(
             REGULAR_USER_1,
             InvariantAction::CreatePool {
-                token_0: token_x,
-                token_1: token_y,
+                token_x,
+                token_y,
                 fee_tier,
                 init_sqrt_price,
                 init_tick,
@@ -66,6 +66,17 @@ fn test_liquidity_gap() {
 
     let pool_state = get_pool(&invariant, token_x, token_y, fee_tier).unwrap();
 
+    deposit_token_pair(
+        &invariant,
+        REGULAR_USER_1,
+        token_x,
+        mint_amount,
+        token_y,
+        mint_amount,
+        None::<&str>,
+    )
+    .unwrap();
+
     invariant.send(
         REGULAR_USER_1,
         InvariantAction::CreatePosition {
@@ -77,6 +88,17 @@ fn test_liquidity_gap() {
             slippage_limit_upper: pool_state.sqrt_price,
         },
     );
+
+    withdraw_token_pair(
+        &invariant,
+        REGULAR_USER_1,
+        token_x,
+        None,
+        token_y,
+        None,
+        None::<&str>,
+    )
+    .unwrap();
 
     let pool_state = get_pool(&invariant, token_x, token_y, fee_tier).unwrap();
 
@@ -154,6 +176,11 @@ fn test_liquidity_gap() {
     let liquidity_delta = Liquidity::from_integer(20008000);
 
     let pool_state = get_pool(&invariant, token_x, token_y, fee_tier).unwrap();
+    
+    increase_allowance(&token_x_program, REGULAR_USER_1, INVARIANT_ID, mint_amount/10).assert_success();
+    increase_allowance(&token_y_program, REGULAR_USER_1, INVARIANT_ID, mint_amount/10).assert_success();
+
+    deposit_token_pair(&invariant, REGULAR_USER_1, token_x, mint_amount/10, token_y, mint_amount/10, None::<&str>).unwrap();
 
     invariant
         .send(

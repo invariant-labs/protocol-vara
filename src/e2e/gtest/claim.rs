@@ -28,15 +28,27 @@ fn test_claim() {
     let user_amount_before_claim = balance_of(&token_x_program, REGULAR_USER_1);
     let invariant_amount_before_claim = balance_of(&token_x_program, INVARIANT_ID);
 
+    assert_eq!(get_user_balances(&invariant, REGULAR_USER_1), vec![]);
+
     invariant
         .send(REGULAR_USER_1, InvariantAction::ClaimFee { position_id: 0 })
         .assert_success();
+
+    let expected_tokens_claimed = 5;
+    
+    assert_eq!(
+        get_user_balances(&invariant, REGULAR_USER_1),
+        vec![(ActorId::from(TOKEN_X_ID), TokenAmount(expected_tokens_claimed))]
+    );
+    assert_eq!(
+        withdraw_single_token(&invariant, REGULAR_USER_1, TOKEN_X_ID, None, None::<&str>),
+        Some(TokenAmount(expected_tokens_claimed))
+    );
 
     let user_amount_after_claim = balance_of(&token_x_program, REGULAR_USER_1);
     let invariant_amount_after_claim = balance_of(&token_x_program, INVARIANT_ID);
 
     let position = get_position(&invariant, REGULAR_USER_1.into(), 0).unwrap();
-    let expected_tokens_claimed = 5;
 
     assert_eq!(
         user_amount_after_claim - expected_tokens_claimed,

@@ -25,13 +25,7 @@ pub fn init_basic_swap(
 
     let amount = 1000;
     mint(&token_x_program, REGULAR_USER_2, amount).assert_success();
-    increase_allowance(
-        &token_x_program,
-        REGULAR_USER_2,
-        INVARIANT_ID,
-        amount,
-    )
-    .assert_success();
+    increase_allowance(&token_x_program, REGULAR_USER_2, INVARIANT_ID, amount).assert_success();
 
     assert_eq!(balance_of(&token_x_program, REGULAR_USER_2), amount);
 
@@ -42,6 +36,11 @@ pub fn init_basic_swap(
 
     let swap_amount = TokenAmount::new(amount);
     let slippage = SqrtPrice::new(MIN_SQRT_PRICE);
+    
+    assert_eq!(
+        deposit_single_token(&invariant, REGULAR_USER_2, TOKEN_X_ID, swap_amount.get(), None::<&str>),
+        Some(swap_amount)
+    );
 
     let res = invariant.send(
         REGULAR_USER_2,
@@ -84,6 +83,8 @@ pub fn init_basic_swap(
             })
         )
     ]));
+
+    assert!(withdraw_single_token(&invariant, REGULAR_USER_2, TOKEN_Y_ID, None, None::<&str>).is_some());
 
     assert_eq!(pool_after.liquidity, pool_before.liquidity);
     assert_eq!(pool_after.current_tick_index, lower_tick);

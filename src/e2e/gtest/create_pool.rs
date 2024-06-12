@@ -31,8 +31,8 @@ fn test_create_pool() {
     let res = invariant.send(
         REGULAR_USER_1,
         InvariantAction::CreatePool {
-            token_0,
-            token_1,
+            token_x: token_0,
+            token_y: token_1,
             fee_tier,
             init_sqrt_price,
             init_tick,
@@ -79,8 +79,8 @@ fn test_create_pool_x_to_y_and_y_to_x() {
     let res = invariant.send(
         REGULAR_USER_1,
         InvariantAction::CreatePool {
-            token_0,
-            token_1,
+            token_x: token_0,
+            token_y: token_1,
             fee_tier,
             init_sqrt_price,
             init_tick,
@@ -91,8 +91,8 @@ fn test_create_pool_x_to_y_and_y_to_x() {
     let _res = invariant.send_and_assert_panic(
         REGULAR_USER_1,
         InvariantAction::CreatePool {
-            token_0: token_1,
-            token_1: token_0,
+            token_x: token_1,
+            token_y: token_0,
             fee_tier,
             init_sqrt_price,
             init_tick,
@@ -125,8 +125,8 @@ fn test_create_pool_with_same_tokens() {
     let _res = invariant.send_and_assert_panic(
         REGULAR_USER_1,
         InvariantAction::CreatePool {
-            token_0,
-            token_1: token_0,
+            token_x: token_0,
+            token_y: token_0,
             fee_tier,
             init_sqrt_price,
             init_tick,
@@ -155,8 +155,8 @@ fn test_create_pool_fee_tier_not_added() {
     let _res = invariant.send_and_assert_panic(
         REGULAR_USER_1,
         InvariantAction::CreatePool {
-            token_0,
-            token_1,
+            token_x: token_0,
+            token_y: token_1,
             fee_tier,
             init_sqrt_price,
             init_tick,
@@ -188,8 +188,8 @@ fn test_create_pool_init_tick_not_divisible_by_tick_spacing() {
     let _res = invariant.send_and_assert_panic(
         REGULAR_USER_1,
         InvariantAction::CreatePool {
-            token_0,
-            token_1,
+            token_x: token_0,
+            token_y: token_1,
             fee_tier,
             init_sqrt_price,
             init_tick,
@@ -221,8 +221,8 @@ fn test_create_pool_init_sqrt_price_minimal_difference_from_tick() {
     let res = invariant.send(
         REGULAR_USER_1,
         InvariantAction::CreatePool {
-            token_0,
-            token_1,
+            token_x: token_0,
+            token_y: token_1,
             fee_tier,
             init_sqrt_price,
             init_tick,
@@ -259,8 +259,8 @@ fn test_create_pool_init_sqrt_price_has_closer_init_tick() {
     let _res = invariant.send_and_assert_panic(
         REGULAR_USER_1,
         InvariantAction::CreatePool {
-            token_0,
-            token_1,
+            token_x: token_0,
+            token_y: token_1,
             fee_tier,
             init_sqrt_price,
             init_tick,
@@ -272,8 +272,8 @@ fn test_create_pool_init_sqrt_price_has_closer_init_tick() {
     let res = invariant.send(
         REGULAR_USER_1,
         InvariantAction::CreatePool {
-            token_0,
-            token_1,
+            token_x: token_0,
+            token_y: token_1,
             fee_tier,
             init_sqrt_price,
             init_tick: correct_tick_index,
@@ -310,8 +310,8 @@ fn test_create_pool_init_sqrt_price_has_closer_init_tick_spacing_over_one() {
     let _res = invariant.send_and_assert_panic(
         REGULAR_USER_1,
         InvariantAction::CreatePool {
-            token_0,
-            token_1,
+            token_x: token_0,
+            token_y: token_1,
             fee_tier,
             init_sqrt_price,
             init_tick,
@@ -323,8 +323,8 @@ fn test_create_pool_init_sqrt_price_has_closer_init_tick_spacing_over_one() {
     let res = invariant.send(
         REGULAR_USER_1,
         InvariantAction::CreatePool {
-            token_0,
-            token_1,
+            token_x: token_0,
+            token_y: token_1,
             fee_tier,
             init_sqrt_price,
             init_tick: correct_tick_index,

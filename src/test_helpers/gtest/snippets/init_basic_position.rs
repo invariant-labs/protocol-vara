@@ -31,6 +31,27 @@ pub fn init_basic_position(
     increase_allowance(&token_y_program, REGULAR_USER_1, INVARIANT_ID, mint_amount)
         .assert_success();
 
+    assert_eq!(
+        deposit_single_token(
+            &invariant,
+            REGULAR_USER_1,
+            TOKEN_X_ID,
+            mint_amount,
+            None::<&str>
+        ),
+        Some(TokenAmount(mint_amount))
+    );
+    assert_eq!(
+        deposit_single_token(
+            &invariant,
+            REGULAR_USER_1,
+            TOKEN_Y_ID,
+            mint_amount,
+            None::<&str>
+        ),
+        Some(TokenAmount(mint_amount))
+    );
+
     let pool_key = PoolKey::new(token_x, token_y, fee_tier).unwrap();
     let lower_tick = -20;
     let upper_tick = 10;
@@ -83,6 +104,9 @@ pub fn init_basic_position(
     ]));
 
     let pool_after = get_pool(&invariant, token_x, token_y, fee_tier).unwrap();
+
+    withdraw_single_token(&invariant, REGULAR_USER_1, TOKEN_X_ID, None, None::<&str>).unwrap();
+    withdraw_single_token(&invariant, REGULAR_USER_1, TOKEN_Y_ID, None, None::<&str>).unwrap();
 
     assert_eq!(pool_after.liquidity, liquidity);
 }

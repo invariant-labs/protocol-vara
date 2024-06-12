@@ -43,8 +43,8 @@ pub enum InvariantAction {
     AddFeeTier(FeeTier),
     RemoveFeeTier(FeeTier),
     CreatePool {
-        token_0: ActorId,
-        token_1: ActorId,
+        token_x: ActorId,
+        token_y: ActorId,
         fee_tier: FeeTier,
         init_sqrt_price: SqrtPrice,
         init_tick: i32,
@@ -87,8 +87,21 @@ pub enum InvariantAction {
         position_id: u32,
     },
     WithdrawProtocolFee(PoolKey),
-    ClaimLostTokens {
+    DepositSingleToken {
         token: ActorId,
+        amount: TokenAmount,
+    },
+    WithdrawSingleToken {
+        token: ActorId,
+        amount: Option<TokenAmount>,
+    },
+    DepositTokenPair {
+        token_x: (ActorId, TokenAmount),
+        token_y: (ActorId, TokenAmount),
+    },
+    WithdrawTokenPair {
+        token_x: (ActorId, Option<TokenAmount>),
+        token_y: (ActorId, Option<TokenAmount>),
     },
 }
 
@@ -139,6 +152,10 @@ pub enum InvariantEvent {
     Quote(QuoteResult),
     QuoteRoute(TokenAmount),
     ClaimFee(TokenAmount, TokenAmount),
+    TokenDeposited(TokenAmount),
+    TokenWithdrawn(TokenAmount),
+    TokenPairDeposited(TokenAmount, TokenAmount),
+    TokenPairWithdrawn(TokenAmount, TokenAmount),
 }
 
 #[derive(Clone, Decode, Encode, Debug, TypeInfo)]
