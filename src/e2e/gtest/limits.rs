@@ -60,8 +60,8 @@ fn test_limits_big_deposit_both_tokens() {
         .send(
             REGULAR_USER_1,
             InvariantAction::CreatePool {
-                token_x,
-                token_y,
+                token_0: token_x,
+                token_1: token_y,
                 fee_tier,
                 init_sqrt_price,
                 init_tick,
@@ -176,8 +176,8 @@ fn test_deposit_limits_at_upper_limit() {
         .send(
             REGULAR_USER_1,
             InvariantAction::CreatePool {
-                token_x,
-                token_y,
+                token_0: token_x,
+                token_1: token_y,
                 fee_tier,
                 init_sqrt_price,
                 init_tick,
@@ -258,8 +258,8 @@ fn test_limits_big_deposit_and_swaps() {
         .send(
             REGULAR_USER_1,
             InvariantAction::CreatePool {
-                token_x,
-                token_y,
+                token_0: token_x,
+                token_1: token_y,
                 fee_tier,
                 init_sqrt_price,
                 init_tick,
@@ -420,8 +420,8 @@ fn test_limits_full_range_with_max_liquidity() {
         .send(
             REGULAR_USER_1,
             InvariantAction::CreatePool {
-                token_x,
-                token_y,
+                token_0: token_x,
+                token_1: token_y,
                 fee_tier,
                 init_sqrt_price,
                 init_tick,

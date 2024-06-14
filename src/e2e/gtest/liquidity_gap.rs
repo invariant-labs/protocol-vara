@@ -50,8 +50,8 @@ fn test_liquidity_gap() {
         .send(
             REGULAR_USER_1,
             InvariantAction::CreatePool {
-                token_x,
-                token_y,
+                token_0: token_x,
+                token_1: token_y,
                 fee_tier,
                 init_sqrt_price,
                 init_tick,

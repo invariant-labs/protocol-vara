@@ -43,8 +43,8 @@ pub enum InvariantAction {
     AddFeeTier(FeeTier),
     RemoveFeeTier(FeeTier),
     CreatePool {
-        token_x: ActorId,
-        token_y: ActorId,
+        token_0: ActorId,
+        token_1: ActorId,
         fee_tier: FeeTier,
         init_sqrt_price: SqrtPrice,
         init_tick: i32,

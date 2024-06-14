@@ -29,8 +29,8 @@ fn test_change_fee_receiver() {
     let res = invariant.send(
         REGULAR_USER_1,
         InvariantAction::CreatePool {
-            token_x: token_0,
-            token_y: token_1,
+            token_0,
+            token_1,
             fee_tier,
             init_sqrt_price,
             init_tick: 0,
@@ -75,8 +75,8 @@ fn test_change_fee_receiver_not_admin() {
     let res = invariant.send(
         REGULAR_USER_1,
         InvariantAction::CreatePool {
-            token_x: token_0,
-            token_y: token_1,
+            token_0,
+            token_1,
             fee_tier,
             init_sqrt_price,
             init_tick: 0,

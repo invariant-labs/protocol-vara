@@ -1310,12 +1310,12 @@ async fn main() {
             };
         }
         InvariantAction::CreatePool {
-            token_x,
-            token_y,
+            token_0,
+            token_1,
             fee_tier,
             init_sqrt_price,
             init_tick,
-        } => match invariant.create_pool(token_x, token_y, fee_tier, init_sqrt_price, init_tick) {
+        } => match invariant.create_pool(token_0, token_1, fee_tier, init_sqrt_price, init_tick) {
             Ok(_) => {}
             Err(e) => {
                 reply_with_err(e);

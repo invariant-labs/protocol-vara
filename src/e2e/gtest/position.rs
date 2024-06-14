@@ -36,8 +36,8 @@ fn test_create_position() {
     let res = invariant.send(
         REGULAR_USER_1,
         InvariantAction::CreatePool {
-            token_x,
-            token_y,
+            token_0: token_x,
+            token_1: token_y,
             fee_tier,
             init_sqrt_price,
             init_tick,
@@ -140,8 +140,8 @@ fn test_position_same_upper_and_lower_tick() {
     let res = invariant.send(
         REGULAR_USER_1,
         InvariantAction::CreatePool {
-            token_x,
-            token_y,
+            token_0: token_x,
+            token_1: token_y,
             fee_tier,
             init_sqrt_price,
             init_tick,
@@ -220,8 +220,8 @@ fn test_position_below_current_tick() {
     let res = invariant.send(
         REGULAR_USER_1,
         InvariantAction::CreatePool {
-            token_x,
-            token_y,
+            token_0: token_x,
+            token_1: token_y,
             fee_tier,
             init_sqrt_price,
             init_tick,
@@ -389,8 +389,8 @@ fn test_position_within_current_tick() {
     let res = invariant.send(
         REGULAR_USER_1,
         InvariantAction::CreatePool {
-            token_x,
-            token_y,
+            token_0: token_x,
+            token_1: token_y,
             fee_tier,
             init_sqrt_price,
             init_tick,
@@ -527,8 +527,8 @@ fn test_position_above_current_tick() {
     let res = invariant.send(
         REGULAR_USER_1,
         InvariantAction::CreatePool {
-            token_x,
-            token_y,
+            token_0: token_x,
+            token_1: token_y,
             fee_tier,
             init_sqrt_price,
             init_tick,
@@ -691,8 +691,8 @@ fn test_create_position_not_enough_token_x() {
     let res = invariant.send(
         REGULAR_USER_1,
         InvariantAction::CreatePool {
-            token_x,
-            token_y,
+            token_0: token_x,
+            token_1: token_y,
             fee_tier,
             init_sqrt_price,
             init_tick,
@@ -810,8 +810,8 @@ fn test_create_position_not_enough_token_y() {
     let res = invariant.send(
         REGULAR_USER_1,
         InvariantAction::CreatePool {
-            token_x,
-            token_y,
+            token_0: token_x,
+            token_1: token_y,
             fee_tier,
             init_sqrt_price,
             init_tick,
@@ -933,8 +933,8 @@ fn test_remove_position() {
         .send(
             REGULAR_USER_1,
             InvariantAction::CreatePool {
-                token_x,
-                token_y,
+                token_0: token_x,
+                token_1: token_y,
                 fee_tier,
                 init_sqrt_price,
                 init_tick,
