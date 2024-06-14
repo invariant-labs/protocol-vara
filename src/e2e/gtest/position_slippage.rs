@@ -18,6 +18,23 @@ fn test_position_slippage_zero_slippage_and_inside_range() {
         init_slippage_pool_with_liquidity(&sys, &invariant, &token_x_program, &token_y_program);
 
     let pool = get_pool(&invariant, token_x, token_y, pool_key.fee_tier).unwrap();
+    let amount_y = balance_of(&token_y_program, REGULAR_USER_1);
+    let amount_x = balance_of(&token_x_program, REGULAR_USER_1);
+
+    increase_allowance(&token_x_program, REGULAR_USER_1, INVARIANT_ID, amount_x).assert_success();
+
+    increase_allowance(&token_y_program, REGULAR_USER_1, INVARIANT_ID, amount_y).assert_success();
+
+    deposit_token_pair(
+        &invariant,
+        REGULAR_USER_1,
+        token_x,
+        amount_x,
+        token_y,
+        amount_y,
+        None::<&str>,
+    )
+    .unwrap();
 
     // zero slippage
     {
@@ -25,18 +42,19 @@ fn test_position_slippage_zero_slippage_and_inside_range() {
         let known_price = pool.sqrt_price;
         let tick = pool_key.fee_tier.tick_spacing as i32;
 
-        let res = invariant.send(
-            REGULAR_USER_1,
-            InvariantAction::CreatePosition {
-                pool_key,
-                lower_tick: -tick,
-                upper_tick: tick,
-                liquidity_delta,
-                slippage_limit_lower: known_price,
-                slippage_limit_upper: known_price,
-            },
-        );
-        assert!(!res.main_failed())
+        invariant
+            .send(
+                REGULAR_USER_1,
+                InvariantAction::CreatePosition {
+                    pool_key,
+                    lower_tick: -tick,
+                    upper_tick: tick,
+                    liquidity_delta,
+                    slippage_limit_lower: known_price,
+                    slippage_limit_upper: known_price,
+                },
+            )
+            .assert_success();
     };
 
     // inside range
@@ -47,18 +65,19 @@ fn test_position_slippage_zero_slippage_and_inside_range() {
 
         let tick = pool_key.fee_tier.tick_spacing as i32;
 
-        let res = invariant.send(
-            REGULAR_USER_1,
-            InvariantAction::CreatePosition {
-                pool_key,
-                lower_tick: -tick,
-                upper_tick: tick,
-                liquidity_delta,
-                slippage_limit_lower: limit_lower,
-                slippage_limit_upper: limit_upper,
-            },
-        );
-        assert!(!res.main_failed())
+        invariant
+            .send(
+                REGULAR_USER_1,
+                InvariantAction::CreatePosition {
+                    pool_key,
+                    lower_tick: -tick,
+                    upper_tick: tick,
+                    liquidity_delta,
+                    slippage_limit_lower: limit_lower,
+                    slippage_limit_upper: limit_upper,
+                },
+            )
+            .assert_success();
     }
 }
 #[test]

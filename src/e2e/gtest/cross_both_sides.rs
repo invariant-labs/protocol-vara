@@ -65,6 +65,17 @@ fn test_cross_both_sides() {
     )
     .assert_success();
 
+    deposit_token_pair(
+        &invariant,
+        REGULAR_USER_1,
+        token_x,
+        mint_amount,
+        token_y,
+        mint_amount,
+        None::<&str>,
+    )
+    .unwrap();
+
     let liquidity_delta = Liquidity::from_integer(20006000);
 
     let pool_state = get_pool(&invariant, token_x, token_y, fee_tier).unwrap();
@@ -128,6 +139,17 @@ fn test_cross_both_sides() {
         mint_amount,
     )
     .assert_success();
+
+    deposit_token_pair(
+        &invariant,
+        REGULAR_USER_1,
+        token_x,
+        mint_amount,
+        token_y,
+        mint_amount,
+        None::<&str>,
+    )
+    .unwrap();
 
     let pool_before = get_pool(&invariant, token_x, token_y, fee_tier).unwrap();
     let limit_sqrt_price = SqrtPrice::new(MIN_SQRT_PRICE);
@@ -200,6 +222,17 @@ fn test_cross_both_sides() {
         massive_x,
     )
     .assert_success();
+
+    deposit_token_pair(
+        &invariant,
+        REGULAR_USER_1,
+        token_x,
+        massive_y,
+        token_y,
+        massive_x,
+        None::<&str>,
+    )
+    .unwrap();
 
     let massive_liquidity_delta = Liquidity::from_integer(19996000399699881985603u128);
 
@@ -330,6 +363,17 @@ fn test_cross_both_sides_not_cross_case() {
     increase_allowance(&token_y_program, REGULAR_USER_1, INVARIANT_ID, mint_amount)
         .assert_success();
 
+    deposit_token_pair(
+        &invariant,
+        REGULAR_USER_1,
+        token_x,
+        mint_amount,
+        token_y,
+        mint_amount,
+        None::<&str>,
+    )
+    .unwrap();
+
     let liquidity_delta = Liquidity::new(20006000000000);
 
     let pool_state = get_pool(&invariant, token_x, token_y, fee_tier).unwrap();
@@ -384,6 +428,17 @@ fn test_cross_both_sides_not_cross_case() {
 
     increase_allowance(&token_y_program, REGULAR_USER_1, INVARIANT_ID, mint_amount)
         .assert_success();
+
+    deposit_token_pair(
+        &invariant,
+        REGULAR_USER_1,
+        token_x,
+        mint_amount,
+        token_y,
+        mint_amount,
+        None::<&str>,
+    )
+    .unwrap();
 
     let pool_before = get_pool(&invariant, token_x, token_y, fee_tier).unwrap();
 

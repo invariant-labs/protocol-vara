@@ -24,12 +24,23 @@ fn test_basic_slippage() {
     let amount = 10u128.pow(8);
     let swap_amount = TokenAmount(amount);
     increase_allowance(
-        &token_x_program,
+        &token_y_program,
         REGULAR_USER_1,
         INVARIANT_ID,
         swap_amount.get(),
     )
     .assert_success();
+
+    assert_eq!(
+        deposit_single_token(
+            &invariant,
+            REGULAR_USER_1,
+            TOKEN_Y_ID,
+            swap_amount.get(),
+            None::<&str>
+        ),
+        Some(swap_amount)
+    );
 
     let target_sqrt_price = SqrtPrice::new(1009940000000000000000001);
     invariant
@@ -61,8 +72,18 @@ fn test_swap_close_to_limit() {
         init_slippage_pool_with_liquidity(&sys, &invariant, &token_x_program, &token_y_program);
     let amount = 10u128.pow(8);
     let swap_amount = TokenAmount::new(amount);
-    increase_allowance(&token_x_program, REGULAR_USER_1, INVARIANT_ID, amount).assert_success();
-
+    increase_allowance(&token_y_program, REGULAR_USER_1, INVARIANT_ID, swap_amount.get()).assert_success();
+    assert_eq!(
+        deposit_single_token(
+            &invariant,
+            REGULAR_USER_1,
+            TOKEN_Y_ID,
+            swap_amount.get(),
+            None::<&str>
+        ),
+        Some(swap_amount)
+    );
+    
     let target_sqrt_price = SqrtPrice::new(MAX_SQRT_PRICE);
     let quoted_target_sqrt_price = quote(
         &invariant,

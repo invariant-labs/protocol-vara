@@ -4,7 +4,9 @@ use gstd::*;
 use gtest::*;
 
 pub fn init_tokens(sys: &System) -> (Program<'_>, Program<'_>) {
-    let bytes = include_bytes!("../../../../target/wasm32-unknown-unknown/release/gear_erc20_wasm.opt.wasm");
+    let bytes = include_bytes!(
+        "../../../../target/wasm32-unknown-unknown/release/gear_erc20_wasm.opt.wasm"
+    );
     let token_x = Program::from_binary_with_id(sys, TOKEN_X_ID, bytes);
     let token_y = Program::from_binary_with_id(sys, TOKEN_Y_ID, bytes);
     assert_ne!(token_x.id(), token_y.id());
@@ -21,6 +23,8 @@ pub fn init_tokens(sys: &System) -> (Program<'_>, Program<'_>) {
 
     send_request!(token: token_x, user: PROGRAM_OWNER, service_name: "Admin", action: "GrantRole", payload: (ActorId::from(PROGRAM_OWNER), Role::Minter)).assert_success();
     send_request!(token: token_y, user: PROGRAM_OWNER, service_name: "Admin", action: "GrantRole", payload: (ActorId::from(PROGRAM_OWNER), Role::Minter)).assert_success();
+    send_request!(token: token_x, user: PROGRAM_OWNER, service_name: "Admin", action: "GrantRole", payload: (ActorId::from(PROGRAM_OWNER), Role::Burner)).assert_success();
+    send_request!(token: token_y, user: PROGRAM_OWNER, service_name: "Admin", action: "GrantRole", payload: (ActorId::from(PROGRAM_OWNER), Role::Burner)).assert_success();
 
     (token_x, token_y)
 }

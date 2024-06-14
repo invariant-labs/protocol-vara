@@ -89,6 +89,17 @@ pub fn big_deposit_and_swap(sys: &System, x_to_y: bool) {
     let pool_key = PoolKey::new(token_x, token_y, fee_tier).unwrap();
     let slippage_limit_lower = pool.sqrt_price;
     let slippage_limit_upper = pool.sqrt_price;
+
+    deposit_token_pair(
+        &invariant,
+        REGULAR_USER_1,
+        token_x,
+        approved_amount,
+        token_y,
+        approved_amount,
+        None::<&str>,
+    );
+
     invariant
         .send(
             REGULAR_USER_1,
@@ -102,6 +113,17 @@ pub fn big_deposit_and_swap(sys: &System, x_to_y: bool) {
             },
         )
         .assert_success();
+
+    withdraw_token_pair(
+        &invariant,
+        REGULAR_USER_1,
+        token_x,
+        None,
+        token_y,
+        None,
+        None::<&str>,
+    )
+    .unwrap();
 
     let amount_x = balance_of(&token_x_program, REGULAR_USER_1);
     let amount_y = balance_of(&token_y_program, REGULAR_USER_1);
@@ -119,6 +141,37 @@ pub fn big_deposit_and_swap(sys: &System, x_to_y: bool) {
         SqrtPrice::new(MAX_SQRT_PRICE)
     };
 
+    let (swapped_token, returned_token) = if x_to_y {
+        increase_allowance(
+            &token_x_program,
+            REGULAR_USER_1,
+            INVARIANT_ID,
+            approved_amount,
+        )
+        .assert_success();
+
+        (token_x, token_y)
+    } else {
+        increase_allowance(
+            &token_y_program,
+            REGULAR_USER_1,
+            INVARIANT_ID,
+            approved_amount,
+        )
+        .assert_success();
+
+        (token_y, token_x)
+    };
+
+    deposit_single_token(
+        &invariant,
+        REGULAR_USER_1,
+        swapped_token,
+        approved_amount,
+        None::<&str>,
+    )
+    .unwrap();
+
     invariant
         .send(
             REGULAR_USER_1,
@@ -131,6 +184,15 @@ pub fn big_deposit_and_swap(sys: &System, x_to_y: bool) {
             },
         )
         .assert_success();
+
+    withdraw_single_token(
+        &invariant,
+        REGULAR_USER_1,
+        returned_token,
+        None,
+        None::<&str>,
+    )
+    .unwrap();
 
     let amount_x = balance_of(&token_x_program, REGULAR_USER_1);
     let amount_y = balance_of(&token_y_program, REGULAR_USER_1);

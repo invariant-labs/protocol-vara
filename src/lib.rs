@@ -35,10 +35,6 @@ pub const TRANSFER_REPLY_HANDLING_COST: u64 = 1_600_000_000 * 2;
 pub const BALANCE_CHANGE_COST: u64 = 100_000 * 2;
 pub const TRANSFER_COST: u64 =
     TRANSFER_GAS_LIMIT + TRANSFER_REPLY_HANDLING_COST + BALANCE_CHANGE_COST;
-pub const CREATE_POSITION_COST: u64 = 100_000 * 2;
-pub const SWAP_UPDATE_COST: u64 = 100_000 * 2;
-pub const REMOVE_POSITION_COST: u64 = 100_000 * 2;
-pub const WITHDRAW_PROTOCOL_FEE_COST: u64 = 100_000 * 2;
 
 type TokenTransferResponse = (String, String, bool);
 
@@ -129,8 +125,8 @@ impl Invariant {
 
     pub fn create_pool(
         &mut self,
-        token_0: ActorId,
-        token_1: ActorId,
+        token_x: ActorId,
+        token_y: ActorId,
         fee_tier: FeeTier,
         init_sqrt_price: SqrtPrice,
         init_tick: i32,
@@ -144,7 +140,7 @@ impl Invariant {
         check_tick(init_tick, fee_tier.tick_spacing)
             .map_err(|_| InvariantError::InvalidInitTick)?;
 
-        let pool_key = PoolKey::new(token_0, token_1, fee_tier)?;
+        let pool_key = PoolKey::new(token_x, token_y, fee_tier)?;
 
         if self.pools.get(&pool_key).is_ok() {
             return Err(InvariantError::PoolAlreadyExist);
@@ -165,11 +161,11 @@ impl Invariant {
 
     pub fn get_pool(
         &self,
-        token_0: ActorId,
-        token_1: ActorId,
+        token_x: ActorId,
+        token_y: ActorId,
         fee_tier: FeeTier,
     ) -> Result<Pool, InvariantError> {
-        let pool_key = PoolKey::new(token_0, token_1, fee_tier)?;
+        let pool_key = PoolKey::new(token_x, token_y, fee_tier)?;
         self.pools.get(&pool_key)
     }
 
@@ -193,7 +189,7 @@ impl Invariant {
         Ok(())
     }
 
-    pub async fn create_position(
+    pub fn create_position(
         &mut self,
         pool_key: PoolKey,
         lower_tick: i32,
@@ -202,10 +198,6 @@ impl Invariant {
         slippage_limit_lower: SqrtPrice,
         slippage_limit_upper: SqrtPrice,
     ) -> Result<Position, InvariantError> {
-        if exec::gas_available() < CREATE_POSITION_COST + 2 * TRANSFER_COST {
-            return Err(InvariantError::NotEnoughGasToExecute);
-        }
-
         let caller = msg::source();
         let current_timestamp = exec::block_timestamp();
         let current_block_number = exec::block_height() as u64;
@@ -237,8 +229,8 @@ impl Invariant {
             pool_key.fee_tier.tick_spacing,
         )?;
 
-        self.deposit_token_pair(&caller, &(pool_key.token_x, x), &(pool_key.token_y, y))
-            .await?;
+        self.decrease_token_balance(&pool_key.token_x, &caller, x.into())?;
+        self.decrease_token_balance(&pool_key.token_y, &caller, y.into())?;
 
         self.pools.update(&pool_key, &pool)?;
 
@@ -280,14 +272,10 @@ impl Invariant {
     pub fn is_tick_initialized(&self, key: PoolKey, index: i32) -> bool {
         self.tickmap.get(index, key.fee_tier.tick_spacing, key)
     }
-    pub async fn remove_position(
+    pub fn remove_position(
         &mut self,
         index: u32,
     ) -> Result<(TokenAmount, TokenAmount), InvariantError> {
-        if exec::gas_available() < REMOVE_POSITION_COST + 2 * TRANSFER_COST {
-            return Err(InvariantError::NotEnoughGasToExecute);
-        }
-
         let caller = msg::source();
         let current_timestamp = exec::block_timestamp();
 
@@ -333,8 +321,8 @@ impl Invariant {
         let token_x = pool_key.token_x;
         let token_y = pool_key.token_y;
 
-        self.withdraw_token_pair(&caller, &(token_x, amount_x), &(token_y, amount_y))
-            .await?;
+        self.increase_token_balance(&token_x, &caller, amount_x)?;
+        self.increase_token_balance(&token_y, &caller, amount_y)?;
 
         self.emit_event(InvariantEvent::PositionRemovedEvent {
             block_timestamp: exec::block_timestamp(),
@@ -365,7 +353,7 @@ impl Invariant {
         self.positions.get_all(&owner_id)
     }
 
-    pub async fn swap(
+    pub fn swap(
         &mut self,
         pool_key: PoolKey,
         x_to_y: bool,
@@ -382,11 +370,10 @@ impl Invariant {
 
         for tick in calculate_swap_result.ticks.iter() {
             crossed_tick_indexes.push(tick.index);
+            self.ticks.update(pool_key, tick.index, *tick)?;
         }
 
-        if exec::gas_available() < SWAP_UPDATE_COST + 2 * TRANSFER_COST {
-            return Err(InvariantError::NotEnoughGasToExecute);
-        }
+        self.pools.update(&pool_key, &calculate_swap_result.pool)?;
 
         let (swapped_token, returned_token) = if x_to_y {
             (&pool_key.token_x, &pool_key.token_y)
@@ -394,26 +381,17 @@ impl Invariant {
             (&pool_key.token_y, &pool_key.token_x)
         };
 
-        self.transfer_single_token(
-            &swapped_token,
-            &caller,
-            calculate_swap_result.amount_in,
-            TransferType::Deposit,
-        )
-        .await?;
-
-        // State update is performed immediately after the deposit since we have the tokens required for the swap
         self.decrease_token_balance(
             &swapped_token,
             &caller,
             calculate_swap_result.amount_in.into(),
         )?;
 
-        for tick in calculate_swap_result.ticks.iter() {
-            self.ticks.update(pool_key, tick.index, *tick)?;
-        }
-
-        self.pools.update(&pool_key, &calculate_swap_result.pool)?;
+        self.increase_token_balance(
+            &returned_token,
+            &caller,
+            calculate_swap_result.amount_out.into(),
+        )?;
 
         if !crossed_tick_indexes.is_empty() {
             self.emit_event(InvariantEvent::CrossTickEvent {
@@ -435,16 +413,6 @@ impl Invariant {
             target_sqrt_price: calculate_swap_result.target_sqrt_price,
             x_to_y,
         });
-
-        // if sending message fails the state will be dropped and the swap will be reverted along with balance decrease
-        // otherwise if message is awaited the error will be caught and balance stored in the storage of the contract
-        self.transfer_single_token(
-            &returned_token,
-            &caller,
-            calculate_swap_result.amount_out,
-            TransferType::Withdrawal,
-        )
-        .await?;
 
         Ok(calculate_swap_result)
     }
@@ -503,10 +471,7 @@ impl Invariant {
         Ok(next_swap_amount)
     }
 
-    pub async fn claim_fee(
-        &mut self,
-        index: u32,
-    ) -> Result<(TokenAmount, TokenAmount), InvariantError> {
+    pub fn claim_fee(&mut self, index: u32) -> Result<(TokenAmount, TokenAmount), InvariantError> {
         let caller = &msg::source();
         let current_timestamp = exec::block_timestamp();
 
@@ -538,32 +503,13 @@ impl Invariant {
         self.ticks
             .update(position.pool_key, lower_tick.index, lower_tick)?;
 
-        let both_positive = x.get() > 0 && y.get() > 0;
-
-        let required_gas = if both_positive {
-            2 * TRANSFER_COST
-        } else {
-            TRANSFER_COST
-        };
-        if exec::gas_available() < required_gas {
-            return Err(InvariantError::NotEnoughGasToExecute);
-        }
-
-        self.withdraw_token_pair(
-            &caller,
-            &(position.pool_key.token_x, x),
-            &(position.pool_key.token_y, y),
-        )
-        .await?;
+        self.increase_token_balance(&position.pool_key.token_x, caller, x)?;
+        self.increase_token_balance(&position.pool_key.token_y, caller, y)?;
 
         Ok((x, y))
     }
 
-    pub async fn withdraw_protocol_fee(&mut self, pool_key: PoolKey) -> Result<(), InvariantError> {
-        if exec::gas_available() < WITHDRAW_PROTOCOL_FEE_COST + 2 * TRANSFER_COST {
-            return Err(InvariantError::NotEnoughGasToExecute);
-        }
-
+    pub fn withdraw_protocol_fee(&mut self, pool_key: PoolKey) -> Result<(), InvariantError> {
         let caller = msg::source();
 
         let mut pool = self.pools.get(&pool_key)?;
@@ -575,30 +521,8 @@ impl Invariant {
         let (amount_x, amount_y) = pool.withdraw_protocol_fee(pool_key);
         self.pools.update(&pool_key, &pool)?;
 
-        if exec::gas_available() < 2 * TRANSFER_COST {
-            return Err(InvariantError::NotEnoughGasToExecute);
-        }
-
-        self.withdraw_token_pair(
-            &caller,
-            &(pool_key.token_x, amount_x),
-            &(pool_key.token_y, amount_y),
-        )
-        .await?;
-
-        Ok(())
-    }
-
-    pub async fn claim_lost_tokens(&mut self, token: &ActorId) -> Result<(), InvariantError> {
-        let caller = msg::source();
-        let balance = self.decrease_token_balance(token, &caller, None)?;
-
-        if exec::gas_available() < TRANSFER_COST {
-            return Err(InvariantError::NotEnoughGasToExecute);
-        }
-
-        self.transfer_single_token(token, &caller, balance, TransferType::Withdrawal)
-            .await?;
+        self.increase_token_balance(&pool_key.token_x, &caller, amount_x)?;
+        self.increase_token_balance(&pool_key.token_y, &caller, amount_y)?;
 
         Ok(())
     }
@@ -613,13 +537,54 @@ impl Invariant {
             .collect()
     }
 
+    async fn deposit_single_token(
+        &mut self,
+        token: &ActorId,
+        caller: &ActorId,
+        amount: TokenAmount,
+    ) -> Result<TokenAmount, InvariantError> {
+        if !self.can_increase_token_balance(token, caller, amount) {
+            return Err(InvariantError::FailedToChangeTokenBalance);
+        }
+
+        self.transfer_single_token(token, caller, amount, TransferType::Deposit)
+            .await?;
+
+        Ok(amount)
+    }
+
+    async fn withdraw_single_token(
+        &mut self,
+        token: &ActorId,
+        caller: &ActorId,
+        amount: Option<TokenAmount>,
+    ) -> Result<TokenAmount, InvariantError> {
+        let amount = self.decrease_token_balance(token, caller, amount)?;
+
+        self.transfer_single_token(token, caller, amount, TransferType::Withdrawal)
+            .await?;
+
+        Ok(amount)
+    }
+
     async fn deposit_token_pair(
         &mut self,
         caller: &ActorId,
         token_x: &(ActorId, TokenAmount),
         token_y: &(ActorId, TokenAmount),
-    ) -> Result<(), InvariantError> {
+    ) -> Result<(TokenAmount, TokenAmount), InvariantError> {
+        if token_x.0.eq(&token_y.0) {
+            return Err(InvariantError::TokensAreSame);
+        }
+
         let transfer_type = TransferType::Deposit;
+
+        if !self.can_increase_token_balance(&token_x.0, &caller, token_x.1)
+            || !self.can_increase_token_balance(&token_y.0, &caller, token_y.1)
+        {
+            return Err(InvariantError::FailedToChangeTokenBalance);
+        }
+
         if !token_x.1.is_zero() && !token_y.1.is_zero() {
             self.transfer_token_pair(caller, token_x, token_y, transfer_type)
                 .await?;
@@ -631,36 +596,60 @@ impl Invariant {
                 .await?;
         }
 
-        if !token_x.1.is_zero() {
-            self.decrease_token_balance(&token_x.0, caller, token_x.1.into())?;
-        }
-
-        if !token_y.1.is_zero() {
-            self.decrease_token_balance(&token_y.0, caller, token_y.1.into())?;
-        }
-
-        Ok(())
+        Ok((token_x.1, token_y.1))
     }
 
     async fn withdraw_token_pair(
         &mut self,
         caller: &ActorId,
-        token_x: &(ActorId, TokenAmount),
-        token_y: &(ActorId, TokenAmount),
-    ) -> Result<(), InvariantError> {
+        token_x: &(ActorId, Option<TokenAmount>),
+        token_y: &(ActorId, Option<TokenAmount>),
+    ) -> Result<(TokenAmount, TokenAmount), InvariantError> {
+        if token_x.0.eq(&token_y.0) {
+            return Err(InvariantError::TokensAreSame);
+        }
+
         let transfer_type = TransferType::Withdrawal;
-        if !token_x.1.is_zero() && !token_y.1.is_zero() {
-            self.transfer_token_pair(caller, token_x, token_y, transfer_type)
+        let amount_x = self.decrease_token_balance(&token_x.0, caller, token_x.1);
+        let amount_y = self.decrease_token_balance(&token_y.0, caller, token_y.1);
+
+        let amount_x = if let Err(e) = amount_x {
+            if e == InvariantError::NoBalanceForTheToken && token_x.1.is_none() {
+                TokenAmount(0)
+            } else {
+                return Err(e);
+            }
+        } else {
+            amount_x?
+        };
+
+        let amount_y = if let Err(e) = amount_y {
+            if e == InvariantError::NoBalanceForTheToken && token_y.1.is_none() {
+                TokenAmount(0)
+            } else {
+                return Err(e);
+            }
+        } else {
+            amount_y?
+        };
+
+        if !amount_x.is_zero() && !amount_y.is_zero() {
+            self.transfer_token_pair(
+                caller,
+                &(token_x.0, amount_x),
+                &(token_y.0, amount_y),
+                transfer_type,
+            )
+            .await?;
+        } else if !amount_x.is_zero() {
+            self.transfer_single_token(&token_x.0, caller, amount_x, transfer_type)
                 .await?;
-        } else if !token_x.1.is_zero() {
-            self.transfer_single_token(&token_x.0, caller, token_x.1, transfer_type)
-                .await?;
-        } else if !token_y.1.is_zero() {
-            self.transfer_single_token(&token_y.0, caller, token_y.1, transfer_type)
+        } else if !amount_y.is_zero() {
+            self.transfer_single_token(&token_y.0, caller, amount_y, transfer_type)
                 .await?;
         }
 
-        Ok(())
+        Ok((amount_x, amount_y))
     }
 
     fn increase_token_balance(
@@ -669,6 +658,10 @@ impl Invariant {
         caller: &ActorId,
         amount: TokenAmount,
     ) -> Result<(), InvariantError> {
+        if amount.is_zero() {
+            return Ok(());
+        }
+
         let token_balance: &mut TokenAmount = self
             .balances
             .entry(*caller)
@@ -683,12 +676,29 @@ impl Invariant {
         Ok(())
     }
 
+    fn can_increase_token_balance(
+        &self,
+        token: &ActorId,
+        caller: &ActorId,
+        amount: TokenAmount,
+    ) -> bool {
+        self.balances
+            .get(caller)
+            .and_then(|tokens| tokens.get(token))
+            .and_then(|a| a.checked_add(amount).is_ok().into())
+            .unwrap_or(true)
+    }
+
     fn decrease_token_balance(
         &mut self,
         token: &ActorId,
         caller: &ActorId,
         amount: Option<TokenAmount>,
     ) -> Result<TokenAmount, InvariantError> {
+        if matches!(amount, Some(TokenAmount(0))) {
+            return Ok(amount.unwrap());
+        }
+
         let (balance, remove_balance) = {
             let token_balances = self
                 .balances
@@ -728,6 +738,10 @@ impl Invariant {
         amount: TokenAmount,
         transfer_type: TransferType,
     ) -> Result<(), InvariantError> {
+        if exec::gas_available() < TRANSFER_COST {
+            return Err(InvariantError::NotEnoughGasToExecute);
+        }
+
         let program_id = &exec::program_id();
         let (from, to) = match transfer_type {
             TransferType::Deposit => (caller, program_id),
@@ -759,6 +773,10 @@ impl Invariant {
         token_y: &(ActorId, TokenAmount),
         transfer_type: TransferType,
     ) -> Result<(), InvariantError> {
+        if exec::gas_available() < 2 * TRANSFER_COST {
+            return Err(InvariantError::NotEnoughGasToExecute);
+        }
+
         let program = &exec::program_id();
 
         let (from, to) = match transfer_type {
@@ -796,10 +814,16 @@ impl Invariant {
             reply_with_err_and_leave(InvariantError::ReplyHandlingFailed);
         }
 
-        match (token_x_check, token_y_check) {
-            (Err(_), Ok(_)) | (Ok(_), Err(_)) => Err(InvariantError::RecoverableTransferError),
-            (Err(_), Err(_)) => Err(InvariantError::UnrecoverableTransferError),
-            _ => Ok(()),
+        match transfer_type {
+            TransferType::Deposit => match (token_x_check, token_y_check) {
+                (Err(_), Ok(_)) | (Ok(_), Err(_)) => Err(InvariantError::RecoverableTransferError),
+                (Err(_), Err(_)) => Err(InvariantError::UnrecoverableTransferError),
+                _ => Ok(()),
+            },
+            TransferType::Withdrawal => match (token_x_check, token_y_check) {
+                (Ok(_), Ok(_)) => Ok(()),
+                _ => Err(InvariantError::RecoverableTransferError),
+            },
         }
     }
 
@@ -1313,17 +1337,14 @@ async fn main() {
             slippage_limit_lower,
             slippage_limit_upper,
         } => {
-            match invariant
-                .create_position(
-                    pool_key,
-                    lower_tick,
-                    upper_tick,
-                    liquidity_delta,
-                    slippage_limit_lower,
-                    slippage_limit_upper,
-                )
-                .await
-            {
+            match invariant.create_position(
+                pool_key,
+                lower_tick,
+                upper_tick,
+                liquidity_delta,
+                slippage_limit_lower,
+                slippage_limit_upper,
+            ) {
                 Ok(position) => {
                     reply(InvariantEvent::PositionCreatedReturn(position), 0)
                         .expect("Unable to reply");
@@ -1334,7 +1355,7 @@ async fn main() {
             }
         }
         InvariantAction::RemovePosition { position_id } => {
-            match invariant.remove_position(position_id).await {
+            match invariant.remove_position(position_id) {
                 Ok((amount_x, amount_y)) => {
                     reply(InvariantEvent::PositionRemovedReturn(amount_x, amount_y), 0)
                         .expect("Unable to reply");
@@ -1358,19 +1379,14 @@ async fn main() {
             amount,
             by_amount_in,
             sqrt_price_limit,
-        } => {
-            match invariant
-                .swap(pool_key, x_to_y, amount, by_amount_in, sqrt_price_limit)
-                .await
-            {
-                Ok(result) => {
-                    reply(InvariantEvent::SwapReturn(result), 0).expect("Unable to reply");
-                }
-                Err(e) => {
-                    reply_with_err(e);
-                }
+        } => match invariant.swap(pool_key, x_to_y, amount, by_amount_in, sqrt_price_limit) {
+            Ok(result) => {
+                reply(InvariantEvent::SwapReturn(result), 0).expect("Unable to reply");
             }
-        }
+            Err(e) => {
+                reply_with_err(e);
+            }
+        },
         InvariantAction::Quote {
             pool_key,
             x_to_y,
@@ -1385,7 +1401,7 @@ async fn main() {
                 reply_with_err(e);
             }
         },
-        InvariantAction::ClaimFee { position_id } => match invariant.claim_fee(position_id).await {
+        InvariantAction::ClaimFee { position_id } => match invariant.claim_fee(position_id) {
             Ok((amount_x, amount_y)) => {
                 reply(InvariantEvent::ClaimFee(amount_x, amount_y), 0).expect("Unable to reply");
             }
@@ -1404,16 +1420,60 @@ async fn main() {
             }
         }
         InvariantAction::WithdrawProtocolFee(pool_key) => {
-            match invariant.withdraw_protocol_fee(pool_key).await {
+            match invariant.withdraw_protocol_fee(pool_key) {
                 Ok(_) => {}
                 Err(e) => {
                     reply_with_err(e);
                 }
             }
         }
-        InvariantAction::ClaimLostTokens { token } => {
-            match invariant.claim_lost_tokens(&token).await {
-                Ok(_) => {}
+        InvariantAction::DepositSingleToken { token, amount } => {
+            match invariant
+                .deposit_single_token(&token, &msg::source(), amount)
+                .await
+            {
+                Ok(x) => {
+                    reply(InvariantEvent::TokenDeposited(x), 0).expect("Unable to reply");
+                }
+                Err(e) => {
+                    reply_with_err(e);
+                }
+            }
+        }
+        InvariantAction::WithdrawSingleToken { token, amount } => {
+            match invariant
+                .withdraw_single_token(&token, &msg::source(), amount)
+                .await
+            {
+                Ok(x) => {
+                    reply(InvariantEvent::TokenWithdrawn(x), 0).expect("Unable to reply");
+                }
+                Err(e) => {
+                    reply_with_err(e);
+                }
+            }
+        }
+        InvariantAction::DepositTokenPair { token_x, token_y } => {
+            match invariant
+                .deposit_token_pair(&msg::source(), &token_x, &token_y)
+                .await
+            {
+                Ok((x, y)) => {
+                    reply(InvariantEvent::TokenPairDeposited(x, y), 0).expect("Unable to reply");
+                }
+                Err(e) => {
+                    reply_with_err(e);
+                }
+            }
+        }
+        InvariantAction::WithdrawTokenPair { token_x, token_y } => {
+            match invariant
+                .withdraw_token_pair(&msg::source(), &token_x, &token_y)
+                .await
+            {
+                Ok((x, y)) => {
+                    reply(InvariantEvent::TokenPairWithdrawn(x, y), 0).expect("Unable to reply");
+                }
                 Err(e) => {
                     reply_with_err(e);
                 }
@@ -1438,8 +1498,8 @@ extern "C" fn state() {
             let protocol_fee = invariant.get_protocol_fee();
             reply(InvariantStateReply::ProtocolFee(protocol_fee), 0).expect("Unable to reply");
         }
-        InvariantStateQuery::GetPool(token_0, token_1, fee_tier) => {
-            match invariant.get_pool(token_0, token_1, fee_tier) {
+        InvariantStateQuery::GetPool(token_x, token_y, fee_tier) => {
+            match invariant.get_pool(token_x, token_y, fee_tier) {
                 Ok(pool) => {
                     reply(InvariantStateReply::Pool(pool), 0).expect("Unable to reply");
                 }

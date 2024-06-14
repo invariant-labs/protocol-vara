@@ -55,6 +55,17 @@ pub fn multiple_swap(x_to_y: bool) {
     increase_allowance(&token_y_program, REGULAR_USER_1, INVARIANT_ID, mint_amount)
         .assert_success();
 
+    deposit_token_pair(
+        &invariant,
+        REGULAR_USER_1,
+        token_x,
+        mint_amount,
+        token_y,
+        mint_amount,
+        None::<&str>,
+    )
+    .unwrap();
+
     let pool_key = PoolKey::new(token_x, token_y, fee_tier).unwrap();
     let upper_tick = 953;
     let lower_tick = -upper_tick;
@@ -87,6 +98,17 @@ pub fn multiple_swap(x_to_y: bool) {
             },
         )
         .assert_success();
+
+    withdraw_token_pair(
+        &invariant,
+        REGULAR_USER_1,
+        token_x,
+        None,
+        token_y,
+        None,
+        None::<&str>,
+    )
+    .unwrap();
 
     if x_to_y {
         mint(&token_x_program, REGULAR_USER_2, amount).assert_success();
