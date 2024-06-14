@@ -7,8 +7,11 @@ import {
 } from '@gear-js/api'
 import { readFile } from 'fs/promises'
 import path from 'path'
-import { ISubmittableResult } from '@polkadot/types/types'
+import { ISubmittableResult, IKeyringPair } from '@polkadot/types/types'
 import { U8aFixed } from '@polkadot/types/codec'
+
+export type Signer = string | IKeyringPair
+export type ActorId = Uint8Array
 
 export const initGearApi = async (gearApiOptions: GearApiOptions | undefined) => {
   const gearApi = await GearApi.create(gearApiOptions)
@@ -31,9 +34,7 @@ export const subscribeToNewHeads = async (api: GearApi): Promise<VoidFunction> =
       `New block with number: ${header.number.toNumber()} and hash: ${header.hash.toHex()}`
     )
   })
-
 }
-
 
 export const getDeploymentData = async (
   contractName: string
@@ -56,6 +57,12 @@ export const getDeploymentData = async (
   } catch (error) {
     throw new Error(`${contractName}.meta.txt or ${contractName}.opt.wasm not found`)
   }
+}
+
+export const getWasm = async (contractName: string): Promise<Buffer> => {
+  const __dirname = new URL('.', import.meta.url).pathname
+
+  return readFile(path.join(__dirname, `../contracts/${contractName}/${contractName}.opt.wasm`))
 }
 
 export const Uint8ArrayToHexStr = (bits: Uint8Array): string => {
@@ -111,13 +118,13 @@ export const getStateOutput = (meta: ProgramMetadata) => {
   }
 }
 
-export enum FungibleTokenMetaTypes {
-  u128 = 'u128',
-  u64 = 'u64',
-  u8 = 'u8',
-  OptionU64 = 'Option<u64>'
-}
-
 export const createTypeByName = (meta: ProgramMetadata, type: string, payload: any) => {
   return meta.createType(meta.getTypeIndexByName(type)!, payload)
+}
+
+export const integerSafeCast = (value: bigint): number => {
+  if (value > BigInt(Number.MAX_SAFE_INTEGER) || value < BigInt(Number.MIN_SAFE_INTEGER)) {
+    throw new Error('Integer value is outside the safe range for Numbers')
+  }
+  return Number(value)
 }
