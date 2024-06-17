@@ -100,30 +100,30 @@ export class FungibleToken {
   }
 
   async burnTx(account: ActorId, amount: bigint) {
-    if (!this.admin) {
-      throw new Error('Admin account is required to burn tokens')
-    }
-
     return this.erc20.admin.burn(account as any, amount as any).withGas(this.gasLimit)
   }
 
   async burn(account: ActorId, amount: bigint) {
+    if (!this.admin) {
+      throw new Error('Admin account is required to burn tokens')
+    }
+
     const tx = await this.burnTx(account, amount)
-    const { response } = await tx.withAccount(this.admin!).signAndSend()
+    const { response } = await tx.withAccount(this.admin).signAndSend()
     return response()
   }
 
   async mintTx(account: ActorId, amount: bigint) {
-    if (!this.admin) {
-      throw new Error('Admin account is required to mint tokens')
-    }
-
     return this.erc20.admin.mint(account as any, amount as any).withGas(this.gasLimit)
   }
 
   async mint(account: ActorId, amount: bigint) {
+    if (!this.admin) {
+      throw new Error('Admin account is required to mint tokens')
+    }
+
     const tx = await this.mintTx(account, amount)
-    const { response } = await tx.withAccount(this.admin!).signAndSend()
+    const { response } = await tx.withAccount(this.admin).signAndSend()
     return response()
   }
 
