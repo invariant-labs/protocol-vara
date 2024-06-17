@@ -12,7 +12,7 @@ const account1 = await GearKeyring.fromSuri('//Bob')
 let unsub: Promise<VoidFunction> | null = null
 const eventListener = new EventListener(api)
 eventListener.listen()
-let token: FungibleToken = await FungibleToken.deploy(api, account0, 'Coin', 'COIN', 12n)
+let token: FungibleToken = null as any
 describe('FungibleToken', function () {
   before(function () {
     unsub = subscribeToNewHeads(api)
