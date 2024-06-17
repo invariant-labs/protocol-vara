@@ -71,6 +71,21 @@ jobs:
           cd target/tmp &&
           curl https://get.gear.rs/gear-v1.3.0-x86_64-unknown-linux-gnu.tar.xz | tar Jx
 
+      - name: Read .nvmrc
+        run: echo NVMRC=`cat ./sdk/.nvmrc` >> $GITHUB_ENV
+
+      - name: Install Rust toolchain
+        run: |
+          rustup install 1.74.1
+          rustup target add wasm32-unknown-unknown
+
+      - name: Setup node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NVMRC }}
+          cache: 'npm'
+          cache-dependency-path: ./sdk/package-lock.json
+
       - name: Build SDK
         working-directory: ./sdk
         run: |

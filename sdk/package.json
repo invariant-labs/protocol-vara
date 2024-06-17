@@ -23,18 +23,22 @@
     "directory": "sdk"
   },
   "scripts": {
-    "build": "npx tsc",
-    "lint": "eslint . --ext .ts",
+    "build": "npx tsc -b --verbose",
+    "lint": "npx eslint . --ext .ts",
     "node:local": "../target/tmp/gear --dev",
     "node:local:stop": "lsof -i :9944 | grep gear | tr -s ' ' | cut -d ' ' -f 2 | head -1 | xargs -r kill -9",
-    "start": "npx tsc && node --experimental-wasm-modules target/index.js",
+    "start": "npm run build && node --experimental-wasm-modules --trace-uncaught target/index.js",
     "wasm:build": "cd ./src/wasm && wasm-pack build && rm ./pkg/.gitignore",
     "test:local": "npm run test:fungible-token && npm run test:invariant",
-    "test:fungible-token": "mocha --config mocharc.json ./tests/fungible-token.test.ts",
-    "test:invariant": "mocha --config mocharc.json ./tests/invariant.test.ts"
+    "test:fungible-token": "npx mocha --config mocharc.json ./tests/fungible-token.test.ts",
+    "test:invariant": "npx mocha --config mocharc.json ./tests/invariant.test.ts",
+    "contract:build": "cd ../ && ./build.sh",
+    "erc-20:copy": "cp ../gear-erc20/wasm/erc20.idl ./contracts/gear_erc20//gear_erc20.idl && cp ../target/wasm32-unknown-unknown/release/gear_erc20_wasm.opt.wasm ./contracts/gear_erc20/gear_erc20.opt.wasm", 
+    "erc-20:generate": "npm run erc-20:copy && npx sails-js generate ./contracts/gear_erc20//gear_erc20.idl -o ./src/erc20-token.ts -n Erc20Token && node fix-generate.js"
   },
   "dependencies": {
-    "@gear-js/api": "^0.38.0",
+    "@gear-js/api": "^0.38.1",
+    "sails-js": "^0.1.4",
     "typescript": "^5.4.5"
   },
   "devDependencies": {

@@ -10,9 +10,9 @@
     "outDir": "./target",
     "moduleResolution": "bundler",
     "baseUrl": "./",
-    "types": ["mocha", "chai"],
+    "types": ["mocha", "chai", "node"],
     "declaration": true
   },
   "exclude": ["./tests", "./target"],
-  "include": ["./src/wasm/pkg/*"]
+  "include": ["./src/wasm/pkg/*", "./src/**/*.ts"]
 }

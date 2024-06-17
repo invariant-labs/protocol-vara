@@ -1,9 +1,10 @@
 import { assert, expect } from 'chai'
 import { GearKeyring } from '@gear-js/api'
 import { EventListener } from '../src/event-listener.js'
-import { UserMessageStatus, initGearApi, subscribeToNewHeads } from '../src/utils.js'
+import { initGearApi, subscribeToNewHeads } from '../src/utils.js'
 import { LOCAL } from '../src/consts.js'
-import { FungibleToken } from '../src/fungible-token.js'
+import { FungibleToken } from '../src/erc20.js'
+import { assertThrowsAsync } from '../src/test-utils.js'
 
 const api = await initGearApi({ providerAddress: LOCAL })
 const account0 = await GearKeyring.fromSuri('//Alice')
@@ -11,7 +12,7 @@ const account1 = await GearKeyring.fromSuri('//Bob')
 let unsub: Promise<VoidFunction> | null = null
 const eventListener = new EventListener(api)
 eventListener.listen()
-let token = await FungibleToken.deploy(api, eventListener, account0, 'Coin', 'COIN', 12n)
+let token: FungibleToken = null as any
 describe('FungibleToken', function () {
   before(function () {
     unsub = subscribeToNewHeads(api)
@@ -19,81 +20,147 @@ describe('FungibleToken', function () {
   this.timeout(200000)
 
   beforeEach(async function () {
-    token = await FungibleToken.deploy(api, eventListener, account0, 'Coin', 'COIN', 12n)
+    token = await FungibleToken.deploy(api, account0, 'Coin', 'COIN', 12n)
   })
   it('mint and burn', async function () {
-    const resMint = await token.mint(account0, 100n)
-    assert.strictEqual(resMint.status, UserMessageStatus.ProcessedSuccessfully)
-    await token.balanceOf(account0.addressRaw)
-
-    const resBurn = await token.burn(account0, 100n)
-    assert.strictEqual(resBurn.status, UserMessageStatus.ProcessedSuccessfully)
+    const resMint = await token.mint(account0.addressRaw, 100n)
+    assert.strictEqual(resMint, true)
+    await token.balanceOf(account0.addressRaw).then(balance => {
+      assert.deepStrictEqual(balance, 100n)
+    })
+    const resBurn = await token.burn(account0.addressRaw, 100n)
+    assert.strictEqual(resBurn, true)
     await token.balanceOf(account0.addressRaw).then(balance => {
       assert.deepStrictEqual(balance, 0n)
     })
   })
-  it('valid transaction timestamp', async function () {
-    const currentTime = Date.now()
-    const res = await token.approve(account1, account0.addressRaw, 100n, 1n)
-    assert.strictEqual(res.status, UserMessageStatus.ProcessedSuccessfully)
-
-    const validityTime = await token.getTxValidityTime(account1.addressRaw, 1n)
-    assert.notStrictEqual(validityTime, null)
-
-    if (validityTime! < currentTime) {
-      throw new Error('Timestamp is invalid')
+  it('mint and burn tx', async function () {
+    {
+      const { response } = await (await token.mintTx(account0.addressRaw, 100n))
+        .withAccount(account0)
+        .signAndSend()
+      assert.strictEqual(await response(), true)
     }
-  })
 
-  it('invalid transaction timestamp', async function () {
-    const invalidTransaction = await token.getTxValidityTime(account1.addressRaw, 0n)
-    assert.strictEqual(invalidTransaction, null)
+    await token.balanceOf(account0.addressRaw).then(balance => {
+      assert.deepStrictEqual(balance, 100n)
+    })
+    {
+      const { response } = await (await token.burnTx(account0.addressRaw, 100n))
+        .withAccount(account0)
+        .signAndSend()
+      assert.strictEqual(await response(), true)
+    }
+    await token.balanceOf(account0.addressRaw).then(balance => {
+      assert.deepStrictEqual(balance, 0n)
+    })
   })
   it('approve and transfer', async () => {
     {
-      const res = await token.mint(account1, 100n)
-      assert.strictEqual(res.status, UserMessageStatus.ProcessedSuccessfully)
+      const res = await token.mint(account1.addressRaw, 100n)
+      assert.strictEqual(res, true)
     }
     {
-      const res = await token.approve(account1, account0.addressRaw, 100n, 1n)
-      assert.strictEqual(res.status, UserMessageStatus.ProcessedSuccessfully)
+      const res = await token.approve(account1, account0.addressRaw, 100n)
+      assert.strictEqual(res, true)
     }
     {
-      const allowance = token.allowance(account0.addressRaw, account1.addressRaw)
+      const allowance = token.allowance(account1.addressRaw, account0.addressRaw)
       const balance0 = token.balanceOf(account0.addressRaw)
       const balance1 = token.balanceOf(account1.addressRaw)
       const totalSupply = token.totalSupply()
       const decimals = token.decimals()
-      assert.deepStrictEqual(await allowance, 100n)
-      assert.deepStrictEqual(await balance0, 0n)
-      assert.deepStrictEqual(await balance1, 100n)
-      assert.deepStrictEqual(await totalSupply, 100n)
-      assert.deepStrictEqual(await decimals, 12n)
-    }
-
-    {
-      const res = await token.burn(account0, 300n)
-      assert.strictEqual(res.status, UserMessageStatus.Panicked)
+      assert.deepStrictEqual(await allowance, 100n, 'allowance mismatch')
+      assert.deepStrictEqual(await balance0, 0n, 'balance0 mismatch')
+      assert.deepStrictEqual(await balance1, 100n, 'balance1 mismatch')
+      assert.deepStrictEqual(await totalSupply, 100n, 'totalSupply mismatch')
+      assert.deepStrictEqual(await decimals, 12n, 'decimals mismatch')
     }
     {
-      const res = await token.mint(account1, 300n)
-      assert.strictEqual(res.status, UserMessageStatus.ProcessedSuccessfully)
+      const res = await token.mint(account1.addressRaw, 300n)
+      assert.strictEqual(res, true)
     }
-    {
-      const res = await token.transfer(account0, account1.addressRaw, account0.addressRaw, 300n)
-      expect(res.status).to.equal(UserMessageStatus.ProcessedWithError)
-      expect(res.data).to.deep.equal({ err: 'NotAllowedToTransfer' })
-    }
+    await assertThrowsAsync(
+      token.transferFrom(account0, account1.addressRaw, account0.addressRaw, 300n),
+      'Error: Panic occurred: InsufficientAllowance'
+    )
     {
       const res = await token.approve(account1, account0.addressRaw, 300n)
-      expect(res.status).to.equal(UserMessageStatus.ProcessedSuccessfully)
+      expect(res).to.equal(true)
     }
     {
-      const res = await token.transfer(account0, account1.addressRaw, account0.addressRaw, 300n)
-      expect(res.status).to.equal(UserMessageStatus.ProcessedSuccessfully)
+      const res = await token.transferFrom(account0, account1.addressRaw, account0.addressRaw, 300n)
+      expect(res).to.equal(true)
     }
     {
-      const allowance = token.allowance(account0.addressRaw, account1.addressRaw)
+      const allowance = token.allowance(account1.addressRaw, account0.addressRaw)
+      const balance0 = token.balanceOf(account0.addressRaw)
+      const balance1 = token.balanceOf(account1.addressRaw)
+      const totalSupply = token.totalSupply()
+      expect(await allowance).to.equal(0n)
+      expect(await balance0).to.equal(300n)
+      expect(await balance1).to.equal(100n)
+      expect(await totalSupply).to.equal(400n)
+    }
+  })
+  it('approve and transfer tx', async () => {
+    {
+      const { response } = await (await token.mintTx(account1.addressRaw, 100n))
+        .withAccount(account0)
+        .signAndSend()
+      assert.strictEqual(await response(), true)
+    }
+    {
+      const { response } = await (await token.approveTx(account0.addressRaw, 100n))
+        .withAccount(account1)
+        .signAndSend()
+      assert.strictEqual(await response(), true)
+    }
+    {
+      const allowance = token.allowance(account1.addressRaw, account0.addressRaw)
+      const balance0 = token.balanceOf(account0.addressRaw)
+      const balance1 = token.balanceOf(account1.addressRaw)
+      const totalSupply = token.totalSupply()
+      const decimals = token.decimals()
+      assert.deepStrictEqual(await allowance, 100n, 'allowance mismatch')
+      assert.deepStrictEqual(await balance0, 0n, 'balance0 mismatch')
+      assert.deepStrictEqual(await balance1, 100n, 'balance1 mismatch')
+      assert.deepStrictEqual(await totalSupply, 100n, 'totalSupply mismatch')
+      assert.deepStrictEqual(await decimals, 12n, 'decimals mismatch')
+    }
+    {
+      const { response } = await (await token.mintTx(account1.addressRaw, 300n))
+        .withAccount(account0)
+        .signAndSend()
+      assert.strictEqual(await response(), true)
+    }
+    await assertThrowsAsync(
+      (async () => {
+        const { response } = await (
+          await token.transferFromTx(account1.addressRaw, account0.addressRaw, 300n)
+        )
+          .withAccount(account0)
+          .signAndSend()
+        assert.strictEqual(await response(), true)
+      })(),
+      'Error: Panic occurred: InsufficientAllowance'
+    )
+    {
+      const { response } = await (await token.approveTx(account0.addressRaw, 300n))
+        .withAccount(account1)
+        .signAndSend()
+      assert.strictEqual(await response(), true)
+    }
+    {
+      const { response } = await (
+        await token.transferFromTx(account1.addressRaw, account0.addressRaw, 300n)
+      )
+        .withAccount(account0)
+        .signAndSend()
+      assert.strictEqual(await response(), true)
+    }
+    {
+      const allowance = token.allowance(account1.addressRaw, account0.addressRaw)
       const balance0 = token.balanceOf(account0.addressRaw)
       const balance1 = token.balanceOf(account1.addressRaw)
       const totalSupply = token.totalSupply()
