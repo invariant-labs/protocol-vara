@@ -89,56 +89,63 @@ export class FungibleToken {
     return this.erc20.erc20.totalSupply(DEFAULT_ADDRESS)
   }
 
+  async approveTx(spender: ActorId, amount: bigint) {
+    return this.erc20.erc20.approve(spender as any, amount as any).withGas(this.gasLimit)
+  }
+
   async approve(owner: Signer, spender: ActorId, amount: bigint): Promise<boolean> {
-    const tx = await this.erc20.erc20
-      .approve(spender as any, amount as any)
-      .withAccount(owner)
-      .withGas(this.gasLimit)
-    const { response } = await tx.signAndSend()
+    const tx = await this.approveTx(spender, amount)
+    const { response } = await tx.withAccount(owner).signAndSend()
     return response()
+  }
+
+  async burnTx(account: ActorId, amount: bigint) {
+    if (!this.admin) {
+      throw new Error('Admin account is required to burn tokens')
+    }
+
+    return this.erc20.admin.burn(account as any, amount as any).withGas(this.gasLimit)
   }
 
   async burn(account: ActorId, amount: bigint) {
+    const tx = await this.burnTx(account, amount)
+    const { response } = await tx.withAccount(this.admin!).signAndSend()
+    return response()
+  }
+
+  async mintTx(account: ActorId, amount: bigint) {
     if (!this.admin) {
-      throw new Error('Admin account is required to burn tokens')
+      throw new Error('Admin account is required to mint tokens')
     }
 
-    const tx = await this.erc20.admin
-      .burn(account as any, amount as any)
-      .withAccount(this.admin)
-      .withGas(this.gasLimit)
-    const { response } = await tx.signAndSend()
-    return response()
+    return this.erc20.admin.mint(account as any, amount as any).withGas(this.gasLimit)
   }
 
   async mint(account: ActorId, amount: bigint) {
-    if (!this.admin) {
-      throw new Error('Admin account is required to burn tokens')
-    }
-
-    const tx = await this.erc20.admin
-      .mint(account as any, amount as any)
-      .withAccount(this.admin)
-      .withGas(this.gasLimit)
-    const { response } = await tx.signAndSend()
+    const tx = await this.mintTx(account, amount)
+    const { response } = await tx.withAccount(this.admin!).signAndSend()
     return response()
+  }
+
+  async transferTx(to: ActorId, amount: bigint) {
+    return this.erc20.erc20.transfer(to as any, amount as any).withGas(this.gasLimit)
   }
 
   async transfer(signer: Signer, to: ActorId, amount: bigint) {
-    const tx = await this.erc20.erc20
-      .transfer(to as any, amount as any)
-      .withAccount(signer)
-      .withGas(this.gasLimit)
-    const { response } = await tx.signAndSend()
+    const tx = await this.transferTx(to, amount)
+    const { response } = await tx.withAccount(signer).signAndSend()
     return response()
   }
 
-  async transferFrom(signer: Signer, from: ActorId, to: ActorId, amount: bigint) {
-    const tx = await this.erc20.erc20
+  async transferFromTx(from: ActorId, to: ActorId, amount: bigint) {
+    return this.erc20.erc20
       .transferFrom(from as any, to as any, amount as any)
-      .withAccount(signer)
       .withGas(this.gasLimit)
-    const { response } = await tx.signAndSend()
+  }
+
+  async transferFrom(signer: Signer, from: ActorId, to: ActorId, amount: bigint) {
+    const tx = await this.transferFromTx(from, to, amount)
+    const { response } = await tx.withAccount(signer).signAndSend()
     return response()
   }
 }
