@@ -1,7 +1,6 @@
 use core::fmt::Debug;
-use gstd::{exec, ext, format, Encode};
-use sails_rtl::gstd::events::{EventTrigger, GStdEventTrigger};
 use gstd::scale_info::StaticTypeInfo;
+use gstd::{exec, ext, format, Encode};
 
 pub fn panicking<T, E: Debug, F: FnOnce() -> Result<T, E>>(f: F) -> T {
     match f() {
@@ -12,12 +11,6 @@ pub fn panicking<T, E: Debug, F: FnOnce() -> Result<T, E>>(f: F) -> T {
 
 pub fn panic(err: impl Debug) -> ! {
     ext::panic(&format!("{err:?}"))
-}
-
-pub fn deposit_event<E: Encode + StaticTypeInfo>(event: E) {
-    if GStdEventTrigger::<E>::new().trigger(event).is_err() {
-        panic("Failed to deposit event");
-    }
 }
 
 #[macro_export]

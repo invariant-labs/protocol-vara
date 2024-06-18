@@ -1,7 +1,7 @@
 use crate::services::{self, pausable::roles::PauseAdmin, roles::storage::RolesStorage};
 use core::marker::PhantomData;
 use gstd::{msg, ActorId, Decode, Encode, String, TypeInfo, Vec};
-use sails_rtl::gstd::events::{EventTrigger, GStdEventTrigger};
+use sails_rtl::format;
 use sails_rtl::gstd::gservice;
 use storage::StateStorage;
 
@@ -15,16 +15,13 @@ pub enum Event {
     Unpaused,
 }
 
-pub type GstdDrivenService = Service<GStdEventTrigger<Event>>;
-
 #[derive(Clone)]
-pub struct Service<X> {
-    roles_service: services::roles::GstdDrivenService,
-    _phantom: PhantomData<X>,
+pub struct Service {
+    roles_service: services::roles::RolesService,
 }
 
-impl<X: EventTrigger<Event>> Service<X> {
-    pub fn seed(mut roles_service: services::roles::GstdDrivenService, admin: ActorId) -> Self {
+impl Service {
+    pub fn seed(mut roles_service: services::roles::RolesService, admin: ActorId) -> Self {
         let _res = StateStorage::set(State::Active);
         debug_assert!(_res.is_ok());
 
@@ -33,10 +30,7 @@ impl<X: EventTrigger<Event>> Service<X> {
         let _res = roles_service.grant_role::<PauseAdmin>(admin);
         debug_assert!(_res);
 
-        Self {
-            roles_service,
-            _phantom: PhantomData,
-        }
+        Self { roles_service }
     }
 
     pub fn ensure_unpaused(&self) -> Result<(), Error> {
@@ -44,16 +38,10 @@ impl<X: EventTrigger<Event>> Service<X> {
     }
 }
 
-#[gservice]
-impl<X> Service<X>
-where
-    X: EventTrigger<Event>,
-{
-    pub fn new(roles_service: services::roles::GstdDrivenService) -> Self {
-        Self {
-            roles_service,
-            _phantom: PhantomData,
-        }
+#[gservice(events=Event)]
+impl Service {
+    pub fn new(roles_service: services::roles::RolesService) -> Self {
+        Self { roles_service }
     }
 
     pub fn is_paused(&self) -> bool {
@@ -68,7 +56,7 @@ where
             let mutated = funcs::pause(StateStorage::as_mut());
 
             if mutated {
-                services::utils::deposit_event(Event::Paused);
+                self.notify_on(Event::Paused).unwrap();
             }
 
             Ok(mutated)
@@ -83,7 +71,7 @@ where
             let mutated = funcs::unpause(StateStorage::as_mut());
 
             if mutated {
-                services::utils::deposit_event(Event::Unpaused)
+                self.notify_on(Event::Unpaused).unwrap();
             }
 
             Ok(mutated)

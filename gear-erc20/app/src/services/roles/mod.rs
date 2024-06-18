@@ -1,7 +1,7 @@
 use crate::services;
 use core::{any::TypeId, marker::PhantomData};
 use gstd::{ActorId, Decode, Encode, String, ToString, TypeInfo, Vec};
-use sails_rtl::gstd::events::{EventTrigger, GStdEventTrigger};
+use sails_rtl::format;
 use sails_rtl::gstd::gservice;
 use storage::{RolesRegistryStorage, RolesStorage};
 
@@ -10,8 +10,6 @@ pub mod storage;
 pub(crate) mod utils;
 
 pub use utils::*;
-
-pub type GstdDrivenService = Service<GStdEventTrigger<Event>>;
 
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Encode, Decode, TypeInfo)]
 #[codec(crate = gstd::codec)]
@@ -28,16 +26,10 @@ pub enum Event {
 }
 
 // TODO (sails): impl Clone for gstd event depositor
-// #[derive(Clone)]
-pub struct Service<X>(PhantomData<X>);
+#[derive(Clone)]
+pub struct RolesService {}
 
-impl Clone for GstdDrivenService {
-    fn clone(&self) -> Self {
-        Self(PhantomData)
-    }
-}
-
-impl<X> Service<X> {
+impl RolesService {
     pub fn seed() -> Self {
         let _res = RolesStorage::default();
         debug_assert!(_res.is_ok());
@@ -45,7 +37,7 @@ impl<X> Service<X> {
         let _res = RolesRegistryStorage::default();
         debug_assert!(_res.is_ok());
 
-        Self(PhantomData)
+        Self {}
     }
 
     pub fn register_role<T: Role>(&mut self) -> Result<()> {
@@ -103,7 +95,7 @@ impl<X> Service<X> {
     }
 }
 
-impl<X: EventTrigger<Event>> Service<X> {
+impl RolesService {
     pub fn grant_role<T: Role>(&mut self, actor: ActorId) -> bool {
         let mutated = services::utils::panicking(move || -> Result<bool> {
             self.ensure_role_registered::<T>()?;
@@ -116,8 +108,9 @@ impl<X: EventTrigger<Event>> Service<X> {
     }
 
     pub fn remove_role<T: Role>(&mut self, actor: ActorId) -> bool {
+        let cloned = self.clone();
         let mutated = services::utils::panicking(move || -> Result<bool> {
-            self.ensure_role_registered::<T>()?;
+            cloned.ensure_role_registered::<T>()?;
 
             let res = funcs::remove_role::<T>(RolesStorage::as_mut(), actor);
 
@@ -125,23 +118,21 @@ impl<X: EventTrigger<Event>> Service<X> {
         });
 
         if mutated {
-            services::utils::deposit_event(Event::RoleRemoved {
+            self.notify_on(Event::RoleRemoved {
                 actor: actor.into(),
                 role: T::name().to_string(),
             })
+            .unwrap();
         }
 
         mutated
     }
 }
 
-#[gservice]
-impl<X> Service<X>
-where
-    X: EventTrigger<Event>,
-{
+#[gservice(events=Event)]
+impl RolesService {
     pub fn new() -> Self {
-        Self(PhantomData)
+        Self {}
     }
 
     pub fn has_role(&self, actor: sails_rtl::ActorId, role: String) -> bool {
