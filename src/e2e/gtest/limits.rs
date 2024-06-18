@@ -2,9 +2,7 @@ use crate::test_helpers::gtest::*;
 
 use contracts::*;
 use decimal::*;
-use gstd::*;
 use gtest::*;
-use io::*;
 use math::{
     get_delta_x, get_delta_y,
     liquidity::Liquidity,
@@ -13,6 +11,7 @@ use math::{
     token_amount::TokenAmount,
     MAX_SQRT_PRICE, MAX_TICK, MIN_SQRT_PRICE,
 };
+use sails_rtl::ActorId;
 
 #[test]
 fn test_limits_big_deposit_x_and_swap_y() {
@@ -49,25 +48,23 @@ fn test_limits_big_deposit_both_tokens() {
 
     let fee_tier = FeeTier::new(Percentage::from_scale(6, 3), 1).unwrap();
 
-    invariant
-        .send(ADMIN, InvariantAction::AddFeeTier(fee_tier))
-        .assert_success();
+    add_fee_tier(&invariant, ADMIN, fee_tier).assert_success();
 
     let init_tick = 0;
     let init_sqrt_price = calculate_sqrt_price(init_tick).unwrap();
 
-    invariant
-        .send(
-            REGULAR_USER_1,
-            InvariantAction::CreatePool {
-                token_0: token_x,
-                token_1: token_y,
-                fee_tier,
-                init_sqrt_price,
-                init_tick,
-            },
-        )
-        .assert_success();
+    let _res = create_pool(
+        &invariant,
+        REGULAR_USER_1,
+        token_x,
+        token_y,
+        fee_tier,
+        init_sqrt_price,
+        init_tick,
+    )
+    .assert_single_event()
+    .assert_empty()
+    .assert_to(REGULAR_USER_1);
 
     let lower_tick = -(fee_tier.tick_spacing as i32);
     let upper_tick = fee_tier.tick_spacing as i32;
@@ -111,19 +108,17 @@ fn test_limits_big_deposit_both_tokens() {
     )
     .unwrap();
 
-    invariant
-        .send(
-            REGULAR_USER_1,
-            InvariantAction::CreatePosition {
-                pool_key,
-                lower_tick,
-                upper_tick,
-                liquidity_delta,
-                slippage_limit_lower,
-                slippage_limit_upper,
-            },
-        )
-        .assert_success();
+    create_position(
+        &invariant,
+        REGULAR_USER_1,
+        pool_key,
+        lower_tick,
+        upper_tick,
+        liquidity_delta,
+        slippage_limit_lower,
+        slippage_limit_upper,
+    )
+    .assert_success();
 
     withdraw_token_pair(
         &invariant,
@@ -165,25 +160,23 @@ fn test_deposit_limits_at_upper_limit() {
 
     let fee_tier = FeeTier::new(Percentage::from_scale(6, 3), 1).unwrap();
 
-    invariant
-        .send(ADMIN, InvariantAction::AddFeeTier(fee_tier))
-        .assert_success();
+    add_fee_tier(&invariant, ADMIN, fee_tier).assert_success();
 
     let init_tick = get_max_tick(1);
     let init_sqrt_price = calculate_sqrt_price(init_tick).unwrap();
 
-    invariant
-        .send(
-            REGULAR_USER_1,
-            InvariantAction::CreatePool {
-                token_0: token_x,
-                token_1: token_y,
-                fee_tier,
-                init_sqrt_price,
-                init_tick,
-            },
-        )
-        .assert_success();
+    let _res = create_pool(
+        &invariant,
+        REGULAR_USER_1,
+        token_x,
+        token_y,
+        fee_tier,
+        init_sqrt_price,
+        init_tick,
+    )
+    .assert_single_event()
+    .assert_empty()
+    .assert_to(REGULAR_USER_1);
 
     let pool = get_pool(&invariant, token_x, token_y, fee_tier).unwrap();
     assert_eq!(pool.current_tick_index, init_tick);
@@ -216,19 +209,17 @@ fn test_deposit_limits_at_upper_limit() {
     )
     .unwrap();
 
-    invariant
-        .send(
-            REGULAR_USER_1,
-            InvariantAction::CreatePosition {
-                pool_key,
-                lower_tick: 0,
-                upper_tick: MAX_TICK,
-                liquidity_delta,
-                slippage_limit_lower,
-                slippage_limit_upper,
-            },
-        )
-        .assert_success();
+    create_position(
+        &invariant,
+        REGULAR_USER_1,
+        pool_key,
+        0,
+        MAX_TICK,
+        liquidity_delta,
+        slippage_limit_lower,
+        slippage_limit_upper,
+    )
+    .assert_success();
 }
 
 #[test]
@@ -248,24 +239,22 @@ fn test_limits_big_deposit_and_swaps() {
 
     let fee_tier = FeeTier::new(Percentage::from_scale(6, 3), 1).unwrap();
 
-    invariant
-        .send(ADMIN, InvariantAction::AddFeeTier(fee_tier))
-        .assert_success();
+    add_fee_tier(&invariant, ADMIN, fee_tier).assert_success();
 
     let init_tick = 0;
     let init_sqrt_price = calculate_sqrt_price(init_tick).unwrap();
-    invariant
-        .send(
-            REGULAR_USER_1,
-            InvariantAction::CreatePool {
-                token_0: token_x,
-                token_1: token_y,
-                fee_tier,
-                init_sqrt_price,
-                init_tick,
-            },
-        )
-        .assert_success();
+    let _res = create_pool(
+        &invariant,
+        REGULAR_USER_1,
+        token_x,
+        token_y,
+        fee_tier,
+        init_sqrt_price,
+        init_tick,
+    )
+    .assert_single_event()
+    .assert_empty()
+    .assert_to(REGULAR_USER_1);
 
     let pos_amount = mint_amount / 2;
     let lower_tick = -(fee_tier.tick_spacing as i32);
@@ -305,19 +294,17 @@ fn test_limits_big_deposit_and_swaps() {
     )
     .unwrap();
 
-    invariant
-        .send(
-            REGULAR_USER_1,
-            InvariantAction::CreatePosition {
-                pool_key,
-                lower_tick,
-                upper_tick,
-                liquidity_delta,
-                slippage_limit_lower,
-                slippage_limit_upper,
-            },
-        )
-        .assert_success();
+    create_position(
+        &invariant,
+        REGULAR_USER_1,
+        pool_key,
+        lower_tick,
+        upper_tick,
+        liquidity_delta,
+        slippage_limit_lower,
+        slippage_limit_upper,
+    )
+    .assert_success();
 
     withdraw_token_pair(
         &invariant,
@@ -375,18 +362,16 @@ fn test_limits_big_deposit_and_swaps() {
             (false, SqrtPrice::new(MAX_SQRT_PRICE))
         };
 
-        invariant
-            .send(
-                REGULAR_USER_1,
-                InvariantAction::Swap {
-                    pool_key,
-                    x_to_y: i % 2 == 0,
-                    amount: swap_amount,
-                    by_amount_in: true,
-                    sqrt_price_limit,
-                },
-            )
-            .assert_success();
+        swap(
+            &invariant,
+            REGULAR_USER_1,
+            pool_key,
+            i % 2 == 0,
+            swap_amount,
+            true,
+            sqrt_price_limit,
+        )
+        .assert_success();
     }
 }
 
@@ -409,25 +394,23 @@ fn test_limits_full_range_with_max_liquidity() {
         .assert_success();
 
     let fee_tier = FeeTier::new(Percentage::from_scale(6, 3), 1).unwrap();
-    invariant
-        .send(ADMIN, InvariantAction::AddFeeTier(fee_tier))
-        .assert_success();
+    add_fee_tier(&invariant, ADMIN, fee_tier).assert_success();
 
     let init_tick = get_max_tick(1);
     let init_sqrt_price = calculate_sqrt_price(init_tick).unwrap();
 
-    invariant
-        .send(
-            REGULAR_USER_1,
-            InvariantAction::CreatePool {
-                token_0: token_x,
-                token_1: token_y,
-                fee_tier,
-                init_sqrt_price,
-                init_tick,
-            },
-        )
-        .assert_success();
+    let _res = create_pool(
+        &invariant,
+        REGULAR_USER_1,
+        token_x,
+        token_y,
+        fee_tier,
+        init_sqrt_price,
+        init_tick,
+    )
+    .assert_single_event()
+    .assert_empty()
+    .assert_to(REGULAR_USER_1);
 
     let pool = get_pool(&invariant, token_x, token_y, fee_tier).unwrap();
     assert_eq!(pool.current_tick_index, init_tick);
@@ -449,19 +432,17 @@ fn test_limits_full_range_with_max_liquidity() {
     )
     .unwrap();
 
-    invariant
-        .send(
-            REGULAR_USER_1,
-            InvariantAction::CreatePosition {
-                pool_key,
-                lower_tick: -MAX_TICK,
-                upper_tick: MAX_TICK,
-                liquidity_delta,
-                slippage_limit_lower,
-                slippage_limit_upper,
-            },
-        )
-        .assert_success();
+    create_position(
+        &invariant,
+        REGULAR_USER_1,
+        pool_key,
+        -MAX_TICK,
+        MAX_TICK,
+        liquidity_delta,
+        slippage_limit_lower,
+        slippage_limit_upper,
+    )
+    .assert_success();
 
     withdraw_token_pair(
         &invariant,

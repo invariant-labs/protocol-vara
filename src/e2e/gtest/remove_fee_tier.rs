@@ -3,9 +3,7 @@ use crate::test_helpers::gtest::*;
 
 use contracts::*;
 use decimal::*;
-use gstd::*;
 use gtest::*;
-use io::*;
 use math::percentage::Percentage;
 #[test]
 fn test_remove_fee_tier() {
@@ -15,11 +13,13 @@ fn test_remove_fee_tier() {
     let invariant = init_invariant(&sys, Percentage(100));
 
     let fee_tier = FeeTier::new(Percentage::from_scale(2, 4), 1).unwrap();
-    let res = invariant.send(ADMIN, InvariantAction::AddFeeTier(fee_tier));
-    assert!(res.events_eq(vec![TestEvent::empty_invariant_response(ADMIN)]));
+    let res = add_fee_tier(&invariant, ADMIN, fee_tier);
+    res.assert_single_event().assert_empty().assert_to(ADMIN);
 
-    let res = invariant.send(ADMIN, InvariantAction::RemoveFeeTier(fee_tier));
-    assert!(res.events_eq(vec![TestEvent::empty_invariant_response(ADMIN)]));
+    remove_fee_tier(&invariant, ADMIN, fee_tier)
+        .assert_single_event()
+        .assert_empty()
+        .assert_to(ADMIN);
 
     assert!(!fee_tier_exists(&invariant, fee_tier));
 }
@@ -29,14 +29,11 @@ fn remove_not_existing_fee_tier() {
     let sys = System::new();
     sys.init_logger();
 
-    let mut invariant = init_invariant(&sys, Percentage(100));
+    let invariant = init_invariant(&sys, Percentage(100));
 
     let fee_tier = FeeTier::new(Percentage::from_scale(2, 4), 1).unwrap();
-    let _res = invariant.send_and_assert_panic(
-        ADMIN,
-        InvariantAction::RemoveFeeTier(fee_tier),
-        InvariantError::FeeTierNotFound,
-    );
+    remove_fee_tier(&invariant, ADMIN, fee_tier)
+        .assert_panicked_with(InvariantError::FeeTierNotFound);
 }
 
 #[test]
@@ -44,15 +41,12 @@ fn test_remove_fee_tier_not_admin() {
     let sys = System::new();
     sys.init_logger();
 
-    let mut invariant = init_invariant(&sys, Percentage(100));
+    let invariant = init_invariant(&sys, Percentage(100));
 
     let fee_tier = FeeTier::new(Percentage::from_scale(2, 4), 1).unwrap();
-    let res = invariant.send(ADMIN, InvariantAction::AddFeeTier(fee_tier));
-    assert!(res.events_eq(vec![TestEvent::empty_invariant_response(ADMIN)]));
+    let res = add_fee_tier(&invariant, ADMIN, fee_tier);
+    res.assert_single_event().assert_empty().assert_to(ADMIN);
 
-    let _res = invariant.send_and_assert_panic(
-        REGULAR_USER_1,
-        InvariantAction::RemoveFeeTier(fee_tier),
-        InvariantError::NotAdmin,
-    );
+    remove_fee_tier(&invariant, REGULAR_USER_1, fee_tier)
+        .assert_panicked_with(InvariantError::NotAdmin);
 }

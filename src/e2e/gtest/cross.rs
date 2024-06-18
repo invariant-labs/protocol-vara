@@ -1,9 +1,9 @@
 use crate::test_helpers::gtest::*;
 use contracts::*;
 use decimal::*;
-use gstd::{prelude::*, ActorId};
 use gtest::*;
 use math::{fee_growth::FeeGrowth, liquidity::Liquidity, percentage::Percentage};
+use sails_rtl::ActorId;
 #[test]
 fn test_cross() {
     let sys = System::new();

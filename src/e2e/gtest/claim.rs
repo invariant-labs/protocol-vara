@@ -2,10 +2,9 @@ use crate::test_helpers::gtest::*;
 
 use contracts::*;
 use decimal::*;
-use gstd::*;
 use gtest::*;
-use io::*;
 use math::{percentage::Percentage, token_amount::TokenAmount};
+use sails_rtl::ActorId;
 
 #[test]
 fn test_claim() {
@@ -30,15 +29,21 @@ fn test_claim() {
 
     assert_eq!(get_user_balances(&invariant, REGULAR_USER_1), vec![]);
 
-    invariant
-        .send(REGULAR_USER_1, InvariantAction::ClaimFee { position_id: 0 })
-        .assert_success();
-
     let expected_tokens_claimed = 5;
-    
+    assert_eq!(
+        expected_tokens_claimed,
+        claim_fee(&invariant, REGULAR_USER_1, 0, None::<InvariantError>)
+            .unwrap()
+            .0
+            .get()
+    );
+
     assert_eq!(
         get_user_balances(&invariant, REGULAR_USER_1),
-        vec![(ActorId::from(TOKEN_X_ID), TokenAmount(expected_tokens_claimed))]
+        vec![(
+            ActorId::from(TOKEN_X_ID),
+            TokenAmount(expected_tokens_claimed)
+        )]
     );
     assert_eq!(
         withdraw_single_token(&invariant, REGULAR_USER_1, TOKEN_X_ID, None, None::<&str>),
@@ -70,16 +75,17 @@ fn test_claim_not_owner() {
     let token_x = ActorId::from(TOKEN_X_ID);
     let token_y = ActorId::from(TOKEN_Y_ID);
 
-    let mut invariant = init_invariant(&sys, Percentage::from_scale(1, 2));
+    let invariant = init_invariant(&sys, Percentage::from_scale(1, 2));
     let (token_x_program, token_y_program) = init_tokens(&sys);
 
     init_basic_pool(&invariant, &token_x, &token_y);
     init_basic_position(&sys, &invariant, &token_x_program, &token_y_program);
     init_basic_swap(&sys, &invariant, &token_x_program, &token_y_program);
 
-    let _res = invariant.send_and_assert_panic(
+    claim_fee(
+        &invariant,
         REGULAR_USER_2,
-        InvariantAction::ClaimFee { position_id: 0 },
-        InvariantError::PositionNotFound,
+        0,
+        InvariantError::PositionNotFound.into(),
     );
 }

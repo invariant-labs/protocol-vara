@@ -3,17 +3,16 @@ use io::InvariantConfig;
 use sails_rtl::gstd::{gprogram, GStdExecContext};
 mod invariant_service;
 mod invariant_storage;
+pub use contracts::{
+    AwaitingTransfer, FeeTier, FeeTiers, InvariantError, Pool, PoolKey, PoolKeys, Pools, Position,
+    Positions, Tick, Tickmap, Ticks, TransferType, UpdatePoolTick,
+};
+use gstd::exec::program_id;
 use invariant_service::InvariantService;
 use invariant_storage::InvariantStorage;
-pub use contracts::{
-  FeeTier, FeeTiers, InvariantError, Pool, PoolKey, PoolKeys, Pools, Position, Positions, Tick,
-  Tickmap, Ticks, UpdatePoolTick, TransferType, AwaitingTransfer,
-};
-use sails_rtl::{ActorId, MessageId};
 use sails_rtl::{gstd::msg, String};
-use gstd::exec::program_id;
+use sails_rtl::{ActorId, MessageId};
 
-//type ServiceOf<T> = <T as sails_rtl::gstd::services::Service>::Exposure;
 pub fn signal_handler() {
     if program_id() == msg::source().into() {
         return;
@@ -165,7 +164,7 @@ pub fn reply_and_signal_handler() {
 }
 pub struct InvariantProgram(());
 
-#[cfg_attr(feature = "test", gprogram(handle_reply = reply_handler, handle_signal = signal_handler))]
+#[cfg_attr(feature = "test", gprogram(handle_reply = reply_and_signal_handler))]
 #[cfg_attr(not(feature = "test"), gprogram(handle_reply = reply_handler, handle_signal = signal_handler))]
 impl InvariantProgram {
     pub fn new(config: InvariantConfig) -> Self {

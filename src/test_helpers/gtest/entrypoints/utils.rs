@@ -2,10 +2,14 @@ extern crate std;
 
 use crate::test_helpers::gtest::consts::*;
 pub use crate::test_helpers::utils::pools_are_identical_no_timestamp;
-use contracts::InvariantError;
-use gstd::{codec::decode_from_bytes, codec::Codec, *};
+use contracts::*;
+use gstd::{codec::decode_from_bytes, codec::Codec, fmt::Debug, *};
 use gtest::{CoreLog, Program, RunResult};
 use io::*;
+use math::{
+    liquidity::Liquidity, percentage::Percentage, sqrt_price::SqrtPrice, token_amount::TokenAmount,
+};
+use sails_rtl::hex::decode;
 use std::println;
 
 pub type ProgramId = [u8; 32];
@@ -17,21 +21,24 @@ pub trait InvariantResult {
     fn events_eq(&self, expected: Vec<TestEvent>) -> bool;
     #[track_caller]
     fn assert_success(&self);
+    #[track_caller]
+    fn assert_single_event(&self) -> TestEvent {
+        self.assert_success();
+        assert_eq!(self.emitted_events().len(), 1);
+        self.emitted_events().last().unwrap().clone()
+    }
+    #[track_caller]
+    fn last_event(&self) -> TestEvent {
+        self.emitted_events().last().unwrap().clone()
+    }
 }
-pub trait RevertibleProgram {
+pub trait TestProgram {
     #[track_caller]
     fn send_and_assert_panic<'a>(
         &'a mut self,
         from: u64,
         payload: impl Codec,
         error: impl Into<String>,
-    ) -> RunResult;
-    #[track_caller]
-    fn send_and_assert_error<'a>(
-        &'a mut self,
-        from: u64,
-        payload: impl Codec,
-        error: InvariantError,
     ) -> RunResult;
 }
 
@@ -66,8 +73,24 @@ impl TestEvent {
             destination: ActorId::from(destination).into(),
         }
     }
-    pub fn empty_invariant_response(destination: u64) -> Self {
-        Self::empty_event(INVARIANT_ID, destination)
+    #[track_caller]
+    pub fn assert_empty(&self) -> &Self {
+        self.assert_with_payload(())
+    }
+    #[track_caller]
+    pub fn assert_to(&self, destination: u64) -> &Self {
+        assert_eq!(ActorId::from(self.destination), ActorId::from(destination));
+        self
+    }
+    #[track_caller]
+    pub fn assert_with_payload<T: Encode + Decode + Debug + PartialEq>(&self, payload: T) -> &Self {
+        assert_eq!(
+            <(String, String, T)>::decode(&mut self.payload.as_slice())
+                .unwrap()
+                .2,
+            payload
+        );
+        self
     }
 }
 
@@ -92,6 +115,7 @@ impl InvariantResult for RunResult {
             .map(TestEvent::from)
             .collect()
     }
+
     #[track_caller]
     #[must_use]
     fn events_eq(&self, expected_events: Vec<TestEvent>) -> bool {
@@ -132,15 +156,17 @@ impl InvariantResult for RunResult {
                 return false;
             }
 
-            if returned.payload != expected.payload {
+            let prefix = <(String, String)>::decode(&mut returned.payload.as_slice()).unwrap();
+            let returned_payload = &returned.payload[(prefix.encode().len() - 1)..].to_vec();
+            if returned_payload != &expected.payload {
                 let decoded_expected =
                     decode_from_bytes::<InvariantEvent>(expected.clone().payload.into());
                 if decoded_expected.is_ok() {
-                    match decode_from_bytes::<InvariantEvent>(returned.clone().payload.into()) {
+                    match decode_from_bytes::<InvariantEvent>(returned_payload.clone().into()) {
                         Err(e) => std::println!(
                             "Error decoding event: {:?}, event data: {:?}",
                             e,
-                            returned
+                            returned_payload
                         ),
                         Ok(decoded) => {
                             let decoded_expected = decoded_expected.unwrap();
@@ -156,7 +182,7 @@ impl InvariantResult for RunResult {
                     std::println!(
                         "mismatched payloads: expected {:?}\n got {:?}",
                         expected.payload,
-                        returned.payload
+                        returned_payload
                     );
                 }
             }
@@ -170,18 +196,11 @@ impl InvariantResult for RunResult {
             self.assert_panicked_with(
                 "message used to get the actual error message in case of an unexpected panic",
             );
-        } else if let Some(event) = self.emitted_events().last() {
-            if let Ok(inv_event) = decode_from_bytes::<InvariantEvent>(event.payload.clone().into())
-            {
-                if let InvariantEvent::ActionFailed(error) = inv_event {
-                    panic!("Unexpected error: {:?}", error)
-                }
-            }
         }
     }
 }
 
-impl RevertibleProgram for Program<'_> {
+impl TestProgram for Program<'_> {
     #[track_caller]
     fn send_and_assert_panic<'a>(
         &'a mut self,
@@ -193,28 +212,53 @@ impl RevertibleProgram for Program<'_> {
         res.assert_panicked_with(error.into());
         res
     }
-    #[track_caller]
-    fn send_and_assert_error<'a>(
-        &'a mut self,
-        from: u64,
-        payload: impl Codec,
-        error: InvariantError,
-    ) -> RunResult {
-        let res = self.send(from, payload);
-        if let Some(event) = res.emitted_events().last() {
-            if let Ok(inv_event) = decode_from_bytes::<InvariantEvent>(event.payload.clone().into())
-            {
-                if let InvariantEvent::ActionFailed(inv_error) = inv_event {
-                    assert_eq!(inv_error, error)
-                }
-                else {
-                    panic!("Invalid Event {:?}", inv_event)
-                }
-            }
-            else {
-                panic!("Unexpected event: {:?}", event)
-            }
-        }
-        res
-    }
+}
+
+// Event structs are necessary since the enum id is dropped when encoding
+#[derive(Clone, Debug, PartialEq, Eq, Encode, Decode, TypeInfo)]
+#[codec(crate = gstd::codec)]
+#[scale_info(crate = gstd::scale_info)]
+pub struct PositionCreatedEvent {
+    pub block_timestamp: u64,
+    pub address: ActorId,
+    pub pool_key: PoolKey,
+    pub liquidity_delta: Liquidity,
+    pub lower_tick: i32,
+    pub upper_tick: i32,
+    pub current_sqrt_price: SqrtPrice,
+}
+#[derive(Clone, Debug, PartialEq, Eq, Encode, Decode, TypeInfo)]
+#[codec(crate = gstd::codec)]
+#[scale_info(crate = gstd::scale_info)]
+pub struct PositionRemovedEvent {
+    pub block_timestamp: u64,
+    pub caller: ActorId,
+    pub pool_key: PoolKey,
+    pub liquidity: Liquidity,
+    pub lower_tick_index: i32,
+    pub upper_tick_index: i32,
+    pub sqrt_price: SqrtPrice,
+}
+#[derive(Clone, Debug, PartialEq, Eq, Encode, Decode, TypeInfo)]
+#[codec(crate = gstd::codec)]
+#[scale_info(crate = gstd::scale_info)]
+pub struct CrossTickEvent {
+    pub timestamp: u64,
+    pub address: ActorId,
+    pub pool: PoolKey,
+    pub indexes: Vec<i32>,
+}
+#[derive(Clone, Debug, PartialEq, Eq, Encode, Decode, TypeInfo)]
+#[codec(crate = gstd::codec)]
+#[scale_info(crate = gstd::scale_info)]
+pub struct SwapEvent {
+    pub timestamp: u64,
+    pub address: ActorId,
+    pub pool: PoolKey,
+    pub amount_in: TokenAmount,
+    pub amount_out: TokenAmount,
+    pub fee: TokenAmount,
+    pub start_sqrt_price: SqrtPrice,
+    pub target_sqrt_price: SqrtPrice,
+    pub x_to_y: bool,
 }

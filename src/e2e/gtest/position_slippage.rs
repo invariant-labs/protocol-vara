@@ -1,10 +1,10 @@
 use crate::test_helpers::gtest::*;
 use contracts::*;
 use decimal::*;
-use gstd::{prelude::*, ActorId};
+use gstd::prelude::*;
 use gtest::*;
-use io::InvariantAction;
 use math::{liquidity::Liquidity, sqrt_price::SqrtPrice};
+use sails_rtl::ActorId;
 
 #[test]
 fn test_position_slippage_zero_slippage_and_inside_range() {
@@ -42,19 +42,17 @@ fn test_position_slippage_zero_slippage_and_inside_range() {
         let known_price = pool.sqrt_price;
         let tick = pool_key.fee_tier.tick_spacing as i32;
 
-        invariant
-            .send(
-                REGULAR_USER_1,
-                InvariantAction::CreatePosition {
-                    pool_key,
-                    lower_tick: -tick,
-                    upper_tick: tick,
-                    liquidity_delta,
-                    slippage_limit_lower: known_price,
-                    slippage_limit_upper: known_price,
-                },
-            )
-            .assert_success();
+        create_position(
+            &invariant,
+            REGULAR_USER_1,
+            pool_key,
+            -tick,
+            tick,
+            liquidity_delta,
+            known_price,
+            known_price,
+        )
+        .assert_success();
     };
 
     // inside range
@@ -65,26 +63,23 @@ fn test_position_slippage_zero_slippage_and_inside_range() {
 
         let tick = pool_key.fee_tier.tick_spacing as i32;
 
-        invariant
-            .send(
-                REGULAR_USER_1,
-                InvariantAction::CreatePosition {
-                    pool_key,
-                    lower_tick: -tick,
-                    upper_tick: tick,
-                    liquidity_delta,
-                    slippage_limit_lower: limit_lower,
-                    slippage_limit_upper: limit_upper,
-                },
-            )
-            .assert_success();
+        create_position(
+            &invariant,
+            REGULAR_USER_1,
+            pool_key,
+            -tick,
+            tick,
+            liquidity_delta,
+            limit_lower,
+            limit_upper,
+        )
+        .assert_success();
     }
 }
 #[test]
 fn test_position_slippage_below_range() {
     let sys = System::new();
-    let (mut invariant, token_x_program, token_y_program) =
-        init_slippage_invariant_and_tokens(&sys);
+    let (invariant, token_x_program, token_y_program) = init_slippage_invariant_and_tokens(&sys);
     let token_x = ActorId::from(TOKEN_X_ID);
     let token_y = ActorId::from(TOKEN_Y_ID);
 
@@ -98,18 +93,17 @@ fn test_position_slippage_below_range() {
     let limit_upper = SqrtPrice::new(1045335831204498605270797);
     let tick = pool_key.fee_tier.tick_spacing as i32;
 
-    let _res = invariant.send_and_assert_panic(
+    create_position(
+        &invariant,
         REGULAR_USER_1,
-        InvariantAction::CreatePosition {
-            pool_key,
-            lower_tick: -tick,
-            upper_tick: tick,
-            liquidity_delta,
-            slippage_limit_lower: limit_lower,
-            slippage_limit_upper: limit_upper,
-        },
-        InvariantError::PriceLimitReached,
-    );
+        pool_key,
+        -tick,
+        tick,
+        liquidity_delta,
+        limit_lower,
+        limit_upper,
+    )
+    .assert_panicked_with(InvariantError::PriceLimitReached);
 
     let _lower_tick = get_tick(&invariant, pool_key, -tick).unwrap_err();
     let _upper_tick = get_tick(&invariant, pool_key, tick).unwrap_err();
@@ -118,8 +112,7 @@ fn test_position_slippage_below_range() {
 #[test]
 fn test_position_slippage_above_range() {
     let sys = System::new();
-    let (mut invariant, token_x_program, token_y_program) =
-        init_slippage_invariant_and_tokens(&sys);
+    let (invariant, token_x_program, token_y_program) = init_slippage_invariant_and_tokens(&sys);
     let token_x = ActorId::from(TOKEN_X_ID);
     let token_y = ActorId::from(TOKEN_Y_ID);
 
@@ -133,18 +126,17 @@ fn test_position_slippage_above_range() {
     let limit_upper = SqrtPrice::new(984442481813945288458906);
     let tick = pool_key.fee_tier.tick_spacing as i32;
 
-    let _res = invariant.send_and_assert_panic(
+    create_position(
+        &invariant,
         REGULAR_USER_1,
-        InvariantAction::CreatePosition {
-            pool_key,
-            lower_tick: -tick,
-            upper_tick: tick,
-            liquidity_delta,
-            slippage_limit_lower: limit_lower,
-            slippage_limit_upper: limit_upper,
-        },
-        InvariantError::PriceLimitReached,
-    );
+        pool_key,
+        -tick,
+        tick,
+        liquidity_delta,
+        limit_lower,
+        limit_upper,
+    )
+    .assert_panicked_with(InvariantError::PriceLimitReached);
 
     let _lower_tick = get_tick(&invariant, pool_key, -tick).unwrap_err();
     let _upper_tick = get_tick(&invariant, pool_key, tick).unwrap_err();

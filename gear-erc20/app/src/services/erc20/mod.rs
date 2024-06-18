@@ -3,9 +3,10 @@
 
 use crate::services;
 use core::{cmp::Ordering, fmt::Debug, marker::PhantomData};
-use gstd::{ext, format, msg, ActorId, Decode, Encode, String, TypeInfo, Vec};
+use gstd::{ext, format, Decode, Encode, String, TypeInfo, Vec};
 use primitive_types::U256;
-use sails_rtl::gstd::gservice;
+use sails_rtl::gstd::{gservice, msg};
+use sails_rtl::ActorId;
 #[cfg(feature = "test")]
 use storage::TransferFailStorage;
 use storage::{AllowancesStorage, BalancesStorage, MetaStorage, TotalSupplyStorage};
@@ -80,7 +81,7 @@ impl ERC20Service {
     }
 
     pub fn approve(&mut self, spender: sails_rtl::ActorId, value: U256) -> bool {
-        let owner = msg::source();
+        let owner = msg::source().into();
 
         let mutated = funcs::approve(AllowancesStorage::as_mut(), owner, spender.into(), value);
 
@@ -125,7 +126,7 @@ impl ERC20Service {
             }
         }
 
-        let from = msg::source();
+        let from = msg::source().into();
 
         let mutated = services::utils::panicking(move || {
             funcs::transfer(BalancesStorage::as_mut(), from, to.into(), value)
@@ -162,7 +163,7 @@ impl ERC20Service {
             }
         }
 
-        let spender = msg::source();
+        let spender = msg::source().into();
 
         let mutated = services::utils::panicking(move || {
             funcs::transfer_from(
@@ -188,7 +189,7 @@ impl ERC20Service {
 
     // TODO (breathx): delete me once multi services are implemented.
     pub fn set_balance(&mut self, new_balance: U256) -> bool {
-        let owner = msg::source();
+        let owner = msg::source().into();
 
         let balance = funcs::balance_of(BalancesStorage::as_ref(), owner);
 

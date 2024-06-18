@@ -10,3 +10,7 @@ invariant-app.workspace = true
 invariant-app.workspace = true
 gear-wasm-builder.workspace = true
 sails-idl-gen.workspace = true
+
+[features]
+default = []
+test = ["invariant-app/test"]

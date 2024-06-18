@@ -9,12 +9,8 @@ use futures;
 use gstd::{exec, format, prelude::*, String};
 use io::*;
 use math::{
-    check_tick,
-    liquidity::Liquidity,
-    percentage::Percentage,
-    sqrt_price::SqrtPrice,
-    token_amount::TokenAmount,
-    MAX_SQRT_PRICE, MIN_SQRT_PRICE,
+    check_tick, liquidity::Liquidity, percentage::Percentage, sqrt_price::SqrtPrice,
+    token_amount::TokenAmount, MAX_SQRT_PRICE, MIN_SQRT_PRICE,
 };
 use sails_rtl::gstd::{
     gservice,
@@ -26,6 +22,32 @@ use sails_rtl::{ActorId, Decode, Encode, MessageId};
 fn program_id() -> ActorId {
     exec::program_id().into()
 }
+pub fn panic(err: InvariantError) -> ! {
+    let str: String = err.into();
+    panic!("{}", str)
+}
+
+macro_rules! panicking {
+    ($expr:expr) => {{
+        let result: Result<_, InvariantError> = $expr();
+        match result {
+            Ok(value) => value,
+            Err(e) => panic(e),
+        }
+    }};
+}
+
+macro_rules! panicking_async {
+    ($expr:expr) => {{
+        let result: Result<_, InvariantError> = $expr().await;
+        match result {
+            Ok(value) => value,
+            Err(e) => panic(e),
+        }
+    }};
+}
+
+type TokenTransferResponse = (String, String, bool);
 
 // TODO: Update once the SDK tests are in place and proper measurement is possible
 pub const TRANSFER_GAS_LIMIT: u64 = 1_600_000_000 * 2;
@@ -44,7 +66,6 @@ impl<TExecContext> InvariantService<TExecContext> {
         InvariantStorage::with_config(config).expect("Invariant storage already set")
     }
 }
-type TokenTransferResponse = (String, String, bool);
 
 #[gservice(events=InvariantEvent)]
 impl<TExecContext> InvariantService<TExecContext>
@@ -55,56 +76,60 @@ where
         Self { exec_context }
     }
 
-    pub fn change_protocol_fee(
-        &mut self,
-        protocol_fee: Percentage,
-    ) -> Result<Percentage, InvariantError> {
-        let invariant = InvariantStorage::as_mut();
+    pub fn change_protocol_fee(&mut self, protocol_fee: Percentage) -> Percentage {
+        panicking!(move || {
+            let invariant = InvariantStorage::as_mut();
 
-        if !self.is_caller_admin(&invariant) {
-            return Err(InvariantError::NotAdmin);
-        }
+            if !self.is_caller_admin(&invariant) {
+                return Err(InvariantError::NotAdmin);
+            }
 
-        invariant.config.protocol_fee = protocol_fee;
-        Ok(invariant.config.protocol_fee)
+            invariant.config.protocol_fee = protocol_fee;
+
+            Ok(invariant.config.protocol_fee)
+        })
     }
 
     pub fn get_protocol_fee(&self) -> Percentage {
         InvariantStorage::as_ref().config.protocol_fee
     }
 
-    pub fn add_fee_tier(&mut self, fee_tier: FeeTier) -> Result<FeeTier, InvariantError> {
-        let invariant = InvariantStorage::as_mut();
+    pub fn add_fee_tier(&mut self, fee_tier: FeeTier) -> FeeTier {
+        panicking!(move || {
+            let invariant = InvariantStorage::as_mut();
 
-        if fee_tier.tick_spacing == 0 || fee_tier.tick_spacing > 100 {
-            return Err(InvariantError::InvalidTickSpacing);
-        }
+            if fee_tier.tick_spacing == 0 || fee_tier.tick_spacing > 100 {
+                return Err(InvariantError::InvalidTickSpacing);
+            }
 
-        if fee_tier.fee >= Percentage::from_integer(1) {
-            return Err(InvariantError::InvalidFee);
-        }
+            if fee_tier.fee >= Percentage::from_integer(1) {
+                return Err(InvariantError::InvalidFee);
+            }
 
-        if !self.is_caller_admin(&invariant) {
-            return Err(InvariantError::NotAdmin);
-        }
+            if !self.is_caller_admin(&invariant) {
+                return Err(InvariantError::NotAdmin);
+            }
 
-        invariant.fee_tiers.add(&fee_tier)?;
-        Ok(fee_tier)
+            invariant.fee_tiers.add(&fee_tier)?;
+            Ok(fee_tier)
+        })
     }
 
     pub fn fee_tier_exists(&self, fee_tier: FeeTier) -> bool {
         InvariantStorage::as_ref().fee_tiers.contains(&fee_tier)
     }
 
-    pub fn remove_fee_tier(&mut self, fee_tier: FeeTier) -> Result<FeeTier, InvariantError> {
-        let invariant = InvariantStorage::as_mut();
+    pub fn remove_fee_tier(&mut self, fee_tier: FeeTier) -> FeeTier {
+        panicking!(move || {
+            let invariant = InvariantStorage::as_mut();
 
-        if !self.is_caller_admin(&invariant) {
-            return Err(InvariantError::NotAdmin);
-        }
+            if !self.is_caller_admin(&invariant) {
+                return Err(InvariantError::NotAdmin);
+            }
 
-        invariant.fee_tiers.remove(&fee_tier)?;
-        Ok(fee_tier)
+            invariant.fee_tiers.remove(&fee_tier)?;
+            Ok(fee_tier)
+        })
     }
 
     pub fn get_fee_tiers(&self) -> Vec<FeeTier> {
@@ -118,34 +143,36 @@ where
         fee_tier: FeeTier,
         init_sqrt_price: SqrtPrice,
         init_tick: i32,
-    ) -> Result<(), InvariantError> {
-        let invariant = InvariantStorage::as_mut();
-        let current_timestamp = exec::block_timestamp();
+    ) {
+        panicking!(move || {
+            let invariant = InvariantStorage::as_mut();
+            let current_timestamp = exec::block_timestamp();
 
-        if !invariant.fee_tiers.contains(&fee_tier) {
-            return Err(InvariantError::FeeTierNotFound);
-        };
+            if !invariant.fee_tiers.contains(&fee_tier) {
+                return Err(InvariantError::FeeTierNotFound);
+            };
 
-        check_tick(init_tick, fee_tier.tick_spacing)
-            .map_err(|_| InvariantError::InvalidInitTick)?;
+            check_tick(init_tick, fee_tier.tick_spacing)
+                .map_err(|_| InvariantError::InvalidInitTick)?;
 
-        let pool_key = PoolKey::new(token_x, token_y, fee_tier)?;
+            let pool_key = PoolKey::new(token_x, token_y, fee_tier)?;
 
-        if invariant.pools.get(&pool_key).is_ok() {
-            return Err(InvariantError::PoolAlreadyExist);
-        };
+            if invariant.pools.get(&pool_key).is_ok() {
+                return Err(InvariantError::PoolAlreadyExist);
+            };
 
-        let pool = Pool::create(
-            init_sqrt_price,
-            init_tick,
-            current_timestamp,
-            fee_tier.tick_spacing,
-            invariant.config.admin,
-        )?;
-        invariant.pools.add(&pool_key, &pool)?;
-        invariant.pool_keys.add(&pool_key)?;
+            let pool = Pool::create(
+                init_sqrt_price,
+                init_tick,
+                current_timestamp,
+                fee_tier.tick_spacing,
+                invariant.config.admin,
+            )?;
+            invariant.pools.add(&pool_key, &pool)?;
+            invariant.pool_keys.add(&pool_key)?;
 
-        Ok(())
+            Ok(())
+        })
     }
 
     pub fn get_pool(
@@ -164,22 +191,20 @@ where
         InvariantStorage::as_ref().pool_keys.get_all(size, offset)
     }
 
-    pub fn change_fee_receiver(
-        &mut self,
-        pool_key: PoolKey,
-        fee_receiver: ActorId,
-    ) -> Result<(), InvariantError> {
-        let invariant = InvariantStorage::as_mut();
+    pub fn change_fee_receiver(&mut self, pool_key: PoolKey, fee_receiver: ActorId) {
+        panicking!(move || {
+            let invariant = InvariantStorage::as_mut();
 
-        if !self.is_caller_admin(&invariant) {
-            return Err(InvariantError::NotAdmin);
-        }
+            if !self.is_caller_admin(&invariant) {
+                return Err(InvariantError::NotAdmin);
+            }
 
-        let mut pool = invariant.pools.get(&pool_key)?;
-        pool.fee_receiver = fee_receiver;
-        invariant.pools.update(&pool_key, &pool)?;
+            let mut pool = invariant.pools.get(&pool_key)?;
+            pool.fee_receiver = fee_receiver;
+            invariant.pools.update(&pool_key, &pool)?;
 
-        Ok(())
+            Ok(())
+        })
     }
 
     pub fn create_position(
@@ -190,75 +215,79 @@ where
         liquidity_delta: Liquidity,
         slippage_limit_lower: SqrtPrice,
         slippage_limit_upper: SqrtPrice,
-    ) -> Result<Position, InvariantError> {
-        let invariant = InvariantStorage::as_mut();
+    ) -> Position {
+        panicking!(move || {
+            let invariant = InvariantStorage::as_mut();
 
-        let caller = self.exec_context.actor_id();
-        let current_timestamp = exec::block_timestamp();
-        let current_block_number = exec::block_height() as u64;
+            let caller = self.exec_context.actor_id();
+            let current_timestamp = exec::block_timestamp();
+            let current_block_number = exec::block_height() as u64;
 
-        // liquidity delta = 0 => return
-        if liquidity_delta == Liquidity::new(0) {
-            return Err(InvariantError::ZeroLiquidity);
-        }
+            // liquidity delta = 0 => return
+            if liquidity_delta == Liquidity::new(0) {
+                return Err(InvariantError::ZeroLiquidity);
+            }
 
-        if lower_tick == upper_tick {
-            return Err(InvariantError::InvalidTickIndex);
-        }
+            if lower_tick == upper_tick {
+                return Err(InvariantError::InvalidTickIndex);
+            }
 
-        let mut pool = invariant.pools.get(&pool_key)?;
+            let mut pool = invariant.pools.get(&pool_key)?;
 
-        let (mut lower_tick, should_add_lower) = invariant.get_or_create_tick(pool_key, lower_tick);
-        let (mut upper_tick, should_add_upper) = invariant.get_or_create_tick(pool_key, upper_tick);
+            let (mut lower_tick, should_add_lower) =
+                invariant.get_or_create_tick(pool_key, lower_tick);
+            let (mut upper_tick, should_add_upper) =
+                invariant.get_or_create_tick(pool_key, upper_tick);
 
-        let (position, x, y) = Position::create(
-            &mut pool,
-            pool_key,
-            &mut lower_tick,
-            &mut upper_tick,
-            current_timestamp,
-            liquidity_delta,
-            slippage_limit_lower,
-            slippage_limit_upper,
-            current_block_number,
-            pool_key.fee_tier.tick_spacing,
-        )?;
+            let (position, x, y) = Position::create(
+                &mut pool,
+                pool_key,
+                &mut lower_tick,
+                &mut upper_tick,
+                current_timestamp,
+                liquidity_delta,
+                slippage_limit_lower,
+                slippage_limit_upper,
+                current_block_number,
+                pool_key.fee_tier.tick_spacing,
+            )?;
 
-        invariant.decrease_token_balance(&pool_key.token_x, &caller, x.into())?;
-        invariant.decrease_token_balance(&pool_key.token_y, &caller, y.into())?;
+            invariant.decrease_token_balance(&pool_key.token_x, &caller, x.into())?;
+            invariant.decrease_token_balance(&pool_key.token_y, &caller, y.into())?;
 
-        invariant.pools.update(&pool_key, &pool)?;
+            invariant.pools.update(&pool_key, &pool)?;
 
-        invariant.positions.add(&caller, &position);
+            invariant.positions.add(&caller, &position);
 
-        if should_add_lower {
-            invariant.add_tick(pool_key, lower_tick)?;
-        } else {
-            invariant
-                .ticks
-                .update(pool_key, lower_tick.index, lower_tick)?;
-        }
+            if should_add_lower {
+                invariant.add_tick(pool_key, lower_tick)?;
+            } else {
+                invariant
+                    .ticks
+                    .update(pool_key, lower_tick.index, lower_tick)?;
+            }
 
-        if should_add_upper {
-            invariant.add_tick(pool_key, upper_tick)?;
-        } else {
-            invariant
-                .ticks
-                .update(pool_key, upper_tick.index, upper_tick)?;
-        }
+            if should_add_upper {
+                invariant.add_tick(pool_key, upper_tick)?;
+            } else {
+                invariant
+                    .ticks
+                    .update(pool_key, upper_tick.index, upper_tick)?;
+            }
 
-        self.notify_on(InvariantEvent::PositionCreatedEvent {
-            block_timestamp: exec::block_timestamp(),
-            address: self.exec_context.actor_id(),
-            pool_key,
-            liquidity_delta,
-            lower_tick: lower_tick.index,
-            upper_tick: upper_tick.index,
-            current_sqrt_price: pool.sqrt_price,
+            self.notify_on(InvariantEvent::PositionCreatedEvent {
+                block_timestamp: exec::block_timestamp(),
+                address: self.exec_context.actor_id(),
+                pool_key,
+                liquidity_delta,
+                lower_tick: lower_tick.index,
+                upper_tick: upper_tick.index,
+                current_sqrt_price: pool.sqrt_price,
+            })
+            .expect("Failed to notify on position created event");
+
+            Ok(position)
         })
-        .expect("Failed to notify on position created event");
-
-        Ok(position)
     }
 
     pub fn get_position(&self, owner_id: ActorId, index: u32) -> Result<Position, InvariantError> {
@@ -277,88 +306,85 @@ where
             .tickmap
             .get(index, key.fee_tier.tick_spacing, key)
     }
-    pub fn remove_position(
-        &mut self,
-        index: u32,
-    ) -> Result<(TokenAmount, TokenAmount), InvariantError> {
-        let invariant = InvariantStorage::as_mut();
+    pub fn remove_position(&mut self, index: u32) -> (TokenAmount, TokenAmount) {
+        panicking!(move || {
+            let invariant = InvariantStorage::as_mut();
 
-        let caller = self.exec_context.actor_id();
-        let current_timestamp = exec::block_timestamp();
+            let caller = self.exec_context.actor_id();
+            let current_timestamp = exec::block_timestamp();
 
-        let mut position = invariant.positions.get(&caller, index).cloned()?;
-        let Position {
-            pool_key,
-            lower_tick_index,
-            upper_tick_index,
-            liquidity: withdrawn_liquidity,
-            ..
-        } = position;
+            let mut position = invariant.positions.get(&caller, index).cloned()?;
+            let Position {
+                pool_key,
+                lower_tick_index,
+                upper_tick_index,
+                liquidity: withdrawn_liquidity,
+                ..
+            } = position;
 
-        let mut lower_tick = invariant.ticks.get(pool_key, lower_tick_index).cloned()?;
+            let mut lower_tick = invariant.ticks.get(pool_key, lower_tick_index).cloned()?;
 
-        let mut upper_tick = invariant.ticks.get(pool_key, upper_tick_index).cloned()?;
+            let mut upper_tick = invariant.ticks.get(pool_key, upper_tick_index).cloned()?;
 
-        let pool = &mut invariant.pools.get(&pool_key)?;
+            let pool = &mut invariant.pools.get(&pool_key)?;
 
-        let (amount_x, amount_y, remove_lower_tick, remove_upper_tick) = position.remove(
-            pool,
-            current_timestamp,
-            &mut lower_tick,
-            &mut upper_tick,
-            pool_key.fee_tier.tick_spacing,
-        );
+            let (amount_x, amount_y, remove_lower_tick, remove_upper_tick) = position.remove(
+                pool,
+                current_timestamp,
+                &mut lower_tick,
+                &mut upper_tick,
+                pool_key.fee_tier.tick_spacing,
+            );
 
-        invariant.pools.update(&pool_key, pool)?;
+            invariant.pools.update(&pool_key, pool)?;
 
-        if remove_lower_tick {
-            invariant.remove_tick(pool_key, lower_tick)?;
-        } else {
-            invariant
-                .ticks
-                .update(pool_key, lower_tick_index, lower_tick)?;
-        }
+            if remove_lower_tick {
+                invariant.remove_tick(pool_key, lower_tick)?;
+            } else {
+                invariant
+                    .ticks
+                    .update(pool_key, lower_tick_index, lower_tick)?;
+            }
 
-        if remove_upper_tick {
-            invariant.remove_tick(pool_key, upper_tick)?;
-        } else {
-            invariant
-                .ticks
-                .update(pool_key, upper_tick_index, upper_tick)?;
-        }
+            if remove_upper_tick {
+                invariant.remove_tick(pool_key, upper_tick)?;
+            } else {
+                invariant
+                    .ticks
+                    .update(pool_key, upper_tick_index, upper_tick)?;
+            }
 
-        invariant.positions.remove(&caller, index)?;
+            invariant.positions.remove(&caller, index)?;
 
-        let token_x = pool_key.token_x;
-        let token_y = pool_key.token_y;
+            let token_x = pool_key.token_x;
+            let token_y = pool_key.token_y;
 
-        invariant.increase_token_balance(&token_x, &caller, amount_x)?;
-        invariant.increase_token_balance(&token_y, &caller, amount_y)?;
+            invariant.increase_token_balance(&token_x, &caller, amount_x)?;
+            invariant.increase_token_balance(&token_y, &caller, amount_y)?;
 
-        self.notify_on(InvariantEvent::PositionRemovedEvent {
-            block_timestamp: exec::block_timestamp(),
-            caller: self.exec_context.actor_id(),
-            pool_key,
-            liquidity: withdrawn_liquidity,
-            lower_tick_index: lower_tick.index,
-            upper_tick_index: upper_tick.index,
-            sqrt_price: pool.sqrt_price,
+            self.notify_on(InvariantEvent::PositionRemovedEvent {
+                block_timestamp: exec::block_timestamp(),
+                caller: self.exec_context.actor_id(),
+                pool_key,
+                liquidity: withdrawn_liquidity,
+                lower_tick_index: lower_tick.index,
+                upper_tick_index: upper_tick.index,
+                sqrt_price: pool.sqrt_price,
+            })
+            .expect("Failed to notify on position removed event");
+
+            Ok((amount_x, amount_y))
         })
-        .expect("Failed to notify on position removed event");
-
-        Ok((amount_x, amount_y))
     }
 
-    pub fn transfer_position(
-        &mut self,
-        index: u32,
-        receiver: ActorId,
-    ) -> Result<(), InvariantError> {
-        InvariantStorage::as_mut().positions.transfer(
-            &self.exec_context.actor_id(),
-            index,
-            &receiver,
-        )
+    pub fn transfer_position(&mut self, index: u32, receiver: ActorId) {
+        panicking!(move || {
+            InvariantStorage::as_mut().positions.transfer(
+                &self.exec_context.actor_id(),
+                index,
+                &receiver,
+            )
+        })
     }
 
     pub fn get_all_positions(&self, owner_id: ActorId) -> Vec<Position> {
@@ -372,67 +398,74 @@ where
         amount: TokenAmount,
         by_amount_in: bool,
         sqrt_price_limit: SqrtPrice,
-    ) -> Result<CalculateSwapResult, InvariantError> {
-        let invariant = InvariantStorage::as_mut();
+    ) -> CalculateSwapResult {
+        panicking!(move || {
+            let invariant = InvariantStorage::as_mut();
 
-        let caller = self.exec_context.actor_id();
+            let caller = self.exec_context.actor_id();
 
-        let calculate_swap_result =
-            invariant.calculate_swap(pool_key, x_to_y, amount, by_amount_in, sqrt_price_limit)?;
+            let calculate_swap_result = invariant.calculate_swap(
+                pool_key,
+                x_to_y,
+                amount,
+                by_amount_in,
+                sqrt_price_limit,
+            )?;
 
-        let mut crossed_tick_indexes: Vec<i32> = vec![];
+            let mut crossed_tick_indexes: Vec<i32> = vec![];
 
-        for tick in calculate_swap_result.ticks.iter() {
-            crossed_tick_indexes.push(tick.index);
-            invariant.ticks.update(pool_key, tick.index, *tick)?;
-        }
+            for tick in calculate_swap_result.ticks.iter() {
+                crossed_tick_indexes.push(tick.index);
+                invariant.ticks.update(pool_key, tick.index, *tick)?;
+            }
 
-        invariant
-            .pools
-            .update(&pool_key, &calculate_swap_result.pool)?;
+            invariant
+                .pools
+                .update(&pool_key, &calculate_swap_result.pool)?;
 
-        let (swapped_token, returned_token) = if x_to_y {
-            (&pool_key.token_x, &pool_key.token_y)
-        } else {
-            (&pool_key.token_y, &pool_key.token_x)
-        };
+            let (swapped_token, returned_token) = if x_to_y {
+                (&pool_key.token_x, &pool_key.token_y)
+            } else {
+                (&pool_key.token_y, &pool_key.token_x)
+            };
 
-        invariant.decrease_token_balance(
-            &swapped_token,
-            &caller,
-            calculate_swap_result.amount_in.into(),
-        )?;
+            invariant.decrease_token_balance(
+                &swapped_token,
+                &caller,
+                calculate_swap_result.amount_in.into(),
+            )?;
 
-        invariant.increase_token_balance(
-            &returned_token,
-            &caller,
-            calculate_swap_result.amount_out.into(),
-        )?;
+            invariant.increase_token_balance(
+                &returned_token,
+                &caller,
+                calculate_swap_result.amount_out.into(),
+            )?;
 
-        if !crossed_tick_indexes.is_empty() {
-            self.notify_on(InvariantEvent::CrossTickEvent {
+            if !crossed_tick_indexes.is_empty() {
+                self.notify_on(InvariantEvent::CrossTickEvent {
+                    timestamp: exec::block_timestamp(),
+                    address: caller,
+                    pool: pool_key,
+                    indexes: crossed_tick_indexes,
+                })
+                .expect("Failed to notify on cross tick event");
+            }
+
+            self.notify_on(InvariantEvent::SwapEvent {
                 timestamp: exec::block_timestamp(),
                 address: caller,
                 pool: pool_key,
-                indexes: crossed_tick_indexes,
+                amount_in: calculate_swap_result.amount_in,
+                amount_out: calculate_swap_result.amount_out,
+                fee: calculate_swap_result.fee,
+                start_sqrt_price: calculate_swap_result.start_sqrt_price,
+                target_sqrt_price: calculate_swap_result.target_sqrt_price,
+                x_to_y,
             })
-            .expect("Failed to notify on cross tick event");
-        }
+            .expect("Failed to notify on swap event");
 
-        self.notify_on(InvariantEvent::SwapEvent {
-            timestamp: exec::block_timestamp(),
-            address: caller,
-            pool: pool_key,
-            amount_in: calculate_swap_result.amount_in,
-            amount_out: calculate_swap_result.amount_out,
-            fee: calculate_swap_result.fee,
-            start_sqrt_price: calculate_swap_result.start_sqrt_price,
-            target_sqrt_price: calculate_swap_result.target_sqrt_price,
-            x_to_y,
+            Ok(calculate_swap_result)
         })
-        .expect("Failed to notify on swap event");
-
-        Ok(calculate_swap_result)
     }
 
     pub fn quote(
@@ -457,7 +490,7 @@ where
     }
 
     pub fn quote_route(
-        &mut self,
+        &self,
         amount_in: TokenAmount,
         swaps: Vec<SwapHop>,
     ) -> Result<TokenAmount, InvariantError> {
@@ -495,66 +528,70 @@ where
         Ok(next_swap_amount)
     }
 
-    pub fn claim_fee(&mut self, index: u32) -> Result<(TokenAmount, TokenAmount), InvariantError> {
-        let invariant = InvariantStorage::as_mut();
+    pub fn claim_fee(&mut self, index: u32) -> (TokenAmount, TokenAmount) {
+        panicking!(move || {
+            let invariant = InvariantStorage::as_mut();
 
-        let caller = self.exec_context.actor_id();
-        let current_timestamp = exec::block_timestamp();
+            let caller = self.exec_context.actor_id();
+            let current_timestamp = exec::block_timestamp();
 
-        let mut position = invariant.positions.get(&caller, index).cloned()?;
+            let mut position = invariant.positions.get(&caller, index).cloned()?;
 
-        let mut lower_tick = invariant
-            .ticks
-            .get(position.pool_key, position.lower_tick_index)
-            .cloned()?;
+            let mut lower_tick = invariant
+                .ticks
+                .get(position.pool_key, position.lower_tick_index)
+                .cloned()?;
 
-        let mut upper_tick = invariant
-            .ticks
-            .get(position.pool_key, position.upper_tick_index)
-            .cloned()?;
+            let mut upper_tick = invariant
+                .ticks
+                .get(position.pool_key, position.upper_tick_index)
+                .cloned()?;
 
-        let mut pool = invariant.pools.get(&position.pool_key)?;
+            let mut pool = invariant.pools.get(&position.pool_key)?;
 
-        let (x, y) = position.claim_fee(
-            &mut pool,
-            &mut upper_tick,
-            &mut lower_tick,
-            current_timestamp,
-        );
+            let (x, y) = position.claim_fee(
+                &mut pool,
+                &mut upper_tick,
+                &mut lower_tick,
+                current_timestamp,
+            );
 
-        invariant.positions.update(&caller, index, &position)?;
-        invariant.pools.update(&position.pool_key, &pool)?;
-        invariant
-            .ticks
-            .update(position.pool_key, upper_tick.index, upper_tick)?;
-        invariant
-            .ticks
-            .update(position.pool_key, lower_tick.index, lower_tick)?;
+            invariant.positions.update(&caller, index, &position)?;
+            invariant.pools.update(&position.pool_key, &pool)?;
+            invariant
+                .ticks
+                .update(position.pool_key, upper_tick.index, upper_tick)?;
+            invariant
+                .ticks
+                .update(position.pool_key, lower_tick.index, lower_tick)?;
 
-        invariant.increase_token_balance(&position.pool_key.token_x, &caller, x)?;
-        invariant.increase_token_balance(&position.pool_key.token_y, &caller, y)?;
+            invariant.increase_token_balance(&position.pool_key.token_x, &caller, x)?;
+            invariant.increase_token_balance(&position.pool_key.token_y, &caller, y)?;
 
-        Ok((x, y))
+            Ok((x, y))
+        })
     }
 
-    pub fn withdraw_protocol_fee(&mut self, pool_key: PoolKey) -> Result<(), InvariantError> {
-        let invariant = InvariantStorage::as_mut();
+    pub fn withdraw_protocol_fee(&mut self, pool_key: PoolKey) {
+        panicking!(move || {
+            let invariant = InvariantStorage::as_mut();
 
-        let caller = self.exec_context.actor_id();
+            let caller = self.exec_context.actor_id();
 
-        let mut pool = invariant.pools.get(&pool_key)?;
+            let mut pool = invariant.pools.get(&pool_key)?;
 
-        if pool.fee_receiver != caller {
-            return Err(InvariantError::NotFeeReceiver);
-        }
+            if pool.fee_receiver != caller {
+                return Err(InvariantError::NotFeeReceiver);
+            }
 
-        let (amount_x, amount_y) = pool.withdraw_protocol_fee(pool_key);
-        invariant.pools.update(&pool_key, &pool)?;
+            let (amount_x, amount_y) = pool.withdraw_protocol_fee(pool_key);
+            invariant.pools.update(&pool_key, &pool)?;
 
-        invariant.increase_token_balance(&pool_key.token_x, &caller, amount_x)?;
-        invariant.increase_token_balance(&pool_key.token_y, &caller, amount_y)?;
+            invariant.increase_token_balance(&pool_key.token_x, &caller, amount_x)?;
+            invariant.increase_token_balance(&pool_key.token_y, &caller, amount_y)?;
 
-        Ok(())
+            Ok(())
+        })
     }
 
     pub fn get_user_balances(&self, user: ActorId) -> Vec<(ActorId, TokenAmount)> {
@@ -571,109 +608,134 @@ where
     pub async fn deposit_single_token(
         &mut self,
         token: ActorId,
-        caller: ActorId,
         amount: TokenAmount,
-    ) -> Result<TokenAmount, InvariantError> {
-        let invariant = InvariantStorage::as_mut();
+    ) -> TokenAmount {
+        panicking_async!(|| async move {
+            let invariant = InvariantStorage::as_mut();
+            let caller = &self.exec_context.actor_id();
 
-        if !invariant.can_increase_token_balance(&token, &caller, amount) {
-            return Err(InvariantError::FailedToChangeTokenBalance);
-        }
+            if !invariant.can_increase_token_balance(&token, &caller, amount) {
+                return Err(InvariantError::FailedToChangeTokenBalance);
+            }
 
-        Self::transfer_single_token(invariant, &token, &caller, amount, TransferType::Deposit)
-            .await?;
+            Self::transfer_single_token(invariant, &token, &caller, amount, TransferType::Deposit)
+                .await?;
 
-        Ok(amount)
+            Ok(amount)
+        })
     }
 
     pub async fn withdraw_single_token(
         &mut self,
         token: ActorId,
-        caller: ActorId,
         amount: Option<TokenAmount>,
-    ) -> Result<TokenAmount, InvariantError> {
-        let invariant = InvariantStorage::as_mut();
+    ) -> TokenAmount {
+        panicking_async!(|| async move {
+            let invariant = InvariantStorage::as_mut();
+            let caller = &self.exec_context.actor_id();
 
-        let amount = invariant.decrease_token_balance(&token, &caller, amount)?;
+            let amount = invariant.decrease_token_balance(&token, &caller, amount)?;
 
-        Self::transfer_single_token(invariant, &token, &caller, amount, TransferType::Withdrawal)
+            Self::transfer_single_token(
+                invariant,
+                &token,
+                &caller,
+                amount,
+                TransferType::Withdrawal,
+            )
             .await?;
 
-        Ok(amount)
+            Ok(amount)
+        })
     }
 
     pub async fn deposit_token_pair(
         &mut self,
-        caller: ActorId,
         token_x: (ActorId, TokenAmount),
         token_y: (ActorId, TokenAmount),
-    ) -> Result<(TokenAmount, TokenAmount), InvariantError> {
-        let invariant = InvariantStorage::as_mut();
+    ) -> (TokenAmount, TokenAmount) {
+        panicking_async!(|| async move {
+            let invariant = InvariantStorage::as_mut();
+            let caller = &self.exec_context.actor_id();
 
-        if token_x.0.eq(&token_y.0) {
-            return Err(InvariantError::TokensAreSame);
-        }
+            if token_x.0.eq(&token_y.0) {
+                return Err(InvariantError::TokensAreSame);
+            }
 
-        let transfer_type = TransferType::Deposit;
+            let transfer_type = TransferType::Deposit;
 
-        if !invariant.can_increase_token_balance(&token_x.0, &caller, token_x.1)
-            || !invariant.can_increase_token_balance(&token_y.0, &caller, token_y.1)
-        {
-            return Err(InvariantError::FailedToChangeTokenBalance);
-        }
+            if !invariant.can_increase_token_balance(&token_x.0, &caller, token_x.1)
+                || !invariant.can_increase_token_balance(&token_y.0, &caller, token_y.1)
+            {
+                return Err(InvariantError::FailedToChangeTokenBalance);
+            }
 
-        if !token_x.1.is_zero() && !token_y.1.is_zero() {
-            Self::transfer_token_pair(invariant, &caller, &token_x, &token_y, transfer_type)
+            if !token_x.1.is_zero() && !token_y.1.is_zero() {
+                Self::transfer_token_pair(invariant, &caller, &token_x, &token_y, transfer_type)
+                    .await?;
+            } else if !token_x.1.is_zero() {
+                Self::transfer_single_token(
+                    invariant,
+                    &token_x.0,
+                    &caller,
+                    token_x.1,
+                    transfer_type,
+                )
                 .await?;
-        } else if !token_x.1.is_zero() {
-            Self::transfer_single_token(invariant, &token_x.0, &caller, token_x.1, transfer_type)
+            } else if !token_y.1.is_zero() {
+                Self::transfer_single_token(
+                    invariant,
+                    &token_y.0,
+                    &caller,
+                    token_y.1,
+                    transfer_type,
+                )
                 .await?;
-        } else if !token_y.1.is_zero() {
-            Self::transfer_single_token(invariant, &token_y.0, &caller, token_y.1, transfer_type)
-                .await?;
-        }
+            }
 
-        Ok((token_x.1, token_y.1))
+            Ok((token_x.1, token_y.1))
+        })
     }
 
     pub async fn withdraw_token_pair(
         &mut self,
-        caller: ActorId,
         token_x: (ActorId, Option<TokenAmount>),
         token_y: (ActorId, Option<TokenAmount>),
-    ) -> Result<(TokenAmount, TokenAmount), InvariantError> {
-        let invariant = InvariantStorage::as_mut();
+    ) -> (TokenAmount, TokenAmount) {
+        panicking_async!(|| async move {
+            let invariant = InvariantStorage::as_mut();
+            let caller = &self.exec_context.actor_id();
 
-        if token_x.0.eq(&token_y.0) {
-            return Err(InvariantError::TokensAreSame);
-        }
-
-        let transfer_type = TransferType::Withdrawal;
-        let amount_x = invariant.decrease_token_balance(&token_x.0, &caller, token_x.1);
-        let amount_y = invariant.decrease_token_balance(&token_y.0, &caller, token_y.1);
-
-        let amount_x = if let Err(e) = amount_x {
-            if e == InvariantError::NoBalanceForTheToken && token_x.1.is_none() {
-                TokenAmount(0)
-            } else {
-                return Err(e);
+            if token_x.0.eq(&token_y.0) {
+                return Err(InvariantError::TokensAreSame);
             }
-        } else {
-            amount_x?
-        };
 
-        let amount_y = if let Err(e) = amount_y {
-            if e == InvariantError::NoBalanceForTheToken && token_y.1.is_none() {
-                TokenAmount(0)
+            let transfer_type = TransferType::Withdrawal;
+            let amount_x = invariant.decrease_token_balance(&token_x.0, &caller, token_x.1);
+            let amount_y = invariant.decrease_token_balance(&token_y.0, &caller, token_y.1);
+
+            let amount_x = if let Err(e) = amount_x {
+                if e == InvariantError::NoBalanceForTheToken && token_x.1.is_none() {
+                    TokenAmount(0)
+                } else {
+                    return Err(e);
+                }
             } else {
-                return Err(e);
-            }
-        } else {
-            amount_y?
-        };
+                amount_x?
+            };
 
-        if !amount_x.is_zero() && !amount_y.is_zero() {
-            Self::transfer_token_pair(
+            let amount_y = if let Err(e) = amount_y {
+                if e == InvariantError::NoBalanceForTheToken && token_y.1.is_none() {
+                    TokenAmount(0)
+                } else {
+                    return Err(e);
+                }
+            } else {
+                amount_y?
+            };
+
+            if !amount_x.is_zero() && !amount_y.is_zero() {
+                Self::transfer_token_pair(
                     invariant,
                     &caller,
                     &(token_x.0, amount_x),
@@ -681,15 +743,28 @@ where
                     transfer_type,
                 )
                 .await?;
-        } else if !amount_x.is_zero() {
-            Self::transfer_single_token(invariant, &token_x.0, &caller, amount_x, transfer_type)
+            } else if !amount_x.is_zero() {
+                Self::transfer_single_token(
+                    invariant,
+                    &token_x.0,
+                    &caller,
+                    amount_x,
+                    transfer_type,
+                )
                 .await?;
-        } else if !amount_y.is_zero() {
-            Self::transfer_single_token(invariant, &token_y.0, &caller, amount_y, transfer_type)
+            } else if !amount_y.is_zero() {
+                Self::transfer_single_token(
+                    invariant,
+                    &token_y.0,
+                    &caller,
+                    amount_y,
+                    transfer_type,
+                )
                 .await?;
-        }
+            }
 
-        Ok((amount_x, amount_y))
+            Ok((amount_x, amount_y))
+        })
     }
 
     fn is_caller_admin(&self, invariant_storage: &Invariant) -> bool {

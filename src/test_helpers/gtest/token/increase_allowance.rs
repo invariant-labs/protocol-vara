@@ -10,7 +10,7 @@ pub fn increase_allowance(token: &Program, owner: u64, spender: u64, amount: u12
 
 pub fn set_allowance(token: &Program, owner: u64, spender: u64, amount: u128) -> RunResult {
     send_request!(
-        token: token,
+        program: token,
         user: owner,
         service_name: "Erc20",
         action: "Approve",

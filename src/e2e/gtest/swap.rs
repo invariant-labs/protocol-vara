@@ -1,9 +1,7 @@
 use crate::test_helpers::gtest::*;
 use contracts::*;
 use decimal::*;
-use gstd::{prelude::*, ActorId};
 use gtest::*;
-use io::*;
 use math::{
     fee_growth::FeeGrowth,
     liquidity::Liquidity,
@@ -12,6 +10,7 @@ use math::{
     token_amount::TokenAmount,
     MAX_SQRT_PRICE, MIN_SQRT_PRICE,
 };
+use sails_rtl::ActorId;
 
 #[test]
 fn test_swap() {
@@ -35,7 +34,7 @@ fn test_swap_not_enough_tokens_x() {
     let token_y: ActorId = TOKEN_Y_ID.into();
 
     let (token_x_program, token_y_program) = init_tokens(&sys);
-    let mut invariant = init_invariant(&sys, Percentage::from_scale(1, 2));
+    let invariant = init_invariant(&sys, Percentage::from_scale(1, 2));
 
     init_basic_pool(&invariant, &token_x, &token_y);
     init_basic_position(&sys, &invariant, &token_x_program, &token_y_program);
@@ -61,23 +60,42 @@ fn test_swap_not_enough_tokens_x() {
     let slippage = SqrtPrice::new(MIN_SQRT_PRICE);
 
     let deposit_amount = swap_amount.get() - 1;
-    assert_eq!(deposit_single_token(&invariant, REGULAR_USER_2, TOKEN_X_ID, deposit_amount, None::<&str>), Some(TokenAmount(deposit_amount)));
-
-    let _res = invariant.send_and_assert_panic(
-        REGULAR_USER_2,
-        InvariantAction::Swap {
-            pool_key,
-            x_to_y: true,
-            amount: swap_amount,
-            by_amount_in: true,
-            sqrt_price_limit: slippage,
-        },
-        InvariantError::FailedToChangeTokenBalance,
+    assert_eq!(
+        deposit_single_token(
+            &invariant,
+            REGULAR_USER_2,
+            TOKEN_X_ID,
+            deposit_amount,
+            None::<&str>
+        ),
+        Some(TokenAmount(deposit_amount))
     );
 
-    assert_eq!(withdraw_single_token(&invariant, REGULAR_USER_2, TOKEN_X_ID, None, None::<&str>), Some(TokenAmount(deposit_amount)));
-    assert_eq!(withdraw_single_token(&invariant, REGULAR_USER_2, TOKEN_Y_ID, None, InvariantError::NoBalanceForTheToken.into()), None);
+    swap(
+        &invariant,
+        REGULAR_USER_2,
+        pool_key,
+        true,
+        swap_amount,
+        true,
+        slippage,
+    )
+    .assert_panicked_with(InvariantError::FailedToChangeTokenBalance);
 
+    assert_eq!(
+        withdraw_single_token(&invariant, REGULAR_USER_2, TOKEN_X_ID, None, None::<&str>),
+        Some(TokenAmount(deposit_amount))
+    );
+    assert_eq!(
+        withdraw_single_token(
+            &invariant,
+            REGULAR_USER_2,
+            TOKEN_Y_ID,
+            None,
+            InvariantError::NoBalanceForTheToken.into()
+        ),
+        None
+    );
 
     let pool_after = get_pool(&invariant, token_x, token_y, fee_tier).unwrap();
 
@@ -104,7 +122,7 @@ fn test_swap_not_enough_tokens_y() {
     let token_y: ActorId = TOKEN_Y_ID.into();
 
     let (token_x_program, token_y_program) = init_tokens(&sys);
-    let mut invariant = init_invariant(&sys, Percentage::from_scale(1, 2));
+    let invariant = init_invariant(&sys, Percentage::from_scale(1, 2));
 
     init_basic_pool(&invariant, &token_x, &token_y);
     init_basic_position(&sys, &invariant, &token_x_program, &token_y_program);
@@ -131,21 +149,32 @@ fn test_swap_not_enough_tokens_y() {
 
     let deposit_amount = swap_amount.get() - 1;
 
-    assert_eq!(deposit_single_token(&invariant, REGULAR_USER_2, TOKEN_Y_ID, deposit_amount, None::<&str>), Some(TokenAmount(deposit_amount)));
-
-    let _res = invariant.send_and_assert_panic(
-        REGULAR_USER_2,
-        InvariantAction::Swap {
-            pool_key,
-            x_to_y: false,
-            amount: swap_amount,
-            by_amount_in: true,
-            sqrt_price_limit: slippage,
-        },
-        InvariantError::FailedToChangeTokenBalance,
+    assert_eq!(
+        deposit_single_token(
+            &invariant,
+            REGULAR_USER_2,
+            TOKEN_Y_ID,
+            deposit_amount,
+            None::<&str>
+        ),
+        Some(TokenAmount(deposit_amount))
     );
 
-    assert_eq!(withdraw_single_token(&invariant, REGULAR_USER_2, TOKEN_Y_ID, None, None::<&str>), Some(TokenAmount(deposit_amount)));
+    swap(
+        &invariant,
+        REGULAR_USER_2,
+        pool_key,
+        false,
+        swap_amount,
+        true,
+        slippage,
+    )
+    .assert_panicked_with(InvariantError::FailedToChangeTokenBalance);
+
+    assert_eq!(
+        withdraw_single_token(&invariant, REGULAR_USER_2, TOKEN_Y_ID, None, None::<&str>),
+        Some(TokenAmount(deposit_amount))
+    );
 
     let pool_after = get_pool(&invariant, token_x, token_y, fee_tier).unwrap();
 
@@ -172,7 +201,7 @@ fn test_swap_not_enough_liquidity_token_y() {
     let token_y: ActorId = TOKEN_Y_ID.into();
 
     let (token_x_program, token_y_program) = init_tokens(&sys);
-    let mut invariant = init_invariant(&sys, Percentage::from_scale(1, 2));
+    let invariant = init_invariant(&sys, Percentage::from_scale(1, 2));
 
     init_basic_pool(&invariant, &token_x, &token_y);
     init_basic_position(&sys, &invariant, &token_x_program, &token_y_program);
@@ -195,21 +224,32 @@ fn test_swap_not_enough_liquidity_token_y() {
     assert_eq!(balance_of(&token_x_program, INVARIANT_ID), 500);
     assert_eq!(balance_of(&token_y_program, INVARIANT_ID), 1000);
 
-    assert_eq!(deposit_single_token(&invariant, REGULAR_USER_2, TOKEN_Y_ID, swap_amount.get(), None::<&str>), Some(swap_amount));
-
-    let _res = invariant.send_and_assert_panic(
-        REGULAR_USER_2,
-        InvariantAction::Swap {
-            pool_key,
-            x_to_y: false,
-            amount: swap_amount,
-            by_amount_in: true,
-            sqrt_price_limit: slippage,
-        },
-        InvariantError::TickLimitReached,
+    assert_eq!(
+        deposit_single_token(
+            &invariant,
+            REGULAR_USER_2,
+            TOKEN_Y_ID,
+            swap_amount.get(),
+            None::<&str>
+        ),
+        Some(swap_amount)
     );
 
-    assert_eq!(withdraw_single_token(&invariant, REGULAR_USER_2, TOKEN_Y_ID, None, None::<&str>), Some(swap_amount));
+    swap(
+        &invariant,
+        REGULAR_USER_2,
+        pool_key,
+        false,
+        swap_amount,
+        true,
+        slippage,
+    )
+    .assert_panicked_with(InvariantError::TickLimitReached);
+
+    assert_eq!(
+        withdraw_single_token(&invariant, REGULAR_USER_2, TOKEN_Y_ID, None, None::<&str>),
+        Some(swap_amount)
+    );
 
     let pool_after = get_pool(&invariant, token_x, token_y, fee_tier).unwrap();
 
@@ -236,7 +276,7 @@ fn test_swap_not_enough_liquidity_token_x() {
     let token_y: ActorId = TOKEN_Y_ID.into();
 
     let (token_x_program, token_y_program) = init_tokens(&sys);
-    let mut invariant = init_invariant(&sys, Percentage::from_scale(1, 2));
+    let invariant = init_invariant(&sys, Percentage::from_scale(1, 2));
 
     init_basic_pool(&invariant, &token_x, &token_y);
     init_basic_position(&sys, &invariant, &token_x_program, &token_y_program);
@@ -259,22 +299,42 @@ fn test_swap_not_enough_liquidity_token_x() {
     assert_eq!(balance_of(&token_x_program, INVARIANT_ID), 500);
     assert_eq!(balance_of(&token_y_program, INVARIANT_ID), 1000);
 
-    assert_eq!(deposit_single_token(&invariant, REGULAR_USER_2, TOKEN_X_ID, swap_amount.get(), None::<&str>), Some(swap_amount));
-
-    let _res = invariant.send_and_assert_panic(
-        REGULAR_USER_2,
-        InvariantAction::Swap {
-            pool_key,
-            x_to_y: true,
-            amount: swap_amount,
-            by_amount_in: true,
-            sqrt_price_limit: slippage,
-        },
-        InvariantError::TickLimitReached,
+    assert_eq!(
+        deposit_single_token(
+            &invariant,
+            REGULAR_USER_2,
+            TOKEN_X_ID,
+            swap_amount.get(),
+            None::<&str>
+        ),
+        Some(swap_amount)
     );
 
-    assert_eq!(withdraw_single_token(&invariant, REGULAR_USER_2, TOKEN_X_ID, None, None::<&str>), Some(swap_amount));
-    assert_eq!(withdraw_single_token(&invariant, REGULAR_USER_2, TOKEN_Y_ID, None, InvariantError::NoBalanceForTheToken.into()), None);
+    swap(
+        &invariant,
+        REGULAR_USER_2,
+        pool_key,
+        true,
+        swap_amount,
+        true,
+        slippage,
+    )
+    .assert_panicked_with(InvariantError::TickLimitReached);
+
+    assert_eq!(
+        withdraw_single_token(&invariant, REGULAR_USER_2, TOKEN_X_ID, None, None::<&str>),
+        Some(swap_amount)
+    );
+    assert_eq!(
+        withdraw_single_token(
+            &invariant,
+            REGULAR_USER_2,
+            TOKEN_Y_ID,
+            None,
+            InvariantError::NoBalanceForTheToken.into()
+        ),
+        None
+    );
 
     let pool_after = get_pool(&invariant, token_x, token_y, fee_tier).unwrap();
 
@@ -307,24 +367,23 @@ fn test_swap_x_to_y() {
 
     let fee_tier = FeeTier::new(Percentage::from_scale(6, 3), 10).unwrap();
 
-    invariant
-        .send(ADMIN, InvariantAction::AddFeeTier(fee_tier))
-        .assert_success();
+    add_fee_tier(&invariant, ADMIN, fee_tier).assert_success();
 
     let init_tick = 0;
     let init_sqrt_price = calculate_sqrt_price(init_tick).unwrap();
-    invariant
-        .send(
-            REGULAR_USER_1,
-            InvariantAction::CreatePool {
-                token_0: token_x,
-                token_1: token_y,
-                fee_tier,
-                init_sqrt_price,
-                init_tick,
-            },
-        )
-        .assert_success();
+
+    let _res = create_pool(
+        &invariant,
+        REGULAR_USER_1,
+        token_x,
+        token_y,
+        fee_tier,
+        init_sqrt_price,
+        init_tick,
+    )
+    .assert_single_event()
+    .assert_empty()
+    .assert_to(REGULAR_USER_1);
 
     mint(&token_x_program, REGULAR_USER_1, initial_amount).assert_success();
     mint(&token_y_program, REGULAR_USER_1, initial_amount).assert_success();
@@ -343,8 +402,26 @@ fn test_swap_x_to_y() {
     )
     .assert_success();
 
-    assert_eq!(deposit_single_token(&invariant, REGULAR_USER_1, TOKEN_X_ID, initial_amount, None::<&str>), Some(TokenAmount(initial_amount)));
-    assert_eq!(deposit_single_token(&invariant, REGULAR_USER_1, TOKEN_Y_ID, initial_amount, None::<&str>), Some(TokenAmount(initial_amount)));
+    assert_eq!(
+        deposit_single_token(
+            &invariant,
+            REGULAR_USER_1,
+            TOKEN_X_ID,
+            initial_amount,
+            None::<&str>
+        ),
+        Some(TokenAmount(initial_amount))
+    );
+    assert_eq!(
+        deposit_single_token(
+            &invariant,
+            REGULAR_USER_1,
+            TOKEN_Y_ID,
+            initial_amount,
+            None::<&str>
+        ),
+        Some(TokenAmount(initial_amount))
+    );
 
     let pool_key = PoolKey::new(token_x, token_y, fee_tier).unwrap();
 
@@ -354,36 +431,36 @@ fn test_swap_x_to_y() {
 
     let liquidity_delta = Liquidity::from_integer(1000000);
 
-    invariant
-        .send(
-            REGULAR_USER_1,
-            InvariantAction::CreatePosition {
-                pool_key,
-                lower_tick: lower_tick_index,
-                upper_tick: upper_tick_index,
-                liquidity_delta,
-                slippage_limit_lower: SqrtPrice::new(0),
-                slippage_limit_upper: SqrtPrice::new(MAX_SQRT_PRICE),
-            },
-        )
-        .assert_success();
+    create_position(
+        &invariant,
+        REGULAR_USER_1,
+        pool_key,
+        lower_tick_index,
+        upper_tick_index,
+        liquidity_delta,
+        SqrtPrice::new(0),
+        SqrtPrice::new(MAX_SQRT_PRICE),
+    )
+    .assert_success();
 
-    invariant
-        .send(
-            REGULAR_USER_1,
-            InvariantAction::CreatePosition {
-                pool_key,
-                lower_tick: lower_tick_index - 20,
-                upper_tick: middle_tick_index,
-                liquidity_delta,
-                slippage_limit_lower: SqrtPrice::new(0),
-                slippage_limit_upper: SqrtPrice::new(MAX_SQRT_PRICE),
-            },
-        )
-        .assert_success();
+    create_position(
+        &invariant,
+        REGULAR_USER_1,
+        pool_key,
+        lower_tick_index - 20,
+        middle_tick_index,
+        liquidity_delta,
+        SqrtPrice::new(0),
+        SqrtPrice::new(MAX_SQRT_PRICE),
+    )
+    .assert_success();
 
-    assert!(withdraw_single_token(&invariant, REGULAR_USER_1, TOKEN_X_ID, None, None::<&str>).is_some());
-    assert!(withdraw_single_token(&invariant, REGULAR_USER_1, TOKEN_Y_ID, None, None::<&str>).is_some());
+    assert!(
+        withdraw_single_token(&invariant, REGULAR_USER_1, TOKEN_X_ID, None, None::<&str>).is_some()
+    );
+    assert!(
+        withdraw_single_token(&invariant, REGULAR_USER_1, TOKEN_Y_ID, None, None::<&str>).is_some()
+    );
 
     let pool = get_pool(&invariant, token_x, token_y, fee_tier).unwrap();
 
@@ -469,24 +546,23 @@ fn test_swap_y_to_x() {
 
     let fee_tier = FeeTier::new(Percentage::from_scale(6, 3), 10).unwrap();
 
-    invariant
-        .send(ADMIN, InvariantAction::AddFeeTier(fee_tier))
-        .assert_success();
+    add_fee_tier(&invariant, ADMIN, fee_tier).assert_success();
 
     let init_tick = 0;
     let init_sqrt_price = calculate_sqrt_price(init_tick).unwrap();
-    invariant
-        .send(
-            REGULAR_USER_1,
-            InvariantAction::CreatePool {
-                token_0: token_x,
-                token_1: token_y,
-                fee_tier,
-                init_sqrt_price,
-                init_tick,
-            },
-        )
-        .assert_success();
+
+    let _res = create_pool(
+        &invariant,
+        REGULAR_USER_1,
+        token_x,
+        token_y,
+        fee_tier,
+        init_sqrt_price,
+        init_tick,
+    )
+    .assert_single_event()
+    .assert_empty()
+    .assert_to(REGULAR_USER_1);
 
     mint(&token_x_program, REGULAR_USER_1, initial_amount).assert_success();
     mint(&token_y_program, REGULAR_USER_1, initial_amount).assert_success();
@@ -508,8 +584,26 @@ fn test_swap_y_to_x() {
     )
     .assert_success();
 
-    assert_eq!(deposit_single_token(&invariant, REGULAR_USER_1, TOKEN_X_ID, initial_amount, None::<&str>), Some(TokenAmount(initial_amount)));
-    assert_eq!(deposit_single_token(&invariant, REGULAR_USER_1, TOKEN_Y_ID, initial_amount, None::<&str>), Some(TokenAmount(initial_amount)));
+    assert_eq!(
+        deposit_single_token(
+            &invariant,
+            REGULAR_USER_1,
+            TOKEN_X_ID,
+            initial_amount,
+            None::<&str>
+        ),
+        Some(TokenAmount(initial_amount))
+    );
+    assert_eq!(
+        deposit_single_token(
+            &invariant,
+            REGULAR_USER_1,
+            TOKEN_Y_ID,
+            initial_amount,
+            None::<&str>
+        ),
+        Some(TokenAmount(initial_amount))
+    );
 
     let pool_key = PoolKey::new(token_x, token_y, fee_tier).unwrap();
 
@@ -519,36 +613,36 @@ fn test_swap_y_to_x() {
 
     let liquidity_delta = Liquidity::from_integer(1000000);
 
-    invariant
-        .send(
-            REGULAR_USER_1,
-            InvariantAction::CreatePosition {
-                pool_key,
-                lower_tick: lower_tick_index,
-                upper_tick: upper_tick_index,
-                liquidity_delta,
-                slippage_limit_lower: SqrtPrice::new(0),
-                slippage_limit_upper: SqrtPrice::new(MAX_SQRT_PRICE),
-            },
-        )
-        .assert_success();
+    create_position(
+        &invariant,
+        REGULAR_USER_1,
+        pool_key,
+        lower_tick_index,
+        upper_tick_index,
+        liquidity_delta,
+        SqrtPrice::new(0),
+        SqrtPrice::new(MAX_SQRT_PRICE),
+    )
+    .assert_success();
 
-    invariant
-        .send(
-            REGULAR_USER_1,
-            InvariantAction::CreatePosition {
-                pool_key,
-                lower_tick: middle_tick_index,
-                upper_tick: upper_tick_index + 20,
-                liquidity_delta,
-                slippage_limit_lower: SqrtPrice::new(0),
-                slippage_limit_upper: SqrtPrice::new(MAX_SQRT_PRICE),
-            },
-        )
-        .assert_success();
+    create_position(
+        &invariant,
+        REGULAR_USER_1,
+        pool_key,
+        middle_tick_index,
+        upper_tick_index + 20,
+        liquidity_delta,
+        SqrtPrice::new(0),
+        SqrtPrice::new(MAX_SQRT_PRICE),
+    )
+    .assert_success();
 
-assert!(withdraw_single_token(&invariant, REGULAR_USER_1, TOKEN_X_ID, None, None::<&str>).is_some());
-assert!(withdraw_single_token(&invariant, REGULAR_USER_1, TOKEN_Y_ID, None, None::<&str>).is_some());
+    assert!(
+        withdraw_single_token(&invariant, REGULAR_USER_1, TOKEN_X_ID, None, None::<&str>).is_some()
+    );
+    assert!(
+        withdraw_single_token(&invariant, REGULAR_USER_1, TOKEN_Y_ID, None, None::<&str>).is_some()
+    );
     let pool = get_pool(&invariant, token_x, token_y, fee_tier).unwrap();
 
     assert_eq!(pool.liquidity, liquidity_delta);

@@ -1,13 +1,14 @@
 use crate::test_helpers::gtest::*;
 use contracts::*;
 use decimal::*;
-use gstd::{prelude::*, ActorId};
+use gstd::prelude::*;
 use gtest::*;
 use io::*;
 use math::{
     fee_growth::FeeGrowth, percentage::Percentage, sqrt_price::SqrtPrice,
     token_amount::TokenAmount, MIN_SQRT_PRICE,
 };
+use sails_rtl::ActorId;
 
 pub fn init_basic_swap(
     sys: &System,
@@ -36,55 +37,59 @@ pub fn init_basic_swap(
 
     let swap_amount = TokenAmount::new(amount);
     let slippage = SqrtPrice::new(MIN_SQRT_PRICE);
-    
+
     assert_eq!(
-        deposit_single_token(&invariant, REGULAR_USER_2, TOKEN_X_ID, swap_amount.get(), None::<&str>),
+        deposit_single_token(
+            &invariant,
+            REGULAR_USER_2,
+            TOKEN_X_ID,
+            swap_amount.get(),
+            None::<&str>
+        ),
         Some(swap_amount)
     );
 
-    let res = invariant.send(
+    let res = swap(
+        &invariant,
         REGULAR_USER_2,
-        InvariantAction::Swap {
-            pool_key,
-            x_to_y: true,
-            amount: swap_amount,
-            by_amount_in: true,
-            sqrt_price_limit: slippage,
-        },
+        pool_key,
+        true,
+        swap_amount,
+        true,
+        slippage,
     );
 
     let pool_after = get_pool(&invariant, token_x, token_y, fee_tier).unwrap();
 
-    assert!(res.events_eq(vec![
-        TestEvent::invariant_response(
-            REGULAR_USER_2,
-            InvariantEvent::SwapEvent {
-                timestamp: sys.block_timestamp(),
-                address: REGULAR_USER_2.into(),
-                pool: pool_key,
-                amount_in: TokenAmount(1000),
-                amount_out: TokenAmount(993),
-                fee: TokenAmount(6),
-                start_sqrt_price: SqrtPrice(1000000000000000000000000),
-                target_sqrt_price: SqrtPrice(999006987054867461743028),
-                x_to_y: true,
-            }
-        ),
-        TestEvent::invariant_response(
-            REGULAR_USER_2,
-            InvariantEvent::SwapReturn(CalculateSwapResult {
-                amount_in: TokenAmount(1000),
-                amount_out: TokenAmount(993),
-                fee: TokenAmount(6),
-                start_sqrt_price: SqrtPrice(1000000000000000000000000),
-                target_sqrt_price: SqrtPrice(999006987054867461743028),
-                pool: pool_after.clone(),
-                ticks: vec![],
-            })
-        )
-    ]));
+    let events = res.emitted_events();
+    events[0]
+        .assert_to(EVENT_ADDRESS)
+        .assert_with_payload(SwapEvent {
+            timestamp: sys.block_timestamp(),
+            address: REGULAR_USER_2.into(),
+            pool: pool_key,
+            amount_in: TokenAmount(1000),
+            amount_out: TokenAmount(993),
+            fee: TokenAmount(6),
+            start_sqrt_price: SqrtPrice(1000000000000000000000000),
+            target_sqrt_price: SqrtPrice(999006987054867461743028),
+            x_to_y: true,
+        });
+    events[1]
+        .assert_to(REGULAR_USER_2)
+        .assert_with_payload(CalculateSwapResult {
+            amount_in: TokenAmount(1000),
+            amount_out: TokenAmount(993),
+            fee: TokenAmount(6),
+            start_sqrt_price: SqrtPrice(1000000000000000000000000),
+            target_sqrt_price: SqrtPrice(999006987054867461743028),
+            pool: pool_after.clone(),
+            ticks: vec![],
+        });
 
-    assert!(withdraw_single_token(&invariant, REGULAR_USER_2, TOKEN_Y_ID, None, None::<&str>).is_some());
+    assert!(
+        withdraw_single_token(&invariant, REGULAR_USER_2, TOKEN_Y_ID, None, None::<&str>).is_some()
+    );
 
     assert_eq!(pool_after.liquidity, pool_before.liquidity);
     assert_eq!(pool_after.current_tick_index, lower_tick);

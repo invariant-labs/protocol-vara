@@ -1,15 +1,16 @@
 #[macro_export]
 macro_rules! send_query {
   (
-    token: $token:expr,
+    program: $program:expr,
     user: $user:expr,
     service_name: $name:literal,
     action: $action:literal,
     payload: ($($val:expr),*),
-    response_type: $response_type:ident
+    response_type: $response_type:ty
   ) => {
         {
-          use gstd::*;
+          use sails_rtl::gstd::*;
+          use sails_rtl::{Decode, Encode};
           use crate::test_helpers::gtest::entrypoints::utils::InvariantResult;
 
           let name = $name.to_string().encode();
@@ -23,7 +24,7 @@ macro_rules! send_query {
           ]
           .concat();
 
-          let result = $token.send_bytes($user, request);
+          let result = $program.send_bytes($user, request);
           result.assert_success();
           let response = <$response_type>::decode(
             &mut &result
@@ -37,4 +38,22 @@ macro_rules! send_query {
           response
         }
   };
+}
+
+#[macro_export]
+macro_rules! send_request {
+    (program: $program: expr, user: $user: expr, service_name: $name: literal, action: $action: literal, payload: ($($val: expr),*)) => {
+        {
+            use gstd::*;
+            let request = [
+                $name.encode(),
+                $action.encode(),
+                ( $( $val, )*).encode(),
+            ]
+            .concat();
+
+            $program.send_bytes($user, request)
+        }
+
+    };
 }

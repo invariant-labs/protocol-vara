@@ -12,6 +12,74 @@ type FeeTier = struct {
   tick_spacing: u16,
 };
 
+type PoolKey = struct {
+  token_x: actor_id,
+  token_y: actor_id,
+  fee_tier: FeeTier,
+};
+
+type TokenAmount = struct {
+  u128,
+};
+
+type SqrtPrice = struct {
+  u128,
+};
+
+type Liquidity = struct {
+  u128,
+};
+
+type Position = struct {
+  pool_key: PoolKey,
+  liquidity: Liquidity,
+  lower_tick_index: i32,
+  upper_tick_index: i32,
+  fee_growth_inside_x: FeeGrowth,
+  fee_growth_inside_y: FeeGrowth,
+  last_block_number: u64,
+  tokens_owed_x: TokenAmount,
+  tokens_owed_y: TokenAmount,
+};
+
+type FeeGrowth = struct {
+  u128,
+};
+
+type CalculateSwapResult = struct {
+  amount_in: TokenAmount,
+  amount_out: TokenAmount,
+  start_sqrt_price: SqrtPrice,
+  target_sqrt_price: SqrtPrice,
+  fee: TokenAmount,
+  pool: Pool,
+  ticks: vec Tick,
+};
+
+type Pool = struct {
+  liquidity: Liquidity,
+  sqrt_price: SqrtPrice,
+  current_tick_index: i32,
+  fee_growth_global_x: FeeGrowth,
+  fee_growth_global_y: FeeGrowth,
+  fee_protocol_token_x: TokenAmount,
+  fee_protocol_token_y: TokenAmount,
+  start_timestamp: u64,
+  last_timestamp: u64,
+  fee_receiver: actor_id,
+};
+
+type Tick = struct {
+  index: i32,
+  sign: bool,
+  liquidity_change: Liquidity,
+  liquidity_gross: Liquidity,
+  sqrt_price: SqrtPrice,
+  fee_growth_outside_x: FeeGrowth,
+  fee_growth_outside_y: FeeGrowth,
+  seconds_outside: u64,
+};
+
 type InvariantError = enum {
   NotAdmin,
   NotFeeReceiver,
@@ -49,79 +117,6 @@ type InvariantError = enum {
   ReplyHandlingFailed,
 };
 
-type PoolKey = struct {
-  token_x: actor_id,
-  token_y: actor_id,
-  fee_tier: FeeTier,
-};
-
-type TokenAmount = struct {
-  u128,
-};
-
-type SqrtPrice = struct {
-  u128,
-};
-
-type Liquidity = struct {
-  u128,
-};
-
-type Position = struct {
-  pool_key: PoolKey,
-  liquidity: Liquidity,
-  lower_tick_index: i32,
-  upper_tick_index: i32,
-  fee_growth_inside_x: FeeGrowth,
-  fee_growth_inside_y: FeeGrowth,
-  last_block_number: u64,
-  tokens_owed_x: TokenAmount,
-  tokens_owed_y: TokenAmount,
-};
-
-type FeeGrowth = struct {
-  u128,
-};
-
-type SwapHop = struct {
-  pool_key: PoolKey,
-  x_to_y: bool,
-};
-
-type CalculateSwapResult = struct {
-  amount_in: TokenAmount,
-  amount_out: TokenAmount,
-  start_sqrt_price: SqrtPrice,
-  target_sqrt_price: SqrtPrice,
-  fee: TokenAmount,
-  pool: Pool,
-  ticks: vec Tick,
-};
-
-type Pool = struct {
-  liquidity: Liquidity,
-  sqrt_price: SqrtPrice,
-  current_tick_index: i32,
-  fee_growth_global_x: FeeGrowth,
-  fee_growth_global_y: FeeGrowth,
-  fee_protocol_token_x: TokenAmount,
-  fee_protocol_token_y: TokenAmount,
-  start_timestamp: u64,
-  last_timestamp: u64,
-  fee_receiver: actor_id,
-};
-
-type Tick = struct {
-  index: i32,
-  sign: bool,
-  liquidity_change: Liquidity,
-  liquidity_gross: Liquidity,
-  sqrt_price: SqrtPrice,
-  fee_growth_outside_x: FeeGrowth,
-  fee_growth_outside_y: FeeGrowth,
-  seconds_outside: u64,
-};
-
 type QuoteResult = struct {
   amount_in: TokenAmount,
   amount_out: TokenAmount,
@@ -129,27 +124,31 @@ type QuoteResult = struct {
   ticks: vec Tick,
 };
 
+type SwapHop = struct {
+  pool_key: PoolKey,
+  x_to_y: bool,
+};
+
 constructor {
   New : (config: InvariantConfig);
 };
 
 service Service {
-  AddFeeTier : (fee_tier: FeeTier) -> result (FeeTier, InvariantError);
-  ChangeFeeReceiver : (pool_key: PoolKey, fee_receiver: actor_id) -> result (null, InvariantError);
-  ChangeProtocolFee : (protocol_fee: Percentage) -> result (Percentage, InvariantError);
-  ClaimFee : (index: u32) -> result (struct { TokenAmount, TokenAmount }, InvariantError);
-  CreatePool : (token_x: actor_id, token_y: actor_id, fee_tier: FeeTier, init_sqrt_price: SqrtPrice, init_tick: i32) -> result (null, InvariantError);
-  CreatePosition : (pool_key: PoolKey, lower_tick: i32, upper_tick: i32, liquidity_delta: Liquidity, slippage_limit_lower: SqrtPrice, slippage_limit_upper: SqrtPrice) -> result (Position, InvariantError);
-  DepositSingleToken : (token: actor_id, caller: actor_id, amount: TokenAmount) -> result (TokenAmount, InvariantError);
-  DepositTokenPair : (caller: actor_id, token_x: struct { actor_id, TokenAmount }, token_y: struct { actor_id, TokenAmount }) -> result (struct { TokenAmount, TokenAmount }, InvariantError);
-  QuoteRoute : (amount_in: TokenAmount, swaps: vec SwapHop) -> result (TokenAmount, InvariantError);
-  RemoveFeeTier : (fee_tier: FeeTier) -> result (FeeTier, InvariantError);
-  RemovePosition : (index: u32) -> result (struct { TokenAmount, TokenAmount }, InvariantError);
-  Swap : (pool_key: PoolKey, x_to_y: bool, amount: TokenAmount, by_amount_in: bool, sqrt_price_limit: SqrtPrice) -> result (CalculateSwapResult, InvariantError);
-  TransferPosition : (index: u32, receiver: actor_id) -> result (null, InvariantError);
-  WithdrawProtocolFee : (pool_key: PoolKey) -> result (null, InvariantError);
-  WithdrawSingleToken : (token: actor_id, caller: actor_id, amount: opt TokenAmount) -> result (TokenAmount, InvariantError);
-  WithdrawTokenPair : (caller: actor_id, token_x: struct { actor_id, opt TokenAmount }, token_y: struct { actor_id, opt TokenAmount }) -> result (struct { TokenAmount, TokenAmount }, InvariantError);
+  AddFeeTier : (fee_tier: FeeTier) -> FeeTier;
+  ChangeFeeReceiver : (pool_key: PoolKey, fee_receiver: actor_id) -> null;
+  ChangeProtocolFee : (protocol_fee: Percentage) -> Percentage;
+  ClaimFee : (index: u32) -> struct { TokenAmount, TokenAmount };
+  CreatePool : (token_x: actor_id, token_y: actor_id, fee_tier: FeeTier, init_sqrt_price: SqrtPrice, init_tick: i32) -> null;
+  CreatePosition : (pool_key: PoolKey, lower_tick: i32, upper_tick: i32, liquidity_delta: Liquidity, slippage_limit_lower: SqrtPrice, slippage_limit_upper: SqrtPrice) -> Position;
+  DepositSingleToken : (token: actor_id, amount: TokenAmount) -> TokenAmount;
+  DepositTokenPair : (token_x: struct { actor_id, TokenAmount }, token_y: struct { actor_id, TokenAmount }) -> struct { TokenAmount, TokenAmount };
+  RemoveFeeTier : (fee_tier: FeeTier) -> FeeTier;
+  RemovePosition : (index: u32) -> struct { TokenAmount, TokenAmount };
+  Swap : (pool_key: PoolKey, x_to_y: bool, amount: TokenAmount, by_amount_in: bool, sqrt_price_limit: SqrtPrice) -> CalculateSwapResult;
+  TransferPosition : (index: u32, receiver: actor_id) -> null;
+  WithdrawProtocolFee : (pool_key: PoolKey) -> null;
+  WithdrawSingleToken : (token: actor_id, amount: opt TokenAmount) -> TokenAmount;
+  WithdrawTokenPair : (token_x: struct { actor_id, opt TokenAmount }, token_y: struct { actor_id, opt TokenAmount }) -> struct { TokenAmount, TokenAmount };
   query FeeTierExists : (fee_tier: FeeTier) -> bool;
   query GetAllPositions : (owner_id: actor_id) -> vec Position;
   query GetFeeTiers : () -> vec FeeTier;
@@ -161,6 +160,7 @@ service Service {
   query GetUserBalances : (user: actor_id) -> vec struct { actor_id, TokenAmount };
   query IsTickInitialized : (key: PoolKey, index: i32) -> bool;
   query Quote : (pool_key: PoolKey, x_to_y: bool, amount: TokenAmount, by_amount_in: bool, sqrt_price_limit: SqrtPrice) -> result (QuoteResult, InvariantError);
+  query QuoteRoute : (amount_in: TokenAmount, swaps: vec SwapHop) -> result (TokenAmount, InvariantError);
 
   events {
     PositionCreatedEvent: struct { block_timestamp: u64, address: actor_id, pool_key: PoolKey, liquidity_delta: Liquidity, lower_tick: i32, upper_tick: i32, current_sqrt_price: SqrtPrice };

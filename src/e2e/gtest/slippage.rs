@@ -1,12 +1,11 @@
 use crate::test_helpers::gtest::*;
 use contracts::*;
 use decimal::*;
-use gstd::{prelude::*, ActorId};
 use gtest::*;
-use io::*;
 use math::{
     percentage::Percentage, sqrt_price::SqrtPrice, token_amount::TokenAmount, MAX_SQRT_PRICE,
 };
+use sails_rtl::ActorId;
 
 #[test]
 fn test_basic_slippage() {
@@ -43,18 +42,16 @@ fn test_basic_slippage() {
     );
 
     let target_sqrt_price = SqrtPrice::new(1009940000000000000000001);
-    invariant
-        .send(
-            REGULAR_USER_1,
-            InvariantAction::Swap {
-                pool_key,
-                x_to_y: false,
-                amount: swap_amount,
-                by_amount_in: true,
-                sqrt_price_limit: target_sqrt_price,
-            },
-        )
-        .assert_success();
+    swap(
+        &invariant,
+        REGULAR_USER_1,
+        pool_key,
+        false,
+        swap_amount,
+        true,
+        target_sqrt_price,
+    )
+    .assert_success();
 
     let expected_sqrt_price = SqrtPrice::new(1009940000000000000000000);
     let pool = get_pool(&invariant, token_x, token_y, pool_key.fee_tier).unwrap();
@@ -66,13 +63,18 @@ fn test_swap_close_to_limit() {
     let sys = System::new();
     sys.init_logger();
 
-    let (mut invariant, token_x_program, token_y_program) =
-        init_slippage_invariant_and_tokens(&sys);
+    let (invariant, token_x_program, token_y_program) = init_slippage_invariant_and_tokens(&sys);
     let pool_key =
         init_slippage_pool_with_liquidity(&sys, &invariant, &token_x_program, &token_y_program);
     let amount = 10u128.pow(8);
     let swap_amount = TokenAmount::new(amount);
-    increase_allowance(&token_y_program, REGULAR_USER_1, INVARIANT_ID, swap_amount.get()).assert_success();
+    increase_allowance(
+        &token_y_program,
+        REGULAR_USER_1,
+        INVARIANT_ID,
+        swap_amount.get(),
+    )
+    .assert_success();
     assert_eq!(
         deposit_single_token(
             &invariant,
@@ -83,7 +85,7 @@ fn test_swap_close_to_limit() {
         ),
         Some(swap_amount)
     );
-    
+
     let target_sqrt_price = SqrtPrice::new(MAX_SQRT_PRICE);
     let quoted_target_sqrt_price = quote(
         &invariant,
@@ -93,24 +95,22 @@ fn test_swap_close_to_limit() {
         swap_amount,
         true,
         target_sqrt_price,
-        None::<InvariantError>,
     )
     .unwrap()
     .target_sqrt_price;
 
     let target_sqrt_price = quoted_target_sqrt_price - SqrtPrice::new(1);
 
-    invariant.send_and_assert_panic(
+    swap(
+        &invariant,
         REGULAR_USER_1,
-        InvariantAction::Swap {
-            pool_key,
-            x_to_y: false,
-            amount: swap_amount,
-            by_amount_in: true,
-            sqrt_price_limit: target_sqrt_price,
-        },
-        InvariantError::PriceLimitReached,
-    );
+        pool_key,
+        false,
+        swap_amount,
+        true,
+        target_sqrt_price,
+    )
+    .assert_panicked_with(InvariantError::PriceLimitReached);
 }
 
 #[test]

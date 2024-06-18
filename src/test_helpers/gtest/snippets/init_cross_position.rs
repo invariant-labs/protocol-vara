@@ -1,10 +1,9 @@
 use crate::test_helpers::gtest::*;
 use contracts::*;
 use decimal::*;
-use gstd::ActorId;
 use gtest::*;
-use io::*;
 use math::{liquidity::Liquidity, percentage::Percentage, token_amount::TokenAmount};
+use sails_rtl::ActorId;
 
 pub fn init_cross_position(
     invariant: &Program,
@@ -24,13 +23,25 @@ pub fn init_cross_position(
     mint(token_y_program, REGULAR_USER_1, mint_amount).assert_success();
     increase_allowance(token_x_program, REGULAR_USER_1, INVARIANT_ID, mint_amount).assert_success();
     increase_allowance(token_y_program, REGULAR_USER_1, INVARIANT_ID, mint_amount).assert_success();
-    
+
     assert_eq!(
-        deposit_single_token(&invariant, REGULAR_USER_1, TOKEN_X_ID, mint_amount, None::<&str>),
+        deposit_single_token(
+            &invariant,
+            REGULAR_USER_1,
+            TOKEN_X_ID,
+            mint_amount,
+            None::<&str>
+        ),
         Some(TokenAmount(mint_amount))
     );
     assert_eq!(
-        deposit_single_token(&invariant, REGULAR_USER_1, TOKEN_Y_ID, mint_amount, None::<&str>),
+        deposit_single_token(
+            &invariant,
+            REGULAR_USER_1,
+            TOKEN_Y_ID,
+            mint_amount,
+            None::<&str>
+        ),
         Some(TokenAmount(mint_amount))
     );
 
@@ -44,24 +55,26 @@ pub fn init_cross_position(
     let slippage_limit_lower = pool_before.sqrt_price;
     let slippage_limit_upper = pool_before.sqrt_price;
 
-    invariant
-        .send(
-            REGULAR_USER_1,
-            InvariantAction::CreatePosition {
-                pool_key,
-                lower_tick,
-                upper_tick,
-                liquidity_delta: liquidity,
-                slippage_limit_lower,
-                slippage_limit_upper,
-            },
-        )
-        .assert_success();
+    create_position(
+        &invariant,
+        REGULAR_USER_1,
+        pool_key,
+        lower_tick,
+        upper_tick,
+        liquidity,
+        slippage_limit_lower,
+        slippage_limit_upper,
+    )
+    .assert_success();
 
     let pool_after = get_pool(invariant, token_x, token_y, fee_tier).unwrap();
 
     assert_eq!(pool_after.liquidity, pool_before.liquidity);
 
-    assert!(withdraw_single_token(invariant, REGULAR_USER_1, TOKEN_X_ID, None, None::<&str>).is_some());
-    assert!(withdraw_single_token(invariant, REGULAR_USER_1, TOKEN_Y_ID, None, None::<&str>).is_some());
+    assert!(
+        withdraw_single_token(invariant, REGULAR_USER_1, TOKEN_X_ID, None, None::<&str>).is_some()
+    );
+    assert!(
+        withdraw_single_token(invariant, REGULAR_USER_1, TOKEN_Y_ID, None, None::<&str>).is_some()
+    );
 }

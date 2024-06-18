@@ -1,3 +1,4 @@
+pub const EVENT_ADDRESS: u64 = 0;
 pub const ADMIN: u64 = 1;
 pub const USERS: [u64; 3] = [2, 3, 4];
 pub const REGULAR_USER_1: u64 = USERS[0];

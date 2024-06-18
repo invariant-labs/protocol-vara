@@ -3272,20 +3272,8 @@ checksum = "8ab99c1c5b31b55620dac12ba4bd042fac156a6f2842c9c4edcfd278caf8c6ae"
 dependencies = [
  "blake2-rfc",
  "derive_more",
- "gmeta-codegen",
  "hex",
  "scale-info",
-]
-
-[[package]]
-name = "gmeta-codegen"
-version = "1.4.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0eff498ad76e14e7261ad08a96bc8db28a847f21cc79fb4554a905b6ca61c257"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn 2.0.66",
 ]
 
 [[package]]
@@ -3931,7 +3919,6 @@ dependencies = [
  "math",
  "sails-idl-gen",
  "sails-rtl",
- "state",
  "tokio",
  "traceable_result",
 ]
@@ -7373,17 +7360,6 @@ name = "stable_deref_trait"
 version = "1.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a8f112729512f8e442d81f95a8a7ddf2b7c6b8a1a6f509a95864142b30cab2d3"
-
-[[package]]
-name = "state"
-version = "0.1.0"
-dependencies = [
- "contracts",
- "gear-wasm-builder",
- "gmeta",
- "gstd",
- "io",
-]
 
 [[package]]
 name = "static_assertions"

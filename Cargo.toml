@@ -20,7 +20,6 @@ futures = { version = "0.3.30", features = [
 gear-wasm-builder.workspace = true
 gmeta.workspace = true
 io.workspace = true
-state.workspace = true
 sails-idl-gen.workspace = true
 
 [dev-dependencies]
@@ -36,7 +35,7 @@ default = ["binary-vendor", "wasm-opt"]
 test = ["gstd/debug"]
 
 [workspace]
-members = ["state", "xtask", "gear-erc20/app", "gear-erc20/wasm", "src/app", "src/wasm"]
+members = ["xtask", "gear-erc20/app", "gear-erc20/wasm", "src/app", "src/wasm"]
 package.version = "0.1.0"
 package.edition = "2021"
 
@@ -53,7 +52,6 @@ gear-erc20-wasm.path = "gear-erc20/wasm"
 invariant-app.path = "src/app"
 invariant-wasm.path = "src/wasm"
 # Contract dependencies
-state.path = "state"
 io.path = "io"
 
 # Gear dependencies

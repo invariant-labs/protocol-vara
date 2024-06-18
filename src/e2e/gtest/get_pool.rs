@@ -3,10 +3,9 @@ use crate::test_helpers::gtest::*;
 
 use contracts::*;
 use decimal::*;
-use gstd::*;
 use gtest::*;
-use io::*;
 use math::{percentage::Percentage, sqrt_price::calculate_sqrt_price};
+use sails_rtl::ActorId;
 
 #[test]
 fn test_get_pool() {
@@ -21,27 +20,26 @@ fn test_get_pool() {
         fee: Percentage::new(1),
         tick_spacing: 1,
     };
-    let res = invariant.send(ADMIN, InvariantAction::AddFeeTier(fee_tier));
-    assert!(!res.main_failed());
-    assert!(res.log().last().unwrap().payload().is_empty());
+    add_fee_tier(&invariant, ADMIN, fee_tier).assert_success();
 
     let init_sqrt_price = calculate_sqrt_price(0).unwrap();
     let init_tick = 0;
 
     let block_timestamp = sys.block_timestamp();
 
-    let res = invariant.send(
+    let res = create_pool(
+        &invariant,
         REGULAR_USER_1,
-        InvariantAction::CreatePool {
-            token_0,
-            token_1,
-            fee_tier,
-            init_sqrt_price,
-            init_tick,
-        },
+        token_0,
+        token_1,
+        fee_tier,
+        init_sqrt_price,
+        init_tick,
     );
+    res.assert_single_event()
+        .assert_empty()
+        .assert_to(REGULAR_USER_1);
 
-    assert!(res.events_eq(vec![TestEvent::empty_invariant_response(REGULAR_USER_1)]));
     let pool = get_pool(&invariant, token_0, token_1, fee_tier).unwrap();
 
     assert_eq!(

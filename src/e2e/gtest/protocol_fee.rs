@@ -1,10 +1,9 @@
 use crate::test_helpers::gtest::*;
 use contracts::*;
 use decimal::*;
-use gstd::{prelude::*, ActorId};
 use gtest::*;
-use io::*;
 use math::{percentage::Percentage, token_amount::TokenAmount};
+use sails_rtl::ActorId;
 
 #[test]
 fn test_protocol_fee() {
@@ -24,9 +23,7 @@ fn test_protocol_fee() {
     let fee_tier = FeeTier::new(Percentage::from_scale(6, 3), 10).unwrap();
     let pool_key = PoolKey::new(token_x, token_y, fee_tier).unwrap();
 
-    invariant
-        .send(ADMIN, InvariantAction::WithdrawProtocolFee(pool_key))
-        .assert_success();
+    withdraw_protocol_fee(&invariant, ADMIN, pool_key).assert_success();
 
     withdraw_token_pair(
         &invariant,
@@ -68,7 +65,7 @@ fn test_protocol_fee_not_admin() {
     let token_x = ActorId::from(TOKEN_X_ID);
     let token_y = ActorId::from(TOKEN_Y_ID);
 
-    let mut invariant = init_invariant(&sys, Percentage::from_scale(1, 2));
+    let invariant = init_invariant(&sys, Percentage::from_scale(1, 2));
     let (token_x_program, token_y_program) = init_tokens(&sys);
 
     init_basic_pool(&invariant, &token_x, &token_y);
@@ -78,11 +75,8 @@ fn test_protocol_fee_not_admin() {
     let fee_tier = FeeTier::new(Percentage::from_scale(6, 3), 10).unwrap();
     let pool_key = PoolKey::new(token_x, token_y, fee_tier).unwrap();
 
-    invariant.send_and_assert_panic(
-        REGULAR_USER_1,
-        InvariantAction::WithdrawProtocolFee(pool_key),
-        InvariantError::NotFeeReceiver,
-    );
+    withdraw_protocol_fee(&invariant, REGULAR_USER_1, pool_key)
+        .assert_panicked_with(InvariantError::NotFeeReceiver);
 }
 
 #[test]
@@ -103,22 +97,12 @@ fn test_withdraw_fee_not_deployer() {
     let fee_tier = FeeTier::new(Percentage::from_scale(6, 3), 10).unwrap();
     let pool_key = PoolKey::new(token_x, token_y, fee_tier).unwrap();
 
-    invariant
-        .send(
-            ADMIN,
-            InvariantAction::ChangeFeeReceiver(pool_key, REGULAR_USER_2.into()),
-        )
-        .assert_success();
+    change_fee_receiver(&invariant, ADMIN, pool_key, REGULAR_USER_2.into()).assert_success();
 
     let pool = get_pool(&invariant, token_x, token_y, fee_tier).unwrap();
     assert_eq!(pool.fee_receiver, REGULAR_USER_2.into());
 
-    invariant
-        .send(
-            REGULAR_USER_2,
-            InvariantAction::WithdrawProtocolFee(pool_key),
-        )
-        .assert_success();
+    withdraw_protocol_fee(&invariant, REGULAR_USER_2, pool_key).assert_success();
 
     withdraw_single_token(&invariant, REGULAR_USER_2, token_x, None, None::<&str>).unwrap();
 

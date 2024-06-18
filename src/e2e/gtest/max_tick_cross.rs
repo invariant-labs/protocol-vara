@@ -1,13 +1,12 @@
 use crate::test_helpers::gtest::*;
 use contracts::*;
 use decimal::*;
-use gstd::*;
 use gtest::*;
-use io::InvariantAction;
 use math::{
     get_tick_at_sqrt_price, liquidity::Liquidity, percentage::Percentage, sqrt_price::SqrtPrice,
     token_amount::TokenAmount, MIN_SQRT_PRICE,
 };
+use sails_rtl::ActorId;
 
 #[test]
 fn max_tick_cross() {
@@ -68,19 +67,17 @@ fn max_tick_cross() {
         let slippage_limit_lower = pool.sqrt_price;
         let slippage_limit_upper = pool.sqrt_price;
 
-        invariant
-            .send(
-                REGULAR_USER_1,
-                InvariantAction::CreatePosition {
-                    pool_key,
-                    lower_tick: i,
-                    upper_tick: i + tick_spacing as i32,
-                    liquidity_delta: liquidity,
-                    slippage_limit_lower,
-                    slippage_limit_upper,
-                },
-            )
-            .assert_success();
+        create_position(
+            &invariant,
+            REGULAR_USER_1,
+            pool_key,
+            i,
+            i + tick_spacing as i32,
+            liquidity,
+            slippage_limit_lower,
+            slippage_limit_upper,
+        )
+        .assert_success();
     }
 
     let pool = get_pool(&invariant, token_x, token_y, fee_tier).unwrap();
@@ -93,13 +90,7 @@ fn max_tick_cross() {
     increase_allowance(&token_x_program, REGULAR_USER_2, INVARIANT_ID, amount).assert_success();
 
     assert_eq!(
-        deposit_single_token(
-            &invariant,
-            REGULAR_USER_2,
-            TOKEN_X_ID,
-            amount,
-            None::<&str>
-        ),
+        deposit_single_token(&invariant, REGULAR_USER_2, TOKEN_X_ID, amount, None::<&str>),
         Some(TokenAmount(amount))
     );
 
@@ -116,7 +107,6 @@ fn max_tick_cross() {
         swap_amount,
         true,
         slippage,
-        None::<InvariantError>,
     )
     .unwrap();
 
@@ -127,18 +117,16 @@ fn max_tick_cross() {
     assert_eq!(crosses_after_quote, 0);
     assert_eq!(quote_result.ticks.len() - 1, 145);
 
-    invariant
-        .send(
-            REGULAR_USER_1,
-            InvariantAction::Swap {
-                pool_key,
-                x_to_y: true,
-                amount: swap_amount,
-                by_amount_in: true,
-                sqrt_price_limit: slippage,
-            },
-        )
-        .assert_success();
+    swap(
+        &invariant,
+        REGULAR_USER_1,
+        pool_key,
+        true,
+        swap_amount,
+        true,
+        slippage,
+    )
+    .assert_success();
 
     let pool_after = get_pool(&invariant, token_x, token_y, pool_key.fee_tier).unwrap();
 

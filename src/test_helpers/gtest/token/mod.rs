@@ -8,8 +8,6 @@ pub mod increase_allowance;
 pub mod init_tokens;
 pub mod init_tokens_with_mint;
 pub mod mint;
-pub mod send_query;
-pub mod send_request;
 pub mod set_transfer_fail;
 
 pub use allowance::*;

@@ -1,8 +1,8 @@
 use crate::send_request;
 use crate::test_helpers::gtest::*;
-use gstd::*;
+use gstd::Encode;
 use gtest::*;
-
+use sails_rtl::ActorId;
 pub fn init_tokens(sys: &System) -> (Program<'_>, Program<'_>) {
     let bytes = include_bytes!(
         "../../../../target/wasm32-unknown-unknown/release/gear_erc20_wasm.opt.wasm"
@@ -21,10 +21,10 @@ pub fn init_tokens(sys: &System) -> (Program<'_>, Program<'_>) {
         .send_bytes(PROGRAM_OWNER, request.clone())
         .assert_success();
 
-    send_request!(token: token_x, user: PROGRAM_OWNER, service_name: "Admin", action: "GrantRole", payload: (ActorId::from(PROGRAM_OWNER), Role::Minter)).assert_success();
-    send_request!(token: token_y, user: PROGRAM_OWNER, service_name: "Admin", action: "GrantRole", payload: (ActorId::from(PROGRAM_OWNER), Role::Minter)).assert_success();
-    send_request!(token: token_x, user: PROGRAM_OWNER, service_name: "Admin", action: "GrantRole", payload: (ActorId::from(PROGRAM_OWNER), Role::Burner)).assert_success();
-    send_request!(token: token_y, user: PROGRAM_OWNER, service_name: "Admin", action: "GrantRole", payload: (ActorId::from(PROGRAM_OWNER), Role::Burner)).assert_success();
+    send_request!(program: token_x, user: PROGRAM_OWNER, service_name: "Admin", action: "GrantRole", payload: (ActorId::from(PROGRAM_OWNER), Role::Minter)).assert_success();
+    send_request!(program: token_y, user: PROGRAM_OWNER, service_name: "Admin", action: "GrantRole", payload: (ActorId::from(PROGRAM_OWNER), Role::Minter)).assert_success();
+    send_request!(program: token_x, user: PROGRAM_OWNER, service_name: "Admin", action: "GrantRole", payload: (ActorId::from(PROGRAM_OWNER), Role::Burner)).assert_success();
+    send_request!(program: token_y, user: PROGRAM_OWNER, service_name: "Admin", action: "GrantRole", payload: (ActorId::from(PROGRAM_OWNER), Role::Burner)).assert_success();
 
     (token_x, token_y)
 }

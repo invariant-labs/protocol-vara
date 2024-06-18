@@ -1,5 +1,6 @@
-use gstd::{collections::HashMap, ActorId, Decode, Encode, TypeInfo};
+use gstd::{collections::HashMap, Decode, Encode, TypeInfo};
 use primitive_types::U256;
+use sails_rtl::ActorId;
 
 pub type AllowancesMap = HashMap<(ActorId, ActorId), NonZeroU256>;
 pub type BalancesMap = HashMap<ActorId, NonZeroU256>;

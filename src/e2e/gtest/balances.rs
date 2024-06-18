@@ -3,9 +3,9 @@ use crate::test_helpers::gtest::*;
 
 use contracts::*;
 use decimal::*;
-use gstd::*;
 use gtest::*;
 use math::{percentage::Percentage, token_amount::TokenAmount};
+use sails_rtl::ActorId;
 
 #[test]
 fn test_single_deposit_and_withdraw() {
@@ -547,7 +547,7 @@ fn test_token_pair_deposit_failures() {
         } else if token == token_y {
             (token_y, &token_y_program)
         } else {
-            panic!("unexpected token")
+            panic!("unexpected token");
         };
 
         let mut balances_before = get_user_balances(&invariant, REGULAR_USER_2);

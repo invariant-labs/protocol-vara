@@ -1,13 +1,12 @@
 use crate::test_helpers::gtest::*;
 use contracts::*;
 use decimal::*;
-use gstd::*;
 use gtest::*;
-use io::*;
 use math::{
     fee_growth::FeeGrowth, liquidity::Liquidity, percentage::Percentage, sqrt_price::SqrtPrice,
     token_amount::TokenAmount, MIN_SQRT_PRICE,
 };
+use sails_rtl::ActorId;
 pub fn init_cross_swap(invariant: &Program, token_x_program: &Program, token_y_program: &Program) {
     let token_x = ActorId::from(TOKEN_X_ID);
     let token_y = ActorId::from(TOKEN_Y_ID);
@@ -31,29 +30,42 @@ pub fn init_cross_swap(invariant: &Program, token_x_program: &Program, token_y_p
     let pool_before = get_pool(invariant, token_x, token_y, fee_tier).unwrap();
 
     let swap_amount = TokenAmount::new(amount);
-    
+
     assert_eq!(
-        deposit_single_token(&invariant, REGULAR_USER_2, TOKEN_X_ID, swap_amount.get(), None::<&str>),
+        deposit_single_token(
+            &invariant,
+            REGULAR_USER_2,
+            TOKEN_X_ID,
+            swap_amount.get(),
+            None::<&str>
+        ),
         Some(swap_amount)
     );
 
     let slippage = SqrtPrice::new(MIN_SQRT_PRICE);
-    invariant
-        .send(
-            REGULAR_USER_2,
-            InvariantAction::Swap {
-                pool_key,
-                x_to_y: true,
-                amount: swap_amount,
-                by_amount_in: true,
-                sqrt_price_limit: slippage,
-            },
-        )
-        .assert_success();
 
+    swap(
+        &invariant,
+        REGULAR_USER_2,
+        pool_key,
+        true,
+        swap_amount,
+        true,
+        slippage,
+    )
+    .assert_success();
 
-    assert!(withdraw_single_token(invariant, REGULAR_USER_2, TOKEN_X_ID, None, InvariantError::NoBalanceForTheToken.into()).is_none());
-    assert!(withdraw_single_token(invariant, REGULAR_USER_2 , TOKEN_Y_ID, None, None::<&str>).is_some());
+    assert!(withdraw_single_token(
+        invariant,
+        REGULAR_USER_2,
+        TOKEN_X_ID,
+        None,
+        InvariantError::NoBalanceForTheToken.into()
+    )
+    .is_none());
+    assert!(
+        withdraw_single_token(invariant, REGULAR_USER_2, TOKEN_Y_ID, None, None::<&str>).is_some()
+    );
 
     let pool_after = get_pool(invariant, token_x, token_y, fee_tier).unwrap();
 
@@ -79,5 +91,4 @@ pub fn init_cross_swap(invariant: &Program, token_x_program: &Program, token_y_p
 
     assert_eq!(pool_after.fee_protocol_token_x, TokenAmount::new(2));
     assert_eq!(pool_after.fee_protocol_token_y, TokenAmount::new(0));
-
 }

@@ -1,9 +1,7 @@
 use crate::test_helpers::gtest::*;
 use contracts::*;
 use decimal::*;
-use s::{prelude::*, ActorId};
 use gtest::*;
-use io::*;
 use math::{
     fee_growth::FeeGrowth,
     liquidity::Liquidity,
@@ -12,6 +10,7 @@ use math::{
     token_amount::TokenAmount,
     MIN_SQRT_PRICE,
 };
+use sails_rtl::{prelude::*, ActorId};
 
 #[test]
 fn test_create_position() {
@@ -29,23 +28,20 @@ fn test_create_position() {
     let init_tick = 0;
     let init_sqrt_price = calculate_sqrt_price(init_tick).unwrap();
 
-    let res = invariant.send(ADMIN, InvariantAction::AddFeeTier(fee_tier));
-
-    assert!(res.events_eq(vec![TestEvent::empty_invariant_response(ADMIN)]));
-
-    let res = invariant.send(
+    let res = add_fee_tier(&invariant, ADMIN, fee_tier);
+    res.assert_single_event().assert_empty().assert_to(ADMIN);
+    let _res = create_pool(
+        &invariant,
         REGULAR_USER_1,
-        InvariantAction::CreatePool {
-            token_0: token_x,
-            token_1: token_y,
-            fee_tier,
-            init_sqrt_price,
-            init_tick,
-        },
-    );
-
-    assert!(res.events_eq(vec![TestEvent::empty_invariant_response(REGULAR_USER_1)]));
-
+        token_x,
+        token_y,
+        fee_tier,
+        init_sqrt_price,
+        init_tick,
+    )
+    .assert_single_event()
+    .assert_empty()
+    .assert_to(REGULAR_USER_1);
     increase_allowance(&token_x_program, REGULAR_USER_1, INVARIANT_ID, 500).assert_success();
 
     increase_allowance(&token_y_program, REGULAR_USER_1, INVARIANT_ID, 500).assert_success();
@@ -64,16 +60,15 @@ fn test_create_position() {
     )
     .unwrap();
 
-    let res = invariant.send(
+    let res = create_position(
+        &invariant,
         REGULAR_USER_1,
-        InvariantAction::CreatePosition {
-            pool_key,
-            lower_tick: -10,
-            upper_tick: 10,
-            liquidity_delta: Liquidity::new(10),
-            slippage_limit_lower: pool.sqrt_price,
-            slippage_limit_upper: pool.sqrt_price,
-        },
+        pool_key,
+        -10,
+        10,
+        Liquidity::new(10),
+        pool.sqrt_price,
+        pool.sqrt_price,
     );
 
     withdraw_token_pair(
@@ -87,34 +82,33 @@ fn test_create_position() {
     )
     .unwrap();
 
-    assert!(res.events_eq(vec![
-        TestEvent::invariant_response(
-            REGULAR_USER_1,
-            InvariantEvent::PositionCreatedEvent {
-                address: REGULAR_USER_1.into(),
-                pool_key,
-                liquidity_delta: Liquidity::new(10),
-                block_timestamp: sys.block_timestamp(),
-                lower_tick: -10,
-                upper_tick: 10,
-                current_sqrt_price: init_sqrt_price,
-            }
-        ),
-        TestEvent::invariant_response(
-            REGULAR_USER_1,
-            InvariantEvent::PositionCreatedReturn(Position {
-                pool_key,
-                liquidity: Liquidity::new(10),
-                lower_tick_index: -10,
-                upper_tick_index: 10,
-                fee_growth_inside_x: FeeGrowth::new(0),
-                fee_growth_inside_y: FeeGrowth::new(0),
-                last_block_number: sys.block_height() as u64,
-                tokens_owed_x: TokenAmount(0),
-                tokens_owed_y: TokenAmount(0)
-            })
-        )
-    ]));
+    let events = res.emitted_events();
+    assert_eq!(events.len(), 2);
+    events[0]
+        .assert_to(EVENT_ADDRESS)
+        .assert_with_payload(PositionCreatedEvent {
+            address: REGULAR_USER_1.into(),
+            pool_key,
+            liquidity_delta: Liquidity::new(10),
+            block_timestamp: sys.block_timestamp(),
+            lower_tick: -10,
+            upper_tick: 10,
+            current_sqrt_price: init_sqrt_price,
+        });
+
+    events[1]
+        .assert_to(REGULAR_USER_1)
+        .assert_with_payload(Position {
+            pool_key,
+            liquidity: Liquidity::new(10),
+            lower_tick_index: -10,
+            upper_tick_index: 10,
+            fee_growth_inside_x: FeeGrowth::new(0),
+            fee_growth_inside_y: FeeGrowth::new(0),
+            last_block_number: sys.block_height() as u64,
+            tokens_owed_x: TokenAmount(0),
+            tokens_owed_y: TokenAmount(0),
+        });
 }
 
 #[test]
@@ -122,7 +116,7 @@ fn test_position_same_upper_and_lower_tick() {
     let sys = System::new();
     sys.init_logger();
 
-    let mut invariant = init_invariant(&sys, Percentage(100));
+    let invariant = init_invariant(&sys, Percentage(100));
 
     let (token_x_program, token_y_program) = init_tokens_with_mint(&sys, (500, 500));
     let token_x = ActorId::from(TOKEN_X_ID);
@@ -133,22 +127,20 @@ fn test_position_same_upper_and_lower_tick() {
     let init_tick = 0;
     let init_sqrt_price = calculate_sqrt_price(init_tick).unwrap();
 
-    let res = invariant.send(ADMIN, InvariantAction::AddFeeTier(fee_tier));
-
-    assert!(res.events_eq(vec![TestEvent::empty_invariant_response(ADMIN)]));
-
-    let res = invariant.send(
+    let res = add_fee_tier(&invariant, ADMIN, fee_tier);
+    res.assert_single_event().assert_empty().assert_to(ADMIN);
+    let _res = create_pool(
+        &invariant,
         REGULAR_USER_1,
-        InvariantAction::CreatePool {
-            token_0: token_x,
-            token_1: token_y,
-            fee_tier,
-            init_sqrt_price,
-            init_tick,
-        },
-    );
-
-    assert!(res.events_eq(vec![TestEvent::empty_invariant_response(REGULAR_USER_1)]));
+        token_x,
+        token_y,
+        fee_tier,
+        init_sqrt_price,
+        init_tick,
+    )
+    .assert_single_event()
+    .assert_empty()
+    .assert_to(REGULAR_USER_1);
 
     increase_allowance(&token_x_program, REGULAR_USER_1, INVARIANT_ID, 500).assert_success();
 
@@ -168,18 +160,17 @@ fn test_position_same_upper_and_lower_tick() {
     )
     .unwrap();
 
-    let _res = invariant.send_and_assert_panic(
+    create_position(
+        &invariant,
         REGULAR_USER_1,
-        InvariantAction::CreatePosition {
-            pool_key,
-            lower_tick: 10,
-            upper_tick: 10,
-            liquidity_delta: Liquidity::new(10),
-            slippage_limit_lower: pool.sqrt_price,
-            slippage_limit_upper: pool.sqrt_price,
-        },
-        InvariantError::InvalidTickIndex,
-    );
+        pool_key,
+        10,
+        10,
+        Liquidity::new(10),
+        pool.sqrt_price,
+        pool.sqrt_price,
+    )
+    .assert_panicked_with(InvariantError::InvalidTickIndex);
 
     withdraw_token_pair(
         &invariant,
@@ -213,22 +204,20 @@ fn test_position_below_current_tick() {
     let init_tick = 0;
     let init_sqrt_price = calculate_sqrt_price(init_tick).unwrap();
 
-    let res = invariant.send(ADMIN, InvariantAction::AddFeeTier(fee_tier));
-
-    assert!(res.events_eq(vec![TestEvent::empty_invariant_response(ADMIN)]));
-
-    let res = invariant.send(
+    let res = add_fee_tier(&invariant, ADMIN, fee_tier);
+    res.assert_single_event().assert_empty().assert_to(ADMIN);
+    let _res = create_pool(
+        &invariant,
         REGULAR_USER_1,
-        InvariantAction::CreatePool {
-            token_0: token_x,
-            token_1: token_y,
-            fee_tier,
-            init_sqrt_price,
-            init_tick,
-        },
-    );
-
-    assert!(res.events_eq(vec![TestEvent::empty_invariant_response(REGULAR_USER_1)]));
+        token_x,
+        token_y,
+        fee_tier,
+        init_sqrt_price,
+        init_tick,
+    )
+    .assert_single_event()
+    .assert_empty()
+    .assert_to(REGULAR_USER_1);
 
     increase_allowance(
         &token_x_program,
@@ -264,48 +253,47 @@ fn test_position_below_current_tick() {
     )
     .unwrap();
 
-    let res = invariant.send(
+    let res = create_position(
+        &invariant,
         REGULAR_USER_1,
-        InvariantAction::CreatePosition {
-            pool_key,
-            lower_tick: lower_tick_index,
-            upper_tick: upper_tick_index,
-            liquidity_delta,
-            slippage_limit_lower: pool_state_before.sqrt_price,
-            slippage_limit_upper: pool_state_before.sqrt_price,
-        },
+        pool_key,
+        lower_tick_index,
+        upper_tick_index,
+        liquidity_delta,
+        pool_state_before.sqrt_price,
+        pool_state_before.sqrt_price,
     );
+
     let expected_x_increase = 0;
     let expected_y_increase = 2162;
 
-    assert!(res.events_eq(vec![
-        TestEvent::invariant_response(
-            REGULAR_USER_1,
-            InvariantEvent::PositionCreatedEvent {
-                address: REGULAR_USER_1.into(),
-                pool_key,
-                liquidity_delta,
-                block_timestamp: sys.block_timestamp(),
-                lower_tick: lower_tick_index,
-                upper_tick: upper_tick_index,
-                current_sqrt_price: init_sqrt_price,
-            }
-        ),
-        TestEvent::invariant_response(
-            REGULAR_USER_1,
-            InvariantEvent::PositionCreatedReturn(Position {
-                pool_key,
-                liquidity: liquidity_delta,
-                lower_tick_index,
-                upper_tick_index,
-                fee_growth_inside_x: FeeGrowth::new(0),
-                fee_growth_inside_y: FeeGrowth::new(0),
-                last_block_number: sys.block_height() as u64,
-                tokens_owed_x: TokenAmount(0),
-                tokens_owed_y: TokenAmount(0)
-            })
-        )
-    ]));
+    let events = res.emitted_events();
+    assert_eq!(events.len(), 2);
+    events[0]
+        .assert_to(EVENT_ADDRESS)
+        .assert_with_payload(PositionCreatedEvent {
+            address: REGULAR_USER_1.into(),
+            pool_key,
+            liquidity_delta,
+            block_timestamp: sys.block_timestamp(),
+            lower_tick: lower_tick_index,
+            upper_tick: upper_tick_index,
+            current_sqrt_price: init_sqrt_price,
+        });
+
+    events[1]
+        .assert_to(REGULAR_USER_1)
+        .assert_with_payload(Position {
+            pool_key,
+            liquidity: liquidity_delta,
+            lower_tick_index,
+            upper_tick_index,
+            fee_growth_inside_x: FeeGrowth::new(0),
+            fee_growth_inside_y: FeeGrowth::new(0),
+            last_block_number: sys.block_height() as u64,
+            tokens_owed_x: TokenAmount(0),
+            tokens_owed_y: TokenAmount(0),
+        });
 
     withdraw_token_pair(
         &invariant,
@@ -382,22 +370,20 @@ fn test_position_within_current_tick() {
     let init_tick = -23028;
     let init_sqrt_price = calculate_sqrt_price(init_tick).unwrap();
 
-    let res = invariant.send(ADMIN, InvariantAction::AddFeeTier(fee_tier));
-
-    assert!(res.events_eq(vec![TestEvent::empty_invariant_response(ADMIN)]));
-
-    let res = invariant.send(
+    let res = add_fee_tier(&invariant, ADMIN, fee_tier);
+    res.assert_single_event().assert_empty().assert_to(ADMIN);
+    let _res = create_pool(
+        &invariant,
         REGULAR_USER_1,
-        InvariantAction::CreatePool {
-            token_0: token_x,
-            token_1: token_y,
-            fee_tier,
-            init_sqrt_price,
-            init_tick,
-        },
-    );
-
-    assert!(res.events_eq(vec![TestEvent::empty_invariant_response(REGULAR_USER_1)]));
+        token_x,
+        token_y,
+        fee_tier,
+        init_sqrt_price,
+        init_tick,
+    )
+    .assert_single_event()
+    .assert_empty()
+    .assert_to(REGULAR_USER_1);
 
     increase_allowance(
         &token_x_program,
@@ -433,19 +419,17 @@ fn test_position_within_current_tick() {
     )
     .unwrap();
 
-    invariant
-        .send(
-            REGULAR_USER_1,
-            InvariantAction::CreatePosition {
-                pool_key,
-                lower_tick: lower_tick_index,
-                upper_tick: upper_tick_index,
-                liquidity_delta,
-                slippage_limit_lower: pool_state_before.sqrt_price,
-                slippage_limit_upper: pool_state_before.sqrt_price,
-            },
-        )
-        .assert_success();
+    create_position(
+        &invariant,
+        REGULAR_USER_1,
+        pool_key,
+        lower_tick_index,
+        upper_tick_index,
+        liquidity_delta,
+        pool_state_before.sqrt_price,
+        pool_state_before.sqrt_price,
+    )
+    .assert_success();
 
     withdraw_token_pair(
         &invariant,
@@ -521,21 +505,21 @@ fn test_position_above_current_tick() {
     let init_tick = -23028;
     let init_sqrt_price = calculate_sqrt_price(init_tick).unwrap();
 
-    let res = invariant.send(ADMIN, InvariantAction::AddFeeTier(fee_tier));
-    assert!(res.events_eq(vec![TestEvent::empty_invariant_response(ADMIN)]));
+    let res = add_fee_tier(&invariant, ADMIN, fee_tier);
+    res.assert_single_event().assert_empty().assert_to(ADMIN);
 
-    let res = invariant.send(
+    let _res = create_pool(
+        &invariant,
         REGULAR_USER_1,
-        InvariantAction::CreatePool {
-            token_0: token_x,
-            token_1: token_y,
-            fee_tier,
-            init_sqrt_price,
-            init_tick,
-        },
-    );
-
-    assert!(res.events_eq(vec![TestEvent::empty_invariant_response(REGULAR_USER_1)]));
+        token_x,
+        token_y,
+        fee_tier,
+        init_sqrt_price,
+        init_tick,
+    )
+    .assert_single_event()
+    .assert_empty()
+    .assert_to(REGULAR_USER_1);
 
     increase_allowance(
         &token_x_program,
@@ -571,46 +555,44 @@ fn test_position_above_current_tick() {
     )
     .unwrap();
 
-    let res = invariant.send(
+    let res = create_position(
+        &invariant,
         REGULAR_USER_1,
-        InvariantAction::CreatePosition {
-            pool_key,
-            lower_tick: lower_tick_index,
-            upper_tick: upper_tick_index,
-            liquidity_delta,
-            slippage_limit_lower: pool_state_before.sqrt_price,
-            slippage_limit_upper: pool_state_before.sqrt_price,
-        },
+        pool_key,
+        lower_tick_index,
+        upper_tick_index,
+        liquidity_delta,
+        pool_state_before.sqrt_price,
+        pool_state_before.sqrt_price,
     );
 
-    assert!(res.events_eq(vec![
-        TestEvent::invariant_response(
-            REGULAR_USER_1,
-            InvariantEvent::PositionCreatedEvent {
-                address: REGULAR_USER_1.into(),
-                pool_key,
-                liquidity_delta,
-                block_timestamp: sys.block_timestamp(),
-                lower_tick: lower_tick_index,
-                upper_tick: upper_tick_index,
-                current_sqrt_price: init_sqrt_price,
-            }
-        ),
-        TestEvent::invariant_response(
-            REGULAR_USER_1,
-            InvariantEvent::PositionCreatedReturn(Position {
-                pool_key,
-                liquidity: liquidity_delta,
-                lower_tick_index,
-                upper_tick_index,
-                fee_growth_inside_x: FeeGrowth::new(0),
-                fee_growth_inside_y: FeeGrowth::new(0),
-                last_block_number: sys.block_height() as u64,
-                tokens_owed_x: TokenAmount(0),
-                tokens_owed_y: TokenAmount(0)
-            })
-        )
-    ]));
+    let events = res.emitted_events();
+    assert_eq!(events.len(), 2);
+    events[0]
+        .assert_to(EVENT_ADDRESS)
+        .assert_with_payload(PositionCreatedEvent {
+            address: REGULAR_USER_1.into(),
+            pool_key,
+            liquidity_delta,
+            block_timestamp: sys.block_timestamp(),
+            lower_tick: lower_tick_index,
+            upper_tick: upper_tick_index,
+            current_sqrt_price: init_sqrt_price,
+        });
+
+    events[1]
+        .assert_to(REGULAR_USER_1)
+        .assert_with_payload(Position {
+            pool_key,
+            liquidity: liquidity_delta,
+            lower_tick_index,
+            upper_tick_index,
+            fee_growth_inside_x: FeeGrowth::new(0),
+            fee_growth_inside_y: FeeGrowth::new(0),
+            last_block_number: sys.block_height() as u64,
+            tokens_owed_x: TokenAmount(0),
+            tokens_owed_y: TokenAmount(0),
+        });
 
     withdraw_token_pair(
         &invariant,
@@ -673,7 +655,7 @@ fn test_create_position_not_enough_token_x() {
     let sys = System::new();
     sys.init_logger();
 
-    let mut invariant = init_invariant(&sys, Percentage(100));
+    let invariant = init_invariant(&sys, Percentage(100));
 
     let initial_balance = 100_000_000;
     let (token_x_program, token_y_program) = init_tokens_with_mint(&sys, (1, initial_balance));
@@ -684,22 +666,20 @@ fn test_create_position_not_enough_token_x() {
     let init_tick = 0;
     let init_sqrt_price = calculate_sqrt_price(init_tick).unwrap();
 
-    let res = invariant.send(ADMIN, InvariantAction::AddFeeTier(fee_tier));
-
-    assert!(res.events_eq(vec![TestEvent::empty_invariant_response(ADMIN)]));
-
-    let res = invariant.send(
+    let res = add_fee_tier(&invariant, ADMIN, fee_tier);
+    res.assert_single_event().assert_empty().assert_to(ADMIN);
+    let _res = create_pool(
+        &invariant,
         REGULAR_USER_1,
-        InvariantAction::CreatePool {
-            token_0: token_x,
-            token_1: token_y,
-            fee_tier,
-            init_sqrt_price,
-            init_tick,
-        },
-    );
-
-    assert!(res.events_eq(vec![TestEvent::empty_invariant_response(REGULAR_USER_1)]));
+        token_x,
+        token_y,
+        fee_tier,
+        init_sqrt_price,
+        init_tick,
+    )
+    .assert_single_event()
+    .assert_empty()
+    .assert_to(REGULAR_USER_1);
 
     increase_allowance(
         &token_x_program,
@@ -735,18 +715,17 @@ fn test_create_position_not_enough_token_x() {
     )
     .unwrap();
 
-    let _res = invariant.send_and_assert_panic(
+    create_position(
+        &invariant,
         REGULAR_USER_1,
-        InvariantAction::CreatePosition {
-            pool_key,
-            lower_tick: lower_tick_index,
-            upper_tick: upper_tick_index,
-            liquidity_delta,
-            slippage_limit_lower: pool_state_before.sqrt_price,
-            slippage_limit_upper: pool_state_before.sqrt_price,
-        },
-        InvariantError::FailedToChangeTokenBalance,
-    );
+        pool_key,
+        lower_tick_index,
+        upper_tick_index,
+        liquidity_delta,
+        pool_state_before.sqrt_price,
+        pool_state_before.sqrt_price,
+    )
+    .assert_panicked_with(InvariantError::FailedToChangeTokenBalance);
 
     let pool_state = get_pool(&invariant, token_x, token_y, fee_tier).unwrap();
 
@@ -792,7 +771,7 @@ fn test_create_position_not_enough_token_y() {
     let sys = System::new();
     sys.init_logger();
 
-    let mut invariant = init_invariant(&sys, Percentage(100));
+    let invariant = init_invariant(&sys, Percentage(100));
 
     let initial_balance = 100_000_000;
     let (token_x_program, token_y_program) = init_tokens_with_mint(&sys, (initial_balance, 1));
@@ -803,22 +782,20 @@ fn test_create_position_not_enough_token_y() {
     let init_tick = 0;
     let init_sqrt_price = calculate_sqrt_price(init_tick).unwrap();
 
-    let res = invariant.send(ADMIN, InvariantAction::AddFeeTier(fee_tier));
-
-    assert!(res.events_eq(vec![TestEvent::empty_invariant_response(ADMIN)]));
-
-    let res = invariant.send(
+    let res = add_fee_tier(&invariant, ADMIN, fee_tier);
+    res.assert_single_event().assert_empty().assert_to(ADMIN);
+    let _res = create_pool(
+        &invariant,
         REGULAR_USER_1,
-        InvariantAction::CreatePool {
-            token_0: token_x,
-            token_1: token_y,
-            fee_tier,
-            init_sqrt_price,
-            init_tick,
-        },
-    );
-
-    assert!(res.events_eq(vec![TestEvent::empty_invariant_response(REGULAR_USER_1)]));
+        token_x,
+        token_y,
+        fee_tier,
+        init_sqrt_price,
+        init_tick,
+    )
+    .assert_single_event()
+    .assert_empty()
+    .assert_to(REGULAR_USER_1);
 
     increase_allowance(
         &token_x_program,
@@ -854,18 +831,17 @@ fn test_create_position_not_enough_token_y() {
     )
     .unwrap();
 
-    let _res = invariant.send_and_assert_panic(
+    create_position(
+        &invariant,
         REGULAR_USER_1,
-        InvariantAction::CreatePosition {
-            pool_key,
-            lower_tick: lower_tick_index,
-            upper_tick: upper_tick_index,
-            liquidity_delta,
-            slippage_limit_lower: pool_state_before.sqrt_price,
-            slippage_limit_upper: pool_state_before.sqrt_price,
-        },
-        InvariantError::FailedToChangeTokenBalance,
-    );
+        pool_key,
+        lower_tick_index,
+        upper_tick_index,
+        liquidity_delta,
+        pool_state_before.sqrt_price,
+        pool_state_before.sqrt_price,
+    )
+    .assert_panicked_with(InvariantError::FailedToChangeTokenBalance);
 
     assert_eq!(
         vec![
@@ -925,22 +901,20 @@ fn test_remove_position() {
 
     let pool_key = PoolKey::new(token_x, token_y, fee_tier).unwrap();
 
-    invariant
-        .send(ADMIN, InvariantAction::AddFeeTier(fee_tier))
-        .assert_success();
+    add_fee_tier(&invariant, ADMIN, fee_tier).assert_success();
 
-    invariant
-        .send(
-            REGULAR_USER_1,
-            InvariantAction::CreatePool {
-                token_0: token_x,
-                token_1: token_y,
-                fee_tier,
-                init_sqrt_price,
-                init_tick,
-            },
-        )
-        .assert_success();
+    let _res = create_pool(
+        &invariant,
+        REGULAR_USER_1,
+        token_x,
+        token_y,
+        fee_tier,
+        init_sqrt_price,
+        init_tick,
+    )
+    .assert_single_event()
+    .assert_empty()
+    .assert_to(REGULAR_USER_1);
 
     let lower_tick_index = -20;
     let upper_tick_index = 10;
@@ -967,19 +941,17 @@ fn test_remove_position() {
     )
     .unwrap();
 
-    invariant
-        .send(
-            REGULAR_USER_1,
-            InvariantAction::CreatePosition {
-                pool_key,
-                lower_tick: lower_tick_index,
-                upper_tick: upper_tick_index,
-                liquidity_delta,
-                slippage_limit_lower: pool_state.sqrt_price,
-                slippage_limit_upper: pool_state.sqrt_price,
-            },
-        )
-        .assert_success();
+    create_position(
+        &invariant,
+        REGULAR_USER_1,
+        pool_key,
+        lower_tick_index,
+        upper_tick_index,
+        liquidity_delta,
+        pool_state.sqrt_price,
+        pool_state.sqrt_price,
+    )
+    .assert_success();
 
     withdraw_token_pair(
         &invariant,
@@ -1029,19 +1001,17 @@ fn test_remove_position() {
     )
     .unwrap();
 
-    invariant
-        .send(
-            REGULAR_USER_1,
-            InvariantAction::CreatePosition {
-                pool_key,
-                lower_tick: incorrect_lower_tick_index,
-                upper_tick: incorrect_upper_tick_index,
-                liquidity_delta,
-                slippage_limit_lower: pool_state.sqrt_price,
-                slippage_limit_upper: pool_state.sqrt_price,
-            },
-        )
-        .assert_success();
+    create_position(
+        &invariant,
+        REGULAR_USER_1,
+        pool_key,
+        incorrect_lower_tick_index,
+        incorrect_upper_tick_index,
+        liquidity_delta,
+        pool_state.sqrt_price,
+        pool_state.sqrt_price,
+    )
+    .assert_success();
 
     withdraw_token_pair(
         &invariant,
@@ -1072,18 +1042,16 @@ fn test_remove_position() {
     let slippage = SqrtPrice::new(MIN_SQRT_PRICE);
     deposit_single_token(&invariant, REGULAR_USER_2, token_x, amount, None::<&str>).unwrap();
 
-    invariant
-        .send(
-            REGULAR_USER_2,
-            InvariantAction::Swap {
-                pool_key,
-                x_to_y: true,
-                amount: swap_amount,
-                by_amount_in: true,
-                sqrt_price_limit: slippage,
-            },
-        )
-        .assert_success();
+    swap(
+        &invariant,
+        REGULAR_USER_2,
+        pool_key,
+        true,
+        swap_amount,
+        true,
+        slippage,
+    )
+    .assert_success();
 
     withdraw_single_token(&invariant, REGULAR_USER_2, token_y, None, None::<&str>).unwrap();
 
@@ -1115,14 +1083,7 @@ fn test_remove_position() {
     assert_eq!(get_user_balances(&invariant, REGULAR_USER_1), vec![]);
 
     // Remove position
-    invariant
-        .send(
-            REGULAR_USER_1,
-            InvariantAction::RemovePosition {
-                position_id: remove_position_index,
-            },
-        )
-        .assert_success();
+    remove_position(&invariant, REGULAR_USER_1, remove_position_index).assert_success();
 
     assert_eq!(
         withdraw_token_pair(
