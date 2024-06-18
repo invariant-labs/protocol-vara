@@ -1,4 +1,4 @@
-use invariant_app::InvariantProgram;
+use invariant::InvariantProgram;
 use sails_idl_gen::program;
 use std::{env, fs::File, path::PathBuf};
 

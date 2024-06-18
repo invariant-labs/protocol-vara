@@ -4,13 +4,13 @@ version.workspace = true
 edition.workspace = true
 
 [dependencies]
-invariant-app.workspace = true
+invariant.workspace = true
 
 [build-dependencies]
-invariant-app.workspace = true
+invariant.workspace = true
 gear-wasm-builder.workspace = true
 sails-idl-gen.workspace = true
 
 [features]
 default = []
-test = ["invariant-app/test"]
+test = ["invariant/test"]

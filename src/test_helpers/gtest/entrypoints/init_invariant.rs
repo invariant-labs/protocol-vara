@@ -1,10 +1,9 @@
 use crate::send_request;
 use crate::test_helpers::consts::*;
 use crate::test_helpers::gtest::consts::*;
-use gstd::Encode;
+use gstd::{Encode, Vec};
 use gtest::*;
 use math::percentage::Percentage;
-
 use io::*;
 
 use super::InvariantResult;

@@ -1,3 +1,4 @@
+use gstd::{Vec, vec};
 #[macro_export]
 macro_rules! send_query {
   (
@@ -10,6 +11,7 @@ macro_rules! send_query {
   ) => {
         {
           use sails_rtl::gstd::*;
+          use gstd::ToString;
           use sails_rtl::{Decode, Encode};
           use crate::test_helpers::gtest::entrypoints::utils::InvariantResult;
 

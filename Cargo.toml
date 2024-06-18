@@ -35,7 +35,7 @@ default = ["binary-vendor", "wasm-opt"]
 test = ["gstd/debug"]
 
 [workspace]
-members = ["xtask", "gear-erc20/app", "gear-erc20/wasm", "src/app", "src/wasm"]
+members = ["xtask", "gear-erc20/app", "gear-erc20/wasm", "src/wasm"]
 package.version = "0.1.0"
 package.edition = "2021"
 
@@ -49,7 +49,7 @@ contracts.path = "src/contracts"
 # Local contracts
 gear-erc20.path = "gear-erc20/app"
 gear-erc20-wasm.path = "gear-erc20/wasm"
-invariant-app.path = "src/app"
+invariant.path = "."
 invariant-wasm.path = "src/wasm"
 # Contract dependencies
 io.path = "io"
