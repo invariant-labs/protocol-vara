@@ -88,7 +88,7 @@ export interface SwapHop {
   x_to_y: boolean;
 }
 
-export class Program {
+export class InvariantContract {
   public readonly registry: TypeRegistry;
   public readonly service: Service;
 
@@ -150,7 +150,7 @@ export class Program {
 }
 
 export class Service {
-  constructor(private _program: Program) {}
+  constructor(private _program: InvariantContract) {}
 
   public addFeeTier(fee_tier: FeeTier): TransactionBuilder<FeeTier> {
     if (!this._program.programId) throw new Error('Program ID is not set');
@@ -563,19 +563,6 @@ export class Service {
       const payload = message.payload.toHex();
       if (getServiceNamePrefix(payload) === 'Service' && getFnNamePrefix(payload) === 'SwapEvent') {
         callback(this._program.registry.createType('(String, String, {"timestamp":"u64","address":"[u8;32]","pool":"PoolKey","amount_in":"TokenAmount","amount_out":"TokenAmount","fee":"TokenAmount","start_sqrt_price":"SqrtPrice","target_sqrt_price":"SqrtPrice","x_to_y":"bool"})', message.payload)[2].toJSON() as { timestamp: number | string; address: string; pool: PoolKey; amount_in: TokenAmount; amount_out: TokenAmount; fee: TokenAmount; start_sqrt_price: SqrtPrice; target_sqrt_price: SqrtPrice; x_to_y: boolean });
-      }
-    });
-  }
-
-  public subscribeToProtocolFeeChangedEvent(callback: (data: Percentage) => void | Promise<void>): Promise<() => void> {
-    return this._program.api.gearEvents.subscribeToGearEvent('UserMessageSent', ({ data: { message } }) => {;
-      if (!message.source.eq(this._program.programId) || !message.destination.eq(ZERO_ADDRESS)) {
-        return;
-      }
-
-      const payload = message.payload.toHex();
-      if (getServiceNamePrefix(payload) === 'Service' && getFnNamePrefix(payload) === 'ProtocolFeeChanged') {
-        callback(this._program.registry.createType('(String, String, Percentage)', message.payload)[2].toJSON() as Percentage);
       }
     });
   }
