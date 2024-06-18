@@ -1,4 +1,4 @@
-use gstd::{Decode, Encode, TypeInfo, ActorId};
+use sails_rtl::{Decode, Encode, TypeInfo, ActorId};
 use crate::{InvariantError, FeeTier};
 use math::percentage::Percentage;
 use decimal::Decimal;

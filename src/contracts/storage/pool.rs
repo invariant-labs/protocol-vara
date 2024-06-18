@@ -2,7 +2,7 @@ extern crate alloc;
 
 use crate::{FeeTier, InvariantError, PoolKey, Tick};
 use decimal::*;
-use gstd::{ActorId, Decode, Encode, TypeInfo};
+use sails_rtl::{ActorId, Decode, Encode, TypeInfo};
 use math::{
     clamm::*,
     fee_growth::FeeGrowth,

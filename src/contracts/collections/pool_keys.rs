@@ -1,5 +1,5 @@
 use crate::{InvariantError, PoolKey};
-use gstd::{Vec, collections::HashMap};
+use sails_rtl::{Vec, collections::HashMap};
 
 #[derive(Debug, Default)]
 pub struct PoolKeys {
@@ -60,7 +60,7 @@ impl PoolKeys {
 #[cfg(test)]
 mod tests {
   use super::*;
-  use gstd::{ActorId, vec};
+  use sails_rtl::{ActorId, vec};
   use crate::FeeTier;
   use math::percentage::Percentage;
   use decimal::*;

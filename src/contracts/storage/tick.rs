@@ -5,7 +5,7 @@ use math::types::{
     fee_growth::FeeGrowth, liquidity::Liquidity, sqrt_price::calculate_sqrt_price,
     sqrt_price::SqrtPrice,
 };
-use gstd::{Decode, Encode, TypeInfo};
+use sails_rtl::{Decode, Encode, TypeInfo};
 use decimal::*;
 use traceable_result::*;
 

@@ -1,7 +1,7 @@
 use crate::test_helpers::gtest::*;
 use contracts::*;
 use decimal::*;
-use gstd::{prelude::*, ActorId};
+use s::{prelude::*, ActorId};
 use gtest::*;
 use io::*;
 use math::{

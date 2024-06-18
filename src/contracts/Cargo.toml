@@ -8,5 +8,7 @@ gstd.workspace = true
 math.workspace = true
 traceable_result.workspace = true
 decimal.workspace = true
+sails-rtl.workspace = true
+
 [lib]
 path = "lib.rs"

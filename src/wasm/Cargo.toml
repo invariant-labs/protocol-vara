@@ -1,0 +1,12 @@
+[package]
+name = "invariant-wasm"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+invariant-app.workspace = true
+
+[build-dependencies]
+invariant-app.workspace = true
+gear-wasm-builder.workspace = true
+sails-idl-gen.workspace = true

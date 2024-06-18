@@ -1,7 +1,7 @@
 use math::types::percentage::Percentage;
 use crate::errors::InvariantError;
 use decimal::*;
-use gstd::{Decode, Encode, TypeInfo};
+use sails_rtl::{Decode, Encode, TypeInfo};
 
 #[derive(Encode, Decode, TypeInfo, PartialEq, Eq, Clone, Copy, Debug, Hash)]
 #[codec(crate = gstd::codec)]

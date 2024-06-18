@@ -1,6 +1,6 @@
 import * as fs from 'fs'
 
-const filesToModify = ['./src/erc20-token.ts']
+const filesToModify = ['./src/erc20-token.ts', "./src/lib.ts"]
 
 String.prototype.replaceAt = function (index, replacement, length) {
   return this.substring(0, index) + replacement + this.substring(index + length)

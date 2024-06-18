@@ -1175,6 +1175,7 @@ dependencies = [
  "decimal",
  "gstd",
  "math",
+ "sails-rtl",
  "traceable_result",
 ]
 
@@ -3928,9 +3929,40 @@ dependencies = [
  "gtest 1.4.1 (git+https://github.com/gear-tech/gear.git?tag=v1.4.1)",
  "io",
  "math",
+ "sails-idl-gen",
+ "sails-rtl",
  "state",
  "tokio",
  "traceable_result",
+]
+
+[[package]]
+name = "invariant-app"
+version = "0.1.0"
+dependencies = [
+ "contracts",
+ "decimal",
+ "env_logger 0.10.2",
+ "futures",
+ "gclient",
+ "gear-core 1.4.1 (git+https://github.com/gear-tech/gear.git?tag=v1.4.1)",
+ "gear-wasm-builder",
+ "gstd",
+ "gtest 1.4.1 (git+https://github.com/gear-tech/gear.git?tag=v1.4.1)",
+ "io",
+ "math",
+ "sails-rtl",
+ "tokio",
+ "traceable_result",
+]
+
+[[package]]
+name = "invariant-wasm"
+version = "0.1.0"
+dependencies = [
+ "gear-wasm-builder",
+ "invariant-app",
+ "sails-idl-gen",
 ]
 
 [[package]]
@@ -3941,6 +3973,7 @@ dependencies = [
  "gmeta",
  "gstd",
  "math",
+ "sails-rtl",
 ]
 
 [[package]]
@@ -5693,7 +5726,7 @@ checksum = "f3cb5ba0dc43242ce17de99c180e96db90b235b8a9fdc9543c96d2209116bd9f"
 [[package]]
 name = "sails-idl-gen"
 version = "0.0.1"
-source = "git+https://github.com/gear-tech/sails?rev=51b731ef8f064a23c6c98fa92d06eeafe44d3f9d#51b731ef8f064a23c6c98fa92d06eeafe44d3f9d"
+source = "git+https://github.com/gear-tech/sails#31a3c1a06817b69040af0c069967dd0b31c9530b"
 dependencies = [
  "convert_case 0.6.0",
  "handlebars",
@@ -5707,7 +5740,7 @@ dependencies = [
 [[package]]
 name = "sails-macros"
 version = "0.0.1"
-source = "git+https://github.com/gear-tech/sails?rev=51b731ef8f064a23c6c98fa92d06eeafe44d3f9d#51b731ef8f064a23c6c98fa92d06eeafe44d3f9d"
+source = "git+https://github.com/gear-tech/sails#31a3c1a06817b69040af0c069967dd0b31c9530b"
 dependencies = [
  "proc-macro-error",
  "sails-macros-core",
@@ -5716,7 +5749,7 @@ dependencies = [
 [[package]]
 name = "sails-macros-core"
 version = "0.0.1"
-source = "git+https://github.com/gear-tech/sails?rev=51b731ef8f064a23c6c98fa92d06eeafe44d3f9d#51b731ef8f064a23c6c98fa92d06eeafe44d3f9d"
+source = "git+https://github.com/gear-tech/sails#31a3c1a06817b69040af0c069967dd0b31c9530b"
 dependencies = [
  "const_format",
  "convert_case 0.6.0",
@@ -5730,7 +5763,7 @@ dependencies = [
 [[package]]
 name = "sails-rtl"
 version = "0.0.1"
-source = "git+https://github.com/gear-tech/sails?rev=51b731ef8f064a23c6c98fa92d06eeafe44d3f9d#51b731ef8f064a23c6c98fa92d06eeafe44d3f9d"
+source = "git+https://github.com/gear-tech/sails#31a3c1a06817b69040af0c069967dd0b31c9530b"
 dependencies = [
  "futures",
  "gear-core-errors 1.4.1 (registry+https://github.com/rust-lang/crates.io-index)",
