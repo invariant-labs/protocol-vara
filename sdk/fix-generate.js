@@ -1,6 +1,6 @@
 import * as fs from 'fs'
 
-const filesToModify = ['./src/erc20-token.ts', "./src/lib.ts"]
+const filesToModify = ['./src/erc20-token.ts', './src/invariant-contract.ts']
 
 String.prototype.replaceAt = function (index, replacement, length) {
   return this.substring(0, index) + replacement + this.substring(index + length)
@@ -17,7 +17,7 @@ for (const path of filesToModify) {
   // matching no parameter queries
   let regex = /\'\(String, String\)\', '\[(.+?), (.+?)\]'/g
   let matches = textBuff.match(regex)
-  matches?.map((val) => {
+  matches?.map(val => {
     let match = val.replaceAll("'[", "['").replaceAll("]'", "']")
 
     let matchCount = 0
@@ -32,6 +32,9 @@ for (const path of filesToModify) {
     }
     textBuff = textBuff.replace(val, match)
   })
-
+  textBuff = textBuff.replaceAll(
+    'message.payload)[2].toJSON() as {',
+    'message.payload)[2].toJSON() as any as {'
+  )
   fs.writeFileSync(path, textBuff, 'utf8')
 }

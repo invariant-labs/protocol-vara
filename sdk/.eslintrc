@@ -3,7 +3,7 @@
   "parser": "@typescript-eslint/parser",
   "plugins": ["@typescript-eslint"],
   "root": true,
-  "ignorePatterns": ["erc20-token.ts", "target"],
+  "ignorePatterns": ["erc20-token.ts", "invariant-contract.ts", "target"],
   "rules": {
     "@typescript-eslint/no-explicit-any": "off",
     "@typescript-eslint/no-namespace": "off",

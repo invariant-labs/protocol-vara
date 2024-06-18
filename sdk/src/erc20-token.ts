@@ -232,7 +232,7 @@ export class Admin {
 
       const payload = message.payload.toHex();
       if (getServiceNamePrefix(payload) === 'Admin' && getFnNamePrefix(payload) === 'Minted') {
-        callback(this._program.registry.createType('(String, String, {"to":"[u8;32]","value":"U256"})', message.payload)[2].toJSON() as { to: string; value: number | string });
+        callback(this._program.registry.createType('(String, String, {"to":"[u8;32]","value":"U256"})', message.payload)[2].toJSON() as any as { to: string; value: number | string });
       }
     });
   }
@@ -245,7 +245,7 @@ export class Admin {
 
       const payload = message.payload.toHex();
       if (getServiceNamePrefix(payload) === 'Admin' && getFnNamePrefix(payload) === 'Burned') {
-        callback(this._program.registry.createType('(String, String, {"from":"[u8;32]","value":"U256"})', message.payload)[2].toJSON() as { from: string; value: number | string });
+        callback(this._program.registry.createType('(String, String, {"from":"[u8;32]","value":"U256"})', message.payload)[2].toJSON() as any as { from: string; value: number | string });
       }
     });
   }
@@ -258,7 +258,7 @@ export class Admin {
 
       const payload = message.payload.toHex();
       if (getServiceNamePrefix(payload) === 'Admin' && getFnNamePrefix(payload) === 'Killed') {
-        callback(this._program.registry.createType('(String, String, {"inheritor":"[u8;32]"})', message.payload)[2].toJSON() as { inheritor: string });
+        callback(this._program.registry.createType('(String, String, {"inheritor":"[u8;32]"})', message.payload)[2].toJSON() as any as { inheritor: string });
       }
     });
   }
@@ -417,7 +417,7 @@ export class Erc20 {
 
       const payload = message.payload.toHex();
       if (getServiceNamePrefix(payload) === 'Erc20' && getFnNamePrefix(payload) === 'Approval') {
-        callback(this._program.registry.createType('(String, String, {"owner":"[u8;32]","spender":"[u8;32]","value":"U256"})', message.payload)[2].toJSON() as { owner: string; spender: string; value: number | string });
+        callback(this._program.registry.createType('(String, String, {"owner":"[u8;32]","spender":"[u8;32]","value":"U256"})', message.payload)[2].toJSON() as any as { owner: string; spender: string; value: number | string });
       }
     });
   }
@@ -430,7 +430,7 @@ export class Erc20 {
 
       const payload = message.payload.toHex();
       if (getServiceNamePrefix(payload) === 'Erc20' && getFnNamePrefix(payload) === 'Transfer') {
-        callback(this._program.registry.createType('(String, String, {"from":"[u8;32]","to":"[u8;32]","value":"U256"})', message.payload)[2].toJSON() as { from: string; to: string; value: number | string });
+        callback(this._program.registry.createType('(String, String, {"from":"[u8;32]","to":"[u8;32]","value":"U256"})', message.payload)[2].toJSON() as any as { from: string; to: string; value: number | string });
       }
     });
   }
