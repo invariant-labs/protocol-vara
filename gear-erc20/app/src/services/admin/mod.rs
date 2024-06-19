@@ -5,14 +5,11 @@ use core::marker::PhantomData;
 use gstd::{exec, msg, String};
 use gstd::{ActorId, Decode, Encode, ToString, TypeInfo, Vec};
 use primitive_types::U256;
-use sails_rtl::gstd::events::{EventTrigger, GStdEventTrigger};
 use sails_rtl::gstd::gservice;
 
 use super::erc20::storage::{AllowancesStorage, BalancesStorage, TotalSupplyStorage};
-
+use sails_rtl::format;
 pub mod funcs;
-
-pub type GstdDrivenService = Service<GStdEventTrigger<Event>>;
 
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Encode, Decode, TypeInfo)]
 #[codec(crate = gstd::codec)]
@@ -32,16 +29,15 @@ pub enum Event {
 }
 
 // TODO (breathx): once supported in sails impl Clone here
-pub struct Service<X> {
-    roles_service: services::roles::GstdDrivenService,
-    pausable_service: ServiceOf<services::pausable::GstdDrivenService>,
-    _phantom: PhantomData<X>,
+pub struct AdminService {
+    roles_service: services::roles::RolesService,
+    pausable_service: ServiceOf<services::pausable::Service>,
 }
 
-impl<X: EventTrigger<Event>> Service<X> {
+impl AdminService {
     pub fn seed(
-        mut roles_service: services::roles::GstdDrivenService,
-        pausable_service: ServiceOf<services::pausable::GstdDrivenService>,
+        mut roles_service: services::roles::RolesService,
+        pausable_service: ServiceOf<services::pausable::Service>,
         admin: ActorId,
     ) -> Self {
         roles_service.register_role::<FungibleAdmin>();
@@ -54,24 +50,19 @@ impl<X: EventTrigger<Event>> Service<X> {
         Self {
             roles_service,
             pausable_service,
-            _phantom: PhantomData,
         }
     }
 }
 
-#[gservice]
-impl<X> Service<X>
-where
-    X: EventTrigger<Event>,
-{
+#[gservice(events=Event)]
+impl AdminService {
     pub fn new(
-        roles_service: services::roles::GstdDrivenService,
-        pausable_service: ServiceOf<services::pausable::GstdDrivenService>,
+        roles_service: services::roles::RolesService,
+        pausable_service: ServiceOf<services::pausable::Service>,
     ) -> Self {
         Self {
             roles_service,
             pausable_service,
-            _phantom: PhantomData,
         }
     }
 
@@ -96,7 +87,9 @@ where
         });
 
         if mutated {
-            services::utils::deposit_event(Event::Minted { to, value });
+            self.notify_on(
+                Event::Minted { to, value }
+            ).unwrap();
         }
 
         mutated
@@ -124,7 +117,7 @@ where
         });
 
         if mutated {
-            services::utils::deposit_event(Event::Burned { from, value });
+            self.notify_on(Event::Burned { from, value }).unwrap();
         }
 
         mutated
@@ -236,7 +229,7 @@ where
                 .ensure_has_role::<FungibleAdmin>(msg::source())
         });
 
-        services::utils::deposit_event(Event::Killed { inheritor });
+        self.notify_on(Event::Killed { inheritor }).unwrap();
 
         exec::exit(inheritor.into())
     }

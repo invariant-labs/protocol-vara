@@ -1,10 +1,13 @@
-use contracts::PoolKey;
+use contracts::{InvariantError, PoolKey};
 use gstd::*;
 use gtest::*;
 use io::*;
 use math::{sqrt_price::SqrtPrice, token_amount::TokenAmount};
 
-use crate::test_helpers::gtest::InvariantResult;
+use crate::{
+    send_query,
+    test_helpers::gtest::{InvariantResult, PROGRAM_OWNER},
+};
 
 #[track_caller]
 pub fn quote(
@@ -15,35 +18,13 @@ pub fn quote(
     amount: TokenAmount,
     by_amount_in: bool,
     sqrt_price_limit: SqrtPrice,
-    expected_error: Option<impl Into<String>>,
-) -> Option<QuoteResult> {
-    let res = invariant.send(
-        from,
-        InvariantAction::Quote {
-            pool_key,
-            x_to_y,
-            amount,
-            by_amount_in,
-            sqrt_price_limit,
-        },
-    );
-
-    if let Some(err) = expected_error {
-        res.assert_panicked_with(err);
-        return None;
-    }
-    res.assert_success();
-    let events = res.emitted_events();
-    assert_eq!(events.len(), 1);
-    let quote_return = events
-        .last()
-        .unwrap()
-        .decoded_event::<InvariantEvent>()
-        .unwrap();
-
-    if let InvariantEvent::Quote(quote_return) = quote_return {
-        Some(quote_return)
-    } else {
-        panic!("unexpected event: {:?}", quote_return)
-    }
+) -> gstd::Result<QuoteResult, InvariantError> {
+    send_query!(
+        program: invariant,
+        user: from,
+        service_name: "Service",
+        action: "Quote",
+        payload: (pool_key, x_to_y, amount, by_amount_in, sqrt_price_limit),
+        response_type: gstd::Result<QuoteResult, InvariantError>
+    )
 }

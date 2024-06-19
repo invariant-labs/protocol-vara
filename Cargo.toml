@@ -11,19 +11,22 @@ decimal.workspace = true
 io.workspace = true
 contracts.workspace = true
 gear-core.workspace = true
-futures = { version = "0.3.30", features = ["async-await"], default-features = false }
+sails-rtl.workspace = true
+futures = { version = "0.3.30", features = [
+  "async-await",
+], default-features = false }
 
 [build-dependencies]
 gear-wasm-builder.workspace = true
 gmeta.workspace = true
 io.workspace = true
-state.workspace = true
+sails-idl-gen.workspace = true
 
 [dev-dependencies]
 gtest.workspace = true
 gclient.workspace = true
 tokio.workspace = true
-gstd = {workspace=true, features=["debug"]}
+gstd = { workspace = true, features = ["debug"] }
 
 [features]
 binary-vendor = []
@@ -32,7 +35,7 @@ default = ["binary-vendor", "wasm-opt"]
 test = ["gstd/debug"]
 
 [workspace]
-members = ["state", "xtask", "gear-erc20/app", "gear-erc20/wasm" ]
+members = ["xtask", "gear-erc20/app", "gear-erc20/wasm", "src/wasm"]
 package.version = "0.1.0"
 package.edition = "2021"
 
@@ -46,9 +49,9 @@ contracts.path = "src/contracts"
 # Local contracts
 gear-erc20.path = "gear-erc20/app"
 gear-erc20-wasm.path = "gear-erc20/wasm"
-
+invariant.path = "."
+invariant-wasm.path = "src/wasm"
 # Contract dependencies
-state.path = "state"
 io.path = "io"
 
 # Gear dependencies
@@ -58,8 +61,8 @@ gmeta = "1.4.1"
 gear-core = { git = "https://github.com/gear-tech/gear.git", tag = "v1.4.1" }
 gtest = { git = "https://github.com/gear-tech/gear.git", tag = "v1.4.1" }
 gclient = { git = "https://github.com/gear-tech/gear.git", tag = "v1.4.1" }
-sails-idl-gen = { git = "https://github.com/gear-tech/sails", rev = "51b731ef8f064a23c6c98fa92d06eeafe44d3f9d" }
-sails-rtl = { git = "https://github.com/gear-tech/sails", rev = "51b731ef8f064a23c6c98fa92d06eeafe44d3f9d" }
+sails-idl-gen = { git = "https://github.com/gear-tech/sails" }
+sails-rtl = { git = "https://github.com/gear-tech/sails" }
 
 # External
 tokio = { version = "1.36", features = ["full"] }

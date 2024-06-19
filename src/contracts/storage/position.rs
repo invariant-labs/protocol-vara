@@ -10,7 +10,7 @@ use math::{
         token_amount::TokenAmount,
     },
 };
-use gstd::{Decode, Encode, TypeInfo};
+use sails_rtl::{Decode, Encode, TypeInfo};
 use decimal::*;
 use traceable_result::*;
 

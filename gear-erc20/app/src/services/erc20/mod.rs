@@ -3,10 +3,10 @@
 
 use crate::services;
 use core::{cmp::Ordering, fmt::Debug, marker::PhantomData};
-use gstd::{ext, format, msg, ActorId, Decode, Encode, String, TypeInfo, Vec};
+use gstd::{ext, format, Decode, Encode, String, TypeInfo, Vec};
 use primitive_types::U256;
-use sails_rtl::gstd::events::{EventTrigger, GStdEventTrigger};
-use sails_rtl::gstd::gservice;
+use sails_rtl::gstd::{gservice, msg};
+use sails_rtl::ActorId;
 #[cfg(feature = "test")]
 use storage::TransferFailStorage;
 use storage::{AllowancesStorage, BalancesStorage, MetaStorage, TotalSupplyStorage};
@@ -34,13 +34,11 @@ pub enum Event {
     },
 }
 
-pub type GstdDrivenService = Service<GStdEventTrigger<Event>>;
-
 // TODO (sails): isn't services - modules?
 #[derive(Clone)]
-pub struct Service<X>(PhantomData<X>);
+pub struct ERC20Service {}
 
-impl<X> Service<X> {
+impl ERC20Service {
     pub fn seed(name: String, symbol: String, decimals: u8) -> Self {
         let _res = AllowancesStorage::default();
         debug_assert!(_res.is_ok());
@@ -60,7 +58,7 @@ impl<X> Service<X> {
             debug_assert!(_res.is_ok());
         }
 
-        Self(PhantomData)
+        Self {}
     }
 }
 
@@ -71,14 +69,11 @@ impl<X> Service<X> {
 // TODO (sails): gstd::ActorId, primitive_types::H256/U256, [u8; 32], NonZeroStuff are primitives!.
 // TODO (sails): gservice(events = Event, error = Error)
 // #[gservice(events = Event, error = Error)]
-#[gservice]
-impl<X> Service<X>
-where
-    X: EventTrigger<Event>,
-{
+#[gservice(events = Event)]
+impl ERC20Service {
     // TODO (sails): hide this into macro.
     pub fn new() -> Self {
-        Self(PhantomData)
+        Self {}
     }
 
     pub fn allowance(&self, owner: sails_rtl::ActorId, spender: sails_rtl::ActorId) -> U256 {
@@ -86,16 +81,17 @@ where
     }
 
     pub fn approve(&mut self, spender: sails_rtl::ActorId, value: U256) -> bool {
-        let owner = msg::source();
+        let owner = msg::source().into();
 
         let mutated = funcs::approve(AllowancesStorage::as_mut(), owner, spender.into(), value);
 
         if mutated {
-            services::utils::deposit_event(Event::Approval {
+            self.notify_on(Event::Approval {
                 owner: owner.into(),
                 spender,
                 value,
             })
+            .unwrap();
         }
 
         mutated
@@ -130,7 +126,7 @@ where
             }
         }
 
-        let from = msg::source();
+        let from = msg::source().into();
 
         let mutated = services::utils::panicking(move || {
             funcs::transfer(BalancesStorage::as_mut(), from, to.into(), value)
@@ -141,11 +137,12 @@ where
             //     .try_into()
             //     .expect("Infallible since `transfer` executed successfully");
 
-            services::utils::deposit_event(Event::Transfer {
+            self.notify_on(Event::Transfer {
                 from: from.into(),
                 to,
                 value,
             })
+            .unwrap();
         }
 
         mutated
@@ -166,7 +163,7 @@ where
             }
         }
 
-        let spender = msg::source();
+        let spender = msg::source().into();
 
         let mutated = services::utils::panicking(move || {
             funcs::transfer_from(
@@ -184,7 +181,7 @@ where
             //     .try_into()
             //     .expect("Infallible since `transfer_from` executed successfully");
 
-            services::utils::deposit_event(Event::Transfer { from, to, value })
+            self.notify_on(Event::Transfer { from, to, value }).unwrap();
         }
 
         mutated
@@ -192,7 +189,7 @@ where
 
     // TODO (breathx): delete me once multi services are implemented.
     pub fn set_balance(&mut self, new_balance: U256) -> bool {
-        let owner = msg::source();
+        let owner = msg::source().into();
 
         let balance = funcs::balance_of(BalancesStorage::as_ref(), owner);
 

@@ -3,7 +3,6 @@ use contracts::*;
 use decimal::*;
 use gstd::prelude::*;
 use gtest::*;
-use io::*;
 use math::{sqrt_price::SqrtPrice, token_amount::TokenAmount, MAX_SQRT_PRICE, MIN_SQRT_PRICE};
 #[track_caller]
 pub fn swap_exact_limit(
@@ -28,7 +27,6 @@ pub fn swap_exact_limit(
         amount,
         by_amount_in,
         sqrt_price_limit,
-        None::<InvariantError>,
     )
     .unwrap();
 
@@ -37,7 +35,7 @@ pub fn swap_exact_limit(
     } else {
         (pool_key.token_y, pool_key.token_x)
     };
-    
+
     assert_eq!(
         deposit_single_token(
             &invariant,
@@ -49,18 +47,16 @@ pub fn swap_exact_limit(
         Some(quote_result.amount_in)
     );
 
-    invariant
-        .send(
-            from,
-            InvariantAction::Swap {
-                pool_key,
-                x_to_y,
-                amount,
-                by_amount_in,
-                sqrt_price_limit: quote_result.target_sqrt_price,
-            },
-        )
-        .assert_success();
+    swap(
+        &invariant,
+        from,
+        pool_key,
+        x_to_y,
+        amount,
+        by_amount_in,
+        quote_result.target_sqrt_price,
+    )
+    .assert_success();
 
     assert_eq!(
         withdraw_single_token(

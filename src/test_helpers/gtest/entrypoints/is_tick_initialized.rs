@@ -2,13 +2,16 @@ use contracts::*;
 use gtest::*;
 
 use io::*;
+use math::percentage::Percentage;
+
+use crate::{send_query, test_helpers::gtest::PROGRAM_OWNER};
 pub fn is_tick_initialized(invariant: &Program, pool_key: PoolKey, index: i32) -> bool {
-    let state: InvariantStateReply = invariant
-        .read_state(InvariantStateQuery::IsTickInitialized(pool_key, index))
-        .expect("Failed to read state");
-    if let InvariantStateReply::IsTickInitialized(is_tick_initialized) = state {
-        return is_tick_initialized;
-    } else {
-        panic!("unexpected state {:?}", state);
-    }
+    send_query!(
+        program: invariant,
+        user: PROGRAM_OWNER,
+        service_name: "Service",
+        action: "IsTickInitialized",
+        payload: (pool_key, index),
+        response_type: bool
+    )
 }

@@ -1,9 +1,7 @@
 use crate::test_helpers::gtest::*;
 use contracts::*;
 use decimal::*;
-use gstd::{prelude::*, ActorId};
 use gtest::*;
-use io::*;
 use math::{
     fee_growth::FeeGrowth,
     liquidity::Liquidity,
@@ -12,6 +10,7 @@ use math::{
     token_amount::TokenAmount,
     MAX_SQRT_PRICE, MIN_SQRT_PRICE,
 };
+use sails_rtl::ActorId;
 #[test]
 fn test_cross_both_sides() {
     let sys = System::new();
@@ -30,22 +29,20 @@ fn test_cross_both_sides() {
         init_tokens_with_mint(&sys, (mint_amount, mint_amount));
 
     let pool_key = PoolKey::new(token_x, token_y, fee_tier).unwrap();
-    invariant
-        .send(ADMIN, InvariantAction::AddFeeTier(fee_tier))
-        .assert_success();
+    add_fee_tier(&invariant, ADMIN, fee_tier).assert_success();
 
-    assert!(invariant
-        .send(
-            REGULAR_USER_1,
-            InvariantAction::CreatePool {
-                token_0: token_x,
-                token_1: token_y,
-                fee_tier,
-                init_sqrt_price,
-                init_tick,
-            }
-        )
-        .events_eq(vec![TestEvent::empty_invariant_response(REGULAR_USER_1)]));
+    let _res = create_pool(
+        &invariant,
+        REGULAR_USER_1,
+        token_x,
+        token_y,
+        fee_tier,
+        init_sqrt_price,
+        init_tick,
+    )
+    .assert_single_event()
+    .assert_empty()
+    .assert_to(REGULAR_USER_1);
 
     let lower_tick_index = -10;
     let upper_tick_index = 10;
@@ -80,33 +77,29 @@ fn test_cross_both_sides() {
 
     let pool_state = get_pool(&invariant, token_x, token_y, fee_tier).unwrap();
 
-    invariant
-        .send(
-            REGULAR_USER_1,
-            InvariantAction::CreatePosition {
-                pool_key,
-                lower_tick: lower_tick_index,
-                upper_tick: upper_tick_index,
-                liquidity_delta,
-                slippage_limit_lower: pool_state.sqrt_price,
-                slippage_limit_upper: pool_state.sqrt_price,
-            },
-        )
-        .assert_success();
+    create_position(
+        &invariant,
+        REGULAR_USER_1,
+        pool_key,
+        lower_tick_index,
+        upper_tick_index,
+        liquidity_delta,
+        pool_state.sqrt_price,
+        pool_state.sqrt_price,
+    )
+    .assert_success();
 
-    invariant
-        .send(
-            REGULAR_USER_1,
-            InvariantAction::CreatePosition {
-                pool_key,
-                lower_tick: -20,
-                upper_tick: lower_tick_index,
-                liquidity_delta,
-                slippage_limit_lower: pool_state.sqrt_price,
-                slippage_limit_upper: pool_state.sqrt_price,
-            },
-        )
-        .assert_success();
+    create_position(
+        &invariant,
+        REGULAR_USER_1,
+        pool_key,
+        -20,
+        lower_tick_index,
+        liquidity_delta,
+        pool_state.sqrt_price,
+        pool_state.sqrt_price,
+    )
+    .assert_success();
 
     let pool = get_pool(&invariant, token_x, token_y, fee_tier).unwrap();
 
@@ -154,18 +147,16 @@ fn test_cross_both_sides() {
     let pool_before = get_pool(&invariant, token_x, token_y, fee_tier).unwrap();
     let limit_sqrt_price = SqrtPrice::new(MIN_SQRT_PRICE);
 
-    invariant
-        .send(
-            REGULAR_USER_1,
-            InvariantAction::Swap {
-                pool_key,
-                x_to_y: true,
-                amount: limit_without_cross_tick_amount,
-                by_amount_in: true,
-                sqrt_price_limit: limit_sqrt_price,
-            },
-        )
-        .assert_success();
+    swap(
+        &invariant,
+        REGULAR_USER_1,
+        pool_key,
+        true,
+        limit_without_cross_tick_amount,
+        true,
+        limit_sqrt_price,
+    )
+    .assert_success();
 
     let pool = get_pool(&invariant, token_x, token_y, fee_tier).unwrap();
     let expected_tick = -10;
@@ -175,31 +166,26 @@ fn test_cross_both_sides() {
     assert_eq!(pool.liquidity, pool_before.liquidity);
     assert_eq!(pool.sqrt_price, expected_price);
 
-    invariant
-        .send(
-            REGULAR_USER_1,
-            InvariantAction::Swap {
-                pool_key,
-                x_to_y: true,
-                amount: min_amount_to_cross_from_tick_price,
-                by_amount_in: true,
-                sqrt_price_limit: limit_sqrt_price,
-            },
-        )
-        .assert_success();
-
-    invariant
-        .send(
-            REGULAR_USER_1,
-            InvariantAction::Swap {
-                pool_key,
-                x_to_y: false,
-                amount: min_amount_to_cross_from_tick_price,
-                by_amount_in: true,
-                sqrt_price_limit: SqrtPrice::new(MAX_SQRT_PRICE),
-            },
-        )
-        .assert_success();
+    swap(
+        &invariant,
+        REGULAR_USER_1,
+        pool_key,
+        true,
+        min_amount_to_cross_from_tick_price,
+        true,
+        limit_sqrt_price,
+    )
+    .assert_success();
+    swap(
+        &invariant,
+        REGULAR_USER_1,
+        pool_key,
+        false,
+        min_amount_to_cross_from_tick_price,
+        true,
+        SqrtPrice::new(MAX_SQRT_PRICE),
+    )
+    .assert_success();
 
     let massive_x = 10u128.pow(19);
     let massive_y = 10u128.pow(19);
@@ -236,45 +222,39 @@ fn test_cross_both_sides() {
 
     let massive_liquidity_delta = Liquidity::from_integer(19996000399699881985603u128);
 
-    invariant
-        .send(
-            REGULAR_USER_1,
-            InvariantAction::CreatePosition {
-                pool_key,
-                lower_tick: -20,
-                upper_tick: 0,
-                liquidity_delta: massive_liquidity_delta,
-                slippage_limit_lower: SqrtPrice::new(MIN_SQRT_PRICE),
-                slippage_limit_upper: SqrtPrice::new(MAX_SQRT_PRICE),
-            },
-        )
-        .assert_success();
+    create_position(
+        &invariant,
+        REGULAR_USER_1,
+        pool_key,
+        -20,
+        0,
+        massive_liquidity_delta,
+        SqrtPrice::new(MIN_SQRT_PRICE),
+        SqrtPrice::new(MAX_SQRT_PRICE),
+    )
+    .assert_success();
 
-    invariant
-        .send(
-            REGULAR_USER_1,
-            InvariantAction::Swap {
-                pool_key,
-                x_to_y: true,
-                amount: TokenAmount(1),
-                by_amount_in: false,
-                sqrt_price_limit: limit_sqrt_price,
-            },
-        )
-        .assert_success();
+    swap(
+        &invariant,
+        REGULAR_USER_1,
+        pool_key,
+        true,
+        TokenAmount(1),
+        false,
+        limit_sqrt_price,
+    )
+    .assert_success();
 
-    invariant
-        .send(
-            REGULAR_USER_1,
-            InvariantAction::Swap {
-                pool_key,
-                x_to_y: false,
-                amount: TokenAmount(2),
-                by_amount_in: true,
-                sqrt_price_limit: SqrtPrice::new(MAX_SQRT_PRICE),
-            },
-        )
-        .assert_success();
+    swap(
+        &invariant,
+        REGULAR_USER_1,
+        pool_key,
+        false,
+        TokenAmount(2),
+        true,
+        SqrtPrice::new(MAX_SQRT_PRICE),
+    )
+    .assert_success();
 
     let pool = get_pool(&invariant, token_x, token_y, fee_tier).unwrap();
 
@@ -331,28 +311,26 @@ fn test_cross_both_sides_not_cross_case() {
     let token_x: ActorId = TOKEN_X_ID.into();
     let token_y: ActorId = TOKEN_Y_ID.into();
 
-    let mut invariant = init_invariant(&sys, Percentage::from_scale(1, 2));
+    let invariant = init_invariant(&sys, Percentage::from_scale(1, 2));
     let (token_x_program, token_y_program) =
         init_tokens_with_mint(&sys, (mint_amount, mint_amount));
 
     let pool_key = PoolKey::new(token_x, token_y, fee_tier).unwrap();
 
-    invariant
-        .send(ADMIN, InvariantAction::AddFeeTier(fee_tier))
-        .assert_success();
+    add_fee_tier(&invariant, ADMIN, fee_tier).assert_success();
 
-    invariant
-        .send(
-            REGULAR_USER_1,
-            InvariantAction::CreatePool {
-                token_0: token_x,
-                token_1: token_y,
-                fee_tier,
-                init_sqrt_price,
-                init_tick,
-            },
-        )
-        .assert_success();
+    let _res = create_pool(
+        &invariant,
+        REGULAR_USER_1,
+        token_x,
+        token_y,
+        fee_tier,
+        init_sqrt_price,
+        init_tick,
+    )
+    .assert_single_event()
+    .assert_empty()
+    .assert_to(REGULAR_USER_1);
 
     let lower_tick_index = -10;
     let upper_tick_index = 10;
@@ -378,33 +356,29 @@ fn test_cross_both_sides_not_cross_case() {
 
     let pool_state = get_pool(&invariant, token_x, token_y, fee_tier).unwrap();
 
-    invariant
-        .send(
-            REGULAR_USER_1,
-            InvariantAction::CreatePosition {
-                pool_key,
-                lower_tick: lower_tick_index,
-                upper_tick: upper_tick_index,
-                liquidity_delta,
-                slippage_limit_lower: pool_state.sqrt_price,
-                slippage_limit_upper: pool_state.sqrt_price,
-            },
-        )
-        .assert_success();
+    create_position(
+        &invariant,
+        REGULAR_USER_1,
+        pool_key,
+        lower_tick_index,
+        upper_tick_index,
+        liquidity_delta,
+        pool_state.sqrt_price,
+        pool_state.sqrt_price,
+    )
+    .assert_success();
 
-    invariant
-        .send(
-            REGULAR_USER_1,
-            InvariantAction::CreatePosition {
-                pool_key,
-                lower_tick: -20,
-                upper_tick: lower_tick_index,
-                liquidity_delta,
-                slippage_limit_lower: pool_state.sqrt_price,
-                slippage_limit_upper: pool_state.sqrt_price,
-            },
-        )
-        .assert_success();
+    create_position(
+        &invariant,
+        REGULAR_USER_1,
+        pool_key,
+        -20,
+        lower_tick_index,
+        liquidity_delta,
+        pool_state.sqrt_price,
+        pool_state.sqrt_price,
+    )
+    .assert_success();
 
     let pool = get_pool(&invariant, token_x, token_y, fee_tier).unwrap();
 
@@ -444,18 +418,16 @@ fn test_cross_both_sides_not_cross_case() {
 
     let limit_sqrt_price = SqrtPrice::new(MIN_SQRT_PRICE);
 
-    invariant
-        .send(
-            REGULAR_USER_1,
-            InvariantAction::Swap {
-                pool_key,
-                x_to_y: true,
-                amount: limit_without_cross_tick_amount,
-                by_amount_in: true,
-                sqrt_price_limit: limit_sqrt_price,
-            },
-        )
-        .assert_success();
+    swap(
+        &invariant,
+        REGULAR_USER_1,
+        pool_key,
+        true,
+        limit_without_cross_tick_amount,
+        true,
+        limit_sqrt_price,
+    )
+    .assert_success();
     let pool = get_pool(&invariant, token_x, token_y, fee_tier).unwrap();
 
     let expected_tick = -10;
@@ -467,15 +439,14 @@ fn test_cross_both_sides_not_cross_case() {
 
     let slippage = SqrtPrice::new(MIN_SQRT_PRICE);
 
-    invariant.send_and_assert_panic(
+    swap(
+        &invariant,
         REGULAR_USER_1,
-        InvariantAction::Swap {
-            pool_key,
-            x_to_y: true,
-            amount: not_cross_amount,
-            by_amount_in: true,
-            sqrt_price_limit: slippage,
-        },
-        InvariantError::NoGainSwap,
-    );
+        pool_key,
+        true,
+        not_cross_amount,
+        true,
+        slippage,
+    )
+    .assert_panicked_with(InvariantError::NoGainSwap);
 }

@@ -19,7 +19,7 @@ pub struct Program(());
 // TODO (sails): stop forcing deriving default on `Program`.
 #[gprogram]
 impl Program {
-    pub fn handle()->u8 {
+    pub fn handle() -> u8 {
         return 1;
     }
     // TODO (sails): fix arguments are unused.
@@ -28,40 +28,40 @@ impl Program {
         let source = msg::source();
         let program = Self(());
 
-        let roles_service = roles::GstdDrivenService::seed();
+        let roles_service = roles::RolesService::seed();
 
-        let erc20_service = <erc20::GstdDrivenService>::seed(name, symbol, decimals);
+        let erc20_service = <erc20::ERC20Service>::seed(name, symbol, decimals);
 
-        let pausable_service = <pausable::GstdDrivenService>::seed(roles_service.clone(), source);
+        let pausable_service = <pausable::Service>::seed(roles_service.clone(), source);
 
         let aggregated_service =
-            <aggregated::GstdDrivenService>::seed(erc20_service, program.pausable());
+            <aggregated::AggregatedService>::seed(erc20_service, program.pausable());
 
-        <admin::GstdDrivenService>::seed(roles_service, program.pausable(), source);
+        <admin::AdminService>::seed(roles_service, program.pausable(), source);
 
         Self(())
     }
 
-    pub fn admin(&self) -> admin::GstdDrivenService {
-        admin::GstdDrivenService::new(self.roles(), self.pausable())
+    pub fn admin(&self) -> admin::AdminService {
+        admin::AdminService::new(self.roles(), self.pausable())
     }
 
     // TODO (sails): service Erc20: Pausable [pipeline]
     // TODO (sails): Should reflect on multiple names as pipeline (aliasing)
     #[groute("erc20")]
-    pub fn aggregated(&self) -> aggregated::GstdDrivenService {
-        aggregated::GstdDrivenService::new(self.erc20(), self.pausable())
+    pub fn aggregated(&self) -> aggregated::AggregatedService {
+        aggregated::AggregatedService::new(self.erc20(), self.pausable())
     }
 
-    pub fn pausable(&self) -> pausable::GstdDrivenService {
-        pausable::GstdDrivenService::new(self.roles())
+    pub fn pausable(&self) -> pausable::Service {
+        pausable::Service::new(self.roles())
     }
 
-    fn roles(&self) -> roles::GstdDrivenService {
-        roles::GstdDrivenService::new()
+    fn roles(&self) -> roles::RolesService {
+        roles::RolesService::new()
     }
 
-    fn erc20(&self) -> erc20::GstdDrivenService {
-        erc20::GstdDrivenService::new()
+    fn erc20(&self) -> erc20::ERC20Service {
+        erc20::ERC20Service::new()
     }
 }

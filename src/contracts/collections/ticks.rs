@@ -1,6 +1,6 @@
 use crate::{PoolKey, Tick, InvariantError};
 
-use gstd::collections::HashMap;
+use sails_rtl::collections::HashMap;
 
 #[derive(Debug, Default)]
 pub struct Ticks {
@@ -57,7 +57,7 @@ mod tests {
   use crate::FeeTier;
   use math::percentage::Percentage;
   use decimal::*;
-  use gstd::ActorId;
+  use sails_rtl::ActorId;
 
   #[test]
   fn test_add() {

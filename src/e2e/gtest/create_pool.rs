@@ -1,13 +1,12 @@
 use crate::test_helpers::gtest::*;
 use contracts::*;
 use decimal::*;
-use gstd::{prelude::*, ActorId};
 use gtest::*;
-use io::*;
 use math::{
     percentage::Percentage,
     sqrt_price::{calculate_sqrt_price, SqrtPrice},
 };
+use sails_rtl::{prelude::*, ActorId};
 
 #[test]
 fn test_create_pool() {
@@ -24,22 +23,21 @@ fn test_create_pool() {
     let init_tick = 0;
     let init_sqrt_price = calculate_sqrt_price(init_tick).unwrap();
 
-    let res = invariant.send(ADMIN, InvariantAction::AddFeeTier(fee_tier));
+    let res = add_fee_tier(&invariant, ADMIN, fee_tier);
+    res.assert_single_event().assert_empty().assert_to(ADMIN);
 
-    assert!(res.events_eq(vec![TestEvent::empty_invariant_response(ADMIN)]));
-
-    let res = invariant.send(
+    let res = create_pool(
+        &invariant,
         REGULAR_USER_1,
-        InvariantAction::CreatePool {
-            token_0,
-            token_1,
-            fee_tier,
-            init_sqrt_price,
-            init_tick,
-        },
+        token_0,
+        token_1,
+        fee_tier,
+        init_sqrt_price,
+        init_tick,
     );
-
-    assert!(res.events_eq(vec![TestEvent::empty_invariant_response(REGULAR_USER_1)]));
+    res.assert_single_event()
+        .assert_empty()
+        .assert_to(REGULAR_USER_1);
 
     assert_eq!(
         get_pools(&invariant, u8::MAX, 0).unwrap(),
@@ -63,7 +61,7 @@ fn test_create_pool_x_to_y_and_y_to_x() {
     let sys = System::new();
     sys.init_logger();
 
-    let mut invariant = init_invariant(&sys, Percentage(100));
+    let invariant = init_invariant(&sys, Percentage(100));
 
     let token_0 = ActorId::from([0x01; 32]);
     let token_1 = ActorId::from([0x02; 32]);
@@ -73,32 +71,32 @@ fn test_create_pool_x_to_y_and_y_to_x() {
     let init_tick = 0;
     let init_sqrt_price = calculate_sqrt_price(init_tick).unwrap();
 
-    let res = invariant.send(ADMIN, InvariantAction::AddFeeTier(fee_tier));
-    assert!(res.events_eq(vec![TestEvent::empty_invariant_response(ADMIN)]));
+    let res = add_fee_tier(&invariant, ADMIN, fee_tier);
+    res.assert_single_event().assert_empty().assert_to(ADMIN);
 
-    let res = invariant.send(
+    let res = create_pool(
+        &invariant,
         REGULAR_USER_1,
-        InvariantAction::CreatePool {
-            token_0,
-            token_1,
-            fee_tier,
-            init_sqrt_price,
-            init_tick,
-        },
+        token_0,
+        token_1,
+        fee_tier,
+        init_sqrt_price,
+        init_tick,
     );
-    assert!(res.events_eq(vec![TestEvent::empty_invariant_response(REGULAR_USER_1)]));
+    res.assert_single_event()
+        .assert_empty()
+        .assert_to(REGULAR_USER_1);
 
-    let _res = invariant.send_and_assert_panic(
+    let res = create_pool(
+        &invariant,
         REGULAR_USER_1,
-        InvariantAction::CreatePool {
-            token_0: token_1,
-            token_1: token_0,
-            fee_tier,
-            init_sqrt_price,
-            init_tick,
-        },
-        InvariantError::PoolAlreadyExist,
+        token_0,
+        token_1,
+        fee_tier,
+        init_sqrt_price,
+        init_tick,
     );
+    res.assert_panicked_with(InvariantError::PoolAlreadyExist);
 
     assert_eq!(
         get_pools(&invariant, u8::MAX, 0).unwrap(),
@@ -110,7 +108,7 @@ fn test_create_pool_with_same_tokens() {
     let sys = System::new();
     sys.init_logger();
 
-    let mut invariant = init_invariant(&sys, Percentage(100));
+    let invariant = init_invariant(&sys, Percentage(100));
 
     let token_0 = ActorId::from([0x01; 32]);
 
@@ -119,20 +117,19 @@ fn test_create_pool_with_same_tokens() {
     let init_tick = 0;
     let init_sqrt_price = calculate_sqrt_price(init_tick).unwrap();
 
-    let res = invariant.send(ADMIN, InvariantAction::AddFeeTier(fee_tier));
-    assert!(res.events_eq(vec![TestEvent::empty_invariant_response(ADMIN)]));
+    let res = add_fee_tier(&invariant, ADMIN, fee_tier);
+    res.assert_single_event().assert_empty().assert_to(ADMIN);
 
-    let _res = invariant.send_and_assert_panic(
+    let res = create_pool(
+        &invariant,
         REGULAR_USER_1,
-        InvariantAction::CreatePool {
-            token_0,
-            token_1: token_0,
-            fee_tier,
-            init_sqrt_price,
-            init_tick,
-        },
-        InvariantError::TokensAreSame,
+        token_0,
+        token_0,
+        fee_tier,
+        init_sqrt_price,
+        init_tick,
     );
+    res.assert_panicked_with(InvariantError::TokensAreSame);
 
     assert_eq!(get_pools(&invariant, u8::MAX, 0).unwrap(), vec![]);
 }
@@ -142,7 +139,7 @@ fn test_create_pool_fee_tier_not_added() {
     let sys = System::new();
     sys.init_logger();
 
-    let mut invariant = init_invariant(&sys, Percentage(100));
+    let invariant = init_invariant(&sys, Percentage(100));
 
     let token_0 = ActorId::from([0x01; 32]);
     let token_1 = ActorId::from([0x02; 32]);
@@ -152,17 +149,16 @@ fn test_create_pool_fee_tier_not_added() {
     let init_tick = 0;
     let init_sqrt_price = calculate_sqrt_price(init_tick).unwrap();
 
-    let _res = invariant.send_and_assert_panic(
+    let res = create_pool(
+        &invariant,
         REGULAR_USER_1,
-        InvariantAction::CreatePool {
-            token_0,
-            token_1,
-            fee_tier,
-            init_sqrt_price,
-            init_tick,
-        },
-        InvariantError::FeeTierNotFound,
+        token_0,
+        token_1,
+        fee_tier,
+        init_sqrt_price,
+        init_tick,
     );
+    res.assert_panicked_with(InvariantError::FeeTierNotFound);
 
     assert_eq!(get_pools(&invariant, u8::MAX, 0).unwrap(), vec![]);
 }
@@ -172,30 +168,29 @@ fn test_create_pool_init_tick_not_divisible_by_tick_spacing() {
     let sys = System::new();
     sys.init_logger();
 
-    let mut invariant = init_invariant(&sys, Percentage(100));
+    let invariant = init_invariant(&sys, Percentage(100));
 
     let token_0 = ActorId::from([0x01; 32]);
     let token_1 = ActorId::from([0x02; 32]);
 
     let fee_tier = FeeTier::new(Percentage::from_scale(5, 1), 3).unwrap();
 
-    let res = invariant.send(ADMIN, InvariantAction::AddFeeTier(fee_tier));
-    assert!(res.events_eq(vec![TestEvent::empty_invariant_response(ADMIN)]));
+    let res = add_fee_tier(&invariant, ADMIN, fee_tier);
+    res.assert_single_event().assert_empty().assert_to(ADMIN);
 
     let init_tick = 2;
     let init_sqrt_price = calculate_sqrt_price(init_tick).unwrap();
 
-    let _res = invariant.send_and_assert_panic(
+    let res = create_pool(
+        &invariant,
         REGULAR_USER_1,
-        InvariantAction::CreatePool {
-            token_0,
-            token_1,
-            fee_tier,
-            init_sqrt_price,
-            init_tick,
-        },
-        InvariantError::InvalidInitTick,
+        token_0,
+        token_1,
+        fee_tier,
+        init_sqrt_price,
+        init_tick,
     );
+    res.assert_panicked_with(InvariantError::InvalidInitTick);
 
     assert_eq!(get_pools(&invariant, u8::MAX, 0).unwrap(), vec![]);
 }
@@ -212,23 +207,24 @@ fn test_create_pool_init_sqrt_price_minimal_difference_from_tick() {
 
     let fee_tier = FeeTier::new(Percentage::from_scale(5, 1), 3).unwrap();
 
-    let res = invariant.send(ADMIN, InvariantAction::AddFeeTier(fee_tier));
-    assert!(res.events_eq(vec![TestEvent::empty_invariant_response(ADMIN)]));
+    let res = add_fee_tier(&invariant, ADMIN, fee_tier);
+    res.assert_single_event().assert_empty().assert_to(ADMIN);
 
     let init_tick = 0;
     let init_sqrt_price = calculate_sqrt_price(init_tick).unwrap() + SqrtPrice::new(1);
 
-    let res = invariant.send(
+    let res = create_pool(
+        &invariant,
         REGULAR_USER_1,
-        InvariantAction::CreatePool {
-            token_0,
-            token_1,
-            fee_tier,
-            init_sqrt_price,
-            init_tick,
-        },
+        token_0,
+        token_1,
+        fee_tier,
+        init_sqrt_price,
+        init_tick,
     );
-    assert!(!res.main_failed());
+    res.assert_single_event()
+        .assert_empty()
+        .assert_to(REGULAR_USER_1);
 
     assert_eq!(
         get_pool(&invariant, token_0, token_1, fee_tier)
@@ -243,43 +239,43 @@ fn test_create_pool_init_sqrt_price_has_closer_init_tick() {
     let sys = System::new();
     sys.init_logger();
 
-    let mut invariant = init_invariant(&sys, Percentage(100));
+    let invariant = init_invariant(&sys, Percentage(100));
 
     let token_0 = ActorId::from([0x01; 32]);
     let token_1 = ActorId::from([0x02; 32]);
 
     let fee_tier = FeeTier::new(Percentage::from_scale(5, 1), 1).unwrap();
 
-    let res = invariant.send(ADMIN, InvariantAction::AddFeeTier(fee_tier));
-    assert!(res.events_eq(vec![TestEvent::empty_invariant_response(ADMIN)]));
+    let res = add_fee_tier(&invariant, ADMIN, fee_tier);
+    res.assert_single_event().assert_empty().assert_to(ADMIN);
 
     let init_tick = 2;
     let init_sqrt_price = SqrtPrice::new(1000175003749000000000000);
 
-    let _res = invariant.send_and_assert_panic(
+    let res = create_pool(
+        &invariant,
         REGULAR_USER_1,
-        InvariantAction::CreatePool {
-            token_0,
-            token_1,
-            fee_tier,
-            init_sqrt_price,
-            init_tick,
-        },
-        InvariantError::InvalidInitSqrtPrice,
+        token_0,
+        token_1,
+        fee_tier,
+        init_sqrt_price,
+        init_tick,
     );
+    res.assert_panicked_with(InvariantError::InvalidInitSqrtPrice);
 
     let correct_tick_index = 3;
-    let res = invariant.send(
+    let res = create_pool(
+        &invariant,
         REGULAR_USER_1,
-        InvariantAction::CreatePool {
-            token_0,
-            token_1,
-            fee_tier,
-            init_sqrt_price,
-            init_tick: correct_tick_index,
-        },
+        token_0,
+        token_1,
+        fee_tier,
+        init_sqrt_price,
+        correct_tick_index,
     );
-    assert!(res.events_eq(vec![TestEvent::empty_invariant_response(REGULAR_USER_1)]));
+    res.assert_single_event()
+        .assert_empty()
+        .assert_to(REGULAR_USER_1);
 
     assert_eq!(
         get_pool(&invariant, token_0, token_1, fee_tier)
@@ -294,43 +290,43 @@ fn test_create_pool_init_sqrt_price_has_closer_init_tick_spacing_over_one() {
     let sys = System::new();
     sys.init_logger();
 
-    let mut invariant = init_invariant(&sys, Percentage(100));
+    let invariant = init_invariant(&sys, Percentage(100));
 
     let token_0 = ActorId::from([0x01; 32]);
     let token_1 = ActorId::from([0x02; 32]);
 
     let fee_tier = FeeTier::new(Percentage::from_scale(5, 1), 3).unwrap();
 
-    let res = invariant.send(ADMIN, InvariantAction::AddFeeTier(fee_tier));
-    assert!(res.events_eq(vec![TestEvent::empty_invariant_response(ADMIN)]));
+    let res = add_fee_tier(&invariant, ADMIN, fee_tier);
+    res.assert_single_event().assert_empty().assert_to(ADMIN);
 
     let init_tick = 0;
     let init_sqrt_price = SqrtPrice::new(1000225003749000000000000);
 
-    let _res = invariant.send_and_assert_panic(
+    let res = create_pool(
+        &invariant,
         REGULAR_USER_1,
-        InvariantAction::CreatePool {
-            token_0,
-            token_1,
-            fee_tier,
-            init_sqrt_price,
-            init_tick,
-        },
-        InvariantError::InvalidInitSqrtPrice,
+        token_0,
+        token_1,
+        fee_tier,
+        init_sqrt_price,
+        init_tick,
     );
+    res.assert_panicked_with(InvariantError::InvalidInitSqrtPrice);
 
     let correct_tick_index = 3;
-    let res = invariant.send(
+    let res = create_pool(
+        &invariant,
         REGULAR_USER_1,
-        InvariantAction::CreatePool {
-            token_0,
-            token_1,
-            fee_tier,
-            init_sqrt_price,
-            init_tick: correct_tick_index,
-        },
+        token_0,
+        token_1,
+        fee_tier,
+        init_sqrt_price,
+        correct_tick_index,
     );
-    assert!(res.events_eq(vec![TestEvent::empty_invariant_response(REGULAR_USER_1)]));
+    res.assert_single_event()
+        .assert_empty()
+        .assert_to(REGULAR_USER_1);
 
     assert_eq!(
         get_pool(&invariant, token_0, token_1, fee_tier)

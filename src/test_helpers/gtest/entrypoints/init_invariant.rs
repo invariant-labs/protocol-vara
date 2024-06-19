@@ -1,24 +1,27 @@
+use crate::send_request;
 use crate::test_helpers::consts::*;
 use crate::test_helpers::gtest::consts::*;
+use gstd::{Encode, Vec};
 use gtest::*;
 use math::percentage::Percentage;
-
 use io::*;
 
+use super::InvariantResult;
+
 pub fn init_invariant(sys: &System, protocol_fee: Percentage) -> Program<'_> {
-    let bytes = include_bytes!("../../../../target/wasm32-unknown-unknown/release/invariant.opt.wasm");
+    let bytes =
+        include_bytes!("../../../../target/wasm32-unknown-unknown/release/invariant_wasm.opt.wasm");
     let program = Program::from_binary_with_id(sys, INVARIANT_ID, bytes);
 
-    assert!(!program
-        .send(
-            PROGRAM_OWNER,
-            InitInvariant {
-                config: InvariantConfig {
-                    admin: ADMIN.into(),
-                    protocol_fee,
-                },
-            },
-        )
-        .main_failed());
+    let init = InvariantConfig {
+        admin: ADMIN.into(),
+        protocol_fee,
+    };
+
+    let request: Vec<u8> = ["New".encode(), init.encode()].concat();
+    program
+        .send_bytes(PROGRAM_OWNER, request.clone())
+        .assert_success();
+
     program
 }

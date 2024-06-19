@@ -1,12 +1,12 @@
 use crate::test_helpers::gtest::*;
 use contracts::*;
 use decimal::*;
-use gstd::{prelude::*, ActorId};
+use gstd::prelude::*;
 use gtest::*;
-use io::InvariantAction;
 use math::{
     percentage::Percentage, sqrt_price::*, token_amount::*, MAX_SQRT_PRICE, MIN_SQRT_PRICE,
 };
+use sails_rtl::ActorId;
 
 pub fn big_deposit_and_swap(sys: &System, x_to_y: bool) {
     let token_x = ActorId::from(TOKEN_X_ID);
@@ -33,24 +33,22 @@ pub fn big_deposit_and_swap(sys: &System, x_to_y: bool) {
         fee: Percentage::from_scale(6, 3),
         tick_spacing: 1,
     };
-    invariant
-        .send(ADMIN, InvariantAction::AddFeeTier(fee_tier))
-        .assert_success();
+    add_fee_tier(&invariant, ADMIN, fee_tier).assert_success();
 
     let init_tick = 0;
     let init_sqrt_price = calculate_sqrt_price(init_tick).unwrap();
-    invariant
-        .send(
-            REGULAR_USER_1,
-            InvariantAction::CreatePool {
-                token_0: token_x,
-                token_1: token_y,
-                fee_tier,
-                init_sqrt_price,
-                init_tick,
-            },
-        )
-        .assert_success();
+    let _res = create_pool(
+        &invariant,
+        REGULAR_USER_1,
+        token_x,
+        token_y,
+        fee_tier,
+        init_sqrt_price,
+        init_tick,
+    )
+    .assert_single_event()
+    .assert_empty()
+    .assert_to(REGULAR_USER_1);
 
     let lower_tick = if x_to_y {
         -(fee_tier.tick_spacing as i32)
@@ -100,19 +98,17 @@ pub fn big_deposit_and_swap(sys: &System, x_to_y: bool) {
         None::<&str>,
     );
 
-    invariant
-        .send(
-            REGULAR_USER_1,
-            InvariantAction::CreatePosition {
-                pool_key,
-                lower_tick,
-                upper_tick,
-                liquidity_delta,
-                slippage_limit_lower,
-                slippage_limit_upper,
-            },
-        )
-        .assert_success();
+    create_position(
+        &invariant,
+        REGULAR_USER_1,
+        pool_key,
+        lower_tick,
+        upper_tick,
+        liquidity_delta,
+        slippage_limit_lower,
+        slippage_limit_upper,
+    )
+    .assert_success();
 
     withdraw_token_pair(
         &invariant,
@@ -172,18 +168,16 @@ pub fn big_deposit_and_swap(sys: &System, x_to_y: bool) {
     )
     .unwrap();
 
-    invariant
-        .send(
-            REGULAR_USER_1,
-            InvariantAction::Swap {
-                pool_key,
-                x_to_y,
-                amount: TokenAmount(approved_amount),
-                by_amount_in: true,
-                sqrt_price_limit,
-            },
-        )
-        .assert_success();
+    swap(
+        &invariant,
+        REGULAR_USER_1,
+        pool_key,
+        x_to_y,
+        TokenAmount(approved_amount),
+        true,
+        sqrt_price_limit,
+    )
+    .assert_success();
 
     withdraw_single_token(
         &invariant,

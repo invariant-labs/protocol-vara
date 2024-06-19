@@ -1,10 +1,10 @@
-use contracts::PoolKey;
-use gstd::*;
+use contracts::{InvariantError, PoolKey};
 use gtest::*;
 use io::*;
 use math::{sqrt_price::SqrtPrice, token_amount::TokenAmount};
-
-use crate::test_helpers::gtest::InvariantResult;
+use sails_rtl::ActorId;
+use gstd::{vec, ToString, String};
+use crate::{send_request, test_helpers::gtest::InvariantResult};
 
 #[track_caller]
 pub fn deposit_single_token(
@@ -14,9 +14,12 @@ pub fn deposit_single_token(
     amount: u128,
     expected_error: Option<impl Into<String>>,
 ) -> Option<TokenAmount> {
-    let res = invariant.send(
-        from,
-        InvariantAction::DepositSingleToken{token: token.into(), amount: TokenAmount(amount)},
+    let res = send_request!(
+        program: invariant,
+        user: from,
+        service_name: "Service",
+        action: "DepositSingleToken",
+        payload: (token.into(), TokenAmount(amount))
     );
 
     if let Some(err) = expected_error {
@@ -27,17 +30,13 @@ pub fn deposit_single_token(
     res.assert_success();
     let events = res.emitted_events();
     assert_eq!(events.len(), 1);
-    let deposit_return = events
+    events
         .last()
         .unwrap()
-        .decoded_event::<InvariantEvent>()
-        .unwrap();
-
-    if let InvariantEvent::TokenDeposited(x) = deposit_return {
-        Some(x)
-    } else {
-        panic!("unexpected event: {:?}", deposit_return)
-    }
+        .decoded_event::<(String, String, TokenAmount)>()
+        .unwrap()
+        .2
+        .into()
 }
 
 #[track_caller]
@@ -50,12 +49,12 @@ pub fn deposit_token_pair(
     token_y_amount: u128,
     expected_error: Option<impl Into<String>>,
 ) -> Option<(TokenAmount, TokenAmount)> {
-    let res = invariant.send(
-        from,
-        InvariantAction::DepositTokenPair {
-            token_x: (token_x.into(), TokenAmount(token_x_amount)),
-            token_y: (token_y.into(), TokenAmount(token_y_amount)),
-        },
+    let res = send_request!(
+        program: invariant,
+        user: from,
+        service_name: "Service",
+        action: "DepositTokenPair",
+        payload: ((token_x.into(), TokenAmount(token_x_amount)), (token_y.into(), TokenAmount(token_y_amount)))
     );
 
     if let Some(err) = expected_error {
@@ -66,15 +65,11 @@ pub fn deposit_token_pair(
     res.assert_success();
     let events = res.emitted_events();
     assert_eq!(events.len(), 1);
-    let deposit_return = events
+    events
         .last()
         .unwrap()
-        .decoded_event::<InvariantEvent>()
-        .unwrap();
-
-    if let InvariantEvent::TokenPairDeposited(x, y) = deposit_return {
-        Some((x, y))
-    } else {
-        panic!("unexpected event: {:?}", deposit_return)
-    }
+        .decoded_event::<(String, String, (TokenAmount, TokenAmount))>()
+        .unwrap()
+        .2
+        .into()
 }

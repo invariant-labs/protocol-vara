@@ -1,12 +1,12 @@
 use crate::test_helpers::gtest::*;
 use contracts::*;
 use decimal::*;
-use gstd::{prelude::*, ActorId};
+use gstd::prelude::*;
 use gtest::*;
-use io::*;
 use math::{
     fee_growth::FeeGrowth, liquidity::Liquidity, percentage::Percentage, token_amount::TokenAmount,
 };
+use sails_rtl::ActorId;
 
 pub fn init_basic_position(
     sys: &System,
@@ -62,46 +62,42 @@ pub fn init_basic_position(
     let slippage_limit_lower = pool_before.sqrt_price;
     let slippage_limit_upper = pool_before.sqrt_price;
 
-    let res = invariant.send(
+    let res = create_position(
+        &invariant,
         REGULAR_USER_1,
-        InvariantAction::CreatePosition {
-            pool_key,
-            lower_tick,
-            upper_tick,
-            liquidity_delta: liquidity,
-            slippage_limit_lower,
-            slippage_limit_upper,
-        },
+        pool_key,
+        lower_tick,
+        upper_tick,
+        liquidity,
+        slippage_limit_lower,
+        slippage_limit_upper,
     );
 
-    assert!(res.events_eq(vec![
-        TestEvent::invariant_response(
-            REGULAR_USER_1,
-            InvariantEvent::PositionCreatedEvent {
-                address: REGULAR_USER_1.into(),
-                pool_key,
-                liquidity_delta: liquidity,
-                block_timestamp: sys.block_timestamp(),
-                lower_tick,
-                upper_tick,
-                current_sqrt_price: pool_before.sqrt_price,
-            }
-        ),
-        TestEvent::invariant_response(
-            REGULAR_USER_1,
-            InvariantEvent::PositionCreatedReturn(Position {
-                pool_key,
-                liquidity,
-                lower_tick_index: lower_tick,
-                upper_tick_index: upper_tick,
-                fee_growth_inside_x: FeeGrowth::new(0),
-                fee_growth_inside_y: FeeGrowth::new(0),
-                last_block_number: sys.block_height() as u64,
-                tokens_owed_x: TokenAmount(0),
-                tokens_owed_y: TokenAmount(0)
-            })
-        )
-    ]));
+    let events = res.emitted_events();
+    events[0]
+        .assert_to(EVENT_ADDRESS)
+        .assert_with_payload(PositionCreatedEvent {
+            address: REGULAR_USER_1.into(),
+            pool_key,
+            liquidity_delta: liquidity,
+            block_timestamp: sys.block_timestamp(),
+            lower_tick,
+            upper_tick,
+            current_sqrt_price: pool_before.sqrt_price,
+        });
+    events[1]
+        .assert_to(REGULAR_USER_1)
+        .assert_with_payload(Position {
+            pool_key,
+            liquidity,
+            lower_tick_index: lower_tick,
+            upper_tick_index: upper_tick,
+            fee_growth_inside_x: FeeGrowth::new(0),
+            fee_growth_inside_y: FeeGrowth::new(0),
+            last_block_number: sys.block_height() as u64,
+            tokens_owed_x: TokenAmount(0),
+            tokens_owed_y: TokenAmount(0),
+        });
 
     let pool_after = get_pool(&invariant, token_x, token_y, fee_tier).unwrap();
 

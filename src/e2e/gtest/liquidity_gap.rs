@@ -2,9 +2,7 @@ use crate::test_helpers::gtest::*;
 
 use contracts::*;
 use decimal::*;
-use gstd::*;
 use gtest::*;
-use io::*;
 use math::{
     fee_growth::FeeGrowth,
     liquidity::Liquidity,
@@ -13,6 +11,7 @@ use math::{
     token_amount::TokenAmount,
     MIN_SQRT_PRICE,
 };
+use sails_rtl::ActorId;
 
 #[test]
 fn test_liquidity_gap() {
@@ -22,7 +21,7 @@ fn test_liquidity_gap() {
     let token_x = ActorId::from(TOKEN_X_ID);
     let token_y = ActorId::from(TOKEN_Y_ID);
 
-    let mut invariant = init_invariant(&sys, Percentage::from_scale(1, 2));
+    let invariant = init_invariant(&sys, Percentage::from_scale(1, 2));
 
     let mint_amount = u128::MAX;
 
@@ -42,22 +41,20 @@ fn test_liquidity_gap() {
 
     let pool_key = PoolKey::new(token_x, token_y, fee_tier).unwrap();
 
-    invariant
-        .send(ADMIN, InvariantAction::AddFeeTier(fee_tier))
-        .assert_success();
+    add_fee_tier(&invariant, ADMIN, fee_tier).assert_success();
 
-    invariant
-        .send(
-            REGULAR_USER_1,
-            InvariantAction::CreatePool {
-                token_0: token_x,
-                token_1: token_y,
-                fee_tier,
-                init_sqrt_price,
-                init_tick,
-            },
-        )
-        .assert_success();
+    let _res = create_pool(
+        &invariant,
+        REGULAR_USER_1,
+        token_x,
+        token_y,
+        fee_tier,
+        init_sqrt_price,
+        init_tick,
+    )
+    .assert_single_event()
+    .assert_empty()
+    .assert_to(REGULAR_USER_1);
 
     let lower_tick_index = -10;
     let upper_tick_index = 10;
@@ -77,17 +74,17 @@ fn test_liquidity_gap() {
     )
     .unwrap();
 
-    invariant.send(
+    create_position(
+        &invariant,
         REGULAR_USER_1,
-        InvariantAction::CreatePosition {
-            pool_key,
-            lower_tick: lower_tick_index,
-            upper_tick: upper_tick_index,
-            liquidity_delta,
-            slippage_limit_lower: pool_state.sqrt_price,
-            slippage_limit_upper: pool_state.sqrt_price,
-        },
-    );
+        pool_key,
+        lower_tick_index,
+        upper_tick_index,
+        liquidity_delta,
+        pool_state.sqrt_price,
+        pool_state.sqrt_price,
+    )
+    .assert_success();
 
     withdraw_token_pair(
         &invariant,
@@ -158,17 +155,16 @@ fn test_liquidity_gap() {
     let swap_amount = TokenAmount(1);
     let target_sqrt_price = SqrtPrice::new(MIN_SQRT_PRICE);
 
-    invariant.send_and_assert_panic(
+    swap(
+        &invariant,
         REGULAR_USER_2,
-        InvariantAction::Swap {
-            pool_key,
-            x_to_y: true,
-            amount: swap_amount,
-            by_amount_in: true,
-            sqrt_price_limit: target_sqrt_price,
-        },
-        InvariantError::NoGainSwap,
-    );
+        pool_key,
+        true,
+        swap_amount,
+        true,
+        target_sqrt_price,
+    )
+    .assert_panicked_with(InvariantError::NoGainSwap);
 
     // Should skip gap and then swap
     let lower_tick_after_swap = -90;
@@ -176,25 +172,44 @@ fn test_liquidity_gap() {
     let liquidity_delta = Liquidity::from_integer(20008000);
 
     let pool_state = get_pool(&invariant, token_x, token_y, fee_tier).unwrap();
-    
-    increase_allowance(&token_x_program, REGULAR_USER_1, INVARIANT_ID, mint_amount/10).assert_success();
-    increase_allowance(&token_y_program, REGULAR_USER_1, INVARIANT_ID, mint_amount/10).assert_success();
 
-    deposit_token_pair(&invariant, REGULAR_USER_1, token_x, mint_amount/10, token_y, mint_amount/10, None::<&str>).unwrap();
+    increase_allowance(
+        &token_x_program,
+        REGULAR_USER_1,
+        INVARIANT_ID,
+        mint_amount / 10,
+    )
+    .assert_success();
+    increase_allowance(
+        &token_y_program,
+        REGULAR_USER_1,
+        INVARIANT_ID,
+        mint_amount / 10,
+    )
+    .assert_success();
 
-    invariant
-        .send(
-            REGULAR_USER_1,
-            InvariantAction::CreatePosition {
-                pool_key,
-                lower_tick: lower_tick_after_swap,
-                upper_tick: upper_tick_after_swap,
-                liquidity_delta,
-                slippage_limit_lower: pool_state.sqrt_price,
-                slippage_limit_upper: pool_state.sqrt_price,
-            },
-        )
-        .assert_success();
+    deposit_token_pair(
+        &invariant,
+        REGULAR_USER_1,
+        token_x,
+        mint_amount / 10,
+        token_y,
+        mint_amount / 10,
+        None::<&str>,
+    )
+    .unwrap();
+
+    create_position(
+        &invariant,
+        REGULAR_USER_1,
+        pool_key,
+        lower_tick_after_swap,
+        upper_tick_after_swap,
+        liquidity_delta,
+        pool_state.sqrt_price,
+        pool_state.sqrt_price,
+    )
+    .assert_success();
 
     let swap_amount = TokenAmount::new(5000);
 
