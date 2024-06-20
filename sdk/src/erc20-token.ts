@@ -408,32 +408,6 @@ export class Erc20 {
     const result = this._program.registry.createType('(String, String, U256)', reply.payload);
     return result[2].toBigInt() as unknown as bigint;
   }
-
-  public subscribeToApprovalEvent(callback: (data: { owner: string; spender: string; value: number | string }) => void | Promise<void>): Promise<() => void> {
-    return this._program.api.gearEvents.subscribeToGearEvent('UserMessageSent', ({ data: { message } }) => {;
-      if (!message.source.eq(this._program.programId) || !message.destination.eq(ZERO_ADDRESS)) {
-        return;
-      }
-
-      const payload = message.payload.toHex();
-      if (getServiceNamePrefix(payload) === 'Erc20' && getFnNamePrefix(payload) === 'Approval') {
-        callback(this._program.registry.createType('(String, String, {"owner":"[u8;32]","spender":"[u8;32]","value":"U256"})', message.payload)[2].toJSON() as any as { owner: string; spender: string; value: number | string });
-      }
-    });
-  }
-
-  public subscribeToTransferEvent(callback: (data: { from: string; to: string; value: number | string }) => void | Promise<void>): Promise<() => void> {
-    return this._program.api.gearEvents.subscribeToGearEvent('UserMessageSent', ({ data: { message } }) => {;
-      if (!message.source.eq(this._program.programId) || !message.destination.eq(ZERO_ADDRESS)) {
-        return;
-      }
-
-      const payload = message.payload.toHex();
-      if (getServiceNamePrefix(payload) === 'Erc20' && getFnNamePrefix(payload) === 'Transfer') {
-        callback(this._program.registry.createType('(String, String, {"from":"[u8;32]","to":"[u8;32]","value":"U256"})', message.payload)[2].toJSON() as any as { from: string; to: string; value: number | string });
-      }
-    });
-  }
 }
 
 export class Pausable {

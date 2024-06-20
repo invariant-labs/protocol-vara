@@ -1,6 +1,5 @@
 import { assert, expect } from 'chai'
 import { GearKeyring } from '@gear-js/api'
-import { EventListener } from '../src/event-listener.js'
 import { initGearApi, subscribeToNewHeads } from '../src/utils.js'
 import { LOCAL } from '../src/consts.js'
 import { FungibleToken } from '../src/erc20.js'
@@ -10,8 +9,6 @@ const api = await initGearApi({ providerAddress: LOCAL })
 const account0 = await GearKeyring.fromSuri('//Alice')
 const account1 = await GearKeyring.fromSuri('//Bob')
 let unsub: Promise<VoidFunction> | null = null
-const eventListener = new EventListener(api)
-eventListener.listen()
 let token: FungibleToken = null as any
 describe('FungibleToken', function () {
   before(function () {

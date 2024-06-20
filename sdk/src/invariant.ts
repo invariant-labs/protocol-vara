@@ -1,111 +1,358 @@
-import { GearApi, HexString, ProgramMetadata } from '@gear-js/api'
+import { GearApi, HexString } from '@gear-js/api'
 import { KeyringPair } from '@polkadot/keyring/types'
-import { Uint8ArrayToHexStr, getDeploymentData, getStateInput, getStateOutput } from './utils.js'
-import { INVARIANT_GAS_LIMIT } from './consts.js'
-import { ISubmittableResult } from '@polkadot/types/types'
-import { EventListener } from './event-listener.js'
+import {
+  ActorId,
+  Signer,
+  getWasm,
+  integerSafeCast,
+  unwrapResult,
+  convertTick,
+  convertPool,
+  convertFeeTier,
+  convertPosition,
+  convertPoolKey,
+  TransactionWrapper,
+  convertCalculateSwapResult
+} from './utils.js'
+import { DEFAULT_ADDRESS, INVARIANT_GAS_LIMIT } from './consts.js'
+import { InvariantContract } from './invariant-contract.js'
+import {
+  CalculateSwapResult,
+  FeeTier,
+  Liquidity,
+  Position,
+  Pool,
+  Percentage,
+  PoolKey,
+  SqrtPrice,
+  Tick,
+  TokenAmount
+} from 'invariant-vara-wasm'
 
 export class Invariant {
-  private readonly gasLimit: bigint
-  private readonly api: GearApi
-  private readonly meta: ProgramMetadata
-  readonly programId: HexString
-  private readonly eventListener: EventListener
   private constructor(
-    api: GearApi,
-    eventListener: EventListener,
-    meta: ProgramMetadata,
-    programId: HexString,
-    gasLimit: bigint
-  ) {
-    Invariant.validateMetadata(meta)
-    this.api = api
-    this.programId = programId
-    this.meta = meta
-    this.eventListener = eventListener
-    this.gasLimit = gasLimit
-  }
-  static validateMetadata(meta: ProgramMetadata) {
-    if (meta.types.init.input === null) {
-      throw new Error('Metadata does not contain init type')
-    }
-
-    if (meta.types.handle.input === null) {
-      throw new Error('Metadata does not contain handle input type')
-    }
-
-    if (meta.types.handle.output === null) {
-      throw new Error('Metadata does not contain handle output type')
-    }
-
-    if (getStateInput(meta) === null) {
-      throw new Error('Metadata does not contain state input type')
-    }
-
-    if (getStateOutput(meta) === null) {
-      throw new Error('Metadata does not contain state output type')
-    }
-  }
+    private readonly contract: InvariantContract,
+    private readonly gasLimit: bigint
+  ) {}
 
   static async deploy(
     api: GearApi,
-    eventListener: EventListener,
     deployer: KeyringPair,
-    protocolFee: bigint,
-    admin: HexString
+    protocolFee: Percentage,
+    gasLimit: bigint = INVARIANT_GAS_LIMIT
   ) {
-    const { metadata, wasm } = await getDeploymentData('invariant')
-    const inputType = metadata.types.init.input!
-
-    const init = metadata.createType(inputType, {
-      config: {
-        admin,
+    const code = await getWasm('invariant')
+    const invariant = new InvariantContract(api)
+    const deployTx = await invariant
+      .newCtorFromCode(code, {
+        admin: deployer.addressRaw,
         protocolFee
-      }
-    })
+      } as any)
+      .withAccount(deployer)
+      .withGas(gasLimit)
 
-    const gas = await api.program.calculateGas.initUpload(
-      `0x${Uint8ArrayToHexStr(deployer.publicKey)}`,
-      wasm,
-      init.toHex(), // payload
-      0, // value
-      false // allow other panics
+    {
+      const { response } = await deployTx.signAndSend()
+      response()
+    }
+
+    return new Invariant(invariant, gasLimit)
+  }
+
+  static async load(api: GearApi, programId: HexString, gasLimit: bigint) {
+    const invariant = new InvariantContract(api, programId)
+    return new Invariant(invariant, gasLimit)
+  }
+
+  programId(): HexString {
+    const id = this.contract.programId
+
+    if (id === undefined || id === null) {
+      throw new Error('Program id is not set')
+    }
+
+    return id
+  }
+
+  async feeTierExists(feeTier: FeeTier): Promise<boolean> {
+    return this.contract.service.feeTierExists(feeTier as any, DEFAULT_ADDRESS)
+  }
+
+  async getFeeTiers(): Promise<FeeTier[]> {
+    return ((await this.contract.service.getFeeTiers(DEFAULT_ADDRESS)) as any[]).map(convertFeeTier)
+  }
+
+  async getPool(token0: ActorId, token1: ActorId, feeTier: FeeTier): Promise<Pool> {
+    return convertPool(
+      unwrapResult(
+        await this.contract.service.getPool(
+          token0 as any,
+          token1 as any,
+          feeTier as any,
+          DEFAULT_ADDRESS as any
+        )
+      )
     )
+  }
 
-    const program = {
-      code: wasm,
-      gasLimit: gas.min_limit.toNumber() * 2,
-      value: 0,
-      initPayload: init.toHex()
-    }
+  async getProtocolFee(): Promise<Percentage> {
+    return BigInt((await this.contract.service.getProtocolFee(DEFAULT_ADDRESS)) as any)
+  }
 
-    const { programId, extrinsic } = api.program.upload(program, metadata)
+  async getTick(key: PoolKey, index: bigint): Promise<Tick> {
+    return convertTick(
+      unwrapResult(
+        await this.contract.service.getTick(key as any, integerSafeCast(index), DEFAULT_ADDRESS)
+      )
+    )
+  }
 
-    const event: Promise<ISubmittableResult> = new Promise(resolve => {
-      extrinsic.signAndSend(deployer, async result => {
-        if (result.isFinalized) {
-          resolve(result)
-        }
-      })
-    })
+  async isTickInitialized(key: PoolKey, index: bigint): Promise<boolean> {
+    return this.contract.service.isTickInitialized(
+      key as any,
+      integerSafeCast(index),
+      DEFAULT_ADDRESS
+    )
+  }
 
-    const res = await event
+  async getPools(size: bigint, offset: bigint): Promise<PoolKey[]> {
+    return unwrapResult(
+      await this.contract.service.getPools(size as any, offset as any, DEFAULT_ADDRESS)
+    ).map(convertPoolKey)
+  }
 
-    if (res.isError) {
-      throw new Error(res.dispatchError?.toString())
-    }
+  async changeProtocolFeeTx(
+    fee: Percentage,
+    gasLimit: bigint = this.gasLimit
+  ): Promise<TransactionWrapper<Percentage>> {
+    return new TransactionWrapper<Percentage>(
+      await this.contract.service.changeProtocolFee(fee as any).withGas(gasLimit)
+    )
+  }
 
-    const returnMessage = eventListener.getByFinalizedResult(res)
+  async changeProtocolFee(
+    signer: Signer,
+    fee: Percentage,
+    gasLimit: bigint = this.gasLimit
+  ): Promise<Percentage> {
+    const tx = (await this.changeProtocolFeeTx(fee, gasLimit)).withAccount(signer)
+    return tx.send()
+  }
 
-    if (returnMessage === undefined) {
-      throw new Error('No init event found')
-    }
-    const details = returnMessage.data.message.details
+  async addFeeTierTx(
+    feeTier: FeeTier,
+    gasLimit: bigint = this.gasLimit
+  ): Promise<TransactionWrapper<FeeTier>> {
+    return new TransactionWrapper<FeeTier>(
+      await this.contract.service.addFeeTier(feeTier as any).withGas(gasLimit)
+    ).withDecode(convertFeeTier)
+  }
 
-    if (details.isSome && details.unwrap().code.isError) {
-      throw new Error(`Failed to upload invariant: ${returnMessage.data.message}`)
-    }
+  async addFeeTier(
+    signer: Signer,
+    feeTier: FeeTier,
+    gasLimit: bigint = this.gasLimit
+  ): Promise<FeeTier> {
+    const tx = (await this.addFeeTierTx(feeTier as any, gasLimit)).withAccount(signer)
+    return tx.send()
+  }
 
-    return new Invariant(api, eventListener, metadata, programId, INVARIANT_GAS_LIMIT)
+  async changeFeeReceiverTx(
+    poolKey: PoolKey,
+    feeReceiver: ActorId,
+    gasLimit: bigint = this.gasLimit
+  ): Promise<TransactionWrapper<null>> {
+    return new TransactionWrapper<null>(
+      await this.contract.service
+        .changeFeeReceiver(poolKey as any, feeReceiver as any)
+        .withGas(gasLimit)
+    )
+  }
+
+  async changeFeeReceiver(
+    signer: Signer,
+    poolKey: PoolKey,
+    feeReceiver: ActorId,
+    gasLimit: bigint = this.gasLimit
+  ): Promise<null> {
+    const tx = (
+      await this.changeFeeReceiverTx(poolKey as any, feeReceiver as any, gasLimit)
+    ).withAccount(signer)
+    return tx.send()
+  }
+
+  async createPoolTx(
+    key: PoolKey,
+    initSqrtPrice: bigint,
+    gasLimit: bigint = this.gasLimit
+  ): Promise<TransactionWrapper<null>> {
+    return new TransactionWrapper<null>(
+      await this.contract.service
+        .createPool(key.tokenX, key.tokenY, key.feeTier as any, initSqrtPrice as any, 0n as any)
+        .withGas(gasLimit)
+    )
+  }
+
+  async createPool(
+    signer: Signer,
+    key: PoolKey,
+    initSqrtPrice: bigint,
+    gasLimit: bigint = this.gasLimit
+  ): Promise<null> {
+    const tx = (await this.createPoolTx(key, initSqrtPrice, gasLimit)).withAccount(signer)
+    return tx.send()
+  }
+
+  async createPositionTx(
+    key: PoolKey,
+    lowerTick: bigint,
+    upperTick: bigint,
+    liquidityDelta: Liquidity,
+    slippageLimitLower: SqrtPrice,
+    slippageLimitUpper: SqrtPrice,
+    gasLimit: bigint = this.gasLimit
+  ): Promise<TransactionWrapper<Position>> {
+    return new TransactionWrapper<Position>(
+      await this.contract.service
+        .createPosition(
+          key as any,
+          lowerTick as any,
+          upperTick as any,
+          liquidityDelta as any,
+          slippageLimitLower as any,
+          slippageLimitUpper as any
+        )
+        .withGas(gasLimit)
+    ).withDecode(convertPosition)
+  }
+
+  async createPosition(
+    signer: Signer,
+    key: PoolKey,
+    lowerTick: bigint,
+    upperTick: bigint,
+    liquidityDelta: Liquidity,
+    slippageLimitLower: SqrtPrice,
+    slippageLimitUpper: SqrtPrice,
+    gasLimit: bigint = this.gasLimit
+  ): Promise<Position> {
+    const tx = (
+      await this.createPositionTx(
+        key,
+        lowerTick,
+        upperTick,
+        liquidityDelta,
+        slippageLimitLower,
+        slippageLimitUpper,
+        gasLimit
+      )
+    ).withAccount(signer)
+    return tx.send()
+  }
+
+  async depositTx(
+    token: ActorId,
+    amount: bigint,
+    gasLimit: bigint = this.gasLimit
+  ): Promise<TransactionWrapper<TokenAmount>> {
+    return new TransactionWrapper(
+      await this.contract.service.depositSingleToken(token as any, amount as any).withGas(gasLimit)
+    )
+  }
+
+  async depositSingleToken(
+    signer: Signer,
+    token: ActorId,
+    amount: bigint,
+    gasLimit: bigint = this.gasLimit
+  ): Promise<TokenAmount> {
+    const tx = (await this.depositTx(token, amount, gasLimit)).withAccount(signer)
+    return tx.send()
+  }
+
+  async removeFeeTierTx(
+    feeTier: FeeTier,
+    gasLimit: bigint = this.gasLimit
+  ): Promise<TransactionWrapper<FeeTier>> {
+    return new TransactionWrapper<FeeTier>(
+      await this.contract.service.removeFeeTier(feeTier as any).withGas(gasLimit)
+    ).withDecode(convertFeeTier)
+  }
+
+  async removeFeeTier(
+    signer: Signer,
+    feeTier: FeeTier,
+    gasLimit: bigint = this.gasLimit
+  ): Promise<FeeTier> {
+    const tx = (await this.removeFeeTierTx(feeTier as any, gasLimit)).withAccount(signer)
+    return tx.send()
+  }
+
+  async swapTx(
+    poolKey: PoolKey,
+    xToY: boolean,
+    amount: TokenAmount,
+    byAmountIn: boolean,
+    sqrtPriceLimit: SqrtPrice,
+    gasLimit: bigint = this.gasLimit
+  ): Promise<TransactionWrapper<CalculateSwapResult>> {
+    return new TransactionWrapper<CalculateSwapResult>(
+      await this.contract.service
+        .swap(poolKey as any, xToY, amount as any, byAmountIn, sqrtPriceLimit as any)
+        .withGas(gasLimit)
+    ).withDecode(convertCalculateSwapResult)
+  }
+
+  async swap(
+    signer: Signer,
+    poolKey: PoolKey,
+    xToY: boolean,
+    amount: TokenAmount,
+    byAmountIn: boolean,
+    sqrtPriceLimit: SqrtPrice,
+    gasLimit: bigint = this.gasLimit
+  ): Promise<CalculateSwapResult> {
+    const tx = (
+      await this.swapTx(poolKey, xToY, amount, byAmountIn, sqrtPriceLimit, gasLimit)
+    ).withAccount(signer)
+    return tx.send()
+  }
+
+  async withdrawProtocolFeeTx(
+    poolKey: PoolKey,
+    gasLimit: bigint = this.gasLimit
+  ): Promise<TransactionWrapper<[TokenAmount, TokenAmount]>> {
+    return new TransactionWrapper(
+      await this.contract.service.withdrawProtocolFee(poolKey as any).withGas(gasLimit)
+    )
+  }
+
+  async withdrawProtocolFee(
+    signer: Signer,
+    poolKey: PoolKey,
+    gasLimit: bigint = this.gasLimit
+  ): Promise<[TokenAmount, TokenAmount]> {
+    const tx = (await this.withdrawProtocolFeeTx(poolKey, gasLimit)).withAccount(signer)
+    return tx.send()
+  }
+
+  async withdrawSingleTokenTx(
+    token: ActorId,
+    amount: TokenAmount | null = null,
+    gasLimit: bigint = this.gasLimit
+  ): Promise<TransactionWrapper<TokenAmount>> {
+    return new TransactionWrapper(
+      await this.contract.service.withdrawSingleToken(token as any, amount as any).withGas(gasLimit)
+    )
+  }
+
+  async withdrawSingleToken(
+    signer: Signer,
+    token: ActorId,
+    amount: TokenAmount | null = null,
+    gasLimit: bigint = this.gasLimit
+  ): Promise<TokenAmount> {
+    const tx = (await this.withdrawSingleTokenTx(token, amount, gasLimit)).withAccount(signer)
+    return tx.send()
   }
 }
