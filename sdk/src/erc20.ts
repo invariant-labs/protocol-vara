@@ -65,6 +65,16 @@ export class FungibleToken {
     return new FungibleToken(gasLimit, erc20)
   }
 
+  programId(): HexString {
+    const id = this.erc20.programId
+
+    if (id === undefined || id === null) {
+      throw new Error('Program id is not set')
+    }
+
+    return id
+  }
+
   async allowance(owner: ActorId, spender: ActorId): Promise<bigint> {
     return this.erc20.erc20.allowance(owner as any, spender as any, DEFAULT_ADDRESS)
   }

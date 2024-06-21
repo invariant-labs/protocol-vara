@@ -94,21 +94,21 @@ export class InvariantContract {
 
   constructor(public api: GearApi, public programId?: `0x${string}`) {
     const types: Record<string, any> = {
-      InvariantConfig: {"admin":"[u8;32]","protocol_fee":"Percentage"},
+      InvariantConfig: {"admin":"[u8;32]","protocolFee":"Percentage"},
       Percentage: "(u64)",
-      FeeTier: {"fee":"Percentage","tick_spacing":"u16"},
-      PoolKey: {"token_x":"[u8;32]","token_y":"[u8;32]","fee_tier":"FeeTier"},
+      FeeTier: {"fee":"Percentage","tickSpacing":"u16"},
+      PoolKey: {"tokenX":"[u8;32]","tokenY":"[u8;32]","feeTier":"FeeTier"},
       TokenAmount: "(u128)",
       SqrtPrice: "(u128)",
       Liquidity: "(u128)",
-      Position: {"pool_key":"PoolKey","liquidity":"Liquidity","lower_tick_index":"i32","upper_tick_index":"i32","fee_growth_inside_x":"FeeGrowth","fee_growth_inside_y":"FeeGrowth","last_block_number":"u64","tokens_owed_x":"TokenAmount","tokens_owed_y":"TokenAmount"},
+      Position: {"poolKey":"PoolKey","liquidity":"Liquidity","lowerTickIndex":"i32","upperTickIndex":"i32","feeGrowthInsideX":"FeeGrowth","feeGrowthInsideY":"FeeGrowth","lastBlockNumber":"u64","tokensOwedX":"TokenAmount","tokensOwedY":"TokenAmount"},
       FeeGrowth: "(u128)",
-      CalculateSwapResult: {"amount_in":"TokenAmount","amount_out":"TokenAmount","start_sqrt_price":"SqrtPrice","target_sqrt_price":"SqrtPrice","fee":"TokenAmount","pool":"Pool","ticks":"Vec<Tick>"},
-      Pool: {"liquidity":"Liquidity","sqrt_price":"SqrtPrice","current_tick_index":"i32","fee_growth_global_x":"FeeGrowth","fee_growth_global_y":"FeeGrowth","fee_protocol_token_x":"TokenAmount","fee_protocol_token_y":"TokenAmount","start_timestamp":"u64","last_timestamp":"u64","fee_receiver":"[u8;32]"},
-      Tick: {"index":"i32","sign":"bool","liquidity_change":"Liquidity","liquidity_gross":"Liquidity","sqrt_price":"SqrtPrice","fee_growth_outside_x":"FeeGrowth","fee_growth_outside_y":"FeeGrowth","seconds_outside":"u64"},
+      CalculateSwapResult: {"amountIn":"TokenAmount","amountOut":"TokenAmount","startSqrtPrice":"SqrtPrice","targetSqrtPrice":"SqrtPrice","fee":"TokenAmount","pool":"Pool","ticks":"Vec<Tick>"},
+      Pool: {"liquidity":"Liquidity","sqrtPrice":"SqrtPrice","currentTickIndex":"i32","feeGrowthGlobalX":"FeeGrowth","feeGrowthGlobalY":"FeeGrowth","feeProtocolTokenX":"TokenAmount","feeProtocolTokenY":"TokenAmount","startTimestamp":"u64","lastTimestamp":"u64","feeReceiver":"[u8;32]"},
+      Tick: {"index":"i32","sign":"bool","liquidityChange":"Liquidity","liquidityGross":"Liquidity","sqrtPrice":"SqrtPrice","feeGrowthOutsideX":"FeeGrowth","feeGrowthOutsideY":"FeeGrowth","secondsOutside":"u64"},
       InvariantError: {"_enum":["NotAdmin","NotFeeReceiver","PoolAlreadyExist","PoolNotFound","TickAlreadyExist","InvalidTickIndexOrTickSpacing","PositionNotFound","TickNotFound","FeeTierNotFound","PoolKeyNotFound","AmountIsZero","WrongLimit","PriceLimitReached","NoGainSwap","InvalidTickSpacing","FeeTierAlreadyExist","PoolKeyAlreadyExist","UnauthorizedFeeReceiver","ZeroLiquidity","RecoverableTransferError","UnrecoverableTransferError","TransferError","TokensAreSame","AmountUnderMinimumAmountOut","InvalidFee","NotEmptyTickDeinitialization","InvalidInitTick","InvalidInitSqrtPrice","NotEnoughGasToExecute","TickLimitReached","InvalidTickIndex","NoBalanceForTheToken","FailedToChangeTokenBalance","ReplyHandlingFailed"]},
-      QuoteResult: {"amount_in":"TokenAmount","amount_out":"TokenAmount","target_sqrt_price":"SqrtPrice","ticks":"Vec<Tick>"},
-      SwapHop: {"pool_key":"PoolKey","x_to_y":"bool"},
+      QuoteResult: {"amountIn":"TokenAmount","amountOut":"TokenAmount","targetSqrtPrice":"SqrtPrice","ticks":"Vec<Tick>"},
+      SwapHop: {"poolKey":"PoolKey","xToY":"bool"},
     }
 
     this.registry = new TypeRegistry();
@@ -185,8 +185,8 @@ export class Service {
       this._program.registry,
       'send_message',
       ['Service', 'ChangeProtocolFee', protocol_fee],
-      '(String, String, Percentage)',
-      'Percentage',
+      '(String, String, u64)',
+      'u64',
       this._program.programId
     );
   }
@@ -199,7 +199,7 @@ export class Service {
       'send_message',
       ['Service', 'ClaimFee', index],
       '(String, String, u32)',
-      '(TokenAmount, TokenAmount)',
+      '(u128, u128)',
       this._program.programId
     );
   }
@@ -211,7 +211,7 @@ export class Service {
       this._program.registry,
       'send_message',
       ['Service', 'CreatePool', token_x, token_y, fee_tier, init_sqrt_price, init_tick],
-      '(String, String, [u8;32], [u8;32], FeeTier, SqrtPrice, i32)',
+      '(String, String, [u8;32], [u8;32], FeeTier, u128, i32)',
       'Null',
       this._program.programId
     );
@@ -224,7 +224,7 @@ export class Service {
       this._program.registry,
       'send_message',
       ['Service', 'CreatePosition', pool_key, lower_tick, upper_tick, liquidity_delta, slippage_limit_lower, slippage_limit_upper],
-      '(String, String, PoolKey, i32, i32, Liquidity, SqrtPrice, SqrtPrice)',
+      '(String, String, PoolKey, i32, i32, u128, u128, u128)',
       'Position',
       this._program.programId
     );
@@ -237,8 +237,8 @@ export class Service {
       this._program.registry,
       'send_message',
       ['Service', 'DepositSingleToken', token, amount],
-      '(String, String, [u8;32], TokenAmount)',
-      'TokenAmount',
+      '(String, String, [u8;32], u128)',
+      'u128',
       this._program.programId
     );
   }
@@ -250,8 +250,8 @@ export class Service {
       this._program.registry,
       'send_message',
       ['Service', 'DepositTokenPair', token_x, token_y],
-      '(String, String, ([u8;32], TokenAmount), ([u8;32], TokenAmount))',
-      '(TokenAmount, TokenAmount)',
+      '(String, String, ([u8;32], u128), ([u8;32], u128))',
+      '(u128, u128)',
       this._program.programId
     );
   }
@@ -277,7 +277,7 @@ export class Service {
       'send_message',
       ['Service', 'RemovePosition', index],
       '(String, String, u32)',
-      '(TokenAmount, TokenAmount)',
+      '(u128, u128)',
       this._program.programId
     );
   }
@@ -289,7 +289,7 @@ export class Service {
       this._program.registry,
       'send_message',
       ['Service', 'Swap', pool_key, x_to_y, amount, by_amount_in, sqrt_price_limit],
-      '(String, String, PoolKey, bool, TokenAmount, bool, SqrtPrice)',
+      '(String, String, PoolKey, bool, u128, bool, u128)',
       'CalculateSwapResult',
       this._program.programId
     );
@@ -328,8 +328,8 @@ export class Service {
       this._program.registry,
       'send_message',
       ['Service', 'WithdrawSingleToken', token, amount],
-      '(String, String, [u8;32], Option<TokenAmount>)',
-      'TokenAmount',
+      '(String, String, [u8;32], Option<u128>)',
+      'u128',
       this._program.programId
     );
   }
@@ -341,8 +341,8 @@ export class Service {
       this._program.registry,
       'send_message',
       ['Service', 'WithdrawTokenPair', token_x, token_y],
-      '(String, String, ([u8;32], Option<TokenAmount>), ([u8;32], Option<TokenAmount>))',
-      '(TokenAmount, TokenAmount)',
+      '(String, String, ([u8;32], Option<u128>), ([u8;32], Option<u128>))',
+      '(u128, u128)',
       this._program.programId
     );
   }
@@ -535,7 +535,7 @@ export class Service {
 
       const payload = message.payload.toHex();
       if (getServiceNamePrefix(payload) === 'Service' && getFnNamePrefix(payload) === 'PositionCreatedEvent') {
-        callback(this._program.registry.createType('(String, String, {"block_timestamp":"u64","address":"[u8;32]","pool_key":"PoolKey","liquidity_delta":"Liquidity","lower_tick":"i32","upper_tick":"i32","current_sqrt_price":"SqrtPrice"})', message.payload)[2].toJSON() as any as { block_timestamp: number | string; address: string; pool_key: PoolKey; liquidity_delta: Liquidity; lower_tick: number; upper_tick: number; current_sqrt_price: SqrtPrice });
+        callback(this._program.registry.createType('(String, String, {"blockTimestamp":"u64","address":"[u8;32]","poolKey":"PoolKey","liquidityDelta":"Liquidity","lowerTick":"i32","upperTick":"i32","currentSqrtPrice":"SqrtPrice"})', message.payload)[2].toJSON() as any as { block_timestamp: number | string; address: string; pool_key: PoolKey; liquidity_delta: Liquidity; lower_tick: number; upper_tick: number; current_sqrt_price: SqrtPrice });
       }
     });
   }
@@ -548,7 +548,7 @@ export class Service {
 
       const payload = message.payload.toHex();
       if (getServiceNamePrefix(payload) === 'Service' && getFnNamePrefix(payload) === 'PositionRemovedEvent') {
-        callback(this._program.registry.createType('(String, String, {"block_timestamp":"u64","caller":"[u8;32]","pool_key":"PoolKey","liquidity":"Liquidity","lower_tick_index":"i32","upper_tick_index":"i32","sqrt_price":"SqrtPrice"})', message.payload)[2].toJSON() as any as { block_timestamp: number | string; caller: string; pool_key: PoolKey; liquidity: Liquidity; lower_tick_index: number; upper_tick_index: number; sqrt_price: SqrtPrice });
+        callback(this._program.registry.createType('(String, String, {"blockTimestamp":"u64","caller":"[u8;32]","poolKey":"PoolKey","liquidity":"Liquidity","lowerTickIndex":"i32","upperTickIndex":"i32","sqrtPrice":"SqrtPrice"})', message.payload)[2].toJSON() as any as { block_timestamp: number | string; caller: string; pool_key: PoolKey; liquidity: Liquidity; lower_tick_index: number; upper_tick_index: number; sqrt_price: SqrtPrice });
       }
     });
   }
@@ -574,7 +574,7 @@ export class Service {
 
       const payload = message.payload.toHex();
       if (getServiceNamePrefix(payload) === 'Service' && getFnNamePrefix(payload) === 'SwapEvent') {
-        callback(this._program.registry.createType('(String, String, {"timestamp":"u64","address":"[u8;32]","pool":"PoolKey","amount_in":"TokenAmount","amount_out":"TokenAmount","fee":"TokenAmount","start_sqrt_price":"SqrtPrice","target_sqrt_price":"SqrtPrice","x_to_y":"bool"})', message.payload)[2].toJSON() as any as { timestamp: number | string; address: string; pool: PoolKey; amount_in: TokenAmount; amount_out: TokenAmount; fee: TokenAmount; start_sqrt_price: SqrtPrice; target_sqrt_price: SqrtPrice; x_to_y: boolean });
+        callback(this._program.registry.createType('(String, String, {"timestamp":"u64","address":"[u8;32]","pool":"PoolKey","amountIn":"TokenAmount","amountOut":"TokenAmount","fee":"TokenAmount","startSqrtPrice":"SqrtPrice","targetSqrtPrice":"SqrtPrice","xToY":"bool"})', message.payload)[2].toJSON() as any as { timestamp: number | string; address: string; pool: PoolKey; amount_in: TokenAmount; amount_out: TokenAmount; fee: TokenAmount; start_sqrt_price: SqrtPrice; target_sqrt_price: SqrtPrice; x_to_y: boolean });
       }
     });
   }

@@ -8,6 +8,7 @@ use traceable_result::*;
 use tsify::Tsify;
 use wasm_bindgen::prelude::*;
 use wasm_wrapper::*;
+use crate::{Pool, Tick};
 
 #[derive(PartialEq, Eq, Debug, Copy, Clone, Serialize, Deserialize, Tsify)]
 #[tsify(into_wasm_abi, from_wasm_abi)]
@@ -24,6 +25,19 @@ pub struct SwapResult {
     pub amount_in: TokenAmount,
     pub amount_out: TokenAmount,
     pub fee_amount: TokenAmount,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Tsify)]
+#[tsify(into_wasm_abi, from_wasm_abi)]
+#[serde(rename_all = "camelCase")]
+pub struct CalculateSwapResult {
+    pub amount_in: TokenAmount,
+    pub amount_out: TokenAmount,
+    pub start_sqrt_price: SqrtPrice,
+    pub target_sqrt_price: SqrtPrice,
+    pub fee: TokenAmount,
+    pub pool: Pool,
+    pub ticks: Vec<Tick>,
 }
 
 #[wasm_wrapper]

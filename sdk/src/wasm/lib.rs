@@ -10,6 +10,7 @@ pub mod math;
 pub mod storage;
 pub mod types;
 
+pub use clamm::*;
 pub use consts::*;
 pub use custom::*;
 pub use helpers::*;
