@@ -100,7 +100,7 @@ pub fn init_slippage_pool_with_liquidity(
             address: REGULAR_USER_1.into(),
             pool_key,
             liquidity_delta: liquidity,
-            block_timestamp: sys.block_timestamp(),
+            timestamp: sys.block_timestamp(),
             lower_tick,
             upper_tick,
             current_sqrt_price: init_sqrt_price,

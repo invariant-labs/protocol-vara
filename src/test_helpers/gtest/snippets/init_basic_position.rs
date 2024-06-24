@@ -80,7 +80,7 @@ pub fn init_basic_position(
             address: REGULAR_USER_1.into(),
             pool_key,
             liquidity_delta: liquidity,
-            block_timestamp: sys.block_timestamp(),
+            timestamp: sys.block_timestamp(),
             lower_tick,
             upper_tick,
             current_sqrt_price: pool_before.sqrt_price,

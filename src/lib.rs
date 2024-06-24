@@ -19,17 +19,14 @@ use invariant_storage::InvariantStorage;
 use sails_rtl::{gstd::msg, String};
 use sails_rtl::{ActorId, MessageId};
 
-pub fn signal_handler() {
+pub fn handle_panic() {
     if program_id() == msg::source().into() {
         return;
     }
 
     let invariant = InvariantStorage::as_mut();
     let token: ActorId = msg::source().into();
-    #[cfg(feature = "test")]
     let message_with_error = msg::reply_to().unwrap();
-    #[cfg(not(feature = "test"))]
-    let message_with_error: MessageId = msg::signal_from().unwrap().into();
 
     let (update_values, message_exists) = {
         let message_record = invariant
@@ -78,10 +75,10 @@ pub fn signal_handler() {
         );
     }
 
-    gstd::debug!("Signal handling finished");
+    gstd::debug!("Panic handling finished");
 }
 
-pub fn reply_handler() {
+pub fn handle_valid_reply() {
     let invariant = InvariantStorage::as_mut();
     let token: ActorId = msg::source().into();
     let message_with_error: MessageId = msg::reply_to().unwrap().into();
@@ -156,22 +153,20 @@ pub fn reply_handler() {
     gstd::debug!("Reply handling finished");
 }
 
-// this is necessary to test custom handle_signal entrypoint with gtest
-// since handle_signal appears to be handled in handle_reply
-#[cfg(feature = "test")]
-pub fn reply_and_signal_handler() {
+pub fn reply_handler() {
+    // message is a valid reply
     if msg::load::<(String, String, bool)>().is_ok() {
-        reply_handler()
+        handle_valid_reply()
+    // message is a valid panic
     } else if msg::load::<String>().is_ok() {
-        signal_handler()
+        handle_panic()
     } else {
-        gstd::debug!("Unknown message type")
+        gstd::debug!("Unknown message type");
     }
 }
 pub struct InvariantProgram(());
 
-#[cfg_attr(feature = "test", gprogram(handle_reply = reply_and_signal_handler))]
-#[cfg_attr(not(feature = "test"), gprogram(handle_reply = reply_handler, handle_signal = signal_handler))]
+#[gprogram(handle_reply = reply_handler)]
 impl InvariantProgram {
     pub fn new(config: InvariantConfig) -> Self {
         InvariantService::<GStdExecContext>::seed(config);

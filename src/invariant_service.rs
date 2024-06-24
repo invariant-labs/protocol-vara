@@ -276,7 +276,7 @@ where
             }
 
             self.notify_on(InvariantEvent::PositionCreatedEvent {
-                block_timestamp: exec::block_timestamp(),
+                timestamp: exec::block_timestamp(),
                 address: self.exec_context.actor_id(),
                 pool_key,
                 liquidity_delta,
@@ -363,8 +363,8 @@ where
             invariant.increase_token_balance(&token_y, &caller, amount_y)?;
 
             self.notify_on(InvariantEvent::PositionRemovedEvent {
-                block_timestamp: exec::block_timestamp(),
-                caller: self.exec_context.actor_id(),
+                timestamp: exec::block_timestamp(),
+                address: self.exec_context.actor_id(),
                 pool_key,
                 liquidity: withdrawn_liquidity,
                 lower_tick_index: lower_tick.index,
@@ -445,7 +445,7 @@ where
                 self.notify_on(InvariantEvent::CrossTickEvent {
                     timestamp: exec::block_timestamp(),
                     address: caller,
-                    pool: pool_key,
+                    pool_key,
                     indexes: crossed_tick_indexes,
                 })
                 .expect("Failed to notify on cross tick event");
@@ -454,7 +454,7 @@ where
             self.notify_on(InvariantEvent::SwapEvent {
                 timestamp: exec::block_timestamp(),
                 address: caller,
-                pool: pool_key,
+                pool_key,
                 amount_in: calculate_swap_result.amount_in,
                 amount_out: calculate_swap_result.amount_out,
                 fee: calculate_swap_result.fee,

@@ -6,7 +6,7 @@ import { Invariant } from '../src/invariant'
 import { assert } from 'chai'
 import { FungibleToken } from '../src/erc20'
 import { assertThrowsAsync } from '../src/test-utils.js'
-import { SqrtPrice, Tick } from 'invariant-vara-wasm/invariant_vara_wasm'
+import { SqrtPrice, Tick } from '../src/schema'
 
 const api = await initGearApi({ providerAddress: LOCAL })
 const admin = await GearKeyring.fromSuri('//Alice')
@@ -127,7 +127,7 @@ describe('Invariant', async function () {
       10n,
       1000000n,
       pool.sqrtPrice,
-      pool.sqrtPrice
+      0n
     )
 
     const lowerTick = await invariant.getTick(poolKey, -10n)

@@ -11,17 +11,17 @@ use wasm_bindgen::prelude::*;
 #[derive(Default, Debug, PartialEq, Serialize, Deserialize, Tsify)]
 #[serde(rename_all = "camelCase")]
 #[tsify(into_wasm_abi, from_wasm_abi)]
-pub struct CreatePositionEvent {
+pub struct PositionCreatedEvent {
     #[tsify(type = "bigint")]
     timestamp: u64,
     address: String,
-    pool: PoolKey,
-    liquidity: Liquidity,
+    pool_key: PoolKey,
+    liquidity_delta: Liquidity,
     #[tsify(type = "bigint")]
     lower_tick: i32,
     #[tsify(type = "bigint")]
     upper_tick: i32,
-    current_sqrt_price: SqrtPrice,
+    sqrt_price: SqrtPrice,
 }
 
 #[derive(Default, Debug, PartialEq, Serialize, Deserialize, Tsify)]
@@ -31,7 +31,7 @@ pub struct CrossTickEvent {
     #[tsify(type = "bigint")]
     timestamp: u64,
     address: String,
-    pool: PoolKey,
+    pool_key: PoolKey,
     #[tsify(type = "bigint[]")]
     indexes: Vec<i32>,
 }
@@ -39,17 +39,17 @@ pub struct CrossTickEvent {
 #[derive(Default, Debug, PartialEq, Serialize, Deserialize, Tsify)]
 #[serde(rename_all = "camelCase")]
 #[tsify(into_wasm_abi, from_wasm_abi)]
-pub struct RemovePositionEvent {
+pub struct PositionRemovedEvent {
     #[tsify(type = "bigint")]
     timestamp: u64,
     address: String,
-    pool: PoolKey,
-    liquidity: Liquidity,
+    pool_key: PoolKey,
+    liquidity_delta: Liquidity,
     #[tsify(type = "bigint")]
     lower_tick: i32,
     #[tsify(type = "bigint")]
     upper_tick: i32,
-    current_sqrt_price: SqrtPrice,
+    sqrt_price: SqrtPrice,
 }
 
 #[derive(Default, Debug, PartialEq, Serialize, Deserialize, Tsify)]
@@ -59,7 +59,7 @@ pub struct SwapEvent {
     #[tsify(type = "bigint")]
     timestamp: u64,
     address: String,
-    pool: PoolKey,
+    pool_key: PoolKey,
     amount_in: TokenAmount,
     amount_out: TokenAmount,
     fee: TokenAmount,

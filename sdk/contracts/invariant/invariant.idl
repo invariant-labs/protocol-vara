@@ -163,10 +163,10 @@ service Service {
   query QuoteRoute : (amount_in: TokenAmount, swaps: vec SwapHop) -> result (TokenAmount, InvariantError);
 
   events {
-    PositionCreatedEvent: struct { block_timestamp: u64, address: actor_id, pool_key: PoolKey, liquidity_delta: Liquidity, lower_tick: i32, upper_tick: i32, current_sqrt_price: SqrtPrice };
-    PositionRemovedEvent: struct { block_timestamp: u64, caller: actor_id, pool_key: PoolKey, liquidity: Liquidity, lower_tick_index: i32, upper_tick_index: i32, sqrt_price: SqrtPrice };
-    CrossTickEvent: struct { timestamp: u64, address: actor_id, pool: PoolKey, indexes: vec i32 };
-    SwapEvent: struct { timestamp: u64, address: actor_id, pool: PoolKey, amount_in: TokenAmount, amount_out: TokenAmount, fee: TokenAmount, start_sqrt_price: SqrtPrice, target_sqrt_price: SqrtPrice, x_to_y: bool };
+    PositionCreatedEvent: struct { timestamp: u64, address: actor_id, pool_key: PoolKey, liquidity_delta: Liquidity, lower_tick: i32, upper_tick: i32, current_sqrt_price: SqrtPrice };
+    PositionRemovedEvent: struct { timestamp: u64, address: actor_id, pool_key: PoolKey, liquidity: Liquidity, lower_tick_index: i32, upper_tick_index: i32, sqrt_price: SqrtPrice };
+    CrossTickEvent: struct { timestamp: u64, address: actor_id, pool_key: PoolKey, indexes: vec i32 };
+    SwapEvent: struct { timestamp: u64, address: actor_id, pool_key: PoolKey, amount_in: TokenAmount, amount_out: TokenAmount, fee: TokenAmount, start_sqrt_price: SqrtPrice, target_sqrt_price: SqrtPrice, x_to_y: bool };
   }
 };
 

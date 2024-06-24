@@ -67,7 +67,7 @@ pub fn init_basic_swap(
         .assert_with_payload(SwapEvent {
             timestamp: sys.block_timestamp(),
             address: REGULAR_USER_2.into(),
-            pool: pool_key,
+            pool_key,
             amount_in: TokenAmount(1000),
             amount_out: TokenAmount(993),
             fee: TokenAmount(6),

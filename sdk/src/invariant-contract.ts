@@ -527,7 +527,7 @@ export class Service {
     return result[2].toJSON() as unknown as { ok: TokenAmount } | { err: InvariantError };
   }
 
-  public subscribeToPositionCreatedEventEvent(callback: (data: { block_timestamp: number | string; address: string; pool_key: PoolKey; liquidity_delta: Liquidity; lower_tick: number; upper_tick: number; current_sqrt_price: SqrtPrice }) => void | Promise<void>): Promise<() => void> {
+  public subscribeToPositionCreatedEventEvent(callback: (data: { timestamp: number | string; address: string; pool_key: PoolKey; liquidity_delta: Liquidity; lower_tick: number; upper_tick: number; current_sqrt_price: SqrtPrice }) => void | Promise<void>): Promise<() => void> {
     return this._program.api.gearEvents.subscribeToGearEvent('UserMessageSent', ({ data: { message } }) => {;
       if (!message.source.eq(this._program.programId) || !message.destination.eq(ZERO_ADDRESS)) {
         return;
@@ -535,12 +535,12 @@ export class Service {
 
       const payload = message.payload.toHex();
       if (getServiceNamePrefix(payload) === 'Service' && getFnNamePrefix(payload) === 'PositionCreatedEvent') {
-        callback(this._program.registry.createType('(String, String, {"blockTimestamp":"u64","address":"[u8;32]","poolKey":"PoolKey","liquidityDelta":"Liquidity","lowerTick":"i32","upperTick":"i32","currentSqrtPrice":"SqrtPrice"})', message.payload)[2].toJSON() as any as { block_timestamp: number | string; address: string; pool_key: PoolKey; liquidity_delta: Liquidity; lower_tick: number; upper_tick: number; current_sqrt_price: SqrtPrice });
+        callback(this._program.registry.createType('(String, String, {"timestamp":"u64","address":"[u8;32]","poolKey":"PoolKey","liquidityDelta":"Liquidity","lowerTick":"i32","upperTick":"i32","currentSqrtPrice":"SqrtPrice"})', message.payload)[2].toJSON() as any as { timestamp: number | string; address: string; pool_key: PoolKey; liquidity_delta: Liquidity; lower_tick: number; upper_tick: number; current_sqrt_price: SqrtPrice });
       }
     });
   }
 
-  public subscribeToPositionRemovedEventEvent(callback: (data: { block_timestamp: number | string; caller: string; pool_key: PoolKey; liquidity: Liquidity; lower_tick_index: number; upper_tick_index: number; sqrt_price: SqrtPrice }) => void | Promise<void>): Promise<() => void> {
+  public subscribeToPositionRemovedEventEvent(callback: (data: { timestamp: number | string; address: string; pool_key: PoolKey; liquidity: Liquidity; lower_tick_index: number; upper_tick_index: number; sqrt_price: SqrtPrice }) => void | Promise<void>): Promise<() => void> {
     return this._program.api.gearEvents.subscribeToGearEvent('UserMessageSent', ({ data: { message } }) => {;
       if (!message.source.eq(this._program.programId) || !message.destination.eq(ZERO_ADDRESS)) {
         return;
@@ -548,12 +548,12 @@ export class Service {
 
       const payload = message.payload.toHex();
       if (getServiceNamePrefix(payload) === 'Service' && getFnNamePrefix(payload) === 'PositionRemovedEvent') {
-        callback(this._program.registry.createType('(String, String, {"blockTimestamp":"u64","caller":"[u8;32]","poolKey":"PoolKey","liquidity":"Liquidity","lowerTickIndex":"i32","upperTickIndex":"i32","sqrtPrice":"SqrtPrice"})', message.payload)[2].toJSON() as any as { block_timestamp: number | string; caller: string; pool_key: PoolKey; liquidity: Liquidity; lower_tick_index: number; upper_tick_index: number; sqrt_price: SqrtPrice });
+        callback(this._program.registry.createType('(String, String, {"timestamp":"u64","address":"[u8;32]","poolKey":"PoolKey","liquidity":"Liquidity","lowerTickIndex":"i32","upperTickIndex":"i32","sqrtPrice":"SqrtPrice"})', message.payload)[2].toJSON() as any as { timestamp: number | string; address: string; pool_key: PoolKey; liquidity: Liquidity; lower_tick_index: number; upper_tick_index: number; sqrt_price: SqrtPrice });
       }
     });
   }
 
-  public subscribeToCrossTickEventEvent(callback: (data: { timestamp: number | string; address: string; pool: PoolKey; indexes: Array<number> }) => void | Promise<void>): Promise<() => void> {
+  public subscribeToCrossTickEventEvent(callback: (data: { timestamp: number | string; address: string; pool_key: PoolKey; indexes: Array<number> }) => void | Promise<void>): Promise<() => void> {
     return this._program.api.gearEvents.subscribeToGearEvent('UserMessageSent', ({ data: { message } }) => {;
       if (!message.source.eq(this._program.programId) || !message.destination.eq(ZERO_ADDRESS)) {
         return;
@@ -561,12 +561,12 @@ export class Service {
 
       const payload = message.payload.toHex();
       if (getServiceNamePrefix(payload) === 'Service' && getFnNamePrefix(payload) === 'CrossTickEvent') {
-        callback(this._program.registry.createType('(String, String, {"timestamp":"u64","address":"[u8;32]","pool":"PoolKey","indexes":"Vec<i32>"})', message.payload)[2].toJSON() as any as { timestamp: number | string; address: string; pool: PoolKey; indexes: Array<number> });
+        callback(this._program.registry.createType('(String, String, {"timestamp":"u64","address":"[u8;32]","poolKey":"PoolKey","indexes":"Vec<i32>"})', message.payload)[2].toJSON() as any as { timestamp: number | string; address: string; pool_key: PoolKey; indexes: Array<number> });
       }
     });
   }
 
-  public subscribeToSwapEventEvent(callback: (data: { timestamp: number | string; address: string; pool: PoolKey; amount_in: TokenAmount; amount_out: TokenAmount; fee: TokenAmount; start_sqrt_price: SqrtPrice; target_sqrt_price: SqrtPrice; x_to_y: boolean }) => void | Promise<void>): Promise<() => void> {
+  public subscribeToSwapEventEvent(callback: (data: { timestamp: number | string; address: string; pool_key: PoolKey; amount_in: TokenAmount; amount_out: TokenAmount; fee: TokenAmount; start_sqrt_price: SqrtPrice; target_sqrt_price: SqrtPrice; x_to_y: boolean }) => void | Promise<void>): Promise<() => void> {
     return this._program.api.gearEvents.subscribeToGearEvent('UserMessageSent', ({ data: { message } }) => {;
       if (!message.source.eq(this._program.programId) || !message.destination.eq(ZERO_ADDRESS)) {
         return;
@@ -574,7 +574,7 @@ export class Service {
 
       const payload = message.payload.toHex();
       if (getServiceNamePrefix(payload) === 'Service' && getFnNamePrefix(payload) === 'SwapEvent') {
-        callback(this._program.registry.createType('(String, String, {"timestamp":"u64","address":"[u8;32]","pool":"PoolKey","amountIn":"TokenAmount","amountOut":"TokenAmount","fee":"TokenAmount","startSqrtPrice":"SqrtPrice","targetSqrtPrice":"SqrtPrice","xToY":"bool"})', message.payload)[2].toJSON() as any as { timestamp: number | string; address: string; pool: PoolKey; amount_in: TokenAmount; amount_out: TokenAmount; fee: TokenAmount; start_sqrt_price: SqrtPrice; target_sqrt_price: SqrtPrice; x_to_y: boolean });
+        callback(this._program.registry.createType('(String, String, {"timestamp":"u64","address":"[u8;32]","poolKey":"PoolKey","amountIn":"TokenAmount","amountOut":"TokenAmount","fee":"TokenAmount","startSqrtPrice":"SqrtPrice","targetSqrtPrice":"SqrtPrice","xToY":"bool"})', message.payload)[2].toJSON() as any as { timestamp: number | string; address: string; pool_key: PoolKey; amount_in: TokenAmount; amount_out: TokenAmount; fee: TokenAmount; start_sqrt_price: SqrtPrice; target_sqrt_price: SqrtPrice; x_to_y: boolean });
       }
     });
   }
