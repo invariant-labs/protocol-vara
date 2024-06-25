@@ -35,7 +35,7 @@ default = ["binary-vendor", "wasm-opt"]
 test = ["gstd/debug"]
 
 [workspace]
-members = ["xtask", "gear-erc20/app", "gear-erc20/wasm", "src/wasm"]
+members = ["xtask", "gear-erc20/wasm", "src/wasm"]
 package.version = "0.1.0"
 package.edition = "2021"
 

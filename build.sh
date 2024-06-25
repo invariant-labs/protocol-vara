@@ -1,4 +1,5 @@
 set -e
+rm -rf ./target/wasm32-unknown-unknown/
 case $1 in
   dev)
     cargo build -p invariant-wasm --release --features "test" &&

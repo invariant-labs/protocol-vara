@@ -116,7 +116,6 @@ fn gtest_test_pausable() {
     assert!(res.main_failed());
 }
 
-//#[cfg(feature = "test")]
 #[test]
 fn gtest_test_transfer_fail() {
     let sys = System::new();
