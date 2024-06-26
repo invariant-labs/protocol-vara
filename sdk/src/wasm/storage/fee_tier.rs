@@ -11,6 +11,7 @@ use wasm_bindgen::prelude::*;
 #[tsify(into_wasm_abi, from_wasm_abi)]
 #[serde(rename_all = "camelCase")]
 pub struct FeeTier {
+    #[tsify(type = "bigint")]
     pub fee: Percentage,
     #[tsify(type = "bigint")]
     pub tick_spacing: u16,

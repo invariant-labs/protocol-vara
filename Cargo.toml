@@ -35,7 +35,7 @@ default = ["binary-vendor", "wasm-opt"]
 test = ["gstd/debug"]
 
 [workspace]
-members = ["xtask", "gear-erc20/app", "gear-erc20/wasm", "src/wasm"]
+members = ["xtask", "gear-erc20/wasm", "src/wasm"]
 package.version = "0.1.0"
 package.edition = "2021"
 
@@ -61,8 +61,8 @@ gmeta = "1.4.1"
 gear-core = { git = "https://github.com/gear-tech/gear.git", tag = "v1.4.1" }
 gtest = { git = "https://github.com/gear-tech/gear.git", tag = "v1.4.1" }
 gclient = { git = "https://github.com/gear-tech/gear.git", tag = "v1.4.1" }
-sails-idl-gen = { git = "https://github.com/gear-tech/sails" }
-sails-rtl = { git = "https://github.com/gear-tech/sails" }
+sails-idl-gen = { git = "https://github.com/gear-tech/sails", rev = "31a3c1a06817b69040af0c069967dd0b31c9530b" }
+sails-rtl = { git = "https://github.com/gear-tech/sails", rev = "31a3c1a06817b69040af0c069967dd0b31c9530b" }
 
 # External
 tokio = { version = "1.36", features = ["full"] }

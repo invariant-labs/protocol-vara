@@ -219,7 +219,7 @@ impl TestProgram for Program<'_> {
 #[codec(crate = gstd::codec)]
 #[scale_info(crate = gstd::scale_info)]
 pub struct PositionCreatedEvent {
-    pub block_timestamp: u64,
+    pub timestamp: u64,
     pub address: ActorId,
     pub pool_key: PoolKey,
     pub liquidity_delta: Liquidity,
@@ -231,10 +231,10 @@ pub struct PositionCreatedEvent {
 #[codec(crate = gstd::codec)]
 #[scale_info(crate = gstd::scale_info)]
 pub struct PositionRemovedEvent {
-    pub block_timestamp: u64,
-    pub caller: ActorId,
+    pub timestamp: u64,
+    pub address: ActorId,
     pub pool_key: PoolKey,
-    pub liquidity: Liquidity,
+    pub liquidity_delta: Liquidity,
     pub lower_tick_index: i32,
     pub upper_tick_index: i32,
     pub sqrt_price: SqrtPrice,
@@ -245,7 +245,7 @@ pub struct PositionRemovedEvent {
 pub struct CrossTickEvent {
     pub timestamp: u64,
     pub address: ActorId,
-    pub pool: PoolKey,
+    pub pool_key: PoolKey,
     pub indexes: Vec<i32>,
 }
 #[derive(Clone, Debug, PartialEq, Eq, Encode, Decode, TypeInfo)]
@@ -254,7 +254,7 @@ pub struct CrossTickEvent {
 pub struct SwapEvent {
     pub timestamp: u64,
     pub address: ActorId,
-    pub pool: PoolKey,
+    pub pool_key: PoolKey,
     pub amount_in: TokenAmount,
     pub amount_out: TokenAmount,
     pub fee: TokenAmount,

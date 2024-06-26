@@ -12,7 +12,10 @@ import {
   convertPosition,
   convertPoolKey,
   TransactionWrapper,
-  convertCalculateSwapResult
+  convertCalculateSwapResult,
+  InvariantEventCallback,
+  decodeEvent,
+  calculateSqrtPriceAfterSlippage
 } from './utils.js'
 import { DEFAULT_ADDRESS, INVARIANT_GAS_LIMIT } from './consts.js'
 import { InvariantContract } from './invariant-contract.js'
@@ -26,10 +29,18 @@ import {
   PoolKey,
   SqrtPrice,
   Tick,
-  TokenAmount
-} from 'invariant-vara-wasm'
+  TokenAmount,
+  InvariantEvent
+} from './schema.js'
+import { getServiceNamePrefix, ZERO_ADDRESS, getFnNamePrefix } from 'sails-js'
+import { calculateTick } from 'invariant-vara-wasm'
 
 export class Invariant {
+  eventListenerStarted: boolean = false
+  private eventListeners: {
+    [key in InvariantEvent]?: ((data: any) => void)[]
+  } = {}
+
   private constructor(
     private readonly contract: InvariantContract,
     private readonly gasLimit: bigint
@@ -74,6 +85,49 @@ export class Invariant {
     return id
   }
 
+  on(callback: InvariantEventCallback): void {
+    if (!this.eventListenerStarted) {
+      this.listen()
+    }
+
+    this.eventListeners[callback.ident] = this.eventListeners[callback.ident] || []
+    this.eventListeners[callback.ident]?.push(callback.callback)
+  }
+
+  private listen() {
+    this.eventListenerStarted = true
+    this.contract.api.gearEvents.subscribeToGearEvent(
+      'UserMessageSent',
+      ({ data: { message } }) => {
+        if (!message.source.eq(this.contract.programId) || !message.destination.eq(ZERO_ADDRESS)) {
+          return
+        }
+
+        const payload = message.payload.toHex()
+        if (getServiceNamePrefix(payload) === 'Service') {
+          const prefix = getFnNamePrefix(payload)
+          if (Object.values(InvariantEvent).includes(prefix as any)) {
+            const event = decodeEvent(this.contract.registry, payload, prefix)
+            const callbacks = this.eventListeners[prefix as InvariantEvent]
+            callbacks?.map(callback => callback(event))
+          }
+        }
+      }
+    )
+  }
+
+  off(callback: InvariantEventCallback): void {
+    this.eventListeners[callback.ident] = this.eventListeners[callback.ident]?.filter(
+      eventListener => {
+        if (callback.callback) {
+          return !(callback.callback === eventListener)
+        } else {
+          return false
+        }
+      }
+    )
+  }
+
   async feeTierExists(feeTier: FeeTier): Promise<boolean> {
     return this.contract.service.feeTierExists(feeTier as any, DEFAULT_ADDRESS)
   }
@@ -93,6 +147,30 @@ export class Invariant {
         )
       )
     )
+  }
+
+  async getPools(size: bigint, offset: bigint): Promise<PoolKey[]> {
+    return unwrapResult(
+      await this.contract.service.getPools(size as any, offset as any, DEFAULT_ADDRESS)
+    ).map(convertPoolKey)
+  }
+
+  async getPosition(ownerId: ActorId, index: bigint): Promise<Position> {
+    return convertPosition(
+      unwrapResult(
+        await this.contract.service.getPosition(
+          ownerId as any,
+          index as any,
+          DEFAULT_ADDRESS as any
+        )
+      )
+    )
+  }
+
+  async getAllPositions(ownerId: ActorId): Promise<Position[]> {
+    return (
+      await this.contract.service.getAllPositions(ownerId as any, DEFAULT_ADDRESS as any)
+    ).map(val => convertPosition(val))
   }
 
   async getProtocolFee(): Promise<Percentage> {
@@ -115,10 +193,14 @@ export class Invariant {
     )
   }
 
-  async getPools(size: bigint, offset: bigint): Promise<PoolKey[]> {
-    return unwrapResult(
-      await this.contract.service.getPools(size as any, offset as any, DEFAULT_ADDRESS)
-    ).map(convertPoolKey)
+  async getUserBalances(user: ActorId): Promise<Map<string, TokenAmount>> {
+    const result = (await this.contract.service.getUserBalances(user as any, DEFAULT_ADDRESS)).map(
+      arr => {
+        arr[1] = BigInt(arr[1] as any) as any
+        return arr
+      }
+    ) as any
+    return new Map(result)
   }
 
   async changeProtocolFeeTx(
@@ -181,14 +263,33 @@ export class Invariant {
     return tx.send()
   }
 
+  async claimFeeTx(
+    index: bigint,
+    gasLimit: bigint = this.gasLimit
+  ): Promise<TransactionWrapper<[TokenAmount, TokenAmount]>> {
+    return new TransactionWrapper<[TokenAmount, TokenAmount]>(
+      await this.contract.service.claimFee(index as any).withGas(gasLimit)
+    ).withDecode(arr => arr.map(BigInt))
+  }
+
+  async claimFee(
+    signer: Signer,
+    index: bigint,
+    gasLimit: bigint = this.gasLimit
+  ): Promise<[TokenAmount, TokenAmount]> {
+    const tx = (await this.claimFeeTx(index, gasLimit)).withAccount(signer)
+    return tx.send()
+  }
+
   async createPoolTx(
     key: PoolKey,
     initSqrtPrice: bigint,
     gasLimit: bigint = this.gasLimit
   ): Promise<TransactionWrapper<null>> {
+    const initTick = calculateTick(initSqrtPrice, key.feeTier.tickSpacing)
     return new TransactionWrapper<null>(
       await this.contract.service
-        .createPool(key.tokenX, key.tokenY, key.feeTier as any, initSqrtPrice as any, 0n as any)
+        .createPool(key.tokenX, key.tokenY, key.feeTier as any, initSqrtPrice as any, initTick as any)
         .withGas(gasLimit)
     )
   }
@@ -208,10 +309,21 @@ export class Invariant {
     lowerTick: bigint,
     upperTick: bigint,
     liquidityDelta: Liquidity,
-    slippageLimitLower: SqrtPrice,
-    slippageLimitUpper: SqrtPrice,
+    spotSqrtPrice: SqrtPrice,
+    slippageTolerance: SqrtPrice,
     gasLimit: bigint = this.gasLimit
   ): Promise<TransactionWrapper<Position>> {
+    const slippageLimitLower = calculateSqrtPriceAfterSlippage(
+      spotSqrtPrice,
+      slippageTolerance,
+      false
+    )
+    const slippageLimitUpper = calculateSqrtPriceAfterSlippage(
+      spotSqrtPrice,
+      slippageTolerance,
+      true
+    )
+
     return new TransactionWrapper<Position>(
       await this.contract.service
         .createPosition(
@@ -232,8 +344,8 @@ export class Invariant {
     lowerTick: bigint,
     upperTick: bigint,
     liquidityDelta: Liquidity,
-    slippageLimitLower: SqrtPrice,
-    slippageLimitUpper: SqrtPrice,
+    spotSqrtPrice: SqrtPrice,
+    slippageTolerance: SqrtPrice,
     gasLimit: bigint = this.gasLimit
   ): Promise<Position> {
     const tx = (
@@ -242,8 +354,8 @@ export class Invariant {
         lowerTick,
         upperTick,
         liquidityDelta,
-        slippageLimitLower,
-        slippageLimitUpper,
+        spotSqrtPrice,
+        slippageTolerance,
         gasLimit
       )
     ).withAccount(signer)
@@ -255,7 +367,7 @@ export class Invariant {
     amount: bigint,
     gasLimit: bigint = this.gasLimit
   ): Promise<TransactionWrapper<TokenAmount>> {
-    return new TransactionWrapper(
+    return new TransactionWrapper<TokenAmount>(
       await this.contract.service.depositSingleToken(token as any, amount as any).withGas(gasLimit)
     )
   }
@@ -267,6 +379,26 @@ export class Invariant {
     gasLimit: bigint = this.gasLimit
   ): Promise<TokenAmount> {
     const tx = (await this.depositTx(token, amount, gasLimit)).withAccount(signer)
+    return tx.send()
+  }
+
+  async depositTokenPairTx(
+    tokenX: [ActorId, TokenAmount],
+    tokenY: [ActorId, TokenAmount],
+    gasLimit: bigint = this.gasLimit
+  ): Promise<TransactionWrapper<[TokenAmount, TokenAmount]>> {
+    return new TransactionWrapper<[TokenAmount, TokenAmount]>(
+      await this.contract.service.depositTokenPair(tokenX as any, tokenY as any).withGas(gasLimit)
+    ).withDecode(arr => arr.map(BigInt))
+  }
+
+  async depositTokenPair(
+    signer: Signer,
+    tokenX: [ActorId, TokenAmount],
+    tokenY: [ActorId, TokenAmount],
+    gasLimit: bigint = this.gasLimit
+  ): Promise<[TokenAmount, TokenAmount]> {
+    const tx = (await this.depositTokenPairTx(tokenX, tokenY, gasLimit)).withAccount(signer)
     return tx.send()
   }
 
@@ -285,6 +417,44 @@ export class Invariant {
     gasLimit: bigint = this.gasLimit
   ): Promise<FeeTier> {
     const tx = (await this.removeFeeTierTx(feeTier as any, gasLimit)).withAccount(signer)
+    return tx.send()
+  }
+
+  async removePositionTx(
+    index: bigint,
+    gasLimit: bigint = this.gasLimit
+  ): Promise<TransactionWrapper<[TokenAmount, TokenAmount]>> {
+    return new TransactionWrapper<[TokenAmount, TokenAmount]>(
+      await this.contract.service.removePosition(index as any).withGas(gasLimit)
+    ).withDecode(arr => arr.map(BigInt))
+  }
+
+  async removePosition(
+    signer: Signer,
+    index: bigint,
+    gasLimit: bigint = this.gasLimit
+  ): Promise<[TokenAmount, TokenAmount]> {
+    const tx = (await this.removePositionTx(index, gasLimit)).withAccount(signer)
+    return tx.send()
+  }
+
+  async transferPositionTx(
+    index: bigint,
+    receiver: ActorId,
+    gasLimit: bigint = this.gasLimit
+  ): Promise<TransactionWrapper<null>> {
+    return new TransactionWrapper<null>(
+      await this.contract.service.transferPosition(index as any, receiver as any).withGas(gasLimit)
+    )
+  }
+
+  async transferPosition(
+    signer: Signer,
+    index: bigint,
+    receiver: ActorId,
+    gasLimit: bigint = this.gasLimit
+  ): Promise<null> {
+    const tx = (await this.transferPositionTx(index, receiver, gasLimit)).withAccount(signer)
     return tx.send()
   }
 
@@ -322,7 +492,7 @@ export class Invariant {
     poolKey: PoolKey,
     gasLimit: bigint = this.gasLimit
   ): Promise<TransactionWrapper<[TokenAmount, TokenAmount]>> {
-    return new TransactionWrapper(
+    return new TransactionWrapper<[TokenAmount, TokenAmount]>(
       await this.contract.service.withdrawProtocolFee(poolKey as any).withGas(gasLimit)
     )
   }
@@ -341,7 +511,7 @@ export class Invariant {
     amount: TokenAmount | null = null,
     gasLimit: bigint = this.gasLimit
   ): Promise<TransactionWrapper<TokenAmount>> {
-    return new TransactionWrapper(
+    return new TransactionWrapper<TokenAmount>(
       await this.contract.service.withdrawSingleToken(token as any, amount as any).withGas(gasLimit)
     )
   }
@@ -353,6 +523,26 @@ export class Invariant {
     gasLimit: bigint = this.gasLimit
   ): Promise<TokenAmount> {
     const tx = (await this.withdrawSingleTokenTx(token, amount, gasLimit)).withAccount(signer)
+    return tx.send()
+  }
+
+  async withdrawTokenPairTx(
+    tokenX: [ActorId, TokenAmount | null],
+    tokenY: [ActorId, TokenAmount | null],
+    gasLimit: bigint = this.gasLimit
+  ): Promise<TransactionWrapper<[TokenAmount, TokenAmount]>> {
+    return new TransactionWrapper<[TokenAmount, TokenAmount]>(
+      await this.contract.service.withdrawTokenPair(tokenX as any, tokenY as any).withGas(gasLimit)
+    ).withDecode(arr => arr.map(BigInt))
+  }
+
+  async withdrawTokenPair(
+    signer: Signer,
+    tokenX: [ActorId, TokenAmount | null],
+    tokenY: [ActorId, TokenAmount | null],
+    gasLimit: bigint = this.gasLimit
+  ): Promise<[TokenAmount, TokenAmount]> {
+    const tx = (await this.withdrawTokenPairTx(tokenX, tokenY, gasLimit)).withAccount(signer)
     return tx.send()
   }
 }

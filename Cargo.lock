@@ -5693,7 +5693,7 @@ checksum = "f3cb5ba0dc43242ce17de99c180e96db90b235b8a9fdc9543c96d2209116bd9f"
 [[package]]
 name = "sails-idl-gen"
 version = "0.0.1"
-source = "git+https://github.com/gear-tech/sails#31a3c1a06817b69040af0c069967dd0b31c9530b"
+source = "git+https://github.com/gear-tech/sails?rev=31a3c1a06817b69040af0c069967dd0b31c9530b#31a3c1a06817b69040af0c069967dd0b31c9530b"
 dependencies = [
  "convert_case 0.6.0",
  "handlebars",
@@ -5707,7 +5707,7 @@ dependencies = [
 [[package]]
 name = "sails-macros"
 version = "0.0.1"
-source = "git+https://github.com/gear-tech/sails#31a3c1a06817b69040af0c069967dd0b31c9530b"
+source = "git+https://github.com/gear-tech/sails?rev=31a3c1a06817b69040af0c069967dd0b31c9530b#31a3c1a06817b69040af0c069967dd0b31c9530b"
 dependencies = [
  "proc-macro-error",
  "sails-macros-core",
@@ -5716,7 +5716,7 @@ dependencies = [
 [[package]]
 name = "sails-macros-core"
 version = "0.0.1"
-source = "git+https://github.com/gear-tech/sails#31a3c1a06817b69040af0c069967dd0b31c9530b"
+source = "git+https://github.com/gear-tech/sails?rev=31a3c1a06817b69040af0c069967dd0b31c9530b#31a3c1a06817b69040af0c069967dd0b31c9530b"
 dependencies = [
  "const_format",
  "convert_case 0.6.0",
@@ -5730,7 +5730,7 @@ dependencies = [
 [[package]]
 name = "sails-rtl"
 version = "0.0.1"
-source = "git+https://github.com/gear-tech/sails#31a3c1a06817b69040af0c069967dd0b31c9530b"
+source = "git+https://github.com/gear-tech/sails?rev=31a3c1a06817b69040af0c069967dd0b31c9530b#31a3c1a06817b69040af0c069967dd0b31c9530b"
 dependencies = [
  "futures",
  "gear-core-errors 1.4.1 (registry+https://github.com/rust-lang/crates.io-index)",

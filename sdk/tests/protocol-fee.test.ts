@@ -49,7 +49,7 @@ describe('protocol-fee', async function () {
       10n,
       10000000000000n,
       1000000000000000000000000n,
-      1000000000000000000000000n
+      10000000000n
     )
 
     await token0.approve(admin, invariant.programId(), 1000000000n)

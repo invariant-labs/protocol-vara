@@ -137,6 +137,16 @@ export class FungibleToken {
     return response()
   }
 
+  async setTransferFail(flag: boolean) {
+    if (!this.admin) {
+      throw new Error('Admin account is required to set transfer failure')
+    }
+    
+    const tx = await this.erc20.erc20.setFailTransfer(flag).withGas(this.gasLimit)
+    const { response } = await tx.withAccount(this.admin).signAndSend()
+    return response()
+  }
+
   async transferTx(to: ActorId, amount: bigint) {
     return this.erc20.erc20.transfer(to as any, amount as any).withGas(this.gasLimit)
   }

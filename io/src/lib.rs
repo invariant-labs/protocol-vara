@@ -28,7 +28,7 @@ impl Default for InvariantConfig {
 #[scale_info(crate = gstd::scale_info)]
 pub enum InvariantEvent {
     PositionCreatedEvent {
-        block_timestamp: u64,
+        timestamp: u64,
         address: ActorId,
         pool_key: PoolKey,
         liquidity_delta: Liquidity,
@@ -37,8 +37,8 @@ pub enum InvariantEvent {
         current_sqrt_price: SqrtPrice,
     },
     PositionRemovedEvent {
-        block_timestamp: u64,
-        caller: ActorId,
+        timestamp: u64,
+        address: ActorId,
         pool_key: PoolKey,
         liquidity: Liquidity,
         lower_tick_index: i32,
@@ -48,13 +48,13 @@ pub enum InvariantEvent {
     CrossTickEvent {
         timestamp: u64,
         address: ActorId,
-        pool: PoolKey,
+        pool_key: PoolKey,
         indexes: Vec<i32>,
     },
     SwapEvent {
         timestamp: u64,
         address: ActorId,
-        pool: PoolKey,
+        pool_key: PoolKey,
         amount_in: TokenAmount,
         amount_out: TokenAmount,
         fee: TokenAmount,
