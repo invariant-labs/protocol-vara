@@ -23,8 +23,8 @@ let token0Address: HexString = null as any
 let token1Address: HexString = null as any
 
 {
-  let token0 = await FungibleToken.deploy(api, admin, 'Coin', 'COIN', 12n)
-  let token1 = await FungibleToken.deploy(api, admin, 'Coin', 'COIN', 12n)
+  const token0 = await FungibleToken.deploy(api, admin, 'Coin', 'COIN', 12n)
+  const token1 = await FungibleToken.deploy(api, admin, 'Coin', 'COIN', 12n)
   await token0.mint(admin.addressRaw, 1000000000000000000000000000000n)
   await token1.mint(admin.addressRaw, 1000000000000000000000000000000n)
   token0Address = token0.programId()
@@ -245,6 +245,6 @@ describe('sdk guide snippets', async function () {
     console.log(token1Name, token1Symbol, token1Decimals)
   })
   this.afterAll(async function () {
-    unsub = subscribeToNewHeads(api)
+    await unsub.then((unsub) => unsub())
   })
 })
