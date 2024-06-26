@@ -1,3 +1,14 @@
 node_modules
-src/wasm/*
+src/**/*
+tests/**/*
 !src/wasm/pkg
+# build scripts
+build.sh
+fix-generate.js
+tests.sh
+package-wasm.sh
+# config files
+.eslintrc
+.nvmrc
+mocharc.json
+tsconfig.json
