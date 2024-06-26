@@ -60,7 +60,7 @@ export class FungibleToken {
     return new FungibleToken(gasLimit, erc20, deployer)
   }
 
-  static async load(api: GearApi, programId: HexString, gasLimit: bigint) {
+  static async load(api: GearApi, programId: HexString, gasLimit: bigint = FUNGIBLE_TOKEN_GAS_LIMIT) {
     const erc20 = new Erc20Token(api, programId)
     return new FungibleToken(gasLimit, erc20)
   }

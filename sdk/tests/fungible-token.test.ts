@@ -1,11 +1,11 @@
 import { assert, expect } from 'chai'
 import { GearKeyring } from '@gear-js/api'
 import { initGearApi, subscribeToNewHeads } from '../src/utils.js'
-import { LOCAL } from '../src/consts.js'
+import { Network } from '../src/consts.js'
 import { FungibleToken } from '../src/erc20.js'
 import { assertThrowsAsync } from '../src/test-utils.js'
 
-const api = await initGearApi({ providerAddress: LOCAL })
+const api = await initGearApi({ providerAddress: Network.Local })
 const account0 = await GearKeyring.fromSuri('//Alice')
 const account1 = await GearKeyring.fromSuri('//Bob')
 let unsub: Promise<VoidFunction> | null = null

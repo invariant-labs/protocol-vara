@@ -1,14 +1,14 @@
 import 'mocha'
 import { initGearApi, newFeeTier, newPoolKey, subscribeToNewHeads } from '../src/utils.js'
 import { GearKeyring } from '@gear-js/api'
-import { LOCAL } from '../src/consts'
+import { Network } from '../src/consts'
 import { Invariant } from '../src/invariant'
 import { assert } from 'chai'
 import { FungibleToken } from '../src/erc20'
 import { assertThrowsAsync } from '../src/test-utils.js'
 import { SqrtPrice, Tick } from '../src/schema'
 
-const api = await initGearApi({ providerAddress: LOCAL })
+const api = await initGearApi({ providerAddress: Network.Local })
 const admin = await GearKeyring.fromSuri('//Alice')
 const user = await GearKeyring.fromSuri('//Bob')
 

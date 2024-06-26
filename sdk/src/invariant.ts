@@ -15,7 +15,8 @@ import {
   convertCalculateSwapResult,
   InvariantEventCallback,
   decodeEvent,
-  calculateSqrtPriceAfterSlippage
+  calculateSqrtPriceAfterSlippage,
+  convertQuoteResult
 } from './utils.js'
 import { DEFAULT_ADDRESS, INVARIANT_GAS_LIMIT } from './consts.js'
 import { InvariantContract } from './invariant-contract.js'
@@ -30,10 +31,11 @@ import {
   SqrtPrice,
   Tick,
   TokenAmount,
-  InvariantEvent
+  InvariantEvent,
+  QuoteResult
 } from './schema.js'
 import { getServiceNamePrefix, ZERO_ADDRESS, getFnNamePrefix } from 'sails-js'
-import { calculateTick } from 'invariant-vara-wasm'
+import { calculateTick, getMaxSqrtPrice, getMinSqrtPrice } from 'invariant-vara-wasm'
 
 export class Invariant {
   eventListenerStarted: boolean = false
@@ -70,7 +72,7 @@ export class Invariant {
     return new Invariant(invariant, gasLimit)
   }
 
-  static async load(api: GearApi, programId: HexString, gasLimit: bigint) {
+  static async load(api: GearApi, programId: HexString, gasLimit: bigint = INVARIANT_GAS_LIMIT) {
     const invariant = new InvariantContract(api, programId)
     return new Invariant(invariant, gasLimit)
   }
@@ -203,6 +205,30 @@ export class Invariant {
     return new Map(result)
   }
 
+  async quote(
+    poolKey: PoolKey,
+    xToY: boolean,
+    amount: TokenAmount,
+    byAmountIn: boolean,
+  ): Promise<QuoteResult> {
+    const sqrtPriceLimit: SqrtPrice = xToY
+    ? getMinSqrtPrice(poolKey.feeTier.tickSpacing)
+    : getMaxSqrtPrice(poolKey.feeTier.tickSpacing)
+    
+    return convertQuoteResult(
+      unwrapResult(
+        await this.contract.service.quote(
+          poolKey as any,
+          xToY,
+          amount as any,
+          byAmountIn,
+          sqrtPriceLimit as any,
+          DEFAULT_ADDRESS
+        )
+      )
+    )
+  }
+
   async changeProtocolFeeTx(
     fee: Percentage,
     gasLimit: bigint = this.gasLimit
@@ -289,7 +315,13 @@ export class Invariant {
     const initTick = calculateTick(initSqrtPrice, key.feeTier.tickSpacing)
     return new TransactionWrapper<null>(
       await this.contract.service
-        .createPool(key.tokenX, key.tokenY, key.feeTier as any, initSqrtPrice as any, initTick as any)
+        .createPool(
+          key.tokenX,
+          key.tokenY,
+          key.feeTier as any,
+          initSqrtPrice as any,
+          initTick as any
+        )
         .withGas(gasLimit)
     )
   }

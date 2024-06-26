@@ -22,9 +22,9 @@ import {
 } from '../src/utils'
 import { u8aToHex } from '@polkadot/util'
 import { GearKeyring } from '@gear-js/api'
-import { LOCAL } from '../src/consts'
+import { Network } from '../src/consts'
 
-const api = await initGearApi({ providerAddress: LOCAL })
+const api = await initGearApi({ providerAddress: Network.Local })
 const admin = await GearKeyring.fromSuri('//Alice')
 const user = await GearKeyring.fromSuri('//Bob')
 

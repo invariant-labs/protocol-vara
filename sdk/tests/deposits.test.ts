@@ -1,13 +1,13 @@
 import 'mocha'
 import { initGearApi, newFeeTier, newPoolKey, subscribeToNewHeads } from '../src/utils.js'
 import { GearKeyring } from '@gear-js/api'
-import { LOCAL } from '../src/consts'
+import { Network } from '../src/consts'
 import { Invariant } from '../src/invariant'
 import { assert } from 'chai'
 import { FungibleToken } from '../src/erc20'
 import { assertThrowsAsync, sortTokens } from '../src/test-utils.js'
 
-const api = await initGearApi({ providerAddress: LOCAL })
+const api = await initGearApi({ providerAddress: Network.Local })
 const admin = await GearKeyring.fromSuri('//Alice')
 
 let unsub: Promise<VoidFunction> | null = null

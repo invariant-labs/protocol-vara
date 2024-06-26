@@ -1,7 +1,7 @@
 import 'mocha'
 import { initGearApi, newFeeTier, newPoolKey, subscribeToNewHeads } from '../src/utils.js'
 import { GearKeyring } from '@gear-js/api'
-import { LOCAL } from '../src/consts'
+import { Network } from '../src/consts'
 import { Invariant } from '../src/invariant'
 import { assert } from 'chai'
 import { FungibleToken } from '../src/erc20'
@@ -9,7 +9,7 @@ import { objectEquals, sortTokens } from '../src/test-utils.js'
 import { PoolKey, SqrtPrice } from '../src/schema'
 import { Position, getLiquidityByX, getLiquidityByY } from 'invariant-vara-wasm'
 
-const api = await initGearApi({ providerAddress: LOCAL })
+const api = await initGearApi({ providerAddress: Network.Local })
 const admin = await GearKeyring.fromSuri('//Alice')
 const user = await GearKeyring.fromSuri('//Bob')
 
