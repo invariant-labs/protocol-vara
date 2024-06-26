@@ -14,7 +14,9 @@ export {
   Position,
   Tick,
   Price,
-  QuoteResult
+  QuoteResult,
+  FeeGrowth,
+  SecondsPerLiquidity
 } from 'invariant-vara-wasm'
 
 export enum InvariantEvent {

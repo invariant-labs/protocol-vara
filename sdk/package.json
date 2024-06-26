@@ -19,7 +19,7 @@
   "license": "ISC",
   "repository": {
     "type": "git",
-    "url": "https://github.com/invariant-labs/protocol-vara",
+    "url": "git+https://github.com/invariant-labs/protocol-vara.git",
     "directory": "sdk"
   },
   "scripts": {
