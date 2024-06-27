@@ -29,7 +29,7 @@ import {
   PoolKey,
   Position,
   Tick
-} from './schema'
+} from './schema.js'
 export type Signer = string | IKeyringPair
 export type ActorId = Uint8Array | HexString
 
