@@ -1,10 +1,10 @@
 import 'mocha'
 import { initGearApi, newFeeTier, newPoolKey, subscribeToNewHeads } from '../src/utils.js'
-import { GearKeyring } from '@gear-js/api'
+import { GearKeyring, HexString } from '@gear-js/api'
 import { Network } from '../src/consts'
 import { Invariant } from '../src/invariant'
 import { assert } from 'chai'
-import { FungibleToken } from '../src/erc20'
+import { FungibleToken } from '../src/erc20.js'
 import { objectEquals, sortTokens } from '../src/test-utils.js'
 import { PoolKey, SqrtPrice } from '../src/schema'
 import { Position, getLiquidityByX, getLiquidityByY } from 'invariant-vara-wasm'
@@ -14,8 +14,10 @@ const admin = await GearKeyring.fromSuri('//Alice')
 const user = await GearKeyring.fromSuri('//Bob')
 
 let unsub: Promise<VoidFunction> | null = null
-let tokenX: FungibleToken = null as any
-let tokenY: FungibleToken = null as any
+let token0Address: HexString = null as any
+let token1Address: HexString = null as any
+const GRC20: FungibleToken = await FungibleToken.load(api)
+GRC20.setAdmin(admin)
 let invariant: Invariant = null as any
 let poolKey: PoolKey = null as any
 const positionOwner = user
@@ -33,23 +35,23 @@ describe('math', async function () {
       this.timeout(80000)
 
       invariant = await Invariant.deploy(api, admin, 10000000000n)
-      tokenX = await FungibleToken.deploy(api, admin, 'Coin', 'COIN', 0n)
-      tokenY = await FungibleToken.deploy(api, admin, 'Coin', 'COIN', 0n)
-      ;[tokenX, tokenY] = sortTokens(tokenX, tokenY)
+      token0Address = await FungibleToken.deploy(api, admin, 'Coin', 'COIN', 0n)
+      token1Address = await FungibleToken.deploy(api, admin, 'Coin', 'COIN', 0n)
+      ;[token0Address, token1Address] = sortTokens(token0Address, token1Address)
 
-      poolKey = newPoolKey(tokenX.programId(), tokenY.programId(), feeTier)
+      poolKey = newPoolKey(token0Address, token1Address, feeTier)
 
       await invariant.addFeeTier(admin, feeTier)
 
       const initSqrtPrice: SqrtPrice = 1005012269622000000000000n
 
       await invariant.createPool(admin, poolKey, initSqrtPrice)
-      await tokenX.mint(admin.addressRaw, 10000000000n)
-      await tokenY.mint(admin.addressRaw, 10000000000n)
-      await tokenX.approve(admin, invariant.programId(), 10000000000n)
-      await tokenY.approve(admin, invariant.programId(), 10000000000n)
-      await invariant.depositSingleToken(admin, tokenX.programId(), 10000000000n)
-      await invariant.depositSingleToken(admin, tokenY.programId(), 10000000000n)
+      await GRC20.mint(admin.addressRaw, 10000000000n, token0Address)
+      await GRC20.mint(admin.addressRaw, 10000000000n, token1Address)
+      await GRC20.approve(admin, invariant.programId(), 10000000000n, token0Address)
+      await GRC20.approve(admin, invariant.programId(), 10000000000n, token1Address)
+      await invariant.depositSingleToken(admin, token0Address, 10000000000n)
+      await invariant.depositSingleToken(admin, token1Address, 10000000000n)
     })
     it('check get liquidity by x', async function () {
       this.timeout(200000)
@@ -58,7 +60,7 @@ describe('math', async function () {
         const lowerTickIndex = 80n
         const upperTickIndex = 120n
 
-        const pool = await invariant.getPool(tokenX.programId(), tokenY.programId(), feeTier)
+        const pool = await invariant.getPool(token0Address, token1Address, feeTier)
 
         getLiquidityByX(providedAmount, lowerTickIndex, upperTickIndex, pool.sqrtPrice, true)
       }
@@ -67,7 +69,7 @@ describe('math', async function () {
         const lowerTickIndex = 80n
         const upperTickIndex = 120n
 
-        const pool = await invariant.getPool(tokenX.programId(), tokenY.programId(), feeTier)
+        const pool = await invariant.getPool(token0Address, token1Address, feeTier)
 
         const { l, amount } = getLiquidityByX(
           providedAmount,
@@ -77,12 +79,12 @@ describe('math', async function () {
           true
         )
 
-        await tokenX.mint(positionOwner.addressRaw, providedAmount)
-        await tokenX.approve(positionOwner, invariant.programId(), providedAmount)
-        await tokenY.mint(positionOwner.addressRaw, amount)
-        await tokenY.approve(positionOwner, invariant.programId(), amount)
-        await invariant.depositSingleToken(positionOwner, tokenX.programId(), providedAmount)
-        await invariant.depositSingleToken(positionOwner, tokenY.programId(), amount)
+        await GRC20.mint(positionOwner.addressRaw, providedAmount, token0Address)
+        await GRC20.approve(positionOwner, invariant.programId(), providedAmount, token0Address)
+        await GRC20.mint(positionOwner.addressRaw, amount, token1Address)
+        await GRC20.approve(positionOwner, invariant.programId(), amount, token1Address)
+        await invariant.depositSingleToken(positionOwner, token0Address, providedAmount)
+        await invariant.depositSingleToken(positionOwner, token1Address, amount)
 
         await invariant.createPosition(
           positionOwner,
@@ -114,7 +116,7 @@ describe('math', async function () {
         const lowerTickIndex = 150n
         const upperTickIndex = 800n
 
-        const pool = await invariant.getPool(tokenX.programId(), tokenY.programId(), feeTier)
+        const pool = await invariant.getPool(token0Address, token1Address, feeTier)
 
         const { l, amount } = getLiquidityByX(
           providedAmount,
@@ -126,9 +128,9 @@ describe('math', async function () {
 
         assert.deepEqual(amount, 0n)
 
-        await tokenX.mint(positionOwner.addressRaw, providedAmount)
-        await tokenX.approve(positionOwner, invariant.programId(), providedAmount)
-        await invariant.depositSingleToken(positionOwner, tokenX.programId(), providedAmount)
+        await GRC20.mint(positionOwner.addressRaw, providedAmount, token0Address)
+        await GRC20.approve(positionOwner, invariant.programId(), providedAmount, token0Address)
+        await invariant.depositSingleToken(positionOwner, token0Address, providedAmount)
 
         await invariant.createPosition(
           positionOwner,
@@ -163,26 +165,26 @@ describe('math', async function () {
     const providedAmount = 47600000000n
     const feeTier = newFeeTier(6000000000n, 10n)
 
-    let poolKey = newPoolKey(tokenX.programId(), tokenY.programId(), feeTier)
+    let poolKey = newPoolKey(token0Address, token1Address, feeTier)
 
     beforeEach(async function () {
       invariant = await Invariant.deploy(api, admin, 10000000000n)
-      tokenX = await FungibleToken.deploy(api, admin, 'Coin', 'COIN', 0n)
-      tokenY = await FungibleToken.deploy(api, admin, 'Coin', 'COIN', 0n)
+      token0Address = await FungibleToken.deploy(api, admin, 'Coin', 'COIN', 0n)
+      token1Address = await FungibleToken.deploy(api, admin, 'Coin', 'COIN', 0n)
 
-      poolKey = newPoolKey(tokenX.programId(), tokenY.programId(), feeTier)
+      poolKey = newPoolKey(token0Address, token1Address, feeTier)
 
       await invariant.addFeeTier(admin, feeTier)
 
       const initSqrtPrice: SqrtPrice = 367897834491000000000000n
 
       await invariant.createPool(admin, poolKey, initSqrtPrice)
-      await tokenX.mint(admin.addressRaw, 10000000000n)
-      await tokenY.mint(admin.addressRaw, 10000000000n)
-      await tokenX.approve(admin, invariant.programId(), 10000000000n)
-      await tokenY.approve(admin, invariant.programId(), 10000000000n)
-      await invariant.depositSingleToken(admin, tokenX.programId(), 10000000000n)
-      await invariant.depositSingleToken(admin, tokenY.programId(), 10000000000n)
+      await GRC20.mint(admin.addressRaw, 10000000000n, token0Address)
+      await GRC20.mint(admin.addressRaw, 10000000000n, token1Address)
+      await GRC20.approve(admin, invariant.programId(), 10000000000n, token0Address)
+      await GRC20.approve(admin, invariant.programId(), 10000000000n, token1Address)
+      await invariant.depositSingleToken(admin, token0Address, 10000000000n)
+      await invariant.depositSingleToken(admin, token1Address, 10000000000n)
     })
 
     it('check get liquidity by y', async function () {
@@ -193,7 +195,7 @@ describe('math', async function () {
         const lowerTickIndex = -22000n
         const upperTickIndex = -21000n
 
-        const pool = await invariant.getPool(tokenX.programId(), tokenY.programId(), feeTier)
+        const pool = await invariant.getPool(token0Address, token1Address, feeTier)
 
         const { l, amount } = getLiquidityByY(
           providedAmount,
@@ -205,9 +207,9 @@ describe('math', async function () {
 
         assert.deepEqual(amount, 0n)
 
-        await tokenY.mint(positionOwner.addressRaw, providedAmount)
-        await tokenY.approve(positionOwner, invariant.programId(), providedAmount)
-        await invariant.depositSingleToken(positionOwner, tokenY.programId(), providedAmount)
+        await GRC20.mint(positionOwner.addressRaw, providedAmount, token1Address)
+        await GRC20.approve(positionOwner, invariant.programId(), providedAmount, token1Address)
+        await invariant.depositSingleToken(positionOwner, token1Address, providedAmount)
 
         await invariant.createPosition(
           positionOwner,
@@ -238,7 +240,7 @@ describe('math', async function () {
         const lowerTickIndex = -25000n
         const upperTickIndex = -19000n
 
-        const pool = await invariant.getPool(tokenX.programId(), tokenY.programId(), feeTier)
+        const pool = await invariant.getPool(token0Address, token1Address, feeTier)
 
         const { l, amount } = getLiquidityByY(
           providedAmount,
@@ -248,13 +250,13 @@ describe('math', async function () {
           true
         )
 
-        await tokenY.mint(positionOwner.addressRaw, providedAmount)
-        await tokenY.approve(positionOwner, invariant.programId(), providedAmount)
-        await tokenX.mint(positionOwner.addressRaw, amount)
-        await tokenX.approve(positionOwner, invariant.programId(), amount)
+        await GRC20.mint(positionOwner.addressRaw, providedAmount, token0Address)
+        await GRC20.approve(positionOwner, invariant.programId(), providedAmount, token0Address)
+        await GRC20.mint(positionOwner.addressRaw, amount, token1Address)
+        await GRC20.approve(positionOwner, invariant.programId(), amount, token1Address)
 
-        await invariant.depositSingleToken(positionOwner, tokenY.programId(), providedAmount)
-        await invariant.depositSingleToken(positionOwner, tokenX.programId(), amount)
+        await invariant.depositSingleToken(positionOwner, token0Address, providedAmount)
+        await invariant.depositSingleToken(positionOwner, token1Address, amount)
 
         await invariant.createPosition(
           positionOwner,
@@ -285,7 +287,7 @@ describe('math', async function () {
         const lowerTickIndex = -10000n
         const upperTickIndex = 0n
 
-        const pool = await invariant.getPool(tokenX.programId(), tokenY.programId(), feeTier)
+        const pool = await invariant.getPool(token0Address, token1Address, feeTier)
 
         assert.throw(() => {
           getLiquidityByY(providedAmount, lowerTickIndex, upperTickIndex, pool.sqrtPrice, true)

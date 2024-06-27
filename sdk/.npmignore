@@ -1,6 +1,7 @@
 node_modules
 src/**/*
 tests/**/*
+target/test-utils.*
 !src/wasm/pkg
 # build scripts
 build.sh
@@ -12,3 +13,5 @@ package-wasm.sh
 .nvmrc
 mocharc.json
 tsconfig.json
+# idls
+contracts/**/*.idl

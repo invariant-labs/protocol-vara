@@ -12,30 +12,29 @@ import { GearKeyring, HexString } from '@gear-js/api'
 import { Network } from '../src/consts'
 import { Invariant } from '../src/invariant'
 import { assert } from 'chai'
-import { FungibleToken } from '../src/erc20'
+import { FungibleToken } from '../src/erc20.js'
 import { Pool, Tick, Position } from '../src/schema'
 import { getLiquidityByY, toPercentage, toPrice } from 'invariant-vara-wasm'
+import { sortTokens } from '../src/test-utils.js'
 
 const api = await initGearApi({ providerAddress: Network.Local })
 const admin = await GearKeyring.fromSuri('//Alice')
-
+const GRC20 = await FungibleToken.load(api)
+GRC20.setAdmin(admin)
 let token0Address: HexString = null as any
 let token1Address: HexString = null as any
-
-{
-  const token0 = await FungibleToken.deploy(api, admin, 'Coin', 'COIN', 12n)
-  const token1 = await FungibleToken.deploy(api, admin, 'Coin', 'COIN', 12n)
-  await token0.mint(admin.addressRaw, 1000000000000000000000000000000n)
-  await token1.mint(admin.addressRaw, 1000000000000000000000000000000n)
-  token0Address = token0.programId()
-  token1Address = token1.programId()
-}
 
 const INVARIANT_ADDRESS = (await Invariant.deploy(api, admin, 0n)).programId()
 let unsub: Promise<VoidFunction> = null as any
 describe('sdk guide snippets', async function () {
   this.timeout(80000)
-
+  this.beforeEach(async function () {
+    token0Address = await FungibleToken.deploy(api, admin, 'Coin', 'COIN', 12n)
+    token1Address = await FungibleToken.deploy(api, admin, 'Coin', 'COIN', 12n)
+    ;[token0Address, token1Address] = sortTokens(token0Address, token1Address)
+    await GRC20.mint(admin.addressRaw, 1000000000000000000000000000000n, token0Address)
+    await GRC20.mint(admin.addressRaw, 1000000000000000000000000000000n, token1Address)
+  })
   this.beforeAll(async function () {
     unsub = subscribeToNewHeads(api)
   })
@@ -83,13 +82,9 @@ describe('sdk guide snippets', async function () {
     // print amount of token x and y we need to give to create position based on parameters we passed
     console.log(tokenXAmount, tokenYAmount)
 
-    // load token contracts
-    const tokenX = await FungibleToken.load(api, poolKey.tokenX)
-    const tokenY = await FungibleToken.load(api, poolKey.tokenY)
-
     // approve transfers of both tokens
-    await tokenX.approve(admin, invariant.programId(), tokenXAmount)
-    await tokenY.approve(admin, invariant.programId(), tokenYAmount)
+    await GRC20.approve(admin, invariant.programId(), tokenXAmount, poolKey.tokenX)
+    await GRC20.approve(admin, invariant.programId(), tokenYAmount, poolKey.tokenY)
 
     // deposit tokens in the contract
     await invariant.depositTokenPair(
@@ -97,6 +92,10 @@ describe('sdk guide snippets', async function () {
       [poolKey.tokenX, tokenXAmount],
       [poolKey.tokenY, tokenYAmount]
     )
+
+    // check user balances
+    const userBalances = await invariant.getUserBalances(admin.addressRaw)
+    console.log(userBalances)
 
     // create position
     const createPositionResult = await invariant.createPosition(
@@ -125,7 +124,7 @@ describe('sdk guide snippets', async function () {
     const amount = 6n * 10n ** 12n
 
     // approve token x transfer
-    await tokenX.approve(admin, invariant.programId(), amount)
+    await GRC20.approve(admin, invariant.programId(), amount, poolKey.tokenX)
     // deposit tokenX
     await invariant.depositSingleToken(admin, poolKey.tokenX, amount)
 
@@ -162,7 +161,7 @@ describe('sdk guide snippets', async function () {
     console.log(fees)
 
     // get balance of a specific token before claiming position fees and print it
-    const adminBalanceBeforeClaim = await tokenX.balanceOf(admin.addressRaw)
+    const adminBalanceBeforeClaim = await GRC20.balanceOf(admin.addressRaw, token0Address)
     console.log(adminBalanceBeforeClaim)
 
     // specify position id
@@ -175,7 +174,7 @@ describe('sdk guide snippets', async function () {
     console.log(withdrawResult)
 
     // get balance of a specific token after claiming position fees and print it
-    const adminBalanceAfterClaim = await tokenX.balanceOf(admin.addressRaw)
+    const adminBalanceAfterClaim = await GRC20.balanceOf(admin.addressRaw, token0Address)
     console.log(adminBalanceAfterClaim)
 
     const receiver = await GearKeyring.fromSuri('//Bob')
@@ -183,7 +182,10 @@ describe('sdk guide snippets', async function () {
     const positionToTransfer = await invariant.getPosition(admin.addressRaw, 0n)
     // Transfer position from admin (signer) to receiver
     await invariant.transferPosition(admin, 0n, receiver.addressRaw)
+    // load received position
     const receiverPosition = await invariant.getPosition(receiver.addressRaw, 0n)
+    
+    // ensure that the position are equal
     assert.deepEqual(positionToTransfer, receiverPosition)
     console.log(receiverPosition)
 
@@ -192,8 +194,8 @@ describe('sdk guide snippets', async function () {
     // ###
 
     // fetch user balances before removal
-    const adminToken0BalanceBeforeRemove = await tokenX.balanceOf(admin.addressRaw)
-    const adminToken1BalanceBeforeRemove = await tokenY.balanceOf(admin.addressRaw)
+    const adminToken0BalanceBeforeRemove = await GRC20.balanceOf(admin.addressRaw, token0Address)
+    const adminToken1BalanceBeforeRemove = await GRC20.balanceOf(admin.addressRaw, token1Address)
     console.log(adminToken0BalanceBeforeRemove, adminToken1BalanceBeforeRemove)
     // remove position
 
@@ -203,8 +205,8 @@ describe('sdk guide snippets', async function () {
     await invariant.withdrawTokenPair(admin, [poolKey.tokenX, null], [poolKey.tokenY, null])
 
     // get balance of a specific token after removing position
-    const adminToken0BalanceAfterRemove = await tokenX.balanceOf(admin.addressRaw)
-    const adminToken1BalanceAfterRemove = await tokenY.balanceOf(admin.addressRaw)
+    const adminToken0BalanceAfterRemove = await GRC20.balanceOf(admin.addressRaw, token0Address)
+    const adminToken1BalanceAfterRemove = await GRC20.balanceOf(admin.addressRaw, token1Address)
 
     // print balances
     console.log(adminToken0BalanceAfterRemove, adminToken1BalanceAfterRemove)
@@ -212,39 +214,38 @@ describe('sdk guide snippets', async function () {
   it('sdk guide - using grc20', async function () {
     this.timeout(80000)
 
-    // deploy token, it will return token object
-    const token0 = await FungibleToken.deploy(api, admin, 'CoinA', 'ACOIN', 12n)
-    // token address can be accessed by calling programId method
-    const token1Address = (
-      await FungibleToken.deploy(api, admin, 'CoinB', 'BCOIN', 12n)
-    ).programId()
+    // deploy token, it will return token address
+    const token0Address = await FungibleToken.deploy(api, admin, 'CoinA', 'ACOIN', 12n)
+    const token1Address = await FungibleToken.deploy(api, admin, 'CoinB', 'BCOIN', 12n)
 
-    // load token by passing its address (you can use existing one), it allows you to interact with it
-    // eslint disable-next-line
-    const token1 = await FungibleToken.load(api, token1Address)
+    // loading token class, allows you to interact with token contracts
+    const GRC20 = await FungibleToken.load(api)
+    // set admin account if you want to mint or burn tokens
+    // by default admin is set to the deployer of the contract
+    GRC20.setAdmin(admin)
 
     // interact with token 0
-    const admin0Balance = await token0.balanceOf(admin.addressRaw)
+    const admin0Balance = await GRC20.balanceOf(admin.addressRaw, token0Address)
     console.log(admin0Balance)
 
     // if you want to interact with different token,
     // simply pass different contract address as an argument
-    const admin1Balance = await token1.balanceOf(admin.addressRaw)
+    const admin1Balance = await GRC20.balanceOf(admin.addressRaw, token1Address)
     console.log(admin1Balance)
 
     // fetch token metadata for previously deployed token0
-    const token0Name = await token0.name()
-    const token0Symbol = await token0.symbol()
-    const token0Decimals = await token0.decimals()
+    const token0Name = await GRC20.name(token0Address)
+    const token0Symbol = await GRC20.symbol(token0Address)
+    const token0Decimals = await GRC20.decimals(token0Address)
     console.log(token0Name, token0Symbol, token0Decimals)
 
     // load diffrent token and load its metadata
-    const token1Name = await token1.name()
-    const token1Symbol = await token1.symbol()
-    const token1Decimals = await token1.decimals()
+    const token1Name = await GRC20.name(token1Address)
+    const token1Symbol = await GRC20.symbol(token1Address)
+    const token1Decimals = await GRC20.decimals(token1Address)
     console.log(token1Name, token1Symbol, token1Decimals)
   })
   this.afterAll(async function () {
-    await unsub.then((unsub) => unsub())
+    await unsub.then(unsub => unsub())
   })
 })

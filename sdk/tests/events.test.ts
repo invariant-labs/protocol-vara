@@ -1,10 +1,10 @@
 import 'mocha'
 import { initGearApi, newFeeTier, newPoolKey, subscribeToNewHeads } from '../src/utils.js'
-import { GearKeyring } from '@gear-js/api'
+import { GearKeyring, HexString } from '@gear-js/api'
 import { Network } from '../src/consts'
 import { Invariant } from '../src/invariant'
 import { assert } from 'chai'
-import { FungibleToken } from '../src/erc20'
+import { FungibleToken } from '../src/erc20.js'
 import { objectEquals } from '../src/test-utils.js'
 import {
   PoolKey,
@@ -21,8 +21,10 @@ const api = await initGearApi({ providerAddress: Network.Local })
 const admin = await GearKeyring.fromSuri('//Alice')
 
 let unsub: Promise<VoidFunction> | null = null
-let tokenX: FungibleToken = null as any
-let tokenY: FungibleToken = null as any
+const GRC20: FungibleToken = await FungibleToken.load(api)
+GRC20.setAdmin(admin)
+let token0Address: HexString = null as any
+let token1Address: HexString = null as any
 let invariant: Invariant = null as any
 const feeTier = newFeeTier(10000000000n, 1n)
 let poolKey: PoolKey = null as any
@@ -37,19 +39,19 @@ describe('events', async function () {
     this.timeout(80000)
 
     invariant = await Invariant.deploy(api, admin, toPercentage(1n, 2n))
-    tokenX = await FungibleToken.deploy(api, admin, 'Coin', 'COIN', 0n)
-    tokenY = await FungibleToken.deploy(api, admin, 'Coin', 'COIN', 0n)
-    poolKey = newPoolKey(tokenX.programId(), tokenY.programId(), feeTier)
+    token0Address = await FungibleToken.deploy(api, admin, 'Coin', 'COIN', 0n)
+    token1Address = await FungibleToken.deploy(api, admin, 'Coin', 'COIN', 0n)
+    poolKey = newPoolKey(token0Address, token1Address, feeTier)
 
     await invariant.addFeeTier(admin, feeTier)
     await invariant.createPool(admin, poolKey, toSqrtPrice(1n, 0n))
 
-    await tokenX.mint(admin.addressRaw, 1000000000000n)
-    await tokenY.mint(admin.addressRaw, 1000000000000n)
-    await tokenX.approve(admin, invariant.programId(), 1000000000000n)
-    await tokenY.approve(admin, invariant.programId(), 1000000000000n)
-    await invariant.depositSingleToken(admin, tokenX.programId(), 1000000000000n)
-    await invariant.depositSingleToken(admin, tokenY.programId(), 1000000000000n)
+    await GRC20.mint(admin.addressRaw, 1000000000000n, token0Address)
+    await GRC20.mint(admin.addressRaw, 1000000000000n, token1Address)
+    await GRC20.approve(admin, invariant.programId(), 1000000000000n, token0Address)
+    await GRC20.approve(admin, invariant.programId(), 1000000000000n, token1Address)
+    await invariant.depositSingleToken(admin, token0Address, 1000000000000n)
+    await invariant.depositSingleToken(admin, token1Address, 1000000000000n)
   })
 
   it('create position event', async function () {
