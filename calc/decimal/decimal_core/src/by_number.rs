@@ -8,90 +8,104 @@ pub fn generate_by_number(characteristics: DecimalCharacteristics) -> proc_macro
     let DecimalCharacteristics {
         struct_name,
         big_type,
+        underlying_type,
         ..
     } = characteristics;
 
     let name_str = &struct_name.to_string();
+    let big_str = &big_type.to_string();
 
     let module_name = string_to_ident("tests_by_number_", &name_str);
 
     proc_macro::TokenStream::from(quote!(
         impl ByNumber<#big_type> for #struct_name {
             fn big_div_by_number(self, rhs: #big_type) -> Self {
-                Self::new(
-                    #big_type::try_from(self.get()).unwrap()
-                        .checked_mul(
-                            Self::one()
-                        ).unwrap()
-                        .checked_div(rhs).unwrap()
-                        .try_into().unwrap()
-                )
+                let big_self: #big_type = self.cast::<#big_type>();
+                let big_self_one: #big_type = Self::one().cast::<#big_type>();
+
+                Self::new(#struct_name::from_value((big_self
+                    .checked_mul(big_self_one)
+                    .unwrap()
+                    .checked_div(rhs)
+                    .unwrap()
+                )))
+
             }
 
             fn checked_big_div_by_number(self, rhs: #big_type) -> core::result::Result<Self, alloc::string::String> {
-                Ok(Self::new(
-                    #big_type::try_from(self.get()).map_err(|_| "checked_big_div_by_number: can't convert self to big_type")?
-                    .checked_mul(Self::checked_one()?).ok_or_else(|| "checked_big_div_by_number: (self * Self::one()) multiplication overflow")?
-                    .checked_div(rhs).ok_or_else(|| "checked_big_div_by_number: ((self * Self::one()) / rhs) division overflow")?
-                    .try_into().map_err(|_| "checked_big_div_by_number: can't convert to result")?
+                let big_self: #big_type = self.cast::<#big_type>();
+                let big_self_one: #big_type = Self::one().cast::<#big_type>();
+
+                Ok(Self::new(#struct_name::checked_from_value(big_self
+                    .checked_mul(big_self_one)
+                    .ok_or_else(|| alloc::format!("decimal: lhs value can't fit into `{}` type in {}::checked_big_div_by_number()", #big_str, #name_str))?
+                    .checked_div(rhs)
+                    .ok_or_else(|| alloc::format!("decimal: lhs value can't fit into `{}` type in {}::checked_big_div_by_number()", #big_str, #name_str))?
+                    )?
                 ))
             }
 
             fn big_div_by_number_up(self, rhs: #big_type) -> Self {
-                Self::new(
-                    #big_type::try_from(self.get()).unwrap()
-                        .checked_mul(
-                            Self::one()
-                        ).unwrap()
-                        .checked_add(
-                            rhs.checked_sub(#big_type::from(1u8)).unwrap()
-                        ).unwrap()
-                        .checked_div(rhs).unwrap()
-                        .try_into().unwrap()
-                )
+                let big_self: #big_type = self.cast::<#big_type>();
+                let big_self_one: #big_type = Self::one().cast::<#big_type>();
+
+                Self::new(#struct_name::from_value(big_self
+                    .checked_mul(big_self_one)
+                    .unwrap()
+                    .checked_add(rhs.checked_sub(#big_type::from(1u8)).unwrap())
+                    .unwrap()
+                    .checked_div(rhs)
+                    .unwrap()
+                ))
             }
 
             fn checked_big_div_by_number_up(self, rhs: #big_type) -> core::result::Result<Self, alloc::string::String> {
-                Ok(Self::new(
-                    #big_type::try_from(self.get()).map_err(|_| "checked_big_div_by_number_up: can't convert self to big_type")?
-                    .checked_mul(Self::checked_one()?).ok_or_else(|| "checked_big_div_by_number_up: (self * Self::one()) multiplication overflow")?
-                    .checked_add(
-                        rhs.checked_sub(#big_type::from(1u8)).ok_or_else(|| "checked_big_div_by_number_up: (rhs - 1) subtraction overflow")?
-                    ).ok_or_else(|| "checked_big_div_by_number_up: ((self * Self::one()) + (rhs - 1)) addition overflow")?
-                    .checked_div(rhs).ok_or_else(|| "checked_big_div_by_number_up: (((self * Self::one()) + (rhs - 1)) / rhs) division overflow")?
-                    .try_into().map_err(|_| "checked_big_div_by_number_up: can't convert to result")?
-                ))
+                let big_self: #big_type = self.cast::<#big_type>();
+                let big_self_one: #big_type = Self::one().cast::<#big_type>();
+
+                Ok(Self::new(#struct_name::checked_from_value(big_self
+                    .checked_mul(big_self_one)
+                    .ok_or_else(|| alloc::format!("decimal: lhs value can't fit into `{}` type in {}::checked_big_div_by_number_up()", #big_str, #name_str))?
+                    .checked_add(rhs.checked_sub(#big_type::from(1u8)).unwrap())
+                    .ok_or_else(|| alloc::format!("decimal: lhs value can't fit into `{}` type in {}::checked_big_div_by_number_up()", #big_str, #name_str))?
+                    .checked_div(rhs)
+                    .ok_or_else(|| alloc::format!("decimal: lhs value can't fit into `{}` type in {}::checked_big_div_by_number_up()", #big_str, #name_str))?
+                )?))
             }
         }
 
         impl<T: Decimal> ToValue<T, #big_type> for #struct_name
         where
-            T::U: TryInto<#big_type>,
+            T::U: AsRef<[u64]>,
+            T: Decimal + Conversion
         {
-            // mul(l/r) = U256::from(l) * U256::from(r) / U256::from(r::one())
             fn big_mul_to_value(self, rhs: T) -> #big_type {
-                #big_type::try_from(self.get()).unwrap()
-                    .checked_mul(
-                        rhs.get()
-                            .try_into().unwrap_or_else(|_| core::panic!("rhs value could not be converted to big type in `big_mul`")),
-                    ).unwrap()
-                    .checked_div(
-                        T::one()
-                    ).unwrap()
+                let big_self: #big_type = self.cast::<#big_type>();
+                let big_rhs: #big_type = rhs.cast::<#big_type>();
+                let big_rhs_one: #big_type = T::one().cast::<#big_type>();
+
+                big_self
+                    .checked_mul(big_rhs)
+                    .unwrap()
+                    .checked_div(big_rhs_one)
+                    .unwrap()
             }
 
-            // mul_up(l/r) = U256::from(l) * U256::from(r) + U256::from(r::almost_one()) / U256::from(r::one())
             fn big_mul_to_value_up(self, rhs: T) -> #big_type {
-                #big_type::try_from(self.get()).unwrap()
-                    .checked_mul(
-                        rhs.get()
-                            .try_into().unwrap_or_else(|_| core::panic!("rhs value could not be converted to big type in `big_mul_up`")),
-                    ).unwrap()
-                    .checked_add(T::almost_one()).unwrap()
-                    .checked_div(
-                        T::one()
-                    ).unwrap()
-            }
+                let big_self: #big_type = self.cast::<#big_type>();
+                let big_rhs: #big_type = rhs.cast::<#big_type>();
+                let big_rhs_one: #big_type = T::one().cast::<#big_type>();
+                let big_rhs_almost_one: #big_type = T::almost_one().cast::<#big_type>();
+
+                big_self
+                    .checked_mul(big_rhs)
+                    .unwrap()
+                    .checked_add(big_rhs_almost_one)
+                    .unwrap()
+                    .checked_div(big_rhs_one)
+                    .unwrap()
+
+                }
         }
 
         #[cfg(test)]
@@ -100,32 +114,44 @@ pub fn generate_by_number(characteristics: DecimalCharacteristics) -> proc_macro
 
             #[test]
             fn test_big_div_up_by_number () {
-                let a = #struct_name::new(2);
-                let b: #big_type = #struct_name::one();
-                assert_eq!(a.big_div_by_number(b), #struct_name::new(2));
-                assert_eq!(a.big_div_by_number_up(b), #struct_name::new(2));
+                let a = #struct_name::new(#underlying_type::from(2u8));
+                let mut struct_one_bytes: alloc::vec::Vec<u64> = #struct_name::one().get().as_ref().try_into().unwrap();
+                struct_one_bytes.resize(#big_type::default().as_ref().len(), 0);
+                let b: #big_type = #big_type(struct_one_bytes.try_into().unwrap());
+                assert_eq!(a.big_div_by_number(b), #struct_name::new(#underlying_type::from(2u8)));
+                assert_eq!(a.big_div_by_number_up(b), #struct_name::new(#underlying_type::from(2u8)));
             }
 
             #[test]
             fn test_checked_big_div_by_number() {
-                let a = #struct_name::new(2);
-                let b: #big_type = #struct_name::one();
-                assert_eq!(a.checked_big_div_by_number(b), Ok(#struct_name::new(2)));
+                let a = #struct_name::new(#underlying_type::from(2u8));
+                let mut struct_one_bytes: alloc::vec::Vec<u64> = #struct_name::one().get().as_ref().try_into().unwrap();
+                struct_one_bytes.resize(#big_type::default().as_ref().len(), 0);
+                let b: #big_type = #big_type(struct_one_bytes.try_into().unwrap());
+                assert_eq!(a.checked_big_div_by_number(b), Ok(#struct_name::new(#underlying_type::from(2u8))));
             }
 
             #[test]
-            fn checked_big_div_by_number_up() {
-                let a = #struct_name::new(2);
-                let b: #big_type = #struct_name::one();
-                assert_eq!(a.checked_big_div_by_number_up(b), Ok(#struct_name::new(2)));
+            fn test_checked_big_div_by_number_up() {
+                let a = #struct_name::new(#underlying_type::from(2u8));
+                let mut struct_one_bytes: alloc::vec::Vec<u64> = #struct_name::one().get().as_ref().try_into().unwrap();
+                struct_one_bytes.resize(#big_type::default().as_ref().len(), 0);
+                let b: #big_type = #big_type(struct_one_bytes.try_into().unwrap());
+                assert_eq!(a.checked_big_div_by_number_up(b), Ok(#struct_name::new(#underlying_type::from(2u8))));
             }
 
             #[test]
             fn test_big_mul_to_value () {
-                let a = #struct_name::new(2);
-                let b = #struct_name::from_integer(1);
-                assert_eq!(a.big_mul_to_value(b), #big_type::from(a.get()));
-                assert_eq!(a.big_mul_to_value_up(b), #big_type::from(a.get()));
+                let a = #struct_name::new(#underlying_type::from(2u8));
+                let b = #struct_name::one();
+                let mut a_bytes: alloc::vec::Vec<u64> = a.get().as_ref().try_into().unwrap();
+                a_bytes.resize(#big_type::default().as_ref().len(), 0);
+                let c: #big_type = #big_type(a_bytes.try_into().unwrap());
+                let mut b_bytes: alloc::vec::Vec<u64> = b.get().as_ref().try_into().unwrap();
+                b_bytes.resize(#big_type::default().as_ref().len(), 0);
+                let d: #big_type = #big_type(b_bytes.try_into().unwrap());
+                assert_eq!(a.big_mul_to_value(b), c);
+                assert_eq!(a.big_mul_to_value_up(b), c);
             }
         }
     ))

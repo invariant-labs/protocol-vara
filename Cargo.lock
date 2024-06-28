@@ -1615,8 +1615,10 @@ name = "decimal"
 version = "0.1.0"
 dependencies = [
  "decimal_core",
+ "gstd",
  "integer-sqrt",
  "num-traits",
+ "traceable_result",
  "uint",
 ]
 
@@ -4515,7 +4517,9 @@ version = "0.1.0"
 dependencies = [
  "decimal",
  "gstd",
+ "sails-rtl",
  "traceable_result",
+ "uint",
 ]
 
 [[package]]

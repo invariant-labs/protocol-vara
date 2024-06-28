@@ -4,18 +4,77 @@
 #![allow(clippy::assign_op_pattern)]
 #![allow(clippy::ptr_offset_with_cast)]
 #![allow(clippy::manual_range_contains)]
-
+#[cfg(not(feature = "invariant-wasm"))]
+pub use sails_rtl::{U128, U256, U512};
 use uint::construct_uint;
+
+construct_uint! {
+    pub struct U448T(7);
+}
+
+construct_uint! {
+    pub struct U384T(6);
+}
 
 construct_uint! {
     pub struct U320(5);
 }
+
 construct_uint! {
-    pub struct U256(4);
+    pub struct U192T(3);
 }
-construct_uint! {
-    pub struct U192(3);
+
+#[cfg(feature = "invariant-wasm")]
+pub mod invariant_wasm {
+    use alloc::string::{String, ToString};
+    use serde::{Deserialize, Serialize};
+    use uint::construct_uint;
+    construct_uint! {
+        pub struct U128(2);
+    }
+    construct_uint! {
+        pub struct U256(4);
+    }
+    construct_uint! {
+        pub struct U512(8);
+    }
+    impl Serialize for U128 {
+        fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+        where
+            S: serde::Serializer,
+        {
+            self.to_string().serialize(serializer)
+        }
+    }
+    impl<'de> Deserialize<'de> for U128 {
+        fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+        where
+            D: serde::Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            Ok(Self::from_dec_str(&s).unwrap())
+        }
+    }
+    impl Serialize for U256 {
+        fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+        where
+            S: serde::Serializer,
+        {
+            self.to_string().serialize(serializer)
+        }
+    }
+    impl<'de> Deserialize<'de> for U256 {
+        fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+        where
+            D: serde::Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            Ok(Self::from_dec_str(&s).unwrap())
+        }
+    }
 }
+#[cfg(feature = "invariant-wasm")]
+pub use invariant_wasm::*;
 
 #[allow(dead_code)]
 pub fn checked_u320_to_u256(n: U320) -> Option<U256> {

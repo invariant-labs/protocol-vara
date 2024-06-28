@@ -48,9 +48,7 @@ contracts.path = "src/contracts"
 
 # Local contracts
 gear-erc20.path = "gear-erc20/app"
-gear-erc20-wasm.path = "gear-erc20/wasm"
 invariant.path = "."
-invariant-wasm.path = "src/wasm"
 # Contract dependencies
 io.path = "io"
 

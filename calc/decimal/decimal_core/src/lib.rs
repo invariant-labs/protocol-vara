@@ -64,9 +64,7 @@ pub fn decimal(
         scale: parsed_scale,
     };
 
-    let mut result = proc_macro::TokenStream::from(quote! {
-        // #[derive(Default, std::fmt::Debug, Clone, Copy, PartialEq, )]
-    });
+    let mut result = proc_macro::TokenStream::from(quote! {});
 
     result.extend(item.clone());
 

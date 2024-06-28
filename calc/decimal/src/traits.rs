@@ -1,8 +1,8 @@
-use core::fmt::{Debug, Display};
+use core::fmt::Debug;
 
 use alloc::string::String;
 
-pub trait Decimal {
+pub trait Decimal: Sized {
     type U: Debug + Default;
 
     fn get(&self) -> Self::U;
@@ -11,11 +11,57 @@ pub trait Decimal {
     fn max_value() -> Self::U;
     fn here<Y: TryFrom<Self::U>>(&self) -> Y;
     fn scale() -> u8;
-    fn one<T: TryFrom<u128>>() -> T;
-    fn checked_one<T: TryFrom<u128>>() -> Result<T, String>
+    fn checked_one() -> Result<Self, String>;
+    fn one() -> Self;
+    fn checked_almost_one() -> Result<Self, String>;
+    fn almost_one() -> Self;
+}
+
+pub trait Conversion: Sized {
+    fn cast<
+        T: Default
+            + AsRef<[u64]>
+            + From<u64>
+            + core::ops::Shl<usize, Output = T>
+            + core::ops::BitOrAssign,
+    >(
+        self,
+    ) -> T;
+    fn checked_cast<
+        T: Default
+            + AsRef<[u64]>
+            + From<u64>
+            + core::ops::Shl<usize, Output = T>
+            + core::ops::BitOrAssign,
+    >(
+        self,
+    ) -> Result<T, String>;
+
+    fn from_value<T, R>(from: R) -> T
     where
-        T::Error: Display;
-    fn almost_one<T: TryFrom<u128>>() -> T;
+        T: Default
+            + AsRef<[u64]>
+            + From<u64>
+            + core::ops::Shl<usize, Output = T>
+            + core::ops::BitOrAssign,
+        R: Default
+            + AsRef<[u64]>
+            + From<u64>
+            + core::ops::Shl<usize, Output = R>
+            + core::ops::BitOrAssign;
+
+    fn checked_from_value<T, R>(from: R) -> Result<T, String>
+    where
+        T: Default
+            + AsRef<[u64]>
+            + From<u64>
+            + core::ops::Shl<usize, Output = T>
+            + core::ops::BitOrAssign,
+        R: Default
+            + AsRef<[u64]>
+            + From<u64>
+            + core::ops::Shl<usize, Output = R>
+            + core::ops::BitOrAssign;
 }
 
 pub trait BigOps<T>: Sized {
@@ -40,6 +86,17 @@ pub trait Factories<T>: Sized {
     fn from_scale(integer: T, scale: u8) -> Self;
     fn checked_from_scale(integer: T, scale: u8) -> Result<Self, String>;
     fn from_scale_up(integer: T, scale: u8) -> Self;
+}
+
+pub trait FactoriesUnderlying {
+    type U: Debug + Default;
+
+    fn from_integer_underlying(integer: Self::U) -> Self;
+    fn from_scale_underlying(integer: Self::U, scale: u8) -> Self;
+    fn checked_from_scale_underlying(integer: Self::U, scale: u8) -> Result<Self, String>
+    where
+        Self: Sized;
+    fn from_scale_up_underlying(integer: Self::U, scale: u8) -> Self;
 }
 
 pub trait BetweenDecimals<T>: Sized {
