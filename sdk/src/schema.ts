@@ -13,7 +13,10 @@ export {
   Pool,
   Position,
   Tick,
-  Price
+  Price,
+  QuoteResult,
+  FeeGrowth,
+  SecondsPerLiquidity
 } from 'invariant-vara-wasm'
 
 export enum InvariantEvent {

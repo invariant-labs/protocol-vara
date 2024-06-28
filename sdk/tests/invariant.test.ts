@@ -1,20 +1,22 @@
 import 'mocha'
 import { initGearApi, newFeeTier, newPoolKey, subscribeToNewHeads } from '../src/utils.js'
-import { GearKeyring } from '@gear-js/api'
-import { LOCAL } from '../src/consts'
+import { GearKeyring, HexString } from '@gear-js/api'
+import { Network } from '../src/consts'
 import { Invariant } from '../src/invariant'
 import { assert } from 'chai'
-import { FungibleToken } from '../src/erc20'
+import { FungibleToken } from '../src/erc20.js'
 import { assertThrowsAsync } from '../src/test-utils.js'
 import { SqrtPrice, Tick } from '../src/schema'
 
-const api = await initGearApi({ providerAddress: LOCAL })
+const api = await initGearApi({ providerAddress: Network.Local })
 const admin = await GearKeyring.fromSuri('//Alice')
 const user = await GearKeyring.fromSuri('//Bob')
 
 let unsub: Promise<VoidFunction> | null = null
-let tokenX: FungibleToken = null as any
-let tokenY: FungibleToken = null as any
+const GRC20: FungibleToken = await FungibleToken.load(api)
+GRC20.setAdmin(admin)
+let token0Address: HexString = null as any
+let token1Address: HexString = null as any
 let invariant: Invariant = null as any
 const MAXu64 = 18_446_744_073_709_551_615n
 const initProtocolFee = 10000000000n
@@ -31,10 +33,10 @@ describe('Invariant', async function () {
   this.beforeEach(async function () {
     this.timeout(40000)
     invariant = await Invariant.deploy(api, admin, initProtocolFee)
-    tokenX = await FungibleToken.deploy(api, admin, 'Coin', 'COIN', 12n)
-    tokenY = await FungibleToken.deploy(api, admin, 'Coin', 'COIN', 12n)
-    await tokenX.mint(user.addressRaw, 1000000000n)
-    await tokenY.mint(user.addressRaw, 1000000000n)
+    token0Address = await FungibleToken.deploy(api, admin, 'Coin', 'COIN', 12n)
+    token1Address = await FungibleToken.deploy(api, admin, 'Coin', 'COIN', 12n)
+    await GRC20.mint(user.addressRaw, 1000000000n, token0Address)
+    await GRC20.mint(user.addressRaw, 1000000000n, token1Address)
   })
 
   it('should set and change protocol fee', async function () {
@@ -108,17 +110,17 @@ describe('Invariant', async function () {
   it('should get tick and check if it is initialized', async () => {
     await invariant.addFeeTier(admin, feeTier)
 
-    const poolKey = newPoolKey(tokenX.programId(), tokenY.programId(), feeTier)
+    const poolKey = newPoolKey(token0Address, token1Address, feeTier)
 
     await invariant.createPool(user, poolKey, 1000000000000000000000000n)
 
-    await tokenX.approve(user, invariant.programId(), 1000000000n)
-    await tokenY.approve(user, invariant.programId(), 1000000000n)
+    await GRC20.approve(user, invariant.programId(), 1000000000n, token0Address)
+    await GRC20.approve(user, invariant.programId(), 1000000000n, token1Address)
 
-    const pool = await invariant.getPool(tokenX.programId(), tokenY.programId(), feeTier)
+    const pool = await invariant.getPool(token0Address, token1Address, feeTier)
 
-    await invariant.depositSingleToken(user, tokenX.programId(), 1000000n)
-    await invariant.depositSingleToken(user, tokenY.programId(), 1000000n)
+    await invariant.depositSingleToken(user, token0Address, 1000000n)
+    await invariant.depositSingleToken(user, token1Address, 1000000n)
 
     await invariant.createPosition(
       user,
@@ -171,12 +173,12 @@ describe('Invariant', async function () {
 
     const initSqrtPrice: SqrtPrice = 1000000000000000000000000n
 
-    const poolKey = newPoolKey(tokenX.programId(), tokenY.programId(), feeTier)
+    const poolKey = newPoolKey(token0Address, token1Address, feeTier)
 
     await invariant.createPool(user, poolKey, initSqrtPrice)
     const pools = await invariant.getPools(1n, 0n)
     assert.deepEqual(pools.length, 1)
-    const pool = await invariant.getPool(tokenX.programId(), tokenY.programId(), feeTier)
+    const pool = await invariant.getPool(token0Address, token1Address, feeTier)
     assert.deepEqual(pool, {
       liquidity: 0n,
       sqrtPrice: 1000000000000000000000000n,
@@ -197,7 +199,7 @@ describe('Invariant', async function () {
 
     const initSqrtPrice: SqrtPrice = 1000175003749000000000000n
 
-    const poolKey = newPoolKey(tokenX.programId(), tokenY.programId(), feeTier)
+    const poolKey = newPoolKey(token0Address, token1Address, feeTier)
 
     assertThrowsAsync(invariant.createPool(user, poolKey, initSqrtPrice), 'Error: InvalidInitTick')
   })
@@ -210,13 +212,13 @@ describe('Invariant', async function () {
     const initSqrtPrice: SqrtPrice = 1000000000000000000000000n
 
     {
-      const poolKey = newPoolKey(tokenX.programId(), tokenY.programId(), feeTier)
+      const poolKey = newPoolKey(token0Address, token1Address, feeTier)
 
       await invariant.createPool(user, poolKey, initSqrtPrice)
 
       const pools = await invariant.getPools(1n, 0n)
       assert.deepEqual(pools.length, 1)
-      const pool = await invariant.getPool(tokenX.programId(), tokenY.programId(), feeTier)
+      const pool = await invariant.getPool(token0Address, token1Address, feeTier)
       assert.deepEqual(pool, {
         liquidity: 0n,
         sqrtPrice: 1000000000000000000000000n,
@@ -231,7 +233,7 @@ describe('Invariant', async function () {
       })
     }
     {
-      const poolKey = newPoolKey(tokenX.programId(), tokenY.programId(), feeTier)
+      const poolKey = newPoolKey(token0Address, token1Address, feeTier)
 
       await assertThrowsAsync(invariant.createPool(user, poolKey, initSqrtPrice))
     }

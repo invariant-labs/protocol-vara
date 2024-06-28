@@ -21,16 +21,18 @@ import {
   subscribeToNewHeads
 } from '../src/utils'
 import { u8aToHex } from '@polkadot/util'
-import { GearKeyring } from '@gear-js/api'
-import { LOCAL } from '../src/consts'
+import { GearKeyring, HexString } from '@gear-js/api'
+import { Network } from '../src/consts'
 
-const api = await initGearApi({ providerAddress: LOCAL })
+const api = await initGearApi({ providerAddress: Network.Local })
 const admin = await GearKeyring.fromSuri('//Alice')
 const user = await GearKeyring.fromSuri('//Bob')
 
 let unsub: Promise<VoidFunction> | null = null
-let tokenX: FungibleToken = null as any
-let tokenY: FungibleToken = null as any
+let tokenXAddress: HexString = null as any
+let tokenYAddress: HexString = null as any
+const GRC20: FungibleToken = await FungibleToken.load(api)
+GRC20.setAdmin(admin)
 let invariant: Invariant = null as any
 const lowerTickIndex = -20n
 const upperTickIndex = 10n
@@ -49,17 +51,16 @@ describe('position', async function () {
   beforeEach(async function () {
     this.timeout(80000)
     invariant = await Invariant.deploy(api, admin, 10000000000n)
-    tokenX = await FungibleToken.deploy(api, admin, 'Coin', 'COIN', 0n)
-    tokenY = await FungibleToken.deploy(api, admin, 'Coin', 'COIN', 0n)
-    ;[tokenX, tokenY] = sortTokens(tokenX, tokenY)
-
-    poolKey = newPoolKey(tokenX.programId(), tokenY.programId(), feeTier)
+    tokenXAddress = await FungibleToken.deploy(api, admin, 'Coin', 'COIN', 0n)
+    tokenYAddress = await FungibleToken.deploy(api, admin, 'Coin', 'COIN', 0n)
+    ;[tokenXAddress, tokenYAddress] = sortTokens(tokenXAddress, tokenYAddress)
+    poolKey = newPoolKey(tokenXAddress, tokenYAddress, feeTier)
 
     await invariant.addFeeTier(admin, feeTier)
 
     await invariant.createPool(user, poolKey, 1000000000000000000000000n)
 
-    pool = await invariant.getPool(tokenX.programId(), tokenY.programId(), feeTier)
+    pool = await invariant.getPool(tokenXAddress, tokenYAddress, feeTier)
 
     invariant.on({
       ident: InvariantEvent.PositionCreatedEvent,
@@ -74,13 +75,13 @@ describe('position', async function () {
       }
     })
 
-    await tokenX.mint(user.addressRaw, 10000000000n)
-    await tokenY.mint(user.addressRaw, 10000000000n)
-    await tokenX.approve(user, invariant.programId(), 10000000000n)
-    await tokenY.approve(user, invariant.programId(), 10000000000n)
+    await GRC20.mint(user.addressRaw, 10000000000n, tokenXAddress)
+    await GRC20.mint(user.addressRaw, 10000000000n, tokenYAddress)
+    await GRC20.approve(user, invariant.programId(), 10000000000n, tokenXAddress)
+    await GRC20.approve(user, invariant.programId(), 10000000000n, tokenYAddress)
 
-    await invariant.depositSingleToken(user, tokenX.programId(), 10000000000n)
-    await invariant.depositSingleToken(user, tokenY.programId(), 10000000000n)
+    await invariant.depositSingleToken(user, tokenXAddress, 10000000000n)
+    await invariant.depositSingleToken(user, tokenYAddress, 10000000000n)
 
     await invariant.createPosition(
       user,
@@ -125,7 +126,7 @@ describe('position', async function () {
     this.timeout(80000)
 
     const position = await invariant.getPosition(user.addressRaw, 0n)
-    const pool = await invariant.getPool(tokenX.programId(), tokenY.programId(), feeTier)
+    const pool = await invariant.getPool(tokenXAddress, tokenYAddress, feeTier)
 
     const providedAmount = 500n
     const { amount: expectedYAmount } = getLiquidityByX(
@@ -213,40 +214,38 @@ describe('position', async function () {
     const swapper = admin
     //clear balances from beforeEach block
 
-    await invariant.withdrawSingleToken(positionOwner, tokenX.programId())
-    await invariant.withdrawSingleToken(positionOwner, tokenY.programId())
+    await invariant.withdrawSingleToken(positionOwner, tokenXAddress)
+    await invariant.withdrawSingleToken(positionOwner, tokenYAddress)
     {
       const amount: TokenAmount = 1000n
 
-      await tokenX.mint(swapper.addressRaw, amount)
-      await tokenX.approve(swapper, invariant.programId(), amount)
-      await invariant.depositSingleToken(swapper, tokenX.programId(), amount)
+      await GRC20.mint(swapper.addressRaw, amount, tokenXAddress)
+      await GRC20.approve(swapper, invariant.programId(), amount, tokenXAddress)
+      await invariant.depositSingleToken(swapper, tokenXAddress, amount)
 
-      const poolBefore = await invariant.getPool(tokenX.programId(), tokenY.programId(), feeTier)
+      const poolBefore = await invariant.getPool(tokenXAddress, tokenYAddress, feeTier)
 
       const targetSqrtPrice: SqrtPrice = 15258932000000000000n
       await invariant.swap(swapper, poolKey, true, amount, true, targetSqrtPrice)
 
-      await invariant.withdrawSingleToken(swapper, tokenY.programId())
-      const poolAfter = await invariant.getPool(tokenX.programId(), tokenY.programId(), feeTier)
+      await invariant.withdrawSingleToken(swapper, tokenYAddress)
+      const poolAfter = await invariant.getPool(tokenXAddress, tokenYAddress, feeTier)
 
       await assertThrowsAsync(
-        invariant.withdrawSingleToken(swapper, tokenX.programId(), amount),
+        invariant.withdrawSingleToken(swapper, tokenXAddress, amount),
         "Panic occurred: panicked with 'InvariantError: NoBalanceForTheToken'"
       )
 
-      const swapperX = await tokenX.balanceOf(swapper.addressRaw)
-      const swapperY = await tokenY.balanceOf(swapper.addressRaw)
+      const swapperX = await GRC20.balanceOf(swapper.addressRaw, tokenXAddress)
+      const swapperY = await GRC20.balanceOf(swapper.addressRaw, tokenYAddress)
 
       assert.equal(swapperX, 0n)
       assert.equal(swapperY, 993n)
 
-      const invariantX = await tokenX.balanceOf(invariant.programId())
-      const invariantY = await tokenY.balanceOf(invariant.programId())
-
+      const invariantX = await GRC20.balanceOf(invariant.programId(), tokenXAddress)
+      const invariantY = await GRC20.balanceOf(invariant.programId(), tokenYAddress)
       assert.equal(invariantX, 1500n)
       assert.equal(invariantY, 7n)
-
       assert.deepEqual(poolAfter.liquidity, poolBefore.liquidity)
       assert.notDeepEqual(poolAfter.sqrtPrice, poolBefore.sqrtPrice)
       assert.deepEqual(poolAfter.currentTickIndex, lowerTickIndex)
@@ -256,22 +255,21 @@ describe('position', async function () {
       assert.deepEqual(poolAfter.feeProtocolTokenY, 0n)
     }
     {
-      const positionOwnerBeforeX = await tokenX.balanceOf(positionOwner.addressRaw)
-      const invariantBeforeX = await tokenX.balanceOf(invariant.programId())
-
+      const positionOwnerBeforeX = await GRC20.balanceOf(positionOwner.addressRaw, tokenXAddress)
+      const invariantBeforeX = await GRC20.balanceOf(invariant.programId(), tokenXAddress)
       await invariant.claimFee(positionOwner, 0n)
-      await invariant.withdrawSingleToken(positionOwner, tokenX.programId())
+      await invariant.withdrawSingleToken(positionOwner, tokenXAddress)
       await assertThrowsAsync(
-        invariant.withdrawSingleToken(positionOwner, tokenY.programId()),
+        invariant.withdrawSingleToken(positionOwner, tokenYAddress),
         "Panic occurred: panicked with 'InvariantError: NoBalanceForTheToken'"
       )
 
-      const positionOwnerAfterX = await tokenX.balanceOf(positionOwner.addressRaw)
+      const positionOwnerAfterX = await GRC20.balanceOf(positionOwner.addressRaw, tokenXAddress)
 
-      const invariantAfterX = await tokenX.balanceOf(invariant.programId())
+      const invariantAfterX = await GRC20.balanceOf(invariant.programId(), tokenXAddress)
 
       const position = await invariant.getPosition(positionOwner.addressRaw, 0n)
-      const pool = await invariant.getPool(tokenX.programId(), tokenY.programId(), feeTier)
+      const pool = await invariant.getPool(tokenXAddress, tokenYAddress, feeTier)
       const expectedTokensClaimed = 5n
 
       assert.deepEqual(positionOwnerAfterX - expectedTokensClaimed, positionOwnerBeforeX)

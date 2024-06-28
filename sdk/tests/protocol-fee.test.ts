@@ -1,18 +1,20 @@
 import { initGearApi, newFeeTier, newPoolKey, subscribeToNewHeads } from '../src/utils.js'
-import { GearKeyring } from '@gear-js/api'
-import { LOCAL } from '../src/consts'
+import { GearKeyring, HexString } from '@gear-js/api'
+import { Network } from '../src/consts'
 import { Invariant } from '../src/invariant'
 import { assert } from 'chai'
-import { FungibleToken } from '../src/erc20'
+import { FungibleToken } from '../src/erc20.js'
 import { assertThrowsAsync } from '../src/test-utils.js'
 
-const api = await initGearApi({ providerAddress: LOCAL })
+const api = await initGearApi({ providerAddress: Network.Local })
 const admin = await GearKeyring.fromSuri('//Alice')
 const user = await GearKeyring.fromSuri('//Bob')
 
 let unsub: Promise<VoidFunction> | null = null
-let token0: FungibleToken = null as any
-let token1: FungibleToken = null as any
+const GRC20: FungibleToken = await FungibleToken.load(api)
+GRC20.setAdmin(admin)
+let token0: HexString = null as any
+let token1: HexString = null as any
 let invariant: Invariant = null as any
 const feeTier = newFeeTier(10000000000n, 1n)
 
@@ -29,18 +31,18 @@ describe('protocol-fee', async function () {
 
     await invariant.addFeeTier(admin, feeTier)
 
-    const poolKey = newPoolKey(token0.programId(), token1.programId(), feeTier)
+    const poolKey = newPoolKey(token0, token1, feeTier)
 
     await invariant.createPool(admin, poolKey, 1000000000000000000000000n)
 
-    await token0.mint(admin.addressRaw, 10000000000000n)
-    await token1.mint(admin.addressRaw, 10000000000000n)
+    await GRC20.mint(admin.addressRaw, 10000000000000n, token0)
+    await GRC20.mint(admin.addressRaw, 10000000000000n, token1)
 
-    await token0.approve(admin, invariant.programId(), 10000000000000n)
-    await token1.approve(admin, invariant.programId(), 10000000000000n)
+    await GRC20.approve(admin, invariant.programId(), 10000000000000n, token0)
+    await GRC20.approve(admin, invariant.programId(), 10000000000000n, token1)
 
-    await invariant.depositSingleToken(admin, token0.programId(), 10000000000000n)
-    await invariant.depositSingleToken(admin, token1.programId(), 10000000000000n)
+    await invariant.depositSingleToken(admin, token0, 10000000000000n)
+    await invariant.depositSingleToken(admin, token1, 10000000000000n)
 
     await invariant.createPosition(
       admin,
@@ -52,8 +54,8 @@ describe('protocol-fee', async function () {
       10000000000n
     )
 
-    await token0.approve(admin, invariant.programId(), 1000000000n)
-    await token1.approve(admin, invariant.programId(), 1000000000n)
+    await GRC20.approve(admin, invariant.programId(), 1000000000n, token0)
+    await GRC20.approve(admin, invariant.programId(), 1000000000n, token1)
 
     await invariant.swap(admin, poolKey, true, 4999n, true, 999505344804856076727628n)
   })
@@ -61,33 +63,33 @@ describe('protocol-fee', async function () {
   it('should withdraw protocol fee', async function () {
     this.timeout(80000)
     let withdrawnToken
-    const poolKey = newPoolKey(token0.programId(), token1.programId(), feeTier)
+    const poolKey = newPoolKey(token0, token1, feeTier)
 
-    if (poolKey.tokenX === token0.programId()) {
+    if (poolKey.tokenX === token0) {
       withdrawnToken = token0
     } else {
       withdrawnToken = token1
     }
 
-    await invariant.withdrawSingleToken(admin, withdrawnToken.programId())
-    const token0Before = await token0.balanceOf(admin.addressRaw)
-    const token1Before = await token1.balanceOf(admin.addressRaw)
+    await invariant.withdrawSingleToken(admin, withdrawnToken)
+    const token0Before = await GRC20.balanceOf(admin.addressRaw, token0)
+    const token1Before = await GRC20.balanceOf(admin.addressRaw, token1)
 
-    const poolBefore = await invariant.getPool(token0.programId(), token1.programId(), feeTier)
+    const poolBefore = await invariant.getPool(token0, token1, feeTier)
     assert.deepEqual(poolBefore.feeProtocolTokenX, 1n, "tokenX fee mismatch")
     assert.deepEqual(poolBefore.feeProtocolTokenY, 0n, "tokenY fee mismatch")
 
     await invariant.withdrawProtocolFee(admin, poolKey)
 
-    const poolAfter = await invariant.getPool(token0.programId(), token1.programId(), feeTier)
+    const poolAfter = await invariant.getPool(token0, token1, feeTier)
     assert.deepEqual(poolAfter.feeProtocolTokenX, 0n, "tokenX fee mismatch")
     assert.deepEqual(poolAfter.feeProtocolTokenY, 0n, "tokenY fee mismatch")
 
-    await invariant.withdrawSingleToken(admin, withdrawnToken.programId())
-    const token0After = await token0.balanceOf(admin.addressRaw)
-    const token1After = await token1.balanceOf(admin.addressRaw)    
+    await invariant.withdrawSingleToken(admin, withdrawnToken)
+    const token0After = await GRC20.balanceOf(admin.addressRaw, token0)
+    const token1After = await GRC20.balanceOf(admin.addressRaw, token1)    
 
-    if (poolKey.tokenX === token0.programId()) {
+    if (poolKey.tokenX === token0) {
       assert.deepEqual(token0Before + 1n, token0After)
       assert.deepEqual(token1Before, token1After)
     } else {
@@ -98,10 +100,10 @@ describe('protocol-fee', async function () {
 
   it('should change fee receiver', async function () {
     this.timeout(80000)
-    const poolKey = newPoolKey(token0.programId(), token1.programId(), feeTier)
+    const poolKey = newPoolKey(token0, token1, feeTier)
     
     let withdrawnToken
-    if (poolKey.tokenX === token0.programId()) {
+    if (poolKey.tokenX === token0) {
       withdrawnToken = token0
     } else {
       withdrawnToken = token1
@@ -109,10 +111,10 @@ describe('protocol-fee', async function () {
 
     await invariant.changeFeeReceiver(admin, poolKey, user.addressRaw)
 
-    const token0Before = await token0.balanceOf(user.addressRaw)
-    const token1Before = await token1.balanceOf(user.addressRaw)
+    const token0Before = await GRC20.balanceOf(user.addressRaw, token0)
+    const token1Before = await GRC20.balanceOf(user.addressRaw, token1)
 
-    const poolBefore = await invariant.getPool(token0.programId(), token1.programId(), feeTier)
+    const poolBefore = await invariant.getPool(token0, token1, feeTier)
     assert.strictEqual(poolBefore.feeProtocolTokenX, 1n, "tokenX fee mismatch")
     assert.strictEqual(poolBefore.feeProtocolTokenY, 0n, "tokenY fee mismatch")
 
@@ -122,16 +124,16 @@ describe('protocol-fee', async function () {
       "Panic occurred: panicked with 'InvariantError: NotFeeReceiver'"
     )
 
-    const poolAfter = await invariant.getPool(token0.programId(), token1.programId(), feeTier)
+    const poolAfter = await invariant.getPool(token0, token1, feeTier)
     assert.strictEqual(poolAfter.feeProtocolTokenX, 0n, "tokenX fee mismatch")
     assert.strictEqual(poolAfter.feeProtocolTokenY, 0n, "tokenY fee mismatch")
 
 
-    await invariant.withdrawSingleToken(user, withdrawnToken.programId())
-    const token0After = await token0.balanceOf(user.addressRaw)
-    const token1After = await token1.balanceOf(user.addressRaw)
+    await invariant.withdrawSingleToken(user, withdrawnToken)
+    const token0After = await GRC20.balanceOf(user.addressRaw, token0)
+    const token1After = await GRC20.balanceOf(user.addressRaw, token1)
 
-    if (poolKey.tokenX === token0.programId()) {
+    if (poolKey.tokenX === token0) {
       assert.deepEqual(token0Before + 1n, token0After)
       assert.deepEqual(token1Before, token1After)
     } else {

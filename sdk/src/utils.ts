@@ -3,8 +3,7 @@ import { readFile } from 'fs/promises'
 import path from 'path'
 import { IKeyringPair } from '@polkadot/types/types'
 import {
-  Price,
-  SqrtPrice,
+  _calculateFee,
   _newFeeTier,
   _newPoolKey,
   calculateAmountDelta,
@@ -14,6 +13,10 @@ import {
 } from 'invariant-vara-wasm'
 import { TypeRegistry } from '@polkadot/types'
 import {
+  TokenAmount,
+  Price,
+  QuoteResult,
+  SqrtPrice,
   CrossTickEvent,
   InvariantEvent,
   SwapEvent,
@@ -26,7 +29,7 @@ import {
   PoolKey,
   Position,
   Tick
-} from './schema'
+} from './schema.js'
 export type Signer = string | IKeyringPair
 export type ActorId = Uint8Array | HexString
 
@@ -115,7 +118,7 @@ export const convertPoolKey = (poolKey: any): PoolKey => {
 }
 
 export const convertPool = (pool: any): Pool => {
-  return convertFieldsToBigInt(pool, ['currentIndex'])
+  return convertFieldsToBigInt(pool, ['currentIndex', 'feeReceiver'])
 }
 
 export const convertPosition = (position: any): Position => {
@@ -157,6 +160,12 @@ export const convertCalculateSwapResult = (calculateSwapResult: any): CalculateS
   calculateSwapResult.ticks = calculateSwapResult.ticks.map(convertTick)
 
   return calculateSwapResult
+}
+
+export const convertQuoteResult = (quoteResult: any): QuoteResult => {
+  quoteResult = convertFieldsToBigInt(quoteResult, ['ticks'])
+  quoteResult.ticks = quoteResult.ticks.map(convertTick)
+  return quoteResult
 }
 
 export interface IMethodReturnType<T> {
@@ -320,4 +329,26 @@ export const calculateSqrtPriceAfterSlippage = (
 
 export const delay = (delayMs: number) => {
   return new Promise(resolve => setTimeout(resolve, delayMs))
+}
+
+export const calculateFee = (
+  pool: Pool,
+  position: Position,
+  lowerTick: Tick,
+  upperTick: Tick
+): [TokenAmount, TokenAmount] => {
+  return _calculateFee(
+    lowerTick.index,
+    lowerTick.feeGrowthOutsideX,
+    lowerTick.feeGrowthOutsideY,
+    upperTick.index,
+    upperTick.feeGrowthOutsideX,
+    upperTick.feeGrowthOutsideY,
+    pool.currentTickIndex,
+    pool.feeGrowthGlobalX,
+    pool.feeGrowthGlobalY,
+    position.feeGrowthInsideX,
+    position.feeGrowthInsideY,
+    position.liquidity
+  )
 }

@@ -11,9 +11,9 @@ use wasm_bindgen::prelude::*;
 #[tsify(into_wasm_abi, from_wasm_abi)]
 #[serde(rename_all = "camelCase")]
 pub struct PoolKey {
-    #[tsify(type = "string")]
+    #[tsify(type = "`0x${string}`")]
     pub token_x: String,
-    #[tsify(type = "string")]
+    #[tsify(type = "`0x${string}`")]
     pub token_y: String,
     pub fee_tier: FeeTier,
 }

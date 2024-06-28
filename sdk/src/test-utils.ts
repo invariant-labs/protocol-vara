@@ -1,6 +1,6 @@
 import { assert } from 'chai'
-import { FungibleToken } from './erc20'
 import { isTokenX } from 'invariant-vara-wasm'
+import { HexString } from '@gear-js/api'
 
 export const objectEquals = (
   object: { [key: string]: any },
@@ -14,8 +14,8 @@ export const objectEquals = (
   }
 }
 
-export const sortTokens = (tokenX: FungibleToken, tokenY: FungibleToken) => {
-  return isTokenX(tokenX.programId(), tokenY.programId())
+export const sortTokens = (tokenX: HexString, tokenY: HexString) => {
+  return isTokenX(tokenX, tokenY)
   ? [tokenX, tokenY]
   : [tokenY, tokenX]
 }
