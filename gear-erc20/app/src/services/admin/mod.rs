@@ -6,7 +6,7 @@ use gstd::{exec, msg, String};
 use gstd::{ActorId, Decode, Encode, ToString, TypeInfo, Vec};
 use primitive_types::U256;
 use sails_rtl::gstd::gservice;
-
+use sails_rtl::Box;
 use super::erc20::storage::{AllowancesStorage, BalancesStorage, TotalSupplyStorage};
 use sails_rtl::format;
 pub mod funcs;

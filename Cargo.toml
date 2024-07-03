@@ -10,7 +10,6 @@ math.workspace = true
 decimal.workspace = true
 io.workspace = true
 contracts.workspace = true
-gear-core.workspace = true
 sails-rtl.workspace = true
 futures = { version = "0.3.30", features = [
   "async-await",
@@ -53,15 +52,15 @@ invariant.path = "."
 io.path = "io"
 
 # Gear dependencies
-gstd = "1.4.1"
-gear-wasm-builder = "1.4.1"
-gmeta = "1.4.1"
-gear-core = { git = "https://github.com/gear-tech/gear.git", tag = "v1.4.1" }
-gtest = { git = "https://github.com/gear-tech/gear.git", tag = "v1.4.1" }
-gclient = { git = "https://github.com/gear-tech/gear.git", tag = "v1.4.1" }
-sails-idl-gen = { git = "https://github.com/gear-tech/sails", rev = "31a3c1a06817b69040af0c069967dd0b31c9530b" }
-sails-rtl = { git = "https://github.com/gear-tech/sails", rev = "31a3c1a06817b69040af0c069967dd0b31c9530b" }
-
+gsys = { git = "https://github.com/gear-tech/gear", tag = "v1.4.2" }
+gstd = "1.4.2"
+gear-wasm-builder = "1.4.2"
+gmeta = "1.4.2"
+gear-core = "1.4.2"
+gtest = { git = "https://github.com/gear-tech/gear", tag = "v1.4.2" }
+gclient = "1.4.2"
+sails-idl-gen = { git = "https://github.com/gear-tech/sails", rev = "079af71bb60462fc76cd0d169bdc25b636029727" }
+sails-rtl = { git = "https://github.com/gear-tech/sails", rev = "079af71bb60462fc76cd0d169bdc25b636029727" }
 # External
 tokio = { version = "1.36", features = ["full"] }
 xshell = "0.2"
@@ -69,3 +68,7 @@ anyhow = "1"
 log = "*"
 env_logger = "*"
 primitive-types = { version = "*", default-features = false }
+# This is necessary since sails relies on github hosted package while gstd uses the crates.io one
+# Packages should be identical
+[patch.crates-io]
+gsys = { git = "https://github.com/gear-tech/gear", tag = "v1.4.2" }

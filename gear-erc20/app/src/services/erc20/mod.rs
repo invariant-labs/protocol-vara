@@ -7,6 +7,7 @@ use gstd::{ext, format, Decode, Encode, String, TypeInfo, Vec};
 use primitive_types::U256;
 use sails_rtl::gstd::{gservice, msg};
 use sails_rtl::ActorId;
+use sails_rtl::Box;
 #[cfg(feature = "test")]
 use storage::TransferFailStorage;
 use storage::{AllowancesStorage, BalancesStorage, MetaStorage, TotalSupplyStorage};

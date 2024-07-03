@@ -3,6 +3,7 @@ use core::{any::TypeId, marker::PhantomData};
 use gstd::{ActorId, Decode, Encode, String, ToString, TypeInfo, Vec};
 use sails_rtl::format;
 use sails_rtl::gstd::gservice;
+use sails_rtl::Box;
 use storage::{RolesRegistryStorage, RolesStorage};
 
 pub mod funcs;

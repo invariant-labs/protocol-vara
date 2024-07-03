@@ -4,4 +4,5 @@ set -e
 # Download node binary
 cargo xtask node
 # Run tests with backtrace
-RUST_BACKTRACE=1 cargo test --workspace --features "gear-erc20-wasm/test invariant-wasm/test" $1
+# Wasm packages are excluded since they've already been built and linker fails when they are built together
+RUST_BACKTRACE=1 cargo test --workspace --exclude "gear-erc20-wasm" --exclude "invariant-wasm" $1

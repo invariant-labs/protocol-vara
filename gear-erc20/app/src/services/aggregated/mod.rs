@@ -5,6 +5,7 @@ use gstd::{ActorId, Decode, Encode, ToString, TypeInfo, Vec};
 use primitive_types::U256;
 use sails_rtl::format;
 use sails_rtl::gstd::gservice;
+use sails_rtl::Box;
 
 // TODO (breathx): once supported in sails impl Clone here
 pub struct AggregatedService {
