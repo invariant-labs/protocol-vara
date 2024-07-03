@@ -2,7 +2,7 @@ node_modules
 src/**/*
 tests/**/*
 target/test-utils.*
-!src/wasm/pkg
+!src/wasm/pkg/*
 # build scripts
 build.sh
 fix-generate.js

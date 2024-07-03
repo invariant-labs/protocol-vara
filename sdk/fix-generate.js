@@ -43,11 +43,11 @@ for (const path of filesToModify) {
       textBuff = textBuff.replace(val, match)
     })
   }
-  // fix transactions by replacing wrapper types to actual types
+  // fix transactions by replacing wrapper types with actual types
   const typesToReplace = [
-    ['Percentage', 'u64'],
-    ['TokenAmount', 'u128'],
-    ['Liquidity', 'u128'],
+    ['Percentage', 'u128'],
+    ['TokenAmount', 'U256'],
+    ['Liquidity', 'U256'],
     ['SqrtPrice', 'u128'],
     ['FeeGrowth', 'u128']
   ]

@@ -1,6 +1,6 @@
 import 'mocha'
-import { PositionRemovedEvent, getLiquidityByX } from 'invariant-vara-wasm'
 import {
+  PositionRemovedEvent,
   PositionCreatedEvent,
   Pool,
   PoolKey,
@@ -18,7 +18,8 @@ import {
   initGearApi,
   newFeeTier,
   newPoolKey,
-  subscribeToNewHeads
+  subscribeToNewHeads,
+  getLiquidityByX
 } from '../src/utils'
 import { u8aToHex } from '@polkadot/util'
 import { GearKeyring, HexString } from '@gear-js/api'
@@ -88,7 +89,7 @@ describe('position', async function () {
       poolKey,
       lowerTickIndex,
       upperTickIndex,
-      1000000000000n,
+      100000000000n,
       pool.sqrtPrice,
       0n
     )
@@ -96,7 +97,7 @@ describe('position', async function () {
     const expectedCreatePositionEvent: PositionCreatedEvent = {
       address: u8aToHex(user.addressRaw),
       sqrtPrice: 1000000000000000000000000n,
-      liquidityDelta: 1000000000000n,
+      liquidityDelta: 100000000000n,
       lowerTick: -20n,
       poolKey,
       upperTick: 10n,
@@ -111,7 +112,7 @@ describe('position', async function () {
     const position = await invariant.getPosition(user.addressRaw, 0n)
     const expectedPosition: Position = {
       poolKey: poolKey,
-      liquidity: 1000000000000n,
+      liquidity: 100000000000n,
       lowerTickIndex: lowerTickIndex,
       upperTickIndex: upperTickIndex,
       feeGrowthInsideX: 0n,
@@ -130,7 +131,7 @@ describe('position', async function () {
 
     const providedAmount = 500n
     const { amount: expectedYAmount } = getLiquidityByX(
-      500n,
+      providedAmount,
       lowerTickIndex,
       upperTickIndex,
       pool.sqrtPrice,
@@ -151,7 +152,7 @@ describe('position', async function () {
       const expectedRemovePositionEvent: PositionRemovedEvent = {
         address: u8aToHex(user.addressRaw),
         sqrtPrice: 1000000000000000000000000n,
-        liquidityDelta: 1000000000000n,
+        liquidityDelta: 100000000000n,
         lowerTick: -20n,
         poolKey,
         upperTick: 10n,
@@ -160,10 +161,7 @@ describe('position', async function () {
 
       objectEquals(removeEvent, expectedRemovePositionEvent, ['timestamp'])
 
-      await assertThrowsAsync(
-        invariant.getPosition(user.addressRaw, 0n),
-        'Error: PositionNotFound'
-      )
+      await assertThrowsAsync(invariant.getPosition(user.addressRaw, 0n), 'Error: PositionNotFound')
       const positions = await invariant.getAllPositions(admin.addressRaw)
       assert.deepEqual(positions.length, 0)
     }
@@ -195,7 +193,7 @@ describe('position', async function () {
       const position = await invariant.getPosition(receiver.addressRaw, 0n)
       const expectedPosition: Position = {
         poolKey: poolKey,
-        liquidity: 1000000000000n,
+        liquidity: 100000000000n,
         lowerTickIndex: lowerTickIndex,
         upperTickIndex: upperTickIndex,
         feeGrowthInsideX: 0n,
@@ -241,7 +239,6 @@ describe('position', async function () {
 
       assert.equal(swapperX, 0n)
       assert.equal(swapperY, 993n)
-
       const invariantX = await GRC20.balanceOf(invariant.programId(), tokenXAddress)
       const invariantY = await GRC20.balanceOf(invariant.programId(), tokenYAddress)
       assert.equal(invariantX, 1500n)
@@ -271,7 +268,7 @@ describe('position', async function () {
       const position = await invariant.getPosition(positionOwner.addressRaw, 0n)
       const pool = await invariant.getPool(tokenXAddress, tokenYAddress, feeTier)
       const expectedTokensClaimed = 5n
-
+      console.log(invariantAfterX)
       assert.deepEqual(positionOwnerAfterX - expectedTokensClaimed, positionOwnerBeforeX)
       assert.deepEqual(invariantAfterX + expectedTokensClaimed, invariantBeforeX)
 

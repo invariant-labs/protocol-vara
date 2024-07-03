@@ -18,6 +18,11 @@ extern "C" {
     #[wasm_bindgen(js_namespace = console, js_name = log)]
     pub fn log_many(a: &str, b: &str);
 }
+// run once in js for debugging purposes
+#[wasm_bindgen]
+pub fn init_panic_hook() {
+  console_error_panic_hook::set_once();
+}
 
 #[macro_export]
 macro_rules! decimal_ops {
@@ -32,7 +37,8 @@ macro_rules! decimal_ops {
             #[wasm_bindgen]
             #[allow(non_snake_case)]
             pub fn [<get $decimal Denominator >] () -> BigInt {
-                BigInt::from($decimal::from_integer(1).get())
+                // should be enough for current denominators
+                BigInt::from($decimal::from_integer(1).get().as_u128())
             }
 
             #[wasm_bindgen]
@@ -40,7 +46,10 @@ macro_rules! decimal_ops {
             pub fn [<to $decimal >] (js_val: JsValue, js_scale: JsValue) -> BigInt {
                 let js_val: u64 = convert!(js_val).unwrap();
                 let scale: u64 = convert!(js_scale).unwrap();
-                BigInt::from($decimal::from_scale(js_val, scale as u8).get())
+                $decimal::from_scale(js_val, scale as u8)
+                .get().0
+                .iter().rev()
+                .fold(BigInt::from(0), |acc, &x| (acc << BigInt::from(64)) | BigInt::from(x))
             }
         }
     };

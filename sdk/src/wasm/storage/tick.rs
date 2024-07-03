@@ -49,11 +49,11 @@ impl Default for Tick {
         Tick {
             index: 0i32,
             sign: false,
-            liquidity_change: Liquidity::new(0),
-            liquidity_gross: Liquidity::new(0),
+            liquidity_change: Liquidity::from_integer(0),
+            liquidity_gross: Liquidity::from_integer(0),
             sqrt_price: SqrtPrice::from_integer(1),
-            fee_growth_outside_x: FeeGrowth::new(0),
-            fee_growth_outside_y: FeeGrowth::new(0),
+            fee_growth_outside_x: FeeGrowth::from_integer(0),
+            fee_growth_outside_y: FeeGrowth::from_integer(0),
             seconds_outside: 0u64,
         }
     }

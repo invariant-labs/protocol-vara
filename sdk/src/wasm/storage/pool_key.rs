@@ -1,4 +1,4 @@
-use crate::alloc::string::ToString;
+use crate::alloc::string::{ToString, String};
 use crate::errors::InvariantError;
 use crate::is_token_x;
 use crate::FeeTier;

@@ -1,4 +1,5 @@
 use crate::alloc::string::{String, ToString};
+use crate::alloc::vec::Vec;
 use crate::types::liquidity::Liquidity;
 use crate::types::sqrt_price::SqrtPrice;
 use crate::types::token_amount::TokenAmount;

@@ -35,6 +35,6 @@ pub enum InvariantError {
 
 impl core::fmt::Display for InvariantError {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        write!(f, "An invariant error occurred")
+        write!(f, "An invariant error occurred {:?}", self)
     }
 }

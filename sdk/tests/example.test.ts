@@ -6,7 +6,10 @@ import {
   newFeeTier,
   newPoolKey,
   priceToSqrtPrice,
-  subscribeToNewHeads
+  subscribeToNewHeads,
+  getLiquidityByY,
+  toPercentage,
+  toPrice
 } from '../src/utils.js'
 import { GearKeyring, HexString } from '@gear-js/api'
 import { Network } from '../src/consts'
@@ -14,7 +17,6 @@ import { Invariant } from '../src/invariant'
 import { assert } from 'chai'
 import { FungibleToken } from '../src/erc20.js'
 import { Pool, Tick, Position } from '../src/schema'
-import { getLiquidityByY, toPercentage, toPrice } from 'invariant-vara-wasm'
 import { sortTokens } from '../src/test-utils.js'
 
 const api = await initGearApi({ providerAddress: Network.Local })
@@ -184,7 +186,7 @@ describe('sdk guide snippets', async function () {
     await invariant.transferPosition(admin, 0n, receiver.addressRaw)
     // load received position
     const receiverPosition = await invariant.getPosition(receiver.addressRaw, 0n)
-    
+
     // ensure that the position are equal
     assert.deepEqual(positionToTransfer, receiverPosition)
     console.log(receiverPosition)

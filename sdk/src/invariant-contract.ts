@@ -7,7 +7,9 @@ export interface InvariantConfig {
   protocol_fee: Percentage;
 }
 
-export type Percentage = [number | string];
+export type Percentage = [U128];
+
+export type U128 = [Array<number | string>];
 
 export interface FeeTier {
   fee: Percentage;
@@ -22,7 +24,7 @@ export interface PoolKey {
 
 export type TokenAmount = [number | string];
 
-export type SqrtPrice = [number | string];
+export type SqrtPrice = [U128];
 
 export type Liquidity = [number | string];
 
@@ -38,7 +40,7 @@ export interface Position {
   tokens_owed_y: TokenAmount;
 }
 
-export type FeeGrowth = [number | string];
+export type FeeGrowth = [U128];
 
 export interface CalculateSwapResult {
   amount_in: TokenAmount;
@@ -95,14 +97,15 @@ export class InvariantContract {
   constructor(public api: GearApi, public programId?: `0x${string}`) {
     const types: Record<string, any> = {
       InvariantConfig: {"admin":"[u8;32]","protocolFee":"Percentage"},
-      Percentage: "(u64)",
+      Percentage: "(U128)",
+      U128: "([u64; 2])",
       FeeTier: {"fee":"Percentage","tickSpacing":"u16"},
       PoolKey: {"tokenX":"[u8;32]","tokenY":"[u8;32]","feeTier":"FeeTier"},
-      TokenAmount: "(u128)",
-      SqrtPrice: "(u128)",
-      Liquidity: "(u128)",
+      TokenAmount: "(U256)",
+      SqrtPrice: "(U128)",
+      Liquidity: "(U256)",
       Position: {"poolKey":"PoolKey","liquidity":"Liquidity","lowerTickIndex":"i32","upperTickIndex":"i32","feeGrowthInsideX":"FeeGrowth","feeGrowthInsideY":"FeeGrowth","lastBlockNumber":"u64","tokensOwedX":"TokenAmount","tokensOwedY":"TokenAmount"},
-      FeeGrowth: "(u128)",
+      FeeGrowth: "(U128)",
       CalculateSwapResult: {"amountIn":"TokenAmount","amountOut":"TokenAmount","startSqrtPrice":"SqrtPrice","targetSqrtPrice":"SqrtPrice","fee":"TokenAmount","pool":"Pool","ticks":"Vec<Tick>"},
       Pool: {"liquidity":"Liquidity","sqrtPrice":"SqrtPrice","currentTickIndex":"i32","feeGrowthGlobalX":"FeeGrowth","feeGrowthGlobalY":"FeeGrowth","feeProtocolTokenX":"TokenAmount","feeProtocolTokenY":"TokenAmount","startTimestamp":"u64","lastTimestamp":"u64","feeReceiver":"[u8;32]"},
       Tick: {"index":"i32","sign":"bool","liquidityChange":"Liquidity","liquidityGross":"Liquidity","sqrtPrice":"SqrtPrice","feeGrowthOutsideX":"FeeGrowth","feeGrowthOutsideY":"FeeGrowth","secondsOutside":"u64"},
@@ -185,8 +188,8 @@ export class Service {
       this._program.registry,
       'send_message',
       ['Service', 'ChangeProtocolFee', protocol_fee],
-      '(String, String, u64)',
-      'u64',
+      '(String, String, u128)',
+      'u128',
       this._program.programId
     );
   }
@@ -199,7 +202,7 @@ export class Service {
       'send_message',
       ['Service', 'ClaimFee', index],
       '(String, String, u32)',
-      '(u128, u128)',
+      '(U256, U256)',
       this._program.programId
     );
   }
@@ -224,7 +227,7 @@ export class Service {
       this._program.registry,
       'send_message',
       ['Service', 'CreatePosition', pool_key, lower_tick, upper_tick, liquidity_delta, slippage_limit_lower, slippage_limit_upper],
-      '(String, String, PoolKey, i32, i32, u128, u128, u128)',
+      '(String, String, PoolKey, i32, i32, U256, u128, u128)',
       'Position',
       this._program.programId
     );
@@ -237,8 +240,8 @@ export class Service {
       this._program.registry,
       'send_message',
       ['Service', 'DepositSingleToken', token, amount],
-      '(String, String, [u8;32], u128)',
-      'u128',
+      '(String, String, [u8;32], U256)',
+      'U256',
       this._program.programId
     );
   }
@@ -250,8 +253,8 @@ export class Service {
       this._program.registry,
       'send_message',
       ['Service', 'DepositTokenPair', token_x, token_y],
-      '(String, String, ([u8;32], u128), ([u8;32], u128))',
-      '(u128, u128)',
+      '(String, String, ([u8;32], U256), ([u8;32], U256))',
+      '(U256, U256)',
       this._program.programId
     );
   }
@@ -277,7 +280,7 @@ export class Service {
       'send_message',
       ['Service', 'RemovePosition', index],
       '(String, String, u32)',
-      '(u128, u128)',
+      '(U256, U256)',
       this._program.programId
     );
   }
@@ -289,7 +292,7 @@ export class Service {
       this._program.registry,
       'send_message',
       ['Service', 'Swap', pool_key, x_to_y, amount, by_amount_in, sqrt_price_limit],
-      '(String, String, PoolKey, bool, u128, bool, u128)',
+      '(String, String, PoolKey, bool, U256, bool, u128)',
       'CalculateSwapResult',
       this._program.programId
     );
@@ -328,8 +331,8 @@ export class Service {
       this._program.registry,
       'send_message',
       ['Service', 'WithdrawSingleToken', token, amount],
-      '(String, String, [u8;32], Option<u128>)',
-      'u128',
+      '(String, String, [u8;32], Option<U256>)',
+      'U256',
       this._program.programId
     );
   }
@@ -341,8 +344,8 @@ export class Service {
       this._program.registry,
       'send_message',
       ['Service', 'WithdrawTokenPair', token_x, token_y],
-      '(String, String, ([u8;32], Option<u128>), ([u8;32], Option<u128>))',
-      '(u128, u128)',
+      '(String, String, ([u8;32], Option<U256>), ([u8;32], Option<U256>))',
+      '(U256, U256)',
       this._program.programId
     );
   }

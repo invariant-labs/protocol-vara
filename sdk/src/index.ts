@@ -22,15 +22,9 @@ export {
   TokenAmount
 } from './schema.js'
 export {
-  calculateTick,
-  getLiquidityByX,
-  getLiquidityByY,
   getMaxChunk,
-  getMaxSqrtPrice,
   getMaxTick,
-  getMinSqrtPrice,
   getMinTick,
-  isTokenX,
   toFeeGrowth,
   toFixedPoint,
   toLiquidity,
@@ -38,14 +32,18 @@ export {
   toPrice,
   toSecondsPerLiquidity,
   toSqrtPrice,
-  toTokenAmount
-} from 'invariant-vara-wasm'
-export {
+  toTokenAmount,
+  calculateTick,
+  getLiquidityByX,
+  getLiquidityByY,
+  getMinSqrtPrice,
+  getMaxSqrtPrice,
   calculateFee,
   calculateSqrtPriceAfterSlippage,
   calculateTokenAmounts,
   newFeeTier,
   newPoolKey,
   priceToSqrtPrice,
-  sqrtPriceToPrice
+  sqrtPriceToPrice,
+  isTokenX
 } from './utils.js'

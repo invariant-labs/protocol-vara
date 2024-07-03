@@ -16,7 +16,10 @@ import {
   InvariantEventCallback,
   decodeEvent,
   calculateSqrtPriceAfterSlippage,
-  convertQuoteResult
+  convertQuoteResult,
+  getMaxSqrtPrice,
+  getMinSqrtPrice,
+  calculateTick
 } from './utils.js'
 import { DEFAULT_ADDRESS, INVARIANT_GAS_LIMIT } from './consts.js'
 import { InvariantContract } from './invariant-contract.js'
@@ -35,7 +38,6 @@ import {
   QuoteResult
 } from './schema.js'
 import { getServiceNamePrefix, ZERO_ADDRESS, getFnNamePrefix } from 'sails-js'
-import { calculateTick, getMaxSqrtPrice, getMinSqrtPrice } from 'invariant-vara-wasm'
 
 export class Invariant {
   eventListenerStarted: boolean = false
@@ -209,12 +211,12 @@ export class Invariant {
     poolKey: PoolKey,
     xToY: boolean,
     amount: TokenAmount,
-    byAmountIn: boolean,
+    byAmountIn: boolean
   ): Promise<QuoteResult> {
     const sqrtPriceLimit: SqrtPrice = xToY
-    ? getMinSqrtPrice(poolKey.feeTier.tickSpacing)
-    : getMaxSqrtPrice(poolKey.feeTier.tickSpacing)
-    
+      ? getMinSqrtPrice(poolKey.feeTier.tickSpacing)
+      : getMaxSqrtPrice(poolKey.feeTier.tickSpacing)
+
     return convertQuoteResult(
       unwrapResult(
         await this.contract.service.quote(

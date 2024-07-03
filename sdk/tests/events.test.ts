@@ -1,5 +1,12 @@
 import 'mocha'
-import { initGearApi, newFeeTier, newPoolKey, subscribeToNewHeads } from '../src/utils.js'
+import {
+  initGearApi,
+  newFeeTier,
+  newPoolKey,
+  subscribeToNewHeads,
+  toPercentage,
+  toSqrtPrice
+} from '../src/utils.js'
 import { GearKeyring, HexString } from '@gear-js/api'
 import { Network } from '../src/consts'
 import { Invariant } from '../src/invariant'
@@ -15,7 +22,7 @@ import {
   SwapEvent
 } from '../src/schema'
 import { decodeAddress } from '@gear-js/api'
-import { getGlobalMinSqrtPrice, toPercentage, toSqrtPrice } from 'invariant-vara-wasm'
+import { getGlobalMinSqrtPrice } from 'invariant-vara-wasm'
 
 const api = await initGearApi({ providerAddress: Network.Local })
 const admin = await GearKeyring.fromSuri('//Alice')
@@ -98,7 +105,7 @@ describe('events', async function () {
       poolKey,
       -10n,
       10n,
-      1000000000000n,
+      100000000000n,
       toSqrtPrice(1n, 0n),
       0n
     )
@@ -108,7 +115,7 @@ describe('events', async function () {
       poolKey,
       -30n,
       -10n,
-      1000000000000n,
+      100000000000n,
       toSqrtPrice(1n, 0n),
       0n
     )
@@ -118,7 +125,7 @@ describe('events', async function () {
       poolKey,
       -50n,
       -30n,
-      1000000000000n,
+      100000000000n,
       toSqrtPrice(1n, 0n),
       0n
     )

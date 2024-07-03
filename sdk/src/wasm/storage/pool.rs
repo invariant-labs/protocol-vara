@@ -1,4 +1,4 @@
-use crate::alloc::string::ToString;
+use crate::alloc::string::{ToString, String};
 use crate::types::{
     fee_growth::FeeGrowth, liquidity::Liquidity, sqrt_price::SqrtPrice, token_amount::TokenAmount,
 };

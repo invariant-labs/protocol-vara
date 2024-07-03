@@ -10,52 +10,61 @@ use traceable_result::*;
 use tsify::Tsify;
 use wasm_bindgen::prelude::*;
 
-#[decimal(28)]
+#[decimal(28, U256)]
 #[derive(Default, Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Serialize, Deserialize, Tsify)]
 #[tsify(into_wasm_abi, from_wasm_abi)]
-pub struct FeeGrowth(#[tsify(type = "bigint")] pub u128);
+pub struct FeeGrowth(#[tsify(type = "bigint")] pub U128);
 
 decimal_ops!(FeeGrowth);
 
 impl FeeGrowth {
     pub fn unchecked_add(self, other: FeeGrowth) -> FeeGrowth {
-        FeeGrowth::new(self.get().wrapping_add(other.get()))
+        if other.get() > FeeGrowth::max_instance().get() - self.get() {
+            FeeGrowth::new((other.get() - (FeeGrowth::max_instance().get() - self.get())) - 1)
+        } else {
+            FeeGrowth::new(self.get() + other.get())
+        }
     }
 
     pub fn unchecked_sub(self, other: FeeGrowth) -> FeeGrowth {
-        FeeGrowth::new(self.get().wrapping_sub(other.get()))
+        if other.get() > self.get() {
+            FeeGrowth::new(FeeGrowth::max_instance().get() - (other.get() - self.get()) + 1)
+        } else {
+            FeeGrowth::new(self.get() - other.get())
+        }
     }
 
     pub fn from_fee(liquidity: Liquidity, fee: TokenAmount) -> TrackableResult<Self> {
         Ok(Self::new(
-            U256::from(fee.get())
-                .checked_mul(FeeGrowth::one())
-                .ok_or_else(|| err!(TrackableError::MUL))?
-                .checked_mul(Liquidity::one())
-                .ok_or_else(|| err!(TrackableError::MUL))?
-                .checked_div(liquidity.here())
-                .ok_or_else(|| err!(TrackableError::DIV))?
-                .try_into()
-                .map_err(|_| err!(TrackableError::cast::<Self>().as_str()))?,
+            Self::checked_from_value(
+                fee.cast::<U384T>()
+                    .checked_mul(FeeGrowth::one().cast())
+                    .ok_or_else(|| err!(TrackableError::MUL))?
+                    .checked_mul(Liquidity::one().cast())
+                    .ok_or_else(|| err!(TrackableError::MUL))?
+                    .checked_div(liquidity.cast())
+                    .ok_or_else(|| err!(TrackableError::DIV))?,
+            )
+            .map_err(|_| err!(TrackableError::cast::<Self>().as_str()))?,
         ))
     }
 
     pub fn to_fee(self, liquidity: Liquidity) -> TrackableResult<TokenAmount> {
         Ok(TokenAmount::new(
-            U256::from(self.get())
-                .checked_mul(liquidity.here())
-                .ok_or_else(|| err!(TrackableError::MUL))?
-                .checked_div(
-                    U256::from(10).pow(U256::from(FeeGrowth::scale() + Liquidity::scale())),
-                )
-                .ok_or_else(|| err!(TrackableError::MUL))?
-                .try_into()
-                .map_err(|_| err!(TrackableError::cast::<TokenAmount>().as_str()))?,
+            TokenAmount::checked_from_value(
+                self.cast::<U384T>()
+                    .checked_mul(liquidity.cast())
+                    .ok_or_else(|| err!(TrackableError::MUL))?
+                    .checked_div(Liquidity::one().cast())
+                    .ok_or_else(|| err!(TrackableError::MUL))?
+                    .checked_div(FeeGrowth::one().cast())
+                    .ok_or_else(|| err!(TrackableError::MUL))?,
+            )
+            .map_err(|_| err!(TrackableError::cast::<TokenAmount>().as_str()))?,
         ))
     }
 }
 
-#[allow(clippy::too_many_arguments)]
 pub fn calculate_fee_growth_inside(
     tick_lower: i32,
     tick_lower_fee_growth_outside_x: FeeGrowth,

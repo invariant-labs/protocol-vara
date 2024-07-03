@@ -16,7 +16,17 @@ export {
   Price,
   QuoteResult,
   FeeGrowth,
-  SecondsPerLiquidity
+  SecondsPerLiquidity,
+  AmountDeltaResult,
+  LiquidityResult,
+  LiquidityTick,
+  PositionTick,
+  SingleTokenLiquidity,
+  SwapHop,
+  SwapResult,
+  TokenAmounts,
+  _calculateFeeResult,
+  calculateAmountDeltaResult
 } from 'invariant-vara-wasm'
 
 export enum InvariantEvent {

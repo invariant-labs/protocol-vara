@@ -1,4 +1,4 @@
-use crate::alloc::string::ToString;
+use crate::alloc::string::{ToString, String};
 use crate::types::percentage::Percentage;
 use serde::{Deserialize, Serialize};
 use tsify::Tsify;
