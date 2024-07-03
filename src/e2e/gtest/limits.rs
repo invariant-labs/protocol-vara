@@ -36,15 +36,18 @@ fn test_limits_big_deposit_both_tokens() {
 
     let token_x = ActorId::from(TOKEN_X_ID);
     let token_y = ActorId::from(TOKEN_Y_ID);
-    let mint_amount = u128::MAX;
-    let approved_amount = 2u128.pow(75) - 1;
+    let mint_amount = U256::MAX;
+    let limit_amount =
+        U256::from_dec_str("95780971304118053647396689196894323976171195136475136").unwrap();
 
     let invariant = init_invariant(&sys, Percentage::from_scale(1, 2));
     let (token_x_program, token_y_program) =
-        init_tokens_with_mint(&sys, (mint_amount, mint_amount));
+        init_tokens_with_mint_user_1(&sys, (mint_amount, mint_amount));
 
-    increase_allowance(&token_x_program, REGULAR_USER_1, INVARIANT_ID, u128::MAX).assert_success();
-    increase_allowance(&token_y_program, REGULAR_USER_1, INVARIANT_ID, u128::MAX).assert_success();
+    increase_allowance(&token_x_program, REGULAR_USER_1, INVARIANT_ID, mint_amount)
+        .assert_success();
+    increase_allowance(&token_y_program, REGULAR_USER_1, INVARIANT_ID, mint_amount)
+        .assert_success();
 
     let fee_tier = FeeTier::new(Percentage::from_scale(6, 3), 1).unwrap();
 
@@ -70,7 +73,7 @@ fn test_limits_big_deposit_both_tokens() {
     let upper_tick = fee_tier.tick_spacing as i32;
     let pool = get_pool(&invariant, token_x, token_y, fee_tier).unwrap();
     let liquidity_delta = get_liquidity_by_x(
-        TokenAmount(approved_amount),
+        TokenAmount(limit_amount),
         lower_tick,
         upper_tick,
         pool.sqrt_price,
@@ -133,12 +136,12 @@ fn test_limits_big_deposit_both_tokens() {
 
     let user_amount_x = balance_of(&token_x_program, REGULAR_USER_1);
     let user_amount_y = balance_of(&token_y_program, REGULAR_USER_1);
-    assert_eq!(user_amount_x, u128::MAX - approved_amount);
-    assert_eq!(user_amount_y, u128::MAX - y.get());
+    assert_eq!(user_amount_x, U256::MAX - limit_amount);
+    assert_eq!(user_amount_y, U256::MAX - y.get());
 
     let contract_amount_x = balance_of(&token_x_program, INVARIANT_ID);
     let contract_amount_y = balance_of(&token_y_program, INVARIANT_ID);
-    assert_eq!(contract_amount_x, approved_amount);
+    assert_eq!(contract_amount_x, limit_amount);
     assert_eq!(contract_amount_y, y.get());
 }
 
@@ -149,14 +152,18 @@ fn test_deposit_limits_at_upper_limit() {
 
     let token_x = ActorId::from(TOKEN_X_ID);
     let token_y = ActorId::from(TOKEN_Y_ID);
-    let mint_amount = 2u128.pow(75) - 1;
+    let limit_amount = U256::from_dec_str(
+        "110427941548649020598956093796432407239217743554726184882600387580788736",
+    )
+    .unwrap(); // 2^236
+    let mint_amount = U256::MAX;
 
     let invariant = init_invariant(&sys, Percentage::from_scale(1, 2));
     let (token_x_program, token_y_program) =
-        init_tokens_with_mint(&sys, (mint_amount, mint_amount));
+        init_tokens_with_mint_user_1(&sys, (mint_amount, mint_amount));
 
-    increase_allowance(&token_x_program, REGULAR_USER_1, INVARIANT_ID, u128::MAX).assert_success();
-    increase_allowance(&token_y_program, REGULAR_USER_1, INVARIANT_ID, u128::MAX).assert_success();
+    increase_allowance(&token_x_program, REGULAR_USER_1, INVARIANT_ID, U256::MAX).assert_success();
+    increase_allowance(&token_y_program, REGULAR_USER_1, INVARIANT_ID, U256::MAX).assert_success();
 
     let fee_tier = FeeTier::new(Percentage::from_scale(6, 3), 1).unwrap();
 
@@ -182,7 +189,7 @@ fn test_deposit_limits_at_upper_limit() {
     assert_eq!(pool.current_tick_index, init_tick);
     assert_eq!(pool.sqrt_price, calculate_sqrt_price(init_tick).unwrap());
 
-    let position_amount = mint_amount - 1;
+    let position_amount = limit_amount - 1;
 
     let liquidity_delta = get_liquidity_by_y(
         TokenAmount(position_amount),
@@ -229,13 +236,15 @@ fn test_limits_big_deposit_and_swaps() {
 
     let token_x = ActorId::from(TOKEN_X_ID);
     let token_y = ActorId::from(TOKEN_Y_ID);
-    let mint_amount = 2u128.pow(76) - 1;
+    let limit_amount =
+        U256::from_dec_str("191561942608236107294793378393788647952342390272950272").unwrap(); // 2^177
 
     let invariant = init_invariant(&sys, Percentage::from_scale(1, 2));
-    let (token_x_program, token_y_program) = init_tokens_with_mint(&sys, (u128::MAX, u128::MAX));
+    let (token_x_program, token_y_program) =
+        init_tokens_with_mint_user_1(&sys, (U256::MAX, U256::MAX));
 
-    increase_allowance(&token_x_program, REGULAR_USER_1, INVARIANT_ID, u128::MAX).assert_success();
-    increase_allowance(&token_y_program, REGULAR_USER_1, INVARIANT_ID, u128::MAX).assert_success();
+    increase_allowance(&token_x_program, REGULAR_USER_1, INVARIANT_ID, U256::MAX).assert_success();
+    increase_allowance(&token_y_program, REGULAR_USER_1, INVARIANT_ID, U256::MAX).assert_success();
 
     let fee_tier = FeeTier::new(Percentage::from_scale(6, 3), 1).unwrap();
 
@@ -256,7 +265,7 @@ fn test_limits_big_deposit_and_swaps() {
     .assert_empty()
     .assert_to(REGULAR_USER_1);
 
-    let pos_amount = mint_amount / 2;
+    let pos_amount = limit_amount / 2;
     let lower_tick = -(fee_tier.tick_spacing as i32);
     let upper_tick = fee_tier.tick_spacing as i32;
     let pool = get_pool(&invariant, token_x, token_y, fee_tier).unwrap();
@@ -287,9 +296,9 @@ fn test_limits_big_deposit_and_swaps() {
         &invariant,
         REGULAR_USER_1,
         token_x,
-        u128::MAX,
+        U256::MAX,
         token_y,
-        u128::MAX,
+        U256::MAX,
         None::<&str>,
     )
     .unwrap();
@@ -319,15 +328,15 @@ fn test_limits_big_deposit_and_swaps() {
 
     let user_amount_x = balance_of(&token_x_program, REGULAR_USER_1);
     let user_amount_y = balance_of(&token_y_program, REGULAR_USER_1);
-    assert_eq!(user_amount_x, u128::MAX - pos_amount);
-    assert_eq!(user_amount_y, u128::MAX - y.get());
+    assert_eq!(user_amount_x, U256::MAX - pos_amount);
+    assert_eq!(user_amount_y, U256::MAX - y.get());
 
     let contract_amount_x = balance_of(&token_x_program, INVARIANT_ID);
     let contract_amount_y = balance_of(&token_y_program, INVARIANT_ID);
     assert_eq!(contract_amount_x, pos_amount);
     assert_eq!(contract_amount_y, y.get());
 
-    let swap_amount = TokenAmount(mint_amount / 8);
+    let swap_amount = TokenAmount(limit_amount / 8);
 
     increase_allowance(
         &token_x_program,
@@ -357,9 +366,9 @@ fn test_limits_big_deposit_and_swaps() {
 
     for i in 1..=4 {
         let (_, sqrt_price_limit) = if i % 2 == 0 {
-            (true, SqrtPrice::new(MIN_SQRT_PRICE))
+            (true, SqrtPrice::new(MIN_SQRT_PRICE.into()))
         } else {
-            (false, SqrtPrice::new(MAX_SQRT_PRICE))
+            (false, SqrtPrice::new(MAX_SQRT_PRICE.into()))
         };
 
         swap(
@@ -383,9 +392,9 @@ fn test_limits_full_range_with_max_liquidity() {
     let token_x = ActorId::from(TOKEN_X_ID);
     let token_y = ActorId::from(TOKEN_Y_ID);
 
-    let mint_amount = u128::MAX;
+    let mint_amount = U256::MAX;
     let (token_x_program, token_y_program) =
-        init_tokens_with_mint(&sys, (mint_amount, mint_amount));
+        init_tokens_with_mint_user_1(&sys, (mint_amount, mint_amount));
     let invariant = init_invariant(&sys, Percentage::from_scale(1, 2));
 
     increase_allowance(&token_x_program, REGULAR_USER_1, INVARIANT_ID, mint_amount)
@@ -417,7 +426,12 @@ fn test_limits_full_range_with_max_liquidity() {
     assert_eq!(pool.sqrt_price, calculate_sqrt_price(init_tick).unwrap());
 
     let pool_key = PoolKey::new(token_x, token_y, fee_tier).unwrap();
-    let liquidity_delta = Liquidity::new(2u128.pow(109) - 1);
+    let liquidity_delta = Liquidity::new(
+        U256::from_dec_str(
+            "220855883097298041197912187592864814478435487109452369765200775161577472", // 2^206
+        )
+        .unwrap(),
+    );
     let slippage_limit_lower = pool.sqrt_price;
     let slippage_limit_upper = pool.sqrt_price;
 
@@ -458,8 +472,11 @@ fn test_limits_full_range_with_max_liquidity() {
     let contract_amount_x = balance_of(&token_x_program, INVARIANT_ID);
     let contract_amount_y = balance_of(&token_y_program, INVARIANT_ID);
 
-    let expected_x = 0;
-    let expected_y = 42534896005851865508212194815854; // < 2^106
+    let expected_x = U256::from(0);
+    let expected_y = U256::from_dec_str(
+        "144738750896072444118518848476700723725861030905971328860187553943253568",
+    )
+    .unwrap(); // < 2^237
     assert_eq!(contract_amount_x, expected_x);
     assert_eq!(contract_amount_y, expected_y);
 }

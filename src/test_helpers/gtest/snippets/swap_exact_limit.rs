@@ -14,9 +14,9 @@ pub fn swap_exact_limit(
     by_amount_in: bool,
 ) {
     let sqrt_price_limit = if x_to_y {
-        SqrtPrice::new(MIN_SQRT_PRICE)
+        SqrtPrice::new(MIN_SQRT_PRICE.into())
     } else {
-        SqrtPrice::new(MAX_SQRT_PRICE)
+        SqrtPrice::new(MAX_SQRT_PRICE.into())
     };
 
     let quote_result = quote(

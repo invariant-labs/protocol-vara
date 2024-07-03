@@ -13,7 +13,7 @@ fn test_create_pool() {
     let sys = System::new();
     sys.init_logger();
 
-    let invariant = init_invariant(&sys, Percentage(100));
+    let invariant = init_invariant(&sys, Percentage(U128::from(100)));
 
     let token_0 = ActorId::from([0x01; 32]);
     let token_1 = ActorId::from([0x02; 32]);
@@ -61,7 +61,7 @@ fn test_create_pool_x_to_y_and_y_to_x() {
     let sys = System::new();
     sys.init_logger();
 
-    let invariant = init_invariant(&sys, Percentage(100));
+    let invariant = init_invariant(&sys, Percentage(U128::from(100)));
 
     let token_0 = ActorId::from([0x01; 32]);
     let token_1 = ActorId::from([0x02; 32]);
@@ -108,7 +108,7 @@ fn test_create_pool_with_same_tokens() {
     let sys = System::new();
     sys.init_logger();
 
-    let invariant = init_invariant(&sys, Percentage(100));
+    let invariant = init_invariant(&sys, Percentage(U128::from(100)));
 
     let token_0 = ActorId::from([0x01; 32]);
 
@@ -139,7 +139,7 @@ fn test_create_pool_fee_tier_not_added() {
     let sys = System::new();
     sys.init_logger();
 
-    let invariant = init_invariant(&sys, Percentage(100));
+    let invariant = init_invariant(&sys, Percentage(U128::from(100)));
 
     let token_0 = ActorId::from([0x01; 32]);
     let token_1 = ActorId::from([0x02; 32]);
@@ -168,7 +168,7 @@ fn test_create_pool_init_tick_not_divisible_by_tick_spacing() {
     let sys = System::new();
     sys.init_logger();
 
-    let invariant = init_invariant(&sys, Percentage(100));
+    let invariant = init_invariant(&sys, Percentage(U128::from(100)));
 
     let token_0 = ActorId::from([0x01; 32]);
     let token_1 = ActorId::from([0x02; 32]);
@@ -200,7 +200,7 @@ fn test_create_pool_init_sqrt_price_minimal_difference_from_tick() {
     let sys = System::new();
     sys.init_logger();
 
-    let invariant = init_invariant(&sys, Percentage(100));
+    let invariant = init_invariant(&sys, Percentage(U128::from(100)));
 
     let token_0 = ActorId::from([0x01; 32]);
     let token_1 = ActorId::from([0x02; 32]);
@@ -211,7 +211,7 @@ fn test_create_pool_init_sqrt_price_minimal_difference_from_tick() {
     res.assert_single_event().assert_empty().assert_to(ADMIN);
 
     let init_tick = 0;
-    let init_sqrt_price = calculate_sqrt_price(init_tick).unwrap() + SqrtPrice::new(1);
+    let init_sqrt_price = calculate_sqrt_price(init_tick).unwrap() + SqrtPrice::new(U128::from(1));
 
     let res = create_pool(
         &invariant,
@@ -239,7 +239,7 @@ fn test_create_pool_init_sqrt_price_has_closer_init_tick() {
     let sys = System::new();
     sys.init_logger();
 
-    let invariant = init_invariant(&sys, Percentage(100));
+    let invariant = init_invariant(&sys, Percentage(U128::from(100)));
 
     let token_0 = ActorId::from([0x01; 32]);
     let token_1 = ActorId::from([0x02; 32]);
@@ -250,7 +250,7 @@ fn test_create_pool_init_sqrt_price_has_closer_init_tick() {
     res.assert_single_event().assert_empty().assert_to(ADMIN);
 
     let init_tick = 2;
-    let init_sqrt_price = SqrtPrice::new(1000175003749000000000000);
+    let init_sqrt_price = SqrtPrice::new(U128::from(1000175003749000000000000u128));
 
     let res = create_pool(
         &invariant,
@@ -290,7 +290,7 @@ fn test_create_pool_init_sqrt_price_has_closer_init_tick_spacing_over_one() {
     let sys = System::new();
     sys.init_logger();
 
-    let invariant = init_invariant(&sys, Percentage(100));
+    let invariant = init_invariant(&sys, Percentage(U128::from(100)));
 
     let token_0 = ActorId::from([0x01; 32]);
     let token_1 = ActorId::from([0x02; 32]);
@@ -301,7 +301,7 @@ fn test_create_pool_init_sqrt_price_has_closer_init_tick_spacing_over_one() {
     res.assert_single_event().assert_empty().assert_to(ADMIN);
 
     let init_tick = 0;
-    let init_sqrt_price = SqrtPrice::new(1000225003749000000000000);
+    let init_sqrt_price = SqrtPrice::new(U128::from(1000225003749000000000000u128));
 
     let res = create_pool(
         &invariant,

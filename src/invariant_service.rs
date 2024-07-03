@@ -224,7 +224,7 @@ where
             let current_block_number = exec::block_height() as u64;
 
             // liquidity delta = 0 => return
-            if liquidity_delta == Liquidity::new(0) {
+            if liquidity_delta == Liquidity::new(U256::from(0)) {
                 return Err(InvariantError::ZeroLiquidity);
             }
 
@@ -509,9 +509,9 @@ where
             let SwapHop { pool_key, x_to_y } = *swap;
 
             let sqrt_price_limit = if x_to_y {
-                SqrtPrice::new(MIN_SQRT_PRICE)
+                SqrtPrice::new(MIN_SQRT_PRICE.into())
             } else {
-                SqrtPrice::new(MAX_SQRT_PRICE)
+                SqrtPrice::new(MAX_SQRT_PRICE.into())
             };
 
             let result = invariant.calculate_swap(
@@ -716,7 +716,7 @@ where
 
             let amount_x = if let Err(e) = amount_x {
                 if e == InvariantError::NoBalanceForTheToken && token_x.1.is_none() {
-                    TokenAmount(0)
+                    TokenAmount::new(U256::from(0))
                 } else {
                     return Err(e);
                 }
@@ -726,7 +726,7 @@ where
 
             let amount_y = if let Err(e) = amount_y {
                 if e == InvariantError::NoBalanceForTheToken && token_y.1.is_none() {
-                    TokenAmount(0)
+                    TokenAmount::new(U256::from(0))
                 } else {
                     return Err(e);
                 }
@@ -890,7 +890,7 @@ where
         amount: TokenAmount,
         transfer_type: TransferType,
     ) -> Result<CodecMessageFuture<TokenTransferResponse>, InvariantError> {
-        if amount == TokenAmount(0) {
+        if amount == TokenAmount::new(U256::from(0)) {
             return Err(InvariantError::TransferError);
         }
         if from == to {
@@ -905,7 +905,7 @@ where
             action,
             from.encode(),
             to.encode(),
-            [amount.get(), 0u128].encode(),
+            amount.encode(),
         ]
         .concat();
 

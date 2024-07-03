@@ -50,8 +50,8 @@ fn test_interaction_with_pool_on_removed_fee_tier() {
     let (claimed_x, claimed_y) =
         claim_fee(&invariant, REGULAR_USER_1, 0, None::<InvariantError>).unwrap();
 
-    assert_eq!(claimed_x, TokenAmount(5));
-    assert_eq!(claimed_y, TokenAmount(0));
+    assert_eq!(claimed_x, TokenAmount::new(U256::from(5)));
+    assert_eq!(claimed_y, TokenAmount::new(U256::from(0)));
 
     // Change fee receiver
     change_fee_receiver(&invariant, ADMIN, pool_key, REGULAR_USER_1.into()).assert_success();

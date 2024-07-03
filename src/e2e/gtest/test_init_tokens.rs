@@ -1,3 +1,4 @@
+use decimal::*;
 use crate::test_helpers::gtest::consts::*;
 use crate::test_helpers::gtest::*;
 
@@ -8,6 +9,6 @@ fn test_init_tokens() {
     sys.init_logger();
 
     let (token_x, token_y) = init_tokens(&sys);
-    mint(&token_x, REGULAR_USER_1, 1000).assert_success();
-    mint(&token_y, REGULAR_USER_1, 1000).assert_success();
+    mint(&token_x, REGULAR_USER_1, U256::from(1000)).assert_success();
+    mint(&token_y, REGULAR_USER_1, U256::from(1000)).assert_success();
 }

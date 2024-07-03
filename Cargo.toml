@@ -66,7 +66,6 @@ sails-rtl = { git = "https://github.com/gear-tech/sails", rev = "31a3c1a06817b69
 tokio = { version = "1.36", features = ["full"] }
 xshell = "0.2"
 anyhow = "1"
-
 log = "*"
 env_logger = "*"
 primitive-types = { version = "*", default-features = false }

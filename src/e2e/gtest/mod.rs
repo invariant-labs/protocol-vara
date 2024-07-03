@@ -1,13 +1,12 @@
 pub mod add_fee_tier;
 pub mod balances;
-pub mod change_fee_receiver;
 pub mod change_protocol_fee;
+pub mod change_fee_receiver;
 pub mod create_pool;
 pub mod get_pool;
 pub mod get_pools;
 pub mod init;
 pub mod test_init_tokens;
-
 pub mod claim;
 pub mod cross;
 pub mod cross_both_sides;

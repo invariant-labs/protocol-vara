@@ -1,7 +1,7 @@
 use sails_rtl::{Decode, Encode, TypeInfo, ActorId};
 use crate::{InvariantError, FeeTier};
 use math::percentage::Percentage;
-use decimal::Decimal;
+use decimal::*;
 
 #[derive(Decode, Encode, TypeInfo, PartialEq, Eq, Clone, Copy, Debug, Hash)]
 #[codec(crate = gstd::codec)]
@@ -18,7 +18,7 @@ impl Default for PoolKey {
           token_x: ActorId::from([0; 32]),
           token_y: ActorId::from([1; 32]),
           fee_tier: FeeTier {
-              fee: Percentage::new(0),
+              fee: Percentage::new(U128::from(0)),
               tick_spacing: 1,
           },
       }

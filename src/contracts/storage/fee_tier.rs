@@ -14,7 +14,7 @@ pub struct FeeTier {
 impl Default for FeeTier {
     fn default() -> Self {
         Self {
-            fee: Percentage::new(0),
+            fee: Percentage::new(U128::from(0)),
             tick_spacing: 1,
         }
     }

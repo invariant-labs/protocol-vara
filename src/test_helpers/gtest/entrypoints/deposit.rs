@@ -1,4 +1,5 @@
 use contracts::{InvariantError, PoolKey};
+use decimal::U256;
 use gtest::*;
 use io::*;
 use math::{sqrt_price::SqrtPrice, token_amount::TokenAmount};
@@ -11,7 +12,7 @@ pub fn deposit_single_token(
     invariant: &Program,
     from: u64,
     token: impl Into<ActorId>,
-    amount: u128,
+    amount: U256,
     expected_error: Option<impl Into<String>>,
 ) -> Option<TokenAmount> {
     let res = send_request!(
@@ -44,9 +45,9 @@ pub fn deposit_token_pair(
     invariant: &Program,
     from: u64,
     token_x: impl Into<ActorId>,
-    token_x_amount: u128,
+    token_x_amount: U256,
     token_y: impl Into<ActorId>,
-    token_y_amount: u128,
+    token_y_amount: U256,
     expected_error: Option<impl Into<String>>,
 ) -> Option<(TokenAmount, TokenAmount)> {
     let res = send_request!(

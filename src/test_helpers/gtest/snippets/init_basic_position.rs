@@ -22,7 +22,7 @@ pub fn init_basic_position(
         tick_spacing: 10,
     };
 
-    let mint_amount = 10u128.pow(10);
+    let mint_amount = U256::from(10u128.pow(10));
     mint(&token_x_program, REGULAR_USER_1, mint_amount).assert_success();
     mint(&token_y_program, REGULAR_USER_1, mint_amount).assert_success();
 
@@ -92,11 +92,11 @@ pub fn init_basic_position(
             liquidity,
             lower_tick_index: lower_tick,
             upper_tick_index: upper_tick,
-            fee_growth_inside_x: FeeGrowth::new(0),
-            fee_growth_inside_y: FeeGrowth::new(0),
+            fee_growth_inside_x: FeeGrowth::new(U128::from(0)),
+            fee_growth_inside_y: FeeGrowth::new(U128::from(0)),
             last_block_number: sys.block_height() as u64,
-            tokens_owed_x: TokenAmount(0),
-            tokens_owed_y: TokenAmount(0),
+            tokens_owed_x: TokenAmount::new(U256::from(0)),
+            tokens_owed_y: TokenAmount::new(U256::from(0)),
         });
 
     let pool_after = get_pool(&invariant, token_x, token_y, fee_tier).unwrap();

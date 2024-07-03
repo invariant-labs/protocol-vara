@@ -38,22 +38,22 @@ fn test_protocol_fee() {
 
     let amount_x = balance_of(&token_x_program, ADMIN);
     let amount_y = balance_of(&token_y_program, ADMIN);
-    assert_eq!(amount_x, 1);
-    assert_eq!(amount_y, 0);
+    assert_eq!(amount_x, U256::from(1));
+    assert_eq!(amount_y, U256::from(0));
 
     let amount_x = balance_of(&token_x_program, INVARIANT_ID);
     let amount_y = balance_of(&token_y_program, INVARIANT_ID);
-    assert_eq!(amount_x, 1499);
-    assert_eq!(amount_y, 7);
+    assert_eq!(amount_x, U256::from(1499));
+    assert_eq!(amount_y, U256::from(7));
 
     let pool_after_withdraw = get_pool(&invariant, token_x, token_y, fee_tier).unwrap();
     assert_eq!(
         pool_after_withdraw.fee_protocol_token_x,
-        TokenAmount::new(0)
+        TokenAmount::new(U256::from(0))
     );
     assert_eq!(
         pool_after_withdraw.fee_protocol_token_y,
-        TokenAmount::new(0)
+        TokenAmount::new(U256::from(0))
     );
 }
 
@@ -119,21 +119,21 @@ fn test_withdraw_fee_not_deployer() {
 
     let amount_x = balance_of(&token_x_program, REGULAR_USER_2);
     let amount_y = balance_of(&token_y_program, REGULAR_USER_2);
-    assert_eq!(amount_x, 1);
-    assert_eq!(amount_y, 993);
+    assert_eq!(amount_x, U256::from(1));
+    assert_eq!(amount_y, U256::from(993));
 
     let amount_x = balance_of(&token_x_program, INVARIANT_ID);
     let amount_y = balance_of(&token_y_program, INVARIANT_ID);
-    assert_eq!(amount_x, 1499);
-    assert_eq!(amount_y, 7);
+    assert_eq!(amount_x, U256::from(1499));
+    assert_eq!(amount_y, U256::from(7));
 
     let pool_after_withdraw = get_pool(&invariant, token_x, token_y, fee_tier).unwrap();
     assert_eq!(
         pool_after_withdraw.fee_protocol_token_x,
-        TokenAmount::new(0)
+        TokenAmount::new(U256::from(0))
     );
     assert_eq!(
         pool_after_withdraw.fee_protocol_token_y,
-        TokenAmount::new(0)
+        TokenAmount::new(U256::from(0))
     );
 }

@@ -18,7 +18,7 @@ pub fn init_cross_position(
         tick_spacing: 10,
     };
 
-    let mint_amount = 10u128.pow(10);
+    let mint_amount = U256::from(10u128.pow(10));
     mint(token_x_program, REGULAR_USER_1, mint_amount).assert_success();
     mint(token_y_program, REGULAR_USER_1, mint_amount).assert_success();
     increase_allowance(token_x_program, REGULAR_USER_1, INVARIANT_ID, mint_amount).assert_success();

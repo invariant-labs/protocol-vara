@@ -50,7 +50,7 @@ mod tests {
     fn test_add() {
         let fee_tier_keys = &mut FeeTiers::default();
         let fee_tier_key = FeeTier::default();
-        let new_fee_tier_key = FeeTier::new(Percentage::new(0), 2).unwrap();
+        let new_fee_tier_key = FeeTier::new(Percentage::new(U128::from(0)), 2).unwrap();
 
         fee_tier_keys.add(&fee_tier_key).unwrap();
         assert!(fee_tier_keys.contains(&fee_tier_key));
@@ -78,7 +78,7 @@ mod tests {
     fn test_get_all() {
         let fee_tier_keys = &mut FeeTiers::default();
         let fee_tier_key = FeeTier::default();
-        let new_fee_tier_key = FeeTier::new(Percentage::new(0), 2).unwrap();
+        let new_fee_tier_key = FeeTier::new(Percentage::new(U128::from(0)), 2).unwrap();
 
         let result = fee_tier_keys.get_all();
         assert_eq!(result, vec![]);

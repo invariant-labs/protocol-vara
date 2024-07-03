@@ -1,6 +1,7 @@
 extern crate alloc;
 
-use crate::{Pool, PoolKey, Tick, InvariantError};
+use crate::{InvariantError, Pool, PoolKey, Tick};
+use decimal::*;
 use math::{
     clamm::*,
     types::{
@@ -11,7 +12,6 @@ use math::{
     },
 };
 use sails_rtl::{Decode, Encode, TypeInfo};
-use decimal::*;
 use traceable_result::*;
 
 #[derive(PartialEq, Eq, Debug, Default, Clone, Copy, Decode, Encode, TypeInfo)]
@@ -48,7 +48,6 @@ impl Position {
 
         // update initialized tick
         lower_tick.update(liquidity_delta, max_liquidity_per_tick, false, add)?;
-
         upper_tick.update(liquidity_delta, max_liquidity_per_tick, true, add)?;
 
         // update fee inside position
@@ -87,7 +86,7 @@ impl Position {
         fee_growth_inside_x: FeeGrowth,
         fee_growth_inside_y: FeeGrowth,
     ) -> TrackableResult<()> {
-        if liquidity_delta.is_zero() && self.liquidity.is_zero() {
+        if liquidity_delta.get() == U256::from(0) && self.liquidity == Liquidity::new(U256::from(0)) {
             return Err(err!("EmptyPositionPokes"));
         }
 
@@ -141,7 +140,7 @@ impl Position {
             pool,
             upper_tick,
             lower_tick,
-            Liquidity::new(0),
+            Liquidity::new(U256::from(0)),
             true,
             current_timestamp,
             self.pool_key.fee_tier.tick_spacing
@@ -150,11 +149,12 @@ impl Position {
         let tokens_owed_x = self.tokens_owed_x;
         let tokens_owed_y = self.tokens_owed_y;
 
-        self.tokens_owed_x = TokenAmount(0);
-        self.tokens_owed_y = TokenAmount(0);
+        self.tokens_owed_x = TokenAmount::new(U256::from(0));
+        self.tokens_owed_y = TokenAmount::new(U256::from(0));
 
         (tokens_owed_x, tokens_owed_y)
     }
+
     #[allow(clippy::too_many_arguments)]
     pub fn create(
         pool: &mut Pool,
@@ -175,14 +175,14 @@ impl Position {
         // init position
         let mut position = Position {
             pool_key,
-            liquidity: Liquidity::new(0),
+            liquidity: Liquidity::new(U256::from(0)),
             lower_tick_index: lower_tick.index,
             upper_tick_index: upper_tick.index,
-            fee_growth_inside_x: FeeGrowth::new(0),
-            fee_growth_inside_y: FeeGrowth::new(0),
+            fee_growth_inside_x: FeeGrowth::new(U128::from(0)),
+            fee_growth_inside_y: FeeGrowth::new(U128::from(0)),
             last_block_number: block_number,
-            tokens_owed_x: TokenAmount::new(0),
-            tokens_owed_y: TokenAmount::new(0),
+            tokens_owed_x: TokenAmount::new(U256::from(0)),
+            tokens_owed_y: TokenAmount::new(U256::from(0)),
         };
 
         let (required_x, required_y) = unwrap!(position.modify(
@@ -279,7 +279,7 @@ mod tests {
                 .calculate_new_liquidity(sign, liquidity_delta)
                 .unwrap();
 
-            assert_eq!(new_liquidity, Liquidity::from_integer(0));
+            assert_eq!(new_liquidity, Liquidity::new(U256::from(0)));
         }
     }
 
@@ -288,7 +288,7 @@ mod tests {
         // Disable empty position pokes error
         {
             let mut position = Position {
-                liquidity: Liquidity::from_integer(0),
+                liquidity: Liquidity::new(U256::from(0)),
                 ..Default::default()
             };
             let sign = true;
@@ -308,11 +308,11 @@ mod tests {
         // zero liquidity fee shouldn't change
         {
             let mut position = Position {
-                liquidity: Liquidity::from_integer(0),
+                liquidity: Liquidity::new(U256::from(0)),
                 fee_growth_inside_x: FeeGrowth::from_integer(4),
                 fee_growth_inside_y: FeeGrowth::from_integer(4),
-                tokens_owed_x: TokenAmount(100),
-                tokens_owed_y: TokenAmount(100),
+                tokens_owed_x: TokenAmount::new(U256::from(100)),
+                tokens_owed_y: TokenAmount::new(U256::from(100)),
                 ..Default::default()
             };
             let sign = true;
@@ -332,8 +332,15 @@ mod tests {
             assert_eq!({ position.liquidity }, Liquidity::from_integer(1));
             assert_eq!({ position.fee_growth_inside_x }, FeeGrowth::from_integer(5));
             assert_eq!({ position.fee_growth_inside_y }, FeeGrowth::from_integer(5));
-            assert_eq!({ position.tokens_owed_x }, TokenAmount(100));
-            assert_eq!({ position.tokens_owed_y }, TokenAmount(100));
+
+            assert_eq!(
+                { position.tokens_owed_x },
+                TokenAmount::new(U256::from(100))
+            );
+            assert_eq!(
+                { position.tokens_owed_y },
+                TokenAmount::new(U256::from(100))
+            );
         }
         // fee should change
         {
@@ -341,8 +348,8 @@ mod tests {
                 liquidity: Liquidity::from_integer(1),
                 fee_growth_inside_x: FeeGrowth::from_integer(4),
                 fee_growth_inside_y: FeeGrowth::from_integer(4),
-                tokens_owed_x: TokenAmount(100),
-                tokens_owed_y: TokenAmount(100),
+                tokens_owed_x: TokenAmount::new(U256::from(100)),
+                tokens_owed_y: TokenAmount::new(U256::from(100)),
                 ..Default::default()
             };
             let sign = true;
@@ -362,17 +369,24 @@ mod tests {
             assert_eq!({ position.liquidity }, Liquidity::from_integer(2));
             assert_eq!({ position.fee_growth_inside_x }, FeeGrowth::from_integer(5));
             assert_eq!({ position.fee_growth_inside_y }, FeeGrowth::from_integer(5));
-            assert_eq!({ position.tokens_owed_x }, TokenAmount(101));
-            assert_eq!({ position.tokens_owed_y }, TokenAmount(101));
+
+            assert_eq!(
+                { position.tokens_owed_x },
+                TokenAmount::new(U256::from(101))
+            );
+            assert_eq!(
+                { position.tokens_owed_y },
+                TokenAmount::new(U256::from(101))
+            );
         }
         // previous fee_growth_inside close to max and current close to 0
         {
             let mut position = Position {
                 liquidity: Liquidity::from_integer(1),
-                fee_growth_inside_x: FeeGrowth::new(u128::MAX) - FeeGrowth::from_integer(10),
-                fee_growth_inside_y: FeeGrowth::new(u128::MAX) - FeeGrowth::from_integer(10),
-                tokens_owed_x: TokenAmount(100),
-                tokens_owed_y: TokenAmount(100),
+                fee_growth_inside_x: FeeGrowth::new(U128::MAX) - FeeGrowth::from_integer(10),
+                fee_growth_inside_y: FeeGrowth::new(U128::MAX) - FeeGrowth::from_integer(10),
+                tokens_owed_x: TokenAmount::new(U256::from(100)),
+                tokens_owed_y: TokenAmount::new(U256::from(100)),
                 ..Default::default()
             };
             let sign = true;
@@ -398,8 +412,14 @@ mod tests {
                 { position.fee_growth_inside_y },
                 FeeGrowth::from_integer(10)
             );
-            assert_eq!({ position.tokens_owed_x }, TokenAmount(120));
-            assert_eq!({ position.tokens_owed_y }, TokenAmount(120));
+            assert_eq!(
+                { position.tokens_owed_x },
+                TokenAmount::new(U256::from(120))
+            );
+            assert_eq!(
+                { position.tokens_owed_y },
+                TokenAmount::new(U256::from(120))
+            );
         }
     }
 
@@ -409,10 +429,10 @@ mod tests {
         {
             let mut position = Position {
                 liquidity: Liquidity::from_integer(123),
-                fee_growth_inside_x: FeeGrowth::new(u128::MAX) - FeeGrowth::from_integer(1234),
-                fee_growth_inside_y: FeeGrowth::new(u128::MAX) - FeeGrowth::from_integer(1234),
-                tokens_owed_x: TokenAmount(0),
-                tokens_owed_y: TokenAmount(0),
+                fee_growth_inside_x: FeeGrowth::new(U128::MAX) - FeeGrowth::from_integer(1234),
+                fee_growth_inside_y: FeeGrowth::new(U128::MAX) - FeeGrowth::from_integer(1234),
+                tokens_owed_x: TokenAmount::new(U256::from(0)),
+                tokens_owed_y: TokenAmount::new(U256::from(0)),
                 ..Default::default()
             };
             let mut pool = Pool {
@@ -435,7 +455,7 @@ mod tests {
                 liquidity_gross: Liquidity::from_integer(123),
                 ..Default::default()
             };
-            let liquidity_delta = Liquidity::new(0);
+            let liquidity_delta = Liquidity::new(U256::from(0));
             let add = true;
             let current_timestamp: u64 = 1234567890;
 
@@ -451,7 +471,10 @@ mod tests {
                 )
                 .unwrap();
 
-            assert_eq!({ position.tokens_owed_x }, TokenAmount(151167));
+            assert_eq!(
+                { position.tokens_owed_x },
+                TokenAmount::new(U256::from(151167))
+            );
         }
     }
 }

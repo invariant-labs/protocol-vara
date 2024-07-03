@@ -45,7 +45,7 @@ fn test_add_multiple_positions() {
     let sys = System::new();
     let invariant = init_invariant(&sys, Percentage::from_scale(6, 3));
 
-    let initial_amount = 10u128.pow(10);
+    let initial_amount = U256::from( 10u128.pow(10));
     let (token_x_program, token_y_program) =
         init_tokens_with_mint(&sys, (initial_amount, initial_amount));
     let token_x = ActorId::from(TOKEN_X_ID);
@@ -229,7 +229,7 @@ fn test_only_owner_can_modify_position_list() {
     let sys = System::new();
     let invariant = init_invariant(&sys, Percentage::from_scale(6, 3));
 
-    let initial_amount = 10u128.pow(10);
+    let initial_amount = U256::from( 10u128.pow(10));
     let (token_x_program, token_y_program) =
         init_tokens_with_mint(&sys, (initial_amount, initial_amount));
     let token_x = ActorId::from(TOKEN_X_ID);
@@ -381,7 +381,7 @@ fn test_transfer_position_ownership() {
     let sys = System::new();
     let invariant = init_invariant(&sys, Percentage::from_scale(6, 3));
 
-    let initial_amount = 10u128.pow(10);
+    let initial_amount = U256::from( 10u128.pow(10));
     let (token_x_program, token_y_program) =
         init_tokens_with_mint(&sys, (initial_amount, initial_amount));
     let token_x = ActorId::from(TOKEN_X_ID);
@@ -704,7 +704,7 @@ fn test_only_owner_can_transfer_position() {
     let sys = System::new();
     let invariant = init_invariant(&sys, Percentage::from_scale(6, 3));
 
-    let initial_amount = 10u128.pow(10);
+    let initial_amount = U256::from( 10u128.pow(10));
     let (token_x_program, token_y_program) =
         init_tokens_with_mint(&sys, (initial_amount, initial_amount));
     let token_x = ActorId::from(TOKEN_X_ID);
@@ -840,7 +840,7 @@ fn test_multiple_positions_on_same_tick() {
     let sys = System::new();
     let invariant = init_invariant(&sys, Percentage::from_scale(6, 3));
 
-    let initial_amount = 10u128.pow(8);
+    let initial_amount = U256::from( 10u128.pow(8));
     let (token_x_program, token_y_program) =
         init_tokens_with_mint(&sys, (initial_amount, initial_amount));
     let token_x = ActorId::from(TOKEN_X_ID);
@@ -896,7 +896,7 @@ fn test_multiple_positions_on_same_tick() {
     let lower_tick_index = -10;
     let upper_tick_index = 10;
 
-    let liquidity_delta = Liquidity::new(100);
+    let liquidity_delta = Liquidity::new(U256::from(100));
 
     let pool_state = get_pool(&invariant, token_x, token_y, fee_tier).unwrap();
 
@@ -965,7 +965,7 @@ fn test_multiple_positions_on_same_tick() {
     let upper_tick = get_tick(&invariant, pool_key, upper_tick_index).unwrap();
 
     let expected_liquidity = Liquidity::new(liquidity_delta.get() * 3);
-    let zero_fee = FeeGrowth::new(0);
+    let zero_fee = FeeGrowth::new(U128::from(0));
 
     // Check ticks
     assert_eq!(lower_tick.index, lower_tick_index);
@@ -1007,8 +1007,8 @@ fn test_multiple_positions_on_same_tick() {
 
     let lower_tick_index = -10;
     let upper_tick_index = 10;
-    let zero_fee = FeeGrowth::new(0);
-    let liquidity_delta = Liquidity::new(100);
+    let zero_fee = FeeGrowth::new(U128::from(0));
+    let liquidity_delta = Liquidity::new(U256::from(100));
 
     let pool_state = get_pool(&invariant, token_x, token_y, fee_tier).unwrap();
 
@@ -1095,33 +1095,33 @@ fn test_multiple_positions_on_same_tick() {
     let tick_10_bit = is_tick_initialized(&invariant, pool_key, 10);
     let tick_20_bit = is_tick_initialized(&invariant, pool_key, 20);
 
-    let expected_active_liquidity = Liquidity::new(400);
+    let expected_active_liquidity = Liquidity::new(U256::from(400));
 
     // Check tick -20
     assert_eq!(tick_n20.index, -20);
-    assert_eq!(tick_n20.liquidity_gross, Liquidity::new(100));
-    assert_eq!(tick_n20.liquidity_change, Liquidity::new(100));
+    assert_eq!(tick_n20.liquidity_gross, Liquidity::new(U256::from(100)));
+    assert_eq!(tick_n20.liquidity_change, Liquidity::new(U256::from(100)));
     assert!(tick_n20.sign);
     assert!(tick_n20_bit);
 
     // Check tick -10
     assert_eq!(tick_n10.index, -10);
-    assert_eq!(tick_n10.liquidity_gross, Liquidity::new(500));
-    assert_eq!(tick_n10.liquidity_change, Liquidity::new(300));
+    assert_eq!(tick_n10.liquidity_gross, Liquidity::new(U256::from(500)));
+    assert_eq!(tick_n10.liquidity_change, Liquidity::new(U256::from(300)));
     assert!(tick_n10.sign);
     assert!(tick_n10_bit);
 
     // Check tick 10
     assert_eq!(tick_10.index, 10);
-    assert_eq!(tick_10.liquidity_gross, Liquidity::new(500));
-    assert_eq!(tick_10.liquidity_change, Liquidity::new(300));
+    assert_eq!(tick_10.liquidity_gross, Liquidity::new(U256::from(500)));
+    assert_eq!(tick_10.liquidity_change, Liquidity::new(U256::from(300)));
     assert!(!tick_10.sign);
     assert!(tick_10_bit);
 
     // Check tick 20
     assert_eq!(tick_20.index, 20);
-    assert_eq!(tick_20.liquidity_gross, Liquidity::new(100));
-    assert_eq!(tick_20.liquidity_change, Liquidity::new(100));
+    assert_eq!(tick_20.liquidity_gross, Liquidity::new(U256::from(100)));
+    assert_eq!(tick_20.liquidity_change, Liquidity::new(U256::from(100)));
     assert!(!tick_20.sign);
     assert!(tick_20_bit);
 
