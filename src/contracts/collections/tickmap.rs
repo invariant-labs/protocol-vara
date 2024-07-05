@@ -1,8 +1,7 @@
 use crate::{InvariantError, PoolKey};
 use sails_rtl::collections::HashMap;
 use math::{
-    types::sqrt_price::{calculate_sqrt_price, get_max_tick, SqrtPrice},
-    MAX_TICK,
+    sqrt_price::get_min_tick, types::sqrt_price::{calculate_sqrt_price, get_max_tick, SqrtPrice}, MAX_TICK
 };
 
 pub const TICK_SEARCH_RANGE: i32 = 256;
@@ -18,6 +17,13 @@ pub fn get_max_chunk(tick_spacing: u16) -> u16 {
     let max_bitmap_index = (max_tick + MAX_TICK) / tick_spacing as i32;
     let max_chunk_index = max_bitmap_index / CHUNK_SIZE;
     max_chunk_index as u16
+}
+
+pub fn get_min_chunk(tick_spacing: u16) -> u16 {
+    let min_tick = get_min_tick(tick_spacing);
+    let min_bitmap_index = (MAX_TICK + min_tick) / tick_spacing as i32;
+    let min_chunk_index = min_bitmap_index / CHUNK_SIZE;
+    min_chunk_index as u16
 }
 
 pub fn tick_to_position(tick: i32, tick_spacing: u16) -> (u16, u8) {

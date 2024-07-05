@@ -47,7 +47,8 @@ import {
   Pool,
   PoolKey,
   Position,
-  Tick
+  Tick,
+  LiquidityTick
 } from './schema.js'
 export type Signer = string | IKeyringPair
 export type ActorId = Uint8Array | HexString
@@ -117,6 +118,10 @@ const convertFieldsToBigInt = (returnedObject: any, exclude?: string[]): any => 
 
 export const convertTick = (tick: any): Tick => {
   return convertFieldsToBigInt(tick)
+}
+
+export const convertLiquidityTick = (tick: any): LiquidityTick => {
+  return convertTick(tick)
 }
 
 export const convertFeeTier = (feeTier: any): FeeTier => {

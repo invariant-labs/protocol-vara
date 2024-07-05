@@ -24,6 +24,12 @@ construct_uint! {
     pub struct U192T(3);
 }
 
+impl From<U384T> for U448T {
+    fn from(n: U384T) -> Self {
+        U448T([n.0[0], n.0[1], n.0[2], n.0[3], n.0[4], n.0[5], 0])
+    }
+}
+
 #[cfg(feature = "invariant-wasm")]
 pub mod invariant_wasm {
     use alloc::string::{String, ToString};
