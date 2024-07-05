@@ -37,7 +37,8 @@ import {
   TokenAmount,
   InvariantEvent,
   QuoteResult,
-  LiquidityTick
+  LiquidityTick,
+  Tickmap
 } from './schema.js'
 import { getServiceNamePrefix, ZERO_ADDRESS, getFnNamePrefix } from 'sails-js'
 
@@ -191,13 +192,15 @@ export class Invariant {
     )
   }
 
-  async getTickmap(key: PoolKey): Promise<Map<bigint, bigint>> {
-    return new Map(
-      (await this.contract.service.getTickmap(key as any, DEFAULT_ADDRESS)).map(val => [
-        BigInt(val[0]),
-        BigInt(val[1])
-      ])
-    )
+  async getTickmap(key: PoolKey): Promise<Tickmap> {
+    return {
+      bitmap: new Map(
+        (await this.contract.service.getTickmap(key as any, DEFAULT_ADDRESS)).map(val => [
+          BigInt(val[0]),
+          BigInt(val[1])
+        ])
+      )
+    }
   }
 
   async getLiquidityTicks(key: PoolKey): Promise<LiquidityTick[]> {

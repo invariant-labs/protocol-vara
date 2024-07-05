@@ -5,7 +5,8 @@ import {
   newPoolKey,
   subscribeToNewHeads,
   toPercentage,
-  toSqrtPrice
+  toSqrtPrice,
+  
 } from '../src/utils.js'
 import { GearKeyring, HexString } from '@gear-js/api'
 import { Network } from '../src/consts'
@@ -22,7 +23,7 @@ import {
   SwapEvent
 } from '../src/schema'
 import { decodeAddress } from '@gear-js/api'
-import { getGlobalMinSqrtPrice } from 'invariant-vara-wasm'
+import { getGlobalMinSqrtPrice  } from 'invariant-vara-wasm'
 
 const api = await initGearApi({ providerAddress: Network.Local })
 const admin = await GearKeyring.fromSuri('//Alice')

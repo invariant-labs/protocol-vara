@@ -19,7 +19,7 @@ extern "C" {
     pub fn log_many(a: &str, b: &str);
 }
 // run once in js for debugging purposes
-#[wasm_bindgen]
+#[wasm_bindgen(js_name = "_initPanicHook")]
 pub fn init_panic_hook() {
   console_error_panic_hook::set_once();
 }

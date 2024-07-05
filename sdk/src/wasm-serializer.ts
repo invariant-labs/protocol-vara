@@ -15,7 +15,8 @@ import {
   LiquidityTick,
   LiquidityResult,
   AmountDeltaResult,
-  CalculateSwapResult
+  CalculateSwapResult,
+  SimulateSwapResult
 } from './schema.js'
 
 export const decodeU256FromU64Array = (value: string): bigint => {
@@ -53,7 +54,6 @@ export const decodeSqrtPrice = decodeU128FromU64Array;
 
 export const decodeLiquidity = decodeU256FromU64Array;
 export const decodeTokenAmount = decodeU256FromU64Array;
-
 
 export const encodeTick = (value: Tick) => {
   value.feeGrowthOutsideX = encodeFeeGrowth(value.feeGrowthOutsideX) as any
@@ -180,6 +180,15 @@ export const encodeFeeTier = (value: FeeTier) => {
   return value
 }
 
+export const encodeSimulateSwapResult = (value: SimulateSwapResult) => {
+  value.startSqrtPrice = encodeSqrtPrice(value.startSqrtPrice)  as any
+  value.targetSqrtPrice = encodeSqrtPrice(value.targetSqrtPrice)  as any
+  value.amountIn = encodeTokenAmount(value.amountIn) as any
+  value.amountOut = encodeTokenAmount(value.amountOut) as any
+  value.fee = encodeTokenAmount(value.fee) as any
+  value.crossedTicks = value.crossedTicks.map(encodeLiquidityTick)
+  return value
+}
 
 export const decodeTick = (value: Tick) => {
   value.feeGrowthOutsideX = decodeFeeGrowth(value.feeGrowthOutsideX as any)
@@ -303,5 +312,15 @@ export const decodePosition = (value: Position) => {
 
 export const decodeFeeTier = (value: FeeTier) => {
   value.fee = decodePercentage(value.fee as any)
+  return value
+}
+
+export const decodeSimulateSwapResult = (value: SimulateSwapResult) => {
+  value.startSqrtPrice = decodeSqrtPrice(value.startSqrtPrice as any)
+  value.targetSqrtPrice = decodeSqrtPrice(value.targetSqrtPrice as any)
+  value.amountIn = decodeTokenAmount(value.amountIn as any)
+  value.amountOut = decodeTokenAmount(value.amountOut as any)
+  value.fee = decodeTokenAmount(value.fee as any)
+  value.crossedTicks = value.crossedTicks.map(decodeLiquidityTick)
   return value
 }

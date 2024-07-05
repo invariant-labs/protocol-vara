@@ -1,14 +1,14 @@
-use alloc::vec::Vec;
 use crate::consts::*;
 use crate::types::{liquidity::*, percentage::*, sqrt_price::*, token_amount::*};
+use crate::{Pool, Tick};
+use alloc::vec::Vec;
+use decimal::*;
 use js_sys::BigInt;
 use serde::{Deserialize, Serialize};
 use traceable_result::*;
 use tsify::Tsify;
 use wasm_bindgen::prelude::*;
 use wasm_wrapper::*;
-use crate::{Pool, Tick};
-use decimal::*;
 
 #[derive(PartialEq, Eq, Debug, Copy, Clone, Serialize, Deserialize, Tsify)]
 #[tsify(into_wasm_abi, from_wasm_abi)]
@@ -265,16 +265,29 @@ pub fn get_next_sqrt_price_x_up(
     let price_delta = ok_or_mark_trace!(SqrtPrice::checked_from_decimal_to_value(liquidity)
         .map_err(|_| err!("extending liquidity overflow")))?;
 
-    let denominator = TokenAmount::from_value(ok_or_mark_trace!(match add_x {
-        true => price_delta.checked_add(starting_sqrt_price.big_mul_to_value(x)),
-        false => price_delta.checked_sub(starting_sqrt_price.big_mul_to_value(x)),
-    }
-    .ok_or_else(|| err!("big_liquidity -/+ sqrt_price * x")))?); // never should be triggered
+    let denominator = match add_x {
+        true => price_delta
+            .checked_add(starting_sqrt_price.big_mul_to_value(x))
+            .unwrap_or(MAX_SQRT_PRICE.into()),
+        false => price_delta
+            .checked_sub(starting_sqrt_price.big_mul_to_value(x))
+            .unwrap_or(MIN_SQRT_PRICE.into()),
+    };
 
-    ok_or_mark_trace!(SqrtPrice::checked_big_div_values_up(
+    let raw_result = SqrtPrice::checked_big_div_values_up(
         TokenAmount::from_value(starting_sqrt_price.big_mul_to_value_up(liquidity)),
-        denominator
-    ))
+        U448T::from(denominator),
+    );
+
+    let result = raw_result.unwrap_or_else(|_| {
+        SqrtPrice::new(if add_x {
+            MIN_SQRT_PRICE.into()
+        } else {
+            MAX_SQRT_PRICE.into()
+        })
+    });
+
+    Ok(result)
 }
 
 #[wasm_wrapper]
@@ -294,15 +307,21 @@ fn get_next_sqrt_price_y_down(
             .map_err(|_| err!("extending liquidity overflow"))?,
     );
 
-    if add_y {
-        let quotient =
-            ok_or_mark_trace!(SqrtPrice::checked_big_div_values(numerator, denominator))?;
-        from_result!(starting_sqrt_price.checked_add(quotient))
+    let raw_result = if add_y {
+        let quotient = SqrtPrice::checked_big_div_values(numerator, denominator)
+            .unwrap_or(SqrtPrice::new(MAX_SQRT_PRICE.into()));
+        starting_sqrt_price
+            .checked_add(quotient)
+            .unwrap_or(SqrtPrice::new(MAX_SQRT_PRICE.into()))
     } else {
-        let quotient =
-            ok_or_mark_trace!(SqrtPrice::checked_big_div_values_up(numerator, denominator))?;
-        from_result!(starting_sqrt_price.checked_sub(quotient))
-    }
+        let quotient = SqrtPrice::checked_big_div_values_up(numerator, denominator)
+            .unwrap_or(SqrtPrice::new(MAX_SQRT_PRICE.into()));
+        starting_sqrt_price
+            .checked_sub(quotient)
+            .unwrap_or(SqrtPrice::new(MIN_SQRT_PRICE.into()))
+    };
+
+    Ok(raw_result)
 }
 
 #[wasm_wrapper]
@@ -396,7 +415,7 @@ pub fn check_ticks(tick_lower: i32, tick_upper: i32, tick_spacing: u16) -> Track
 
 #[wasm_wrapper]
 pub fn check_tick(tick_index: i32, tick_spacing: u16) -> TrackableResult<()> {
-    let (min_tick, max_tick) = (get_min_tick(tick_spacing), get_max_tick(tick_spacing));
+    let (min_tick, max_tick) = (get_min_tick(tick_spacing)?, get_max_tick(tick_spacing)?);
     let tick_spacing = tick_spacing as i32;
     if tick_index % tick_spacing != 0 {
         return Err(err!("InvalidTickSpacing"));

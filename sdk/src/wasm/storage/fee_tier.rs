@@ -13,7 +13,8 @@ use wasm_bindgen::prelude::*;
 pub struct FeeTier {
     #[tsify(type = "bigint")]
     pub fee: Percentage,
-    pub tick_spacing: u16,
+    #[tsify(type = "bigint")]
+    pub tick_spacing: u64,
 }
 impl FeeTier {
     pub fn new(fee: Percentage, tick_spacing: u16) -> Result<Self, InvariantError> {
@@ -25,7 +26,7 @@ impl FeeTier {
             return Err(InvariantError::InvalidFee);
         }
 
-        Ok(Self { fee, tick_spacing })
+        Ok(Self { fee, tick_spacing: tick_spacing as u64})
     }
 }
 

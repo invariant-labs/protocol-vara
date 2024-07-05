@@ -26,7 +26,9 @@ export {
   SwapResult,
   TokenAmounts,
   _calculateFeeResult,
-  calculateAmountDeltaResult
+  calculateAmountDeltaResult,
+  Tickmap,
+  SimulateSwapResult,
 } from 'invariant-vara-wasm'
 
 export enum InvariantEvent {

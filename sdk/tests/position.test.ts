@@ -70,7 +70,7 @@ describe('position', async function () {
       }
     })
     invariant.on({
-      ident: InvariantEvent.PositionCreatedEvent,
+      ident: InvariantEvent.PositionRemovedEvent,
       callback: event => {
         removeEvent = event
       }

@@ -85,14 +85,14 @@ pub fn is_token_x(token_candidate: String, token_to_compare: String) -> Trackabl
     Ok(token_candidate < token_to_compare)
 }
 
-#[wasm_wrapper("isValidTick")]
+#[wasm_wrapper("_isValidTick")]
 pub fn check_tick_to_sqrt_price_relationship(
     tick_index: i32,
     tick_spacing: u16,
     sqrt_price: SqrtPrice,
 ) -> TrackableResult<bool> {
     if tick_index + tick_spacing as i32 > MAX_TICK {
-        let max_tick = get_max_tick(tick_spacing);
+        let max_tick = get_max_tick(tick_spacing)?;
         let max_sqrt_price = ok_or_mark_trace!(SqrtPrice::from_tick(max_tick))?;
         if sqrt_price != max_sqrt_price {
             return Ok(false);
