@@ -30,7 +30,7 @@ pub fn get_tick_search_range() -> i32 {
     TICK_SEARCH_RANGE
 }
 
-#[wasm_wrapper]
+#[wasm_wrapper("_getMaxChunk")]
 pub fn get_max_chunk(tick_spacing: u16) -> TrackableResult<u16> {
     let max_tick = get_max_tick(tick_spacing)?;
     let max_bitmap_index = (max_tick + MAX_TICK) / tick_spacing as i32;

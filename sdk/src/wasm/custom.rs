@@ -80,7 +80,7 @@ pub fn calculate_fee(
     Ok((tokens_owed_x, tokens_owed_y))
 }
 
-#[wasm_wrapper]
+#[wasm_wrapper("_isTokenX")]
 pub fn is_token_x(token_candidate: String, token_to_compare: String) -> TrackableResult<bool> {
     Ok(token_candidate < token_to_compare)
 }

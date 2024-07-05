@@ -6,7 +6,7 @@ import {
   PositionTick,
   QuoteResult,
   Tick,
-  calculateAmountDeltaResult,
+  _calculateAmountDeltaResult,
   _calculateFeeResult,
   TokenAmounts,
   SwapResult,
@@ -152,7 +152,7 @@ export const encodeCalculateSwapResult = (value: CalculateSwapResult) => {
   return value
 }
 
-export const encodeCalculateAmountDeltaResult = (value: calculateAmountDeltaResult) => {
+export const encodeCalculateAmountDeltaResult = (value: _calculateAmountDeltaResult) => {
   value[0] = encodeTokenAmount(value[0]) as any
   value[1] = encodeTokenAmount(value[1]) as any
 
@@ -289,7 +289,7 @@ export const decodeCalculateSwapResult = (value: CalculateSwapResult) => {
   return value
 }
 
-export const decodeCalculateAmountDeltaResult = (value: calculateAmountDeltaResult) => {
+export const decodeCalculateAmountDeltaResult = (value: _calculateAmountDeltaResult) => {
   value[0] = decodeTokenAmount(value[0] as any)
   value[1] = decodeTokenAmount(value[1] as any)
   return value
@@ -312,6 +312,7 @@ export const decodePosition = (value: Position) => {
 
 export const decodeFeeTier = (value: FeeTier) => {
   value.fee = decodePercentage(value.fee as any)
+  value.tickSpacing = BigInt(value.tickSpacing)
   return value
 }
 

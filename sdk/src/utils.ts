@@ -7,29 +7,29 @@ import {
   _calculateFee,
   _newFeeTier,
   _newPoolKey,
-  calculateAmountDelta as _calculateAmountDelta,
-  calculateAmountDeltaResult as calculateAmountDeltaResult,
-  getLiquidityByX as _getLiquidityByX,
-  getLiquidityByY as _getLiquidityByY,
-  calculateTick as _calculateTick,
-  isTokenX as _isTokenX,
+  _calculateAmountDelta,
+  _getLiquidityByX,
+  _getLiquidityByY,
+  _calculateTick,
+  _isTokenX,
   getPercentageDenominator,
   getSqrtPriceDenominator,
-  getMinSqrtPrice as _getMinSqrtPrice,
-  getMinTick as _getMinTick,
-  getMaxChunk as _getMaxChunk,
-  getMaxSqrtPrice as _getMaxSqrtPrice,
-  getMaxTick as _getMaxTick,
-  toFeeGrowth as _toFeeGrowth,
-  toFixedPoint as _toFixedPoint,
-  toLiquidity as _toLiquidity,
-  toPercentage as _toPercentage,
-  toPrice as _toPrice,
-  toSecondsPerLiquidity as _toSecondsPerLiquidity,
-  toSqrtPrice as _toSqrtPrice,
-  toTokenAmount as _toTokenAmount,
-  simulateInvariantSwap as _simulateInvariantSwap,
-  tickIndexToPosition
+  _getMinSqrtPrice,
+  _getMinTick,
+  _getMaxChunk,
+  _getMaxSqrtPrice,
+  _getMaxTick,
+  _toFeeGrowth,
+  _toFixedPoint,
+  _toLiquidity,
+  _toPercentage,
+  _toPrice,
+  _toSecondsPerLiquidity,
+  _toSqrtPrice,
+  _toTokenAmount,
+  _simulateInvariantSwap,
+  tickIndexToPosition,
+  _positionToTick
 } from 'invariant-vara-wasm'
 
 import { TypeRegistry } from '@polkadot/types'
@@ -52,7 +52,7 @@ import {
   Tick,
   LiquidityTick,
   Tickmap,
-  SimulateSwapResult
+  _calculateAmountDeltaResult
 } from './schema.js'
 import { MAX_TICK_CROSS } from './consts.js'
 export type Signer = string | IKeyringPair
@@ -391,7 +391,7 @@ export const delay = (delayMs: number) => {
 export const calculateTokenAmounts = (
   pool: Pool,
   position: Position
-): calculateAmountDeltaResult => {
+): _calculateAmountDeltaResult => {
   return _calculateTokenAmounts(pool, position, false)
 }
 
@@ -399,7 +399,7 @@ export const _calculateTokenAmounts = (
   pool: Pool,
   position: Position,
   sign: boolean
-): calculateAmountDeltaResult => {
+): _calculateAmountDeltaResult => {
   return wasmSerializer.decodeCalculateAmountDeltaResult(
     _calculateAmountDelta(
       pool.currentTickIndex,
@@ -540,6 +540,12 @@ export const toSqrtPrice = (val: bigint, scale: bigint): bigint => {
 
 export const toTokenAmount = (val: bigint, scale: bigint): bigint => {
   return _toTokenAmount(val, integerSafeCast(scale))
+}
+
+export const positionToTick = (chunk: bigint, bit: bigint, tickSpacing: bigint): bigint => {
+  return BigInt(
+    _positionToTick(integerSafeCast(chunk), integerSafeCast(bit), integerSafeCast(tickSpacing))
+  )
 }
 
 export const simulateInvariantSwap = (

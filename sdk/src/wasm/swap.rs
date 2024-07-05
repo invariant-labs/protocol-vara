@@ -15,7 +15,7 @@ use wasm_wrapper::wasm_wrapper;
 
 type LiquidityTicks = Vec<LiquidityTick>;
 
-#[wasm_wrapper]
+#[wasm_wrapper("_simulateInvariantSwap")]
 pub fn simulate_invariant_swap(
     tickmap: Tickmap,
     fee_tier: FeeTier,
