@@ -145,9 +145,9 @@ fn test_liquidity_gap() {
     assert_eq!(delta_invariant_y, expected_y_amount_out);
     assert_eq!(
         pool.fee_growth_global_x,
-        FeeGrowth::new(U128::from(29991002699190242927121u128))
+        FeeGrowth::new(29991002699190242927121u128)
     );
-    assert_eq!(pool.fee_growth_global_y, FeeGrowth::new(U128::from(0)));
+    assert_eq!(pool.fee_growth_global_y, FeeGrowth::new(0));
     assert_eq!(pool.fee_protocol_token_x, TokenAmount::new(U256::from(1)));
     assert_eq!(pool.fee_protocol_token_y, TokenAmount::new(U256::from(0)));
 

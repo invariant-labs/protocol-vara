@@ -8,5 +8,5 @@ fn test_init() {
     let sys = System::new();
     sys.init_logger();
 
-    let _invariant = init_invariant(&sys, Percentage(U128::from(100)));
+    let _invariant = init_invariant(&sys, Percentage(100));
 }

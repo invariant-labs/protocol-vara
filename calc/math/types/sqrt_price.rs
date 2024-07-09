@@ -10,7 +10,7 @@ use traceable_result::*;
 #[derive(Default, Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Encode, Decode, TypeInfo)]
 #[codec(crate = gstd::codec)]
 #[scale_info(crate = gstd::scale_info)]
-pub struct SqrtPrice(pub U128);
+pub struct SqrtPrice(pub u128);
 
 impl SqrtPrice {
     pub fn from_tick(i: i32) -> TrackableResult<Self> {
@@ -82,7 +82,7 @@ impl SqrtPrice {
             .unwrap()
             .checked_div(denominator)
             .unwrap();
-        let casted_result = SqrtPrice::from_value::<U128, U384T>(result);
+        let casted_result = SqrtPrice::from_value::<u128, U384T>(result);
         SqrtPrice::new(casted_result)
     }
 
@@ -96,8 +96,8 @@ impl SqrtPrice {
             .checked_div(denominator)
             .ok_or_else(|| err!(TrackableError::DIV))?;
 
-        let casted_result = SqrtPrice::checked_from_value::<U128, U448T>(result)
-            .map_err(|_| err!("Can't parse from U448T to U128"))?;
+        let casted_result = SqrtPrice::checked_from_value::<u128, U448T>(result)
+            .map_err(|_| err!("Can't parse from U448T to u128"))?;
         Ok(SqrtPrice::new(casted_result))
     }
 
@@ -118,8 +118,8 @@ impl SqrtPrice {
             .ok_or_else(|| err!(TrackableError::DIV))?;
 
         // TODO - add ok_or_mark_trace!
-        let casted_result = SqrtPrice::checked_from_value::<U128, U448T>(result)
-            .map_err(|_| err!("Can't parse from U448T to U128"))?;
+        let casted_result = SqrtPrice::checked_from_value::<u128, U448T>(result)
+            .map_err(|_| err!("Can't parse from U448T to u128"))?;
         Ok(SqrtPrice::new(casted_result))
     }
 }
@@ -158,58 +158,58 @@ pub fn calculate_sqrt_price(tick_index: i32) -> TrackableResult<SqrtPrice> {
     let mut sqrt_price = FixedPoint::from_integer(1);
 
     if tick & 0x1 != 0 {
-        sqrt_price *= FixedPoint::new(U128::from(1000049998750u128));
+        sqrt_price *= FixedPoint::new(1000049998750u128);
     }
     if tick & 0x2 != 0 {
-        sqrt_price *= FixedPoint::new(U128::from(1000100000000u128));
+        sqrt_price *= FixedPoint::new(1000100000000u128);
     }
     if tick & 0x4 != 0 {
-        sqrt_price *= FixedPoint::new(U128::from(1000200010000u128));
+        sqrt_price *= FixedPoint::new(1000200010000u128);
     }
     if tick & 0x8 != 0 {
-        sqrt_price *= FixedPoint::new(U128::from(1000400060004u128));
+        sqrt_price *= FixedPoint::new(1000400060004u128);
     }
     if tick & 0x10 != 0 {
-        sqrt_price *= FixedPoint::new(U128::from(1000800280056u128));
+        sqrt_price *= FixedPoint::new(1000800280056u128);
     }
     if tick & 0x20 != 0 {
-        sqrt_price *= FixedPoint::new(U128::from(1001601200560u128));
+        sqrt_price *= FixedPoint::new(1001601200560u128);
     }
     if tick & 0x40 != 0 {
-        sqrt_price *= FixedPoint::new(U128::from(1003204964963u128));
+        sqrt_price *= FixedPoint::new(1003204964963u128);
     }
     if tick & 0x80 != 0 {
-        sqrt_price *= FixedPoint::new(U128::from(1006420201726u128));
+        sqrt_price *= FixedPoint::new(1006420201726u128);
     }
     if tick & 0x100 != 0 {
-        sqrt_price *= FixedPoint::new(U128::from(1012881622442u128));
+        sqrt_price *= FixedPoint::new(1012881622442u128);
     }
     if tick & 0x200 != 0 {
-        sqrt_price *= FixedPoint::new(U128::from(1025929181080u128));
+        sqrt_price *= FixedPoint::new(1025929181080u128);
     }
     if tick & 0x400 != 0 {
-        sqrt_price *= FixedPoint::new(U128::from(1052530684591u128));
+        sqrt_price *= FixedPoint::new(1052530684591u128);
     }
     if tick & 0x800 != 0 {
-        sqrt_price *= FixedPoint::new(U128::from(1107820842005u128));
+        sqrt_price *= FixedPoint::new(1107820842005u128);
     }
     if tick & 0x1000 != 0 {
-        sqrt_price *= FixedPoint::new(U128::from(1227267017980u128));
+        sqrt_price *= FixedPoint::new(1227267017980u128);
     }
     if tick & 0x2000 != 0 {
-        sqrt_price *= FixedPoint::new(U128::from(1506184333421u128));
+        sqrt_price *= FixedPoint::new(1506184333421u128);
     }
     if tick & 0x4000 != 0 {
-        sqrt_price *= FixedPoint::new(U128::from(2268591246242u128));
+        sqrt_price *= FixedPoint::new(2268591246242u128);
     }
     if tick & 0x8000 != 0 {
-        sqrt_price *= FixedPoint::new(U128::from(5146506242525u128));
+        sqrt_price *= FixedPoint::new(5146506242525u128);
     }
     if tick & 0x0001_0000 != 0 {
-        sqrt_price *= FixedPoint::new(U128::from(26486526504348u128));
+        sqrt_price *= FixedPoint::new(26486526504348u128);
     }
     if tick & 0x0002_0000 != 0 {
-        sqrt_price *= FixedPoint::new(U128::from(701536086265529u128));
+        sqrt_price *= FixedPoint::new(701536086265529u128);
     }
 
     Ok(if tick_index >= 0 {
@@ -284,14 +284,14 @@ mod tests {
             // expected 65535.383934512647
             // real     65535.384161610681...
             assert_eq!(sqrt_price, SqrtPrice::from_scale(65535383934512647u128, 12));
-            assert_eq!(sqrt_price, SqrtPrice::new(U128::from(MAX_SQRT_PRICE)));
+            assert_eq!(sqrt_price, SqrtPrice::new(MAX_SQRT_PRICE));
         }
         {
             let sqrt_price = SqrtPrice::from_tick(MIN_TICK).unwrap();
             // expected 0.000015258932
             // real     0.0000152589324...
             assert_eq!(sqrt_price, SqrtPrice::from_scale(15258932u128, 12));
-            assert_eq!(sqrt_price, SqrtPrice::new(U128::from(MIN_SQRT_PRICE)));
+            assert_eq!(sqrt_price, SqrtPrice::new(MIN_SQRT_PRICE));
         }
     }
 
@@ -319,40 +319,40 @@ mod tests {
             let global_max_sqrt_price = SqrtPrice::from_tick(MAX_TICK).unwrap();
             assert_eq!(
                 global_max_sqrt_price,
-                SqrtPrice::new(U128::from(MAX_SQRT_PRICE))
+                SqrtPrice::new(MAX_SQRT_PRICE)
             ); // ceil(log2(this)) = 96
             let global_min_sqrt_price = SqrtPrice::from_tick(-MAX_TICK).unwrap();
             assert_eq!(
                 global_min_sqrt_price,
-                SqrtPrice::new(U128::from(MIN_SQRT_PRICE))
+                SqrtPrice::new(MIN_SQRT_PRICE)
             ); // floor(log2(this)) = 63
         }
         {
             let max_sqrt_price = get_max_sqrt_price(1);
             let max_tick: i32 = get_max_tick(1);
-            assert_eq!(max_sqrt_price, SqrtPrice::new(U128::from(MAX_SQRT_PRICE)));
+            assert_eq!(max_sqrt_price, SqrtPrice::new(MAX_SQRT_PRICE));
             assert_eq!(
                 SqrtPrice::from_tick(max_tick).unwrap(),
-                SqrtPrice::new(U128::from(MAX_SQRT_PRICE))
+                SqrtPrice::new(MAX_SQRT_PRICE)
             );
 
             let max_sqrt_price = get_max_sqrt_price(2);
             let max_tick: i32 = get_max_tick(2);
-            assert_eq!(max_sqrt_price, SqrtPrice::new(U128::from(MAX_SQRT_PRICE)));
+            assert_eq!(max_sqrt_price, SqrtPrice::new(MAX_SQRT_PRICE));
             assert_eq!(
                 SqrtPrice::from_tick(max_tick).unwrap(),
-                SqrtPrice::new(U128::from(MAX_SQRT_PRICE))
+                SqrtPrice::new(MAX_SQRT_PRICE)
             );
 
             let max_sqrt_price = get_max_sqrt_price(5);
             let max_tick: i32 = get_max_tick(5);
             assert_eq!(
                 max_sqrt_price,
-                SqrtPrice::new(U128::from(65525554855399275000000000000u128))
+                SqrtPrice::new(65525554855399275000000000000u128)
             );
             assert_eq!(
                 SqrtPrice::from_tick(max_tick).unwrap(),
-                SqrtPrice::new(U128::from(65525554855399275000000000000u128))
+                SqrtPrice::new(65525554855399275000000000000u128)
             );
 
             let max_sqrt_price = get_max_sqrt_price(10);
@@ -360,11 +360,11 @@ mod tests {
             assert_eq!(max_tick, 221810);
             assert_eq!(
                 max_sqrt_price,
-                SqrtPrice::new(U128::from(65509176333123237000000000000u128))
+                SqrtPrice::new(65509176333123237000000000000u128)
             );
             assert_eq!(
                 SqrtPrice::from_tick(max_tick).unwrap(),
-                SqrtPrice::new(U128::from(65509176333123237000000000000u128))
+                SqrtPrice::new(65509176333123237000000000000u128)
             );
 
             let max_sqrt_price = get_max_sqrt_price(100);
@@ -373,39 +373,39 @@ mod tests {
 
             assert_eq!(
                 max_sqrt_price,
-                SqrtPrice::new(U128::from(65476431569071896000000000000u128))
+                SqrtPrice::new(65476431569071896000000000000u128)
             );
             assert_eq!(
                 SqrtPrice::from_tick(max_tick).unwrap(),
-                SqrtPrice::new(U128::from(65476431569071896000000000000u128))
+                SqrtPrice::new(65476431569071896000000000000u128)
             );
         }
         {
             let min_sqrt_price = get_min_sqrt_price(1);
             let min_tick: i32 = get_min_tick(1);
-            assert_eq!(min_sqrt_price, SqrtPrice::new(U128::from(MIN_SQRT_PRICE)));
+            assert_eq!(min_sqrt_price, SqrtPrice::new(MIN_SQRT_PRICE));
             assert_eq!(
                 SqrtPrice::from_tick(min_tick).unwrap(),
-                SqrtPrice::new(U128::from(MIN_SQRT_PRICE))
+                SqrtPrice::new(MIN_SQRT_PRICE)
             );
 
             let min_sqrt_price = get_min_sqrt_price(2);
             let min_tick: i32 = get_min_tick(2);
-            assert_eq!(min_sqrt_price, SqrtPrice::new(U128::from(MIN_SQRT_PRICE)));
+            assert_eq!(min_sqrt_price, SqrtPrice::new(MIN_SQRT_PRICE));
             assert_eq!(
                 SqrtPrice::from_tick(min_tick).unwrap(),
-                SqrtPrice::new(U128::from(MIN_SQRT_PRICE))
+                SqrtPrice::new(MIN_SQRT_PRICE)
             );
 
             let min_sqrt_price = get_min_sqrt_price(5);
             let min_tick: i32 = get_min_tick(5);
             assert_eq!(
                 min_sqrt_price,
-                SqrtPrice::new(U128::from(15261221000000000000u128))
+                SqrtPrice::new(15261221000000000000u128)
             );
             assert_eq!(
                 SqrtPrice::from_tick(min_tick).unwrap(),
-                SqrtPrice::new(U128::from(15261221000000000000u128))
+                SqrtPrice::new(15261221000000000000u128)
             );
 
             let min_sqrt_price = get_min_sqrt_price(10);
@@ -413,11 +413,11 @@ mod tests {
             assert_eq!(min_tick, -221810);
             assert_eq!(
                 min_sqrt_price,
-                SqrtPrice::new(U128::from(15265036000000000000u128))
+                SqrtPrice::new(15265036000000000000u128)
             );
             assert_eq!(
                 SqrtPrice::from_tick(min_tick).unwrap(),
-                SqrtPrice::new(U128::from(15265036000000000000u128))
+                SqrtPrice::new(15265036000000000000u128)
             );
 
             let min_sqrt_price = get_min_sqrt_price(100);
@@ -425,11 +425,11 @@ mod tests {
             assert_eq!(min_tick, -221800);
             assert_eq!(
                 min_sqrt_price,
-                SqrtPrice::new(U128::from(15272671000000000000u128))
+                SqrtPrice::new(15272671000000000000u128)
             );
             assert_eq!(
                 SqrtPrice::from_tick(min_tick).unwrap(),
-                SqrtPrice::new(U128::from(15272671000000000000u128))
+                SqrtPrice::new(15272671000000000000u128)
             );
         }
     }

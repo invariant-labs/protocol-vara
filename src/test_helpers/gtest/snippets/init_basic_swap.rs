@@ -71,8 +71,8 @@ pub fn init_basic_swap(
             amount_in: TokenAmount::new(U256::from(1000)),
             amount_out: TokenAmount::new(U256::from(993)),
             fee: TokenAmount::new(U256::from(6)),
-            start_sqrt_price: SqrtPrice::new(U128::from(1000000000000000000000000u128)),
-            target_sqrt_price: SqrtPrice::new(U128::from(999006987054867461743028u128)),
+            start_sqrt_price: SqrtPrice::new(1000000000000000000000000u128),
+            target_sqrt_price: SqrtPrice::new(999006987054867461743028u128),
             x_to_y: true,
         });
     events[1]
@@ -81,8 +81,8 @@ pub fn init_basic_swap(
             amount_in: TokenAmount::new(U256::from(1000)),
             amount_out: TokenAmount::new(U256::from(993)),
             fee: TokenAmount::new(U256::from(6)),
-            start_sqrt_price: SqrtPrice::new(U128::from(1000000000000000000000000u128)),
-            target_sqrt_price: SqrtPrice::new(U128::from(999006987054867461743028u128)),
+            start_sqrt_price: SqrtPrice::new(1000000000000000000000000u128),
+            target_sqrt_price: SqrtPrice::new(999006987054867461743028u128),
             pool: pool_after.clone(),
             ticks: vec![],
         });
@@ -103,9 +103,9 @@ pub fn init_basic_swap(
 
     assert_eq!(
         pool_after.fee_growth_global_x,
-        FeeGrowth::new(U128::from(50000000000000000000000u128))
+        FeeGrowth::new(50000000000000000000000u128)
     );
-    assert_eq!(pool_after.fee_growth_global_y, FeeGrowth::new(U128::from(0)));
+    assert_eq!(pool_after.fee_growth_global_y, FeeGrowth::new(0));
 
     assert_eq!(pool_after.fee_protocol_token_x, TokenAmount::new(U256::from(1)));
     assert_eq!(pool_after.fee_protocol_token_y, TokenAmount::new(U256::from(0)));

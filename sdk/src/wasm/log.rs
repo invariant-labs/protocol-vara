@@ -18,7 +18,7 @@ const LOG2_ACCURACY: u64 = 1u64 << (31 - LOG2_MIN_BINARY_POSITION);
 const SQRT_PRICE_DENOMINATOR: u128 = 1_000000_000000_000000_000000;
 
 fn sqrt_price_to_x32(decimal: SqrtPrice) -> u64 {
-    (decimal.get().as_u128() * LOG2_ONE / SQRT_PRICE_DENOMINATOR) as u64
+    (decimal.get() * LOG2_ONE / SQRT_PRICE_DENOMINATOR) as u64
 }
 
 fn align_tick_to_spacing(accurate_tick: i32, tick_spacing: i32) -> i32 {

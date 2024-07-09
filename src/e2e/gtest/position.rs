@@ -17,7 +17,7 @@ fn test_create_position() {
     let sys = System::new();
     sys.init_logger();
 
-    let invariant = init_invariant(&sys, Percentage(U128::from(100)));
+    let invariant = init_invariant(&sys, Percentage(100));
 
     let (token_x_program, token_y_program) =
         init_tokens_with_mint(&sys, (U256::from(500), U256::from(500)));
@@ -104,8 +104,8 @@ fn test_create_position() {
             liquidity: Liquidity::new(U256::from(10)),
             lower_tick_index: -10,
             upper_tick_index: 10,
-            fee_growth_inside_x: FeeGrowth::new(U128::from(0)),
-            fee_growth_inside_y: FeeGrowth::new(U128::from(0)),
+            fee_growth_inside_x: FeeGrowth::new(0),
+            fee_growth_inside_y: FeeGrowth::new(0),
             last_block_number: sys.block_height() as u64,
             tokens_owed_x: TokenAmount::new(U256::from(0)),
             tokens_owed_y: TokenAmount::new(U256::from(0)),
@@ -117,7 +117,7 @@ fn test_position_same_upper_and_lower_tick() {
     let sys = System::new();
     sys.init_logger();
 
-    let invariant = init_invariant(&sys, Percentage(U128::from(100)));
+    let invariant = init_invariant(&sys, Percentage(100));
 
     let (token_x_program, token_y_program) =
         init_tokens_with_mint(&sys, (U256::from(500), U256::from(500)));
@@ -193,7 +193,7 @@ fn test_position_below_current_tick() {
     let sys = System::new();
     sys.init_logger();
 
-    let invariant = init_invariant(&sys, Percentage(U128::from(100)));
+    let invariant = init_invariant(&sys, Percentage(100));
 
     let initial_balance = U256::from(10_000_000_000u128);
     let (token_x_program, token_y_program) = init_tokens_with_mint(
@@ -292,8 +292,8 @@ fn test_position_below_current_tick() {
             liquidity: liquidity_delta,
             lower_tick_index,
             upper_tick_index,
-            fee_growth_inside_x: FeeGrowth::new(U128::from(0)),
-            fee_growth_inside_y: FeeGrowth::new(U128::from(0)),
+            fee_growth_inside_x: FeeGrowth::new(0),
+            fee_growth_inside_y: FeeGrowth::new(0),
             last_block_number: sys.block_height() as u64,
             tokens_owed_x: TokenAmount::new(U256::from(0)),
             tokens_owed_y: TokenAmount::new(U256::from(0)),
@@ -321,7 +321,7 @@ fn test_position_below_current_tick() {
     let invariant_x = balance_of(&token_x_program, INVARIANT_ID.into());
     let invariant_y = balance_of(&token_y_program, INVARIANT_ID.into());
 
-    let zero_fee = FeeGrowth::new(U128::from(0));
+    let zero_fee = FeeGrowth::new(0);
 
     // Check ticks
     assert_eq!(lower_tick.index, lower_tick_index);
@@ -360,7 +360,7 @@ fn test_position_within_current_tick() {
     let sys = System::new();
     sys.init_logger();
 
-    let invariant = init_invariant(&sys, Percentage(U128::from(100)));
+    let invariant = init_invariant(&sys, Percentage(100));
 
     let initial_balance = U256::from(100_000_000);
     let (token_x_program, token_y_program) = init_tokens_with_mint(
@@ -458,7 +458,7 @@ fn test_position_within_current_tick() {
     let user_1_y = balance_of(&token_y_program, REGULAR_USER_1.into());
     let invariant_x = balance_of(&token_x_program, INVARIANT_ID.into());
     let invariant_y = balance_of(&token_y_program, INVARIANT_ID.into());
-    let zero_fee = FeeGrowth::new(U128::from(0));
+    let zero_fee = FeeGrowth::new(0);
     let expected_x_increase = U256::from(317);
     let expected_y_increase = U256::from(32);
 
@@ -499,7 +499,7 @@ fn test_position_above_current_tick() {
     let sys = System::new();
     sys.init_logger();
 
-    let invariant = init_invariant(&sys, Percentage(U128::from(100)));
+    let invariant = init_invariant(&sys, Percentage(100));
 
     let initial_balance = U256::from(100_000_000);
     let (token_x_program, token_y_program) = init_tokens_with_mint(
@@ -595,8 +595,8 @@ fn test_position_above_current_tick() {
             liquidity: liquidity_delta,
             lower_tick_index,
             upper_tick_index,
-            fee_growth_inside_x: FeeGrowth::new(U128::from(0)),
-            fee_growth_inside_y: FeeGrowth::new(U128::from(0)),
+            fee_growth_inside_x: FeeGrowth::new(0),
+            fee_growth_inside_y: FeeGrowth::new(0),
             last_block_number: sys.block_height() as u64,
             tokens_owed_x: TokenAmount::new(U256::from(0)),
             tokens_owed_y: TokenAmount::new(U256::from(0)),
@@ -624,7 +624,7 @@ fn test_position_above_current_tick() {
     let invariant_x = balance_of(&token_x_program, INVARIANT_ID.into());
     let invariant_y = balance_of(&token_y_program, INVARIANT_ID.into());
 
-    let zero_fee = FeeGrowth::new(U128::from(0));
+    let zero_fee = FeeGrowth::new(0);
     let expected_x_increase = U256::from(21549);
     let expected_y_increase = U256::from(0);
 
@@ -663,7 +663,7 @@ fn test_create_position_not_enough_token_x() {
     let sys = System::new();
     sys.init_logger();
 
-    let invariant = init_invariant(&sys, Percentage(U128::from(100)));
+    let invariant = init_invariant(&sys, Percentage(100));
 
     let initial_balance = U256::from(100_000_000);
     let (token_x_program, token_y_program) =
@@ -783,7 +783,7 @@ fn test_create_position_not_enough_token_y() {
     let sys = System::new();
     sys.init_logger();
 
-    let invariant = init_invariant(&sys, Percentage(U128::from(100)));
+    let invariant = init_invariant(&sys, Percentage(100));
 
     let initial_balance = U256::from(100_000_000u128);
     let (token_x_program, token_y_program) =
@@ -1074,7 +1074,7 @@ fn test_remove_position() {
     let pool_state_after = get_pool(&invariant, token_x, token_y, fee_tier).unwrap();
     assert_eq!(
         pool_state_after.fee_growth_global_x,
-        FeeGrowth::new(U128::from(49999950000049999u128))
+        FeeGrowth::new(49999950000049999u128)
     );
     assert_eq!(
         pool_state_after.fee_protocol_token_x,

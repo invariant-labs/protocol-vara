@@ -12,12 +12,12 @@ fn test_change_fee_receiver() {
     let sys = System::new();
     sys.init_logger();
 
-    let invariant = init_invariant(&sys, Percentage(U128::from(0)));
+    let invariant = init_invariant(&sys, Percentage(0));
 
     let token_0 = ActorId::from([0x01; 32]);
     let token_1 = ActorId::from([0x02; 32]);
     let fee_tier = FeeTier {
-        fee: Percentage::new(U128::from(1)),
+        fee: Percentage::new(1),
         tick_spacing: 1,
     };
     let res = add_fee_tier(&invariant, ADMIN, fee_tier);
@@ -56,12 +56,12 @@ fn test_change_fee_receiver_not_admin() {
     let sys = System::new();
     sys.init_logger();
 
-    let invariant = init_invariant(&sys, Percentage(U128::from(0)));
+    let invariant = init_invariant(&sys, Percentage(0));
 
     let token_0 = ActorId::from([0x01; 32]);
     let token_1 = ActorId::from([0x02; 32]);
     let fee_tier = FeeTier {
-        fee: Percentage::new(U128::from(1)),
+        fee: Percentage::new(1),
         tick_spacing: 1,
     };
     let res = add_fee_tier(&invariant, ADMIN, fee_tier);

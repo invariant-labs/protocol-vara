@@ -13,7 +13,7 @@ use wasm_wrapper::wasm_wrapper;
 #[decimal(24, U384T)]
 #[derive(Default, Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Serialize, Deserialize, Tsify)]
 #[tsify(into_wasm_abi, from_wasm_abi)]
-pub struct SqrtPrice(#[tsify(type = "bigint")] pub U128);
+pub struct SqrtPrice(#[tsify(type = "bigint")] pub u128);
 
 decimal_ops!(SqrtPrice);
 
@@ -87,7 +87,7 @@ impl SqrtPrice {
             .unwrap()
             .checked_div(denominator)
             .unwrap();
-        let casted_result = SqrtPrice::from_value::<U128, U384T>(result);
+        let casted_result = SqrtPrice::from_value::<u128, U384T>(result);
         SqrtPrice::new(casted_result)
     }
 
@@ -101,8 +101,8 @@ impl SqrtPrice {
             .checked_div(denominator)
             .ok_or_else(|| err!(TrackableError::DIV))?;
 
-        let casted_result = SqrtPrice::checked_from_value::<U128, U448T>(result)
-            .map_err(|_| err!("Can't parse from U448T to U128"))?;
+        let casted_result = SqrtPrice::checked_from_value::<u128, U448T>(result)
+            .map_err(|_| err!("Can't parse from U448T to u128"))?;
         Ok(SqrtPrice::new(casted_result))
     }
 
@@ -123,8 +123,8 @@ impl SqrtPrice {
             .ok_or_else(|| err!(TrackableError::DIV))?;
 
         // TODO - add ok_or_mark_trace!
-        let casted_result = SqrtPrice::checked_from_value::<U128, U448T>(result)
-            .map_err(|_| err!("Can't parse from U448T to U128"))?;
+        let casted_result = SqrtPrice::checked_from_value::<u128, U448T>(result)
+            .map_err(|_| err!("Can't parse from U448T to u128"))?;
         Ok(SqrtPrice::new(casted_result))
     }
 }
@@ -140,58 +140,58 @@ pub fn calculate_sqrt_price(tick_index: i32) -> TrackableResult<SqrtPrice> {
     let mut sqrt_price = FixedPoint::from_integer(1);
 
     if tick & 0x1 != 0 {
-        sqrt_price *= FixedPoint::new(U128::from(1000049998750u128));
+        sqrt_price *= FixedPoint::new(1000049998750u128);
     }
     if tick & 0x2 != 0 {
-        sqrt_price *= FixedPoint::new(U128::from(1000100000000u128));
+        sqrt_price *= FixedPoint::new(1000100000000u128);
     }
     if tick & 0x4 != 0 {
-        sqrt_price *= FixedPoint::new(U128::from(1000200010000u128));
+        sqrt_price *= FixedPoint::new(1000200010000u128);
     }
     if tick & 0x8 != 0 {
-        sqrt_price *= FixedPoint::new(U128::from(1000400060004u128));
+        sqrt_price *= FixedPoint::new(1000400060004u128);
     }
     if tick & 0x10 != 0 {
-        sqrt_price *= FixedPoint::new(U128::from(1000800280056u128));
+        sqrt_price *= FixedPoint::new(1000800280056u128);
     }
     if tick & 0x20 != 0 {
-        sqrt_price *= FixedPoint::new(U128::from(1001601200560u128));
+        sqrt_price *= FixedPoint::new(1001601200560u128);
     }
     if tick & 0x40 != 0 {
-        sqrt_price *= FixedPoint::new(U128::from(1003204964963u128));
+        sqrt_price *= FixedPoint::new(1003204964963u128);
     }
     if tick & 0x80 != 0 {
-        sqrt_price *= FixedPoint::new(U128::from(1006420201726u128));
+        sqrt_price *= FixedPoint::new(1006420201726u128);
     }
     if tick & 0x100 != 0 {
-        sqrt_price *= FixedPoint::new(U128::from(1012881622442u128));
+        sqrt_price *= FixedPoint::new(1012881622442u128);
     }
     if tick & 0x200 != 0 {
-        sqrt_price *= FixedPoint::new(U128::from(1025929181080u128));
+        sqrt_price *= FixedPoint::new(1025929181080u128);
     }
     if tick & 0x400 != 0 {
-        sqrt_price *= FixedPoint::new(U128::from(1052530684591u128));
+        sqrt_price *= FixedPoint::new(1052530684591u128);
     }
     if tick & 0x800 != 0 {
-        sqrt_price *= FixedPoint::new(U128::from(1107820842005u128));
+        sqrt_price *= FixedPoint::new(1107820842005u128);
     }
     if tick & 0x1000 != 0 {
-        sqrt_price *= FixedPoint::new(U128::from(1227267017980u128));
+        sqrt_price *= FixedPoint::new(1227267017980u128);
     }
     if tick & 0x2000 != 0 {
-        sqrt_price *= FixedPoint::new(U128::from(1506184333421u128));
+        sqrt_price *= FixedPoint::new(1506184333421u128);
     }
     if tick & 0x4000 != 0 {
-        sqrt_price *= FixedPoint::new(U128::from(2268591246242u128));
+        sqrt_price *= FixedPoint::new(2268591246242u128);
     }
     if tick & 0x8000 != 0 {
-        sqrt_price *= FixedPoint::new(U128::from(5146506242525u128));
+        sqrt_price *= FixedPoint::new(5146506242525u128);
     }
     if tick & 0x0001_0000 != 0 {
-        sqrt_price *= FixedPoint::new(U128::from(26486526504348u128));
+        sqrt_price *= FixedPoint::new(26486526504348u128);
     }
     if tick & 0x0002_0000 != 0 {
-        sqrt_price *= FixedPoint::new(U128::from(701536086265529u128));
+        sqrt_price *= FixedPoint::new(701536086265529u128);
     }
 
     Ok(if tick_index >= 0 {

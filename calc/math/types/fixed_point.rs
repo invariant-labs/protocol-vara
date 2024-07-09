@@ -6,4 +6,4 @@ use gstd::{Decode, Encode, TypeInfo};
 #[derive(Default, Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Encode, Decode, TypeInfo)]
 #[codec(crate = gstd::codec)]
 #[scale_info(crate = gstd::scale_info)]
-pub struct FixedPoint(pub U128);
+pub struct FixedPoint(pub u128);
