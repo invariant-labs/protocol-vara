@@ -76,87 +76,8 @@ pub fn generate_base(characteristics: DecimalCharacteristics) -> proc_macro::Tok
                 Self::checked_almost_one().unwrap()
             }
         }
-
-        impl Conversion for #struct_name
-        where
-        {
-            fn cast<T: Default
-                    + AsRef<[u64]>
-                    + From<u64>
-                    + core::ops::Shl<usize, Output = T>
-                    + core::ops::BitOrAssign,
-                >(self) -> T {
-                    Self::checked_cast(self).unwrap()
-            }
-
-            fn checked_cast<T: Default
-                    + AsRef<[u64]>
-                    + From<u64>
-                    + core::ops::Shl<usize, Output = T>
-                    + core::ops::BitOrAssign,
-                >(self) -> Result<T, alloc::string::String> {
-                    let mut self_bytes: alloc::vec::Vec<u64> = self.get().as_ref().try_into().unwrap();
-                    let mut result = T::default();
-                    let result_length: usize = result.as_ref().len();
-
-                    if self_bytes.len() > result_length {
-                        let (self_bytes, remaining_bytes) = self_bytes.split_at_mut(result_length);
-                        if remaining_bytes.iter().any(|&x| x != 0) {
-                            return Err(alloc::string::String::from("Overflow while casting."))
-                        }
-                    }
-
-                    for (index, &value) in self_bytes.iter().enumerate() {
-                        result |= (T::from(value) << (index * 64));
-                    }
-                    Ok(result)
-            }
-
-            fn from_value<T, R>(from: R) -> T
-            where
-                T: Default
-                    + AsRef<[u64]>
-                    + From<u64>
-                    + core::ops::Shl<usize, Output = T>
-                    + core::ops::BitOrAssign,
-                R: Default
-                    + AsRef<[u64]>
-                    + From<u64>
-                    + core::ops::Shl<usize, Output = R>
-                    + core::ops::BitOrAssign,
-            {
-                Self::checked_from_value(from).unwrap()
-            }
-
-            fn checked_from_value<T,R>(from:R) -> Result<T, alloc::string::String>
-            where
-            T: Default
-                + AsRef<[u64]>
-                + From<u64>
-                + core::ops::Shl<usize, Output = T>
-                + core::ops::BitOrAssign,
-            R: Default
-                + AsRef<[u64]>
-                + From<u64>
-                + core::ops::Shl<usize, Output = R>
-                + core::ops::BitOrAssign,
-            {
-                let mut self_bytes: alloc::vec::Vec<u64> = from.as_ref().try_into().unwrap();
-                let mut result = T::default();
-                let result_length: usize = result.as_ref().len();
-                if self_bytes.len() > result_length {
-                    let (self_bytes, remaining_bytes) = self_bytes.split_at_mut(result_length);
-                    if remaining_bytes.iter().any(|&x| x != 0) {
-                        return Err(alloc::string::String::from("Overflow while casting from value."))
-                    }
-                }
-                for (index, &value) in self_bytes.iter().enumerate() {
-                    result |= (T::from(value) << (index * 64));
-                }
-                Ok(result)
-            }
-        }
-
+        // default impl is enough
+        impl Conversion for #struct_name {}
         #[cfg(test)]
         pub mod #module_name {
             use super::*;

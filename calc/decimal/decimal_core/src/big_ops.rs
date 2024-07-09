@@ -16,10 +16,10 @@ pub fn generate_big_ops(characteristics: DecimalCharacteristics) -> proc_macro::
 
     let module_name = string_to_ident("tests_big_ops_", &name_str);
     proc_macro::TokenStream::from(quote!(
-        impl<T: Decimal> BigOps<T> for #struct_name
+        impl<T> BigOps<T> for #struct_name
         where
         T: Decimal + alloc::fmt::Debug + Conversion,
-        T::U: AsRef<[u64]>,
+        #big_type: UintCast<<T as Decimal>::U>,
         {
             fn big_mul(self, rhs: T) -> Self {
                 let big_self: #big_type = self.cast::<#big_type>();
@@ -88,7 +88,7 @@ pub fn generate_big_ops(characteristics: DecimalCharacteristics) -> proc_macro::
                     .unwrap_or_else(|| core::panic!("decimal: lhs value can't fit into `{}` type in {}::big_div_up()", #big_str, #name_str))
                     .checked_add(big_rhs)
                     .unwrap_or_else(|| core::panic!("decimal: overflow in method {}::big_div_up()", #name_str))
-                    .checked_sub(#big_type::from(1))
+                    .checked_sub(#big_type::from(1u8))
                     .unwrap_or_else(|| core::panic!("decimal: underflow in method {}::big_div_up()", #name_str))
                     .checked_div(big_rhs)
                     .unwrap_or_else(|| core::panic!("decimal: overflow in method {}::big_div_up()", #name_str))
@@ -102,37 +102,37 @@ pub fn generate_big_ops(characteristics: DecimalCharacteristics) -> proc_macro::
 
             #[test]
             fn test_big_mul () {
-                let a = #struct_name::new(#underlying_type::from(2));
+                let a = #struct_name::new(#underlying_type::from(2u8));
                 let b = #struct_name::one();
-                assert_eq!(a.big_mul(b), #struct_name::new(#underlying_type::from(2)));
+                assert_eq!(a.big_mul(b), #struct_name::new(#underlying_type::from(2u8)));
             }
 
             #[test]
             fn test_big_mul_up () {
-                let a = #struct_name::new(#underlying_type::from(2));
+                let a = #struct_name::new(#underlying_type::from(2u8));
                 let b = #struct_name::one();
                 assert_eq!(a.big_mul_up(b), a);
             }
 
             #[test]
             fn test_big_div () {
-                let a = #struct_name::new(#underlying_type::from(2));
+                let a = #struct_name::new(#underlying_type::from(2u8));
                 let b = #struct_name::one();
-                assert_eq!(a.big_div(b), #struct_name::new(#underlying_type::from(2)));
+                assert_eq!(a.big_div(b), #struct_name::new(#underlying_type::from(2u8)));
             }
 
             #[test]
             fn test_checked_big_div () {
-                let a = #struct_name::new(#underlying_type::from(29));
+                let a = #struct_name::new(#underlying_type::from(29u8));
                 let b = #struct_name::one();
                 assert_eq!(a.big_div(b), a);
             }
 
             #[test]
             fn test_big_div_up () {
-                let a = #struct_name::new(#underlying_type::from(2));
+                let a = #struct_name::new(#underlying_type::from(2u8));
                 let b = #struct_name::one();
-                assert_eq!(a.big_div_up(b), #struct_name::new(#underlying_type::from(2)));
+                assert_eq!(a.big_div_up(b), #struct_name::new(#underlying_type::from(2u8)));
             }
         }
     ))
