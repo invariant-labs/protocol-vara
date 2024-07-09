@@ -4,11 +4,7 @@ type InvariantConfig = struct {
 };
 
 type Percentage = struct {
-  U128,
-};
-
-type U128 = struct {
-  [u64, 2],
+  u128,
 };
 
 type FeeTier = struct {
@@ -27,7 +23,7 @@ type TokenAmount = struct {
 };
 
 type SqrtPrice = struct {
-  U128,
+  u128,
 };
 
 type Liquidity = struct {
@@ -47,7 +43,7 @@ type Position = struct {
 };
 
 type FeeGrowth = struct {
-  U128,
+  u128,
 };
 
 type CalculateSwapResult = struct {

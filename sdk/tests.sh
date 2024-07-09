@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e 
 
 npm run node:local &
 # node can crash if it recieves a message too early

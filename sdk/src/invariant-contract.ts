@@ -7,9 +7,7 @@ export interface InvariantConfig {
   protocol_fee: Percentage;
 }
 
-export type Percentage = [U128];
-
-export type U128 = [Array<number | string>];
+export type Percentage = [number | string];
 
 export interface FeeTier {
   fee: Percentage;
@@ -24,7 +22,7 @@ export interface PoolKey {
 
 export type TokenAmount = [number | string];
 
-export type SqrtPrice = [U128];
+export type SqrtPrice = [number | string];
 
 export type Liquidity = [number | string];
 
@@ -40,7 +38,7 @@ export interface Position {
   tokens_owed_y: TokenAmount;
 }
 
-export type FeeGrowth = [U128];
+export type FeeGrowth = [number | string];
 
 export interface CalculateSwapResult {
   amount_in: TokenAmount;
@@ -97,15 +95,14 @@ export class InvariantContract {
   constructor(public api: GearApi, public programId?: `0x${string}`) {
     const types: Record<string, any> = {
       InvariantConfig: {"admin":"[u8;32]","protocolFee":"Percentage"},
-      Percentage: "(U128)",
-      U128: "([u64; 2])",
+      Percentage: "(u128)",
       FeeTier: {"fee":"Percentage","tickSpacing":"u16"},
       PoolKey: {"tokenX":"[u8;32]","tokenY":"[u8;32]","feeTier":"FeeTier"},
       TokenAmount: "(U256)",
-      SqrtPrice: "(U128)",
+      SqrtPrice: "(u128)",
       Liquidity: "(U256)",
       Position: {"poolKey":"PoolKey","liquidity":"Liquidity","lowerTickIndex":"i32","upperTickIndex":"i32","feeGrowthInsideX":"FeeGrowth","feeGrowthInsideY":"FeeGrowth","lastBlockNumber":"u64","tokensOwedX":"TokenAmount","tokensOwedY":"TokenAmount"},
-      FeeGrowth: "(U128)",
+      FeeGrowth: "(u128)",
       CalculateSwapResult: {"amountIn":"TokenAmount","amountOut":"TokenAmount","startSqrtPrice":"SqrtPrice","targetSqrtPrice":"SqrtPrice","fee":"TokenAmount","pool":"Pool","ticks":"Vec<Tick>"},
       Pool: {"liquidity":"Liquidity","sqrtPrice":"SqrtPrice","currentTickIndex":"i32","feeGrowthGlobalX":"FeeGrowth","feeGrowthGlobalY":"FeeGrowth","feeProtocolTokenX":"TokenAmount","feeProtocolTokenY":"TokenAmount","startTimestamp":"u64","lastTimestamp":"u64","feeReceiver":"[u8;32]"},
       Tick: {"index":"i32","sign":"bool","liquidityChange":"Liquidity","liquidityGross":"Liquidity","sqrtPrice":"SqrtPrice","feeGrowthOutsideX":"FeeGrowth","feeGrowthOutsideY":"FeeGrowth","secondsOutside":"u64"},
