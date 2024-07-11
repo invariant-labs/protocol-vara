@@ -1,12 +1,10 @@
 extern crate alloc;
-
-use decimal::*;
-use traceable_result::*;
-
 use math::liquidity::Liquidity;
 use math::sqrt_price::{calculate_sqrt_price, SqrtPrice};
 use math::token_amount::TokenAmount;
 use math::MAX_TICK;
+use decimal::*;
+use traceable_result::*;
 
 #[derive(Debug)]
 pub struct LiquidityResult {
@@ -118,6 +116,7 @@ pub fn get_liquidity_by_x(
         rounding_up,
     ))
 }
+
 pub fn get_liquidity_by_x_sqrt_price(
     x: TokenAmount,
     lower_sqrt_price: SqrtPrice,
@@ -134,16 +133,17 @@ pub fn get_liquidity_by_x_sqrt_price(
             (lower_sqrt_price.big_mul(upper_sqrt_price)).big_div(SqrtPrice::from_integer(1));
         let denominator = upper_sqrt_price - lower_sqrt_price;
         let liquidity = Liquidity::new(
-            (U256::from(x.get())
-                * U256::from(nominator.get())
-                * U256::from(Liquidity::from_integer(1).get())
-                / U256::from(denominator.get()))
-            .try_into()
+            Liquidity::checked_from_value(
+                x.cast::<U512>()
+                    * nominator.cast::<U512>()
+                    * Liquidity::from_integer(1).cast::<U512>()
+                    / denominator.cast::<U512>(),
+            )
             .map_err(|_| err!("Overflow in calculating liquidity"))?,
         );
         return Ok(SingleTokenLiquidity {
             l: liquidity,
-            amount: TokenAmount(0),
+            amount: TokenAmount::new(U256::from(0)),
         });
     }
 
@@ -152,11 +152,10 @@ pub fn get_liquidity_by_x_sqrt_price(
         .big_div(SqrtPrice::from_integer(1));
     let denominator = upper_sqrt_price - current_sqrt_price;
     let liquidity = Liquidity::new(
-        (U256::from(x.get())
-            * U256::from(nominator.get())
-            * U256::from(Liquidity::from_integer(1).get())
-            / U256::from(denominator.get()))
-        .try_into()
+        Liquidity::checked_from_value(
+            x.cast::<U512>() * nominator.cast::<U512>() * Liquidity::from_integer(1).cast::<U512>()
+                / denominator.cast::<U512>(),
+        )
         .map_err(|_| err!("Overflow in calculating liquidity"))?,
     );
 
@@ -207,27 +206,29 @@ pub fn get_liquidity_by_y_sqrt_price(
     if upper_sqrt_price <= current_sqrt_price {
         let sqrt_price_diff = upper_sqrt_price - lower_sqrt_price;
         let liquidity = Liquidity::new(
-            (U256::from(y.get())
-                * U256::from(SqrtPrice::from_integer(1).get())
-                * U256::from(Liquidity::from_integer(1).get())
-                / U256::from(sqrt_price_diff.get()))
-            .try_into()
-            .map_err(|_| err!("Overflow while calculating liquidity"))?,
+            Liquidity::checked_from_value(
+                y.cast::<U512>()
+                    * SqrtPrice::from_integer(1).cast::<U512>()
+                    * Liquidity::from_integer(1).cast::<U512>()
+                    / sqrt_price_diff.cast::<U512>(),
+            )
+            .map_err(|_| err!("Overflow in calculating liquidity"))?,
         );
         return Ok(SingleTokenLiquidity {
             l: liquidity,
-            amount: TokenAmount::new(0),
+            amount: TokenAmount::new(U256::from(0)),
         });
     }
 
     let sqrt_price_diff = current_sqrt_price - lower_sqrt_price;
     let liquidity = Liquidity::new(
-        (U256::from(y.get())
-            * U256::from(SqrtPrice::from_integer(1).get())
-            * U256::from(Liquidity::from_integer(1).get())
-            / U256::from(sqrt_price_diff.get()))
-        .try_into()
-        .map_err(|_| err!("Overflow while calculating liquidity"))?,
+        Liquidity::checked_from_value(
+            y.cast::<U512>()
+                * SqrtPrice::from_integer(1).cast::<U512>()
+                * Liquidity::from_integer(1).cast::<U512>()
+                / sqrt_price_diff.cast::<U512>(),
+        )
+        .map_err(|_| err!("Overflow in calculating liquidity"))?,
     );
     let denominator =
         (current_sqrt_price.big_mul(upper_sqrt_price)).big_div(SqrtPrice::from_integer(1));
@@ -252,17 +253,11 @@ pub fn calculate_x(
 
     Ok(if rounding_up {
         TokenAmount::new(
-            ((U256::from(common) + U256::from(Liquidity::from_integer(1).get()) - U256::from(1))
-                / U256::from(Liquidity::from_integer(1).get()))
-            .try_into()
-            .map_err(|_| err!("Overflow while casting to TokenAmount"))?,
+            (common + Liquidity::from_integer(1).get() - U256::from(1))
+                / Liquidity::from_integer(1).get(),
         )
     } else {
-        TokenAmount::new(
-            (U256::from(common) / U256::from(Liquidity::from_integer(1).get()))
-                .try_into()
-                .map_err(|_| err!("Overflow while casting to TokenAmount"))?,
-        )
+        TokenAmount::new(common / Liquidity::from_integer(1).get())
     })
 }
 
@@ -274,18 +269,15 @@ pub fn calculate_y(
     let shifted_liquidity = liquidity.get() / Liquidity::from_integer(1).get();
     Ok(if rounding_up {
         TokenAmount::new(
-            (((U256::from(sqrt_price_diff.get()) * U256::from(shifted_liquidity))
-                + U256::from(SqrtPrice::from_integer(1).get() - 1))
-                / U256::from(SqrtPrice::from_integer(1).get()))
-            .try_into()
-            .map_err(|_| err!("Overflow in calculating TokenAmount"))?,
+            (sqrt_price_diff.cast::<U256>() * shifted_liquidity
+                + SqrtPrice::from_integer(1).cast::<U256>()
+                - 1)
+                / SqrtPrice::from_integer(1).cast::<U256>(),
         )
     } else {
         TokenAmount::new(
-            (U256::from(sqrt_price_diff.get()) * U256::from(shifted_liquidity)
-                / U256::from(SqrtPrice::from_integer(1).get()))
-            .try_into()
-            .map_err(|_| err!("Overflow in calculating TokenAmount"))?,
+            sqrt_price_diff.cast::<U256>() * shifted_liquidity
+                / SqrtPrice::from_integer(1).cast::<U256>(),
         )
     })
 }
@@ -296,7 +288,7 @@ mod tests {
 
     #[test]
     fn get_liquidity_by_x_test() {
-        let x = TokenAmount::new(43_0000);
+        let x = TokenAmount::new(U256::from(43_0000));
         let current_sqrt_price = calculate_sqrt_price(100).unwrap();
         // below current tick
         {
@@ -311,9 +303,10 @@ mod tests {
         }
         // in current tick
         {
-            let expected_l = Liquidity::new(432392997319297);
-            let expected_y_up = TokenAmount(434322);
-            let expected_y_down = TokenAmount(434321);
+            let expected_l =
+                Liquidity::from_scale(U256::from(43239299731929u128), Liquidity::scale());
+            let expected_y_up = TokenAmount::new(U256::from(434322));
+            let expected_y_down = TokenAmount::new(U256::from(434321));
 
             let lower_tick = 80;
             let upper_tick = 120;
@@ -331,8 +324,8 @@ mod tests {
         }
         // above current tick
         {
-            let expected_l = Liquidity::new(13548826311623);
-            let expected_y = TokenAmount(0);
+            let expected_l = Liquidity::new(U256::from(1354882631162u64));
+            let expected_y = TokenAmount::new(U256::from(0));
             let lower_tick = 150;
             let upper_tick = 800;
 
@@ -350,12 +343,12 @@ mod tests {
 
     #[test]
     fn get_liquidity_by_y_test() {
-        let y = TokenAmount(47_600_000_000);
+        let y = TokenAmount::new(U256::from(47_600_000_000u64));
         let current_sqrt_price = calculate_sqrt_price(-20000).unwrap();
         // below current tick
         {
-            let expected_l = Liquidity::new(2789052279103923275);
-            let expected_x = TokenAmount(0);
+            let expected_l = Liquidity::new(U256::from(278905227910392327u64));
+            let expected_x = TokenAmount::new(U256::from(0));
             let lower_tick = -22000;
             let upper_tick = -21000;
 
@@ -370,9 +363,9 @@ mod tests {
         }
         // in current tick
         {
-            let expected_l = Liquidity::new(584945290554346935);
-            let expected_x_up = TokenAmount(77539808126);
-            let expected_x_down = TokenAmount(77539808125);
+            let expected_l = Liquidity::new(U256::from(58494529055434693u64));
+            let expected_x_up = TokenAmount::new(U256::from(77539808126u64));
+            let expected_x_down = TokenAmount::new(U256::from(77539808125u64));
             let lower_tick = -25000;
             let upper_tick = -19000;
 
@@ -407,15 +400,15 @@ mod tests {
 
     #[test]
     fn get_liquidity_test() {
-        let y = TokenAmount(47_600_000_000);
+        let y = TokenAmount::new(U256::from(47_600_000_000u64));
         let current_sqrt_price = calculate_sqrt_price(-20000).unwrap();
 
         // below current tick
         {
             let lower_tick = -22000;
             let upper_tick = -21000;
-            let expected_x = TokenAmount(0);
-            let expected_l = Liquidity::new(2789052279103923275);
+            let expected_x = TokenAmount::new(U256::from(0));
+            let expected_l = Liquidity::new(U256::from(278905227910392327u64));
             let result_up = get_liquidity(
                 expected_x,
                 y,
@@ -444,10 +437,10 @@ mod tests {
         {
             let lower_tick = -25000;
             let upper_tick = -19000;
-            let expected_x_up = TokenAmount(77539808126);
-            let expected_x_down = TokenAmount(77539808125);
-            let expected_l_up = Liquidity::new(584945290554346935);
-            let expected_l_down = Liquidity::new(584945290552911923);
+            let expected_x_up = TokenAmount::new(U256::from(77539808126u64));
+            let expected_x_down = TokenAmount::new(U256::from(77539808125u64));
+            let expected_l_up = Liquidity::new(U256::from(58494529055434693u64));
+            let expected_l_down = Liquidity::new(U256::from(58494529055291192u64));
             let result_up = get_liquidity(
                 expected_x_up,
                 y,
@@ -476,9 +469,9 @@ mod tests {
         {
             let lower_tick = 150;
             let upper_tick = 800;
-            let x = TokenAmount(430_000_000);
-            let expected_y = TokenAmount(0);
-            let expected_l = Liquidity::new(13548826311623850);
+            let x = TokenAmount::new(U256::from(430_000_000));
+            let expected_y = TokenAmount::new(U256::from(0));
+            let expected_l = Liquidity::new(U256::from(1354882631162385u64));
             let result_up = get_liquidity(
                 x,
                 expected_y,

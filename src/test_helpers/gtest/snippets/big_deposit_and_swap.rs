@@ -13,8 +13,11 @@ pub fn big_deposit_and_swap(sys: &System, x_to_y: bool) {
     let token_y = ActorId::from(TOKEN_Y_ID);
     let invariant = init_invariant(sys, Percentage::from_scale(1, 2));
 
-    let (token_x_program, token_y_program) = init_tokens_with_mint(sys, (u128::MAX, u128::MAX));
-    let approved_amount = 2u128.pow(75) - 1;
+    let (token_x_program, token_y_program) =
+        init_tokens_with_mint_user_1(sys, (U256::MAX.into(), U256::MAX.into()));
+    let approved_amount =
+        U256::from_dec_str("102844034832575377634685573909834406561420991602098741459288064") //2^206
+            .unwrap();
 
     increase_allowance(
         &token_x_program,
@@ -124,17 +127,41 @@ pub fn big_deposit_and_swap(sys: &System, x_to_y: bool) {
     let amount_x = balance_of(&token_x_program, REGULAR_USER_1);
     let amount_y = balance_of(&token_y_program, REGULAR_USER_1);
     if x_to_y {
-        assert_eq!(amount_x, 340282366920938463463374607431768211455);
-        assert_eq!(amount_y, 340282366920938425684442744474606501888);
+        assert_eq!(
+            amount_x,
+            U256::from_dec_str(
+                "115792089237316195423570985008687907853269984665640564039457584007913129639935"
+            )
+            .unwrap()
+        );
+        assert_eq!(
+            amount_y,
+            U256::from_dec_str(
+                "115792089237316092579536152433310273167696074831234002618465981909171670351871"
+            )
+            .unwrap()
+        );
     } else {
-        assert_eq!(amount_x, 340282366920938425684442744474606501888);
-        assert_eq!(amount_y, 340282366920938463463374607431768211455);
+        assert_eq!(
+            amount_y,
+            U256::from_dec_str(
+                "115792089237316195423570985008687907853269984665640564039457584007913129639935"
+            )
+            .unwrap()
+        );
+        assert_eq!(
+            amount_x,
+            U256::from_dec_str(
+                "115792089237316092579536152433310273167696074831234002618465981909171670351871"
+            )
+            .unwrap()
+        );
     }
 
     let sqrt_price_limit = if x_to_y {
-        SqrtPrice::new(MIN_SQRT_PRICE)
+        SqrtPrice::new(MIN_SQRT_PRICE.into())
     } else {
-        SqrtPrice::new(MAX_SQRT_PRICE)
+        SqrtPrice::new(MAX_SQRT_PRICE.into())
     };
 
     let (swapped_token, returned_token) = if x_to_y {
@@ -191,10 +218,22 @@ pub fn big_deposit_and_swap(sys: &System, x_to_y: bool) {
     let amount_x = balance_of(&token_x_program, REGULAR_USER_1);
     let amount_y = balance_of(&token_y_program, REGULAR_USER_1);
     if x_to_y {
-        assert_eq!(amount_x, 340282366920938425684442744474606501888);
-        assert_ne!(amount_y, 0);
+        assert_eq!(
+            amount_x,
+            U256::from_dec_str(
+                "115792089237316092579536152433310273167696074831234002618465981909171670351871"
+            )
+            .unwrap()
+        );
+        assert_ne!(amount_y, U256::from(0));
     } else {
-        assert_ne!(amount_x, 0);
-        assert_eq!(amount_y, 340282366920938425684442744474606501888);
+        assert_ne!(amount_x, U256::from(0));
+        assert_eq!(
+            amount_y,
+            U256::from_dec_str(
+                "115792089237316092579536152433310273167696074831234002618465981909171670351871"
+            )
+            .unwrap()
+        );
     }
 }

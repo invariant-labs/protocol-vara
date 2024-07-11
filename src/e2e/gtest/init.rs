@@ -1,5 +1,5 @@
 use crate::test_helpers::gtest::*;
-
+use decimal::*;
 use gtest::*;
 use math::percentage::Percentage;
 

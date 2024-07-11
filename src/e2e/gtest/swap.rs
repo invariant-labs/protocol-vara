@@ -44,22 +44,22 @@ fn test_swap_not_enough_tokens_x() {
     let fee_tier = FeeTier { fee, tick_spacing };
     let pool_key = PoolKey::new(token_x, token_y, fee_tier).unwrap();
 
-    let amount = 1000;
-    mint(&token_x_program, REGULAR_USER_2, amount - 1).assert_success();
+    let amount = U256::from(1000);
+    mint(&token_x_program, REGULAR_USER_2, amount - U256::one()).assert_success();
 
     increase_allowance(&token_x_program, REGULAR_USER_2, INVARIANT_ID, amount).assert_success();
 
-    assert_eq!(balance_of(&token_x_program, REGULAR_USER_2), 999);
+    assert_eq!(balance_of(&token_x_program, REGULAR_USER_2), U256::from(999));
 
-    assert_eq!(balance_of(&token_x_program, INVARIANT_ID), 500);
-    assert_eq!(balance_of(&token_y_program, INVARIANT_ID), 1000);
+    assert_eq!(balance_of(&token_x_program, INVARIANT_ID), U256::from(500));
+    assert_eq!(balance_of(&token_y_program, INVARIANT_ID), U256::from(1000));
 
     let pool_before = get_pool(&invariant, token_x, token_y, fee_tier).unwrap();
 
     let swap_amount = TokenAmount::new(amount);
-    let slippage = SqrtPrice::new(MIN_SQRT_PRICE);
+    let slippage = SqrtPrice::new(MIN_SQRT_PRICE.into());
 
-    let deposit_amount = swap_amount.get() - 1;
+    let deposit_amount = swap_amount.get() - U256::from(1);
     assert_eq!(
         deposit_single_token(
             &invariant,
@@ -101,17 +101,29 @@ fn test_swap_not_enough_tokens_x() {
 
     assert_eq!(pool_before, pool_after);
 
-    assert_eq!(balance_of(&token_x_program, REGULAR_USER_2), 999);
-    assert_eq!(balance_of(&token_y_program, REGULAR_USER_2), 0);
+    assert_eq!(balance_of(&token_x_program, REGULAR_USER_2), U256::from(999));
+    assert_eq!(balance_of(&token_y_program, REGULAR_USER_2), U256::from(0));
 
-    assert_eq!(balance_of(&token_x_program, INVARIANT_ID), 500);
-    assert_eq!(balance_of(&token_y_program, INVARIANT_ID), 1000);
+    assert_eq!(balance_of(&token_x_program, INVARIANT_ID), U256::from(500));
+    assert_eq!(balance_of(&token_y_program, INVARIANT_ID), U256::from(1000));
 
-    assert_eq!(pool_after.fee_growth_global_x, FeeGrowth::new(0));
-    assert_eq!(pool_after.fee_growth_global_y, FeeGrowth::new(0));
+    assert_eq!(
+        pool_after.fee_growth_global_x,
+        FeeGrowth::new(0)
+    );
+    assert_eq!(
+        pool_after.fee_growth_global_y,
+        FeeGrowth::new(0)
+    );
 
-    assert_eq!(pool_after.fee_protocol_token_x, TokenAmount::new(0));
-    assert_eq!(pool_after.fee_protocol_token_y, TokenAmount::new(0));
+    assert_eq!(
+        pool_after.fee_protocol_token_x,
+        TokenAmount::new(U256::from(0))
+    );
+    assert_eq!(
+        pool_after.fee_protocol_token_y,
+        TokenAmount::new(U256::from(0))
+    );
 }
 
 #[test]
@@ -132,22 +144,22 @@ fn test_swap_not_enough_tokens_y() {
     let fee_tier = FeeTier { fee, tick_spacing };
     let pool_key = PoolKey::new(token_x, token_y, fee_tier).unwrap();
 
-    let amount = 500;
-    mint(&token_y_program, REGULAR_USER_2, amount - 1).assert_success();
+    let amount = U256::from(500);
+    mint(&token_y_program, REGULAR_USER_2, amount - U256::one()).assert_success();
 
     increase_allowance(&token_y_program, REGULAR_USER_2, INVARIANT_ID, amount).assert_success();
 
-    assert_eq!(balance_of(&token_y_program, REGULAR_USER_2), 499);
+    assert_eq!(balance_of(&token_y_program, REGULAR_USER_2), U256::from(499));
 
-    assert_eq!(balance_of(&token_x_program, INVARIANT_ID), 500);
-    assert_eq!(balance_of(&token_y_program, INVARIANT_ID), 1000);
+    assert_eq!(balance_of(&token_x_program, INVARIANT_ID), U256::from(500));
+    assert_eq!(balance_of(&token_y_program, INVARIANT_ID), U256::from(1000));
 
     let pool_before = get_pool(&invariant, token_x, token_y, fee_tier).unwrap();
 
     let swap_amount = TokenAmount::new(amount);
-    let slippage = SqrtPrice::new(MAX_SQRT_PRICE);
+    let slippage = SqrtPrice::new(MAX_SQRT_PRICE.into());
 
-    let deposit_amount = swap_amount.get() - 1;
+    let deposit_amount = swap_amount.get() - U256::from(1);
 
     assert_eq!(
         deposit_single_token(
@@ -180,17 +192,29 @@ fn test_swap_not_enough_tokens_y() {
 
     assert_eq!(pool_before, pool_after);
 
-    assert_eq!(balance_of(&token_x_program, REGULAR_USER_2), 0);
-    assert_eq!(balance_of(&token_y_program, REGULAR_USER_2), 499);
+    assert_eq!(balance_of(&token_x_program, REGULAR_USER_2), U256::from(0));
+    assert_eq!(balance_of(&token_y_program, REGULAR_USER_2), U256::from(499));
 
-    assert_eq!(balance_of(&token_x_program, INVARIANT_ID), 500);
-    assert_eq!(balance_of(&token_y_program, INVARIANT_ID), 1000);
+    assert_eq!(balance_of(&token_x_program, INVARIANT_ID), U256::from(500));
+    assert_eq!(balance_of(&token_y_program, INVARIANT_ID), U256::from(1000));
 
-    assert_eq!(pool_after.fee_growth_global_x, FeeGrowth::new(0));
-    assert_eq!(pool_after.fee_growth_global_y, FeeGrowth::new(0));
+    assert_eq!(
+        pool_after.fee_growth_global_x,
+        FeeGrowth::new(0)
+    );
+    assert_eq!(
+        pool_after.fee_growth_global_y,
+        FeeGrowth::new(0)
+    );
 
-    assert_eq!(pool_after.fee_protocol_token_x, TokenAmount::new(0));
-    assert_eq!(pool_after.fee_protocol_token_y, TokenAmount::new(0));
+    assert_eq!(
+        pool_after.fee_protocol_token_x,
+        TokenAmount::new(U256::from(0))
+    );
+    assert_eq!(
+        pool_after.fee_protocol_token_y,
+        TokenAmount::new(U256::from(0))
+    );
 }
 
 #[test]
@@ -210,7 +234,7 @@ fn test_swap_not_enough_liquidity_token_y() {
     let fee_tier = FeeTier { fee, tick_spacing };
     let pool_key = PoolKey::new(token_x, token_y, fee_tier).unwrap();
 
-    let amount = 1000;
+    let amount = U256::from(1000);
     mint(&token_y_program, REGULAR_USER_2, amount).assert_success();
 
     increase_allowance(&token_y_program, REGULAR_USER_2, INVARIANT_ID, amount).assert_success();
@@ -218,11 +242,11 @@ fn test_swap_not_enough_liquidity_token_y() {
     let pool_before = get_pool(&invariant, token_x, token_y, fee_tier).unwrap();
 
     let swap_amount = TokenAmount::new(amount);
-    let slippage = SqrtPrice::new(MAX_SQRT_PRICE);
+    let slippage = SqrtPrice::new(MAX_SQRT_PRICE.into());
 
-    assert_eq!(balance_of(&token_y_program, REGULAR_USER_2), 1000);
-    assert_eq!(balance_of(&token_x_program, INVARIANT_ID), 500);
-    assert_eq!(balance_of(&token_y_program, INVARIANT_ID), 1000);
+    assert_eq!(balance_of(&token_y_program, REGULAR_USER_2), U256::from(1000));
+    assert_eq!(balance_of(&token_x_program, INVARIANT_ID), U256::from(500));
+    assert_eq!(balance_of(&token_y_program, INVARIANT_ID), U256::from(1000));
 
     assert_eq!(
         deposit_single_token(
@@ -255,17 +279,29 @@ fn test_swap_not_enough_liquidity_token_y() {
 
     assert_eq!(pool_before, pool_after);
 
-    assert_eq!(balance_of(&token_x_program, REGULAR_USER_2), 0);
-    assert_eq!(balance_of(&token_y_program, REGULAR_USER_2), 1000);
+    assert_eq!(balance_of(&token_x_program, REGULAR_USER_2), U256::from(0));
+    assert_eq!(balance_of(&token_y_program, REGULAR_USER_2), U256::from(1000));
 
-    assert_eq!(balance_of(&token_x_program, INVARIANT_ID), 500);
-    assert_eq!(balance_of(&token_y_program, INVARIANT_ID), 1000);
+    assert_eq!(balance_of(&token_x_program, INVARIANT_ID), U256::from(500));
+    assert_eq!(balance_of(&token_y_program, INVARIANT_ID), U256::from(1000));
 
-    assert_eq!(pool_after.fee_growth_global_x, FeeGrowth::new(0));
-    assert_eq!(pool_after.fee_growth_global_y, FeeGrowth::new(0));
+    assert_eq!(
+        pool_after.fee_growth_global_x,
+        FeeGrowth::new(0)
+    );
+    assert_eq!(
+        pool_after.fee_growth_global_y,
+        FeeGrowth::new(0)
+    );
 
-    assert_eq!(pool_after.fee_protocol_token_x, TokenAmount::new(0));
-    assert_eq!(pool_after.fee_protocol_token_y, TokenAmount::new(0));
+    assert_eq!(
+        pool_after.fee_protocol_token_x,
+        TokenAmount::new(U256::from(0))
+    );
+    assert_eq!(
+        pool_after.fee_protocol_token_y,
+        TokenAmount::new(U256::from(0))
+    );
 }
 
 #[test]
@@ -285,7 +321,7 @@ fn test_swap_not_enough_liquidity_token_x() {
     let fee_tier = FeeTier { fee, tick_spacing };
     let pool_key = PoolKey::new(token_x, token_y, fee_tier).unwrap();
 
-    let amount = 2000;
+    let amount = U256::from(2000);
     mint(&token_x_program, REGULAR_USER_2, amount).assert_success();
 
     increase_allowance(&token_x_program, REGULAR_USER_2, INVARIANT_ID, amount).assert_success();
@@ -293,11 +329,11 @@ fn test_swap_not_enough_liquidity_token_x() {
     let pool_before = get_pool(&invariant, token_x, token_y, fee_tier).unwrap();
 
     let swap_amount = TokenAmount::new(amount);
-    let slippage = SqrtPrice::new(MIN_SQRT_PRICE);
+    let slippage = SqrtPrice::new(MIN_SQRT_PRICE.into());
 
-    assert_eq!(balance_of(&token_x_program, REGULAR_USER_2), 2000);
-    assert_eq!(balance_of(&token_x_program, INVARIANT_ID), 500);
-    assert_eq!(balance_of(&token_y_program, INVARIANT_ID), 1000);
+    assert_eq!(balance_of(&token_x_program, REGULAR_USER_2), U256::from(2000));
+    assert_eq!(balance_of(&token_x_program, INVARIANT_ID), U256::from(500));
+    assert_eq!(balance_of(&token_y_program, INVARIANT_ID), U256::from(1000));
 
     assert_eq!(
         deposit_single_token(
@@ -340,17 +376,29 @@ fn test_swap_not_enough_liquidity_token_x() {
 
     assert_eq!(pool_before, pool_after);
 
-    assert_eq!(balance_of(&token_x_program, REGULAR_USER_2), 2000);
-    assert_eq!(balance_of(&token_y_program, REGULAR_USER_2), 0);
+    assert_eq!(balance_of(&token_x_program, REGULAR_USER_2), U256::from(2000));
+    assert_eq!(balance_of(&token_y_program, REGULAR_USER_2), U256::from(0));
 
-    assert_eq!(balance_of(&token_x_program, INVARIANT_ID), 500);
-    assert_eq!(balance_of(&token_y_program, INVARIANT_ID), 1000);
+    assert_eq!(balance_of(&token_x_program, INVARIANT_ID), U256::from(500));
+    assert_eq!(balance_of(&token_y_program, INVARIANT_ID), U256::from(1000));
 
-    assert_eq!(pool_after.fee_growth_global_x, FeeGrowth::new(0));
-    assert_eq!(pool_after.fee_growth_global_y, FeeGrowth::new(0));
+    assert_eq!(
+        pool_after.fee_growth_global_x,
+        FeeGrowth::new(0)
+    );
+    assert_eq!(
+        pool_after.fee_growth_global_y,
+        FeeGrowth::new(0)
+    );
 
-    assert_eq!(pool_after.fee_protocol_token_x, TokenAmount::new(0));
-    assert_eq!(pool_after.fee_protocol_token_y, TokenAmount::new(0));
+    assert_eq!(
+        pool_after.fee_protocol_token_x,
+        TokenAmount::new(U256::from(0))
+    );
+    assert_eq!(
+        pool_after.fee_protocol_token_y,
+        TokenAmount::new(U256::from(0))
+    );
 }
 
 #[test]
@@ -362,7 +410,7 @@ fn test_swap_x_to_y() {
     let token_y = ActorId::from(TOKEN_Y_ID);
 
     let invariant = init_invariant(&sys, Percentage::from_scale(6, 3));
-    let initial_amount = 10u128.pow(10);
+    let initial_amount = U256::from(10u128.pow(10));
     let (token_x_program, token_y_program) = init_tokens(&sys);
 
     let fee_tier = FeeTier::new(Percentage::from_scale(6, 3), 10).unwrap();
@@ -439,7 +487,7 @@ fn test_swap_x_to_y() {
         upper_tick_index,
         liquidity_delta,
         SqrtPrice::new(0),
-        SqrtPrice::new(MAX_SQRT_PRICE),
+        SqrtPrice::new(MAX_SQRT_PRICE.into()),
     )
     .assert_success();
 
@@ -451,7 +499,7 @@ fn test_swap_x_to_y() {
         middle_tick_index,
         liquidity_delta,
         SqrtPrice::new(0),
-        SqrtPrice::new(MAX_SQRT_PRICE),
+        SqrtPrice::new(MAX_SQRT_PRICE.into()),
     )
     .assert_success();
 
@@ -466,7 +514,7 @@ fn test_swap_x_to_y() {
 
     assert_eq!(pool.liquidity, liquidity_delta);
 
-    let amount = 1000;
+    let amount = U256::from(1000);
     let swap_amount = TokenAmount(amount);
     mint(&token_x_program, REGULAR_USER_2, amount).assert_success();
 
@@ -499,8 +547,8 @@ fn test_swap_x_to_y() {
     // Check balances
     let delta_invariant_y = before_invariant_y - invariant_y;
     let delta_invariant_x = invariant_x - before_invariant_x;
-    let expected_x = 0;
-    let expected_y = amount - 10;
+    let expected_x = U256::from(0);
+    let expected_y = amount - U256::from(10);
 
     // Check balances
     assert_eq!(user_x, expected_x);
@@ -512,21 +560,27 @@ fn test_swap_x_to_y() {
     assert_eq!(pool.fee_growth_global_y, FeeGrowth::new(0));
     assert_eq!(
         pool.fee_growth_global_x,
-        FeeGrowth::new(40000000000000000000000)
+        FeeGrowth::new(40000000000000000000000u128)
     );
-    assert_eq!(pool.fee_protocol_token_y, TokenAmount(0));
-    assert_eq!(pool.fee_protocol_token_x, TokenAmount(2));
+    assert_eq!(pool.fee_protocol_token_y, TokenAmount::new(U256::from(0)));
+    assert_eq!(pool.fee_protocol_token_x, TokenAmount::new(U256::from(2)));
 
     // Check Ticks
     assert_eq!(lower_tick.liquidity_change, liquidity_delta);
     assert_eq!(middle_tick.liquidity_change, liquidity_delta);
     assert_eq!(upper_tick.liquidity_change, liquidity_delta);
-    assert_eq!(upper_tick.fee_growth_outside_x, FeeGrowth::new(0));
+    assert_eq!(
+        upper_tick.fee_growth_outside_x,
+        FeeGrowth::new(0)
+    );
     assert_eq!(
         middle_tick.fee_growth_outside_x,
-        FeeGrowth::new(30000000000000000000000)
+        FeeGrowth::new(30000000000000000000000u128)
     );
-    assert_eq!(lower_tick.fee_growth_outside_x, FeeGrowth::new(0));
+    assert_eq!(
+        lower_tick.fee_growth_outside_x,
+        FeeGrowth::new(0)
+    );
     assert!(lower_tick_bit);
     assert!(middle_tick_bit);
     assert!(upper_tick_bit);
@@ -541,7 +595,7 @@ fn test_swap_y_to_x() {
     let token_y = ActorId::from(TOKEN_Y_ID);
 
     let invariant = init_invariant(&sys, Percentage::from_scale(6, 3));
-    let initial_amount = 10u128.pow(10);
+    let initial_amount = U256::from(10u128.pow(10));
     let (token_x_program, token_y_program) = init_tokens(&sys);
 
     let fee_tier = FeeTier::new(Percentage::from_scale(6, 3), 10).unwrap();
@@ -621,7 +675,7 @@ fn test_swap_y_to_x() {
         upper_tick_index,
         liquidity_delta,
         SqrtPrice::new(0),
-        SqrtPrice::new(MAX_SQRT_PRICE),
+        SqrtPrice::new(MAX_SQRT_PRICE.into()),
     )
     .assert_success();
 
@@ -633,7 +687,7 @@ fn test_swap_y_to_x() {
         upper_tick_index + 20,
         liquidity_delta,
         SqrtPrice::new(0),
-        SqrtPrice::new(MAX_SQRT_PRICE),
+        SqrtPrice::new(MAX_SQRT_PRICE.into()),
     )
     .assert_success();
 
@@ -647,7 +701,7 @@ fn test_swap_y_to_x() {
 
     assert_eq!(pool.liquidity, liquidity_delta);
 
-    let amount = 1000;
+    let amount = U256::from(1000);
     let swap_amount = TokenAmount(amount);
 
     mint(&token_y_program, REGULAR_USER_2, amount).assert_success();
@@ -656,8 +710,8 @@ fn test_swap_y_to_x() {
 
     let before_invariant_x = balance_of(&token_x_program, INVARIANT_ID);
     let before_invariant_y = balance_of(&token_y_program, INVARIANT_ID);
-    assert_eq!(balance_of(&token_x_program, INVARIANT_ID), 2499);
-    assert_eq!(balance_of(&token_y_program, INVARIANT_ID), 500);
+    assert_eq!(balance_of(&token_x_program, INVARIANT_ID), U256::from(2499));
+    assert_eq!(balance_of(&token_y_program, INVARIANT_ID), U256::from(500));
     swap_exact_limit(
         &invariant,
         REGULAR_USER_2,
@@ -681,8 +735,8 @@ fn test_swap_y_to_x() {
     let invariant_y = balance_of(&token_y_program, INVARIANT_ID);
     let delta_invariant_x = before_invariant_x - invariant_x;
     let delta_invariant_y = invariant_y - before_invariant_y;
-    let expected_x = amount - 10;
-    let expected_y = 0;
+    let expected_x = amount - U256::from(10);
+    let expected_y = U256::from(0);
 
     // Check balances
     assert_eq!(user_x, expected_x);
@@ -694,21 +748,27 @@ fn test_swap_y_to_x() {
     assert_eq!(pool.fee_growth_global_x, FeeGrowth::new(0));
     assert_eq!(
         pool.fee_growth_global_y,
-        FeeGrowth::new(40000000000000000000000)
+        FeeGrowth::new(40000000000000000000000u128)
     );
-    assert_eq!(pool.fee_protocol_token_x, TokenAmount(0));
-    assert_eq!(pool.fee_protocol_token_y, TokenAmount(2));
+    assert_eq!(pool.fee_protocol_token_x, TokenAmount::new(U256::from(0)));
+    assert_eq!(pool.fee_protocol_token_y, TokenAmount::new(U256::from(2)));
 
     // Check Ticks
     assert_eq!(lower_tick.liquidity_change, liquidity_delta);
     assert_eq!(middle_tick.liquidity_change, liquidity_delta);
     assert_eq!(upper_tick.liquidity_change, liquidity_delta);
-    assert_eq!(upper_tick.fee_growth_outside_y, FeeGrowth::new(0));
+    assert_eq!(
+        upper_tick.fee_growth_outside_y,
+        FeeGrowth::new(0)
+    );
     assert_eq!(
         middle_tick.fee_growth_outside_y,
-        FeeGrowth::new(30000000000000000000000)
+        FeeGrowth::new(30000000000000000000000u128)
     );
-    assert_eq!(lower_tick.fee_growth_outside_y, FeeGrowth::new(0));
+    assert_eq!(
+        lower_tick.fee_growth_outside_y,
+        FeeGrowth::new(0)
+    );
     assert!(lower_tick_bit);
     assert!(middle_tick_bit);
     assert!(upper_tick_bit);

@@ -1,7 +1,6 @@
+use alloc::vec::Vec;
 use crate::consts::*;
 use crate::types::{liquidity::*, percentage::*, sqrt_price::*, token_amount::*};
-use core::convert::TryInto;
-use decimal::*;
 use js_sys::BigInt;
 use serde::{Deserialize, Serialize};
 use traceable_result::*;
@@ -9,6 +8,7 @@ use tsify::Tsify;
 use wasm_bindgen::prelude::*;
 use wasm_wrapper::*;
 use crate::{Pool, Tick};
+use decimal::*;
 
 #[derive(PartialEq, Eq, Debug, Copy, Clone, Serialize, Deserialize, Tsify)]
 #[tsify(into_wasm_abi, from_wasm_abi)]
@@ -52,15 +52,18 @@ pub fn compute_swap_step(
     if liquidity.is_zero() {
         return Ok(SwapResult {
             next_sqrt_price: target_sqrt_price,
-            amount_in: TokenAmount(0),
-            amount_out: TokenAmount(0),
-            fee_amount: TokenAmount(0),
+            amount_in: TokenAmount::new(U256::from(0)),
+            amount_out: TokenAmount::new(U256::from(0)),
+            fee_amount: TokenAmount::new(U256::from(0)),
         });
     }
 
     let x_to_y = current_sqrt_price >= target_sqrt_price;
     let next_sqrt_price: SqrtPrice;
-    let (mut amount_in, mut amount_out) = (TokenAmount(0), TokenAmount(0));
+    let (mut amount_in, mut amount_out) = (
+        TokenAmount::new(U256::from(0)),
+        TokenAmount::new(U256::from(0)),
+    );
 
     if by_amount_in {
         let amount_after_fee = amount.big_mul(Percentage::from_integer(1u8) - fee);
@@ -199,23 +202,24 @@ pub fn get_delta_y(
     let delta_y = match rounding_up {
         true => delta
             .big_mul_to_value_up(liquidity)
-            .checked_add(SqrtPrice::almost_one())
+            .checked_add(SqrtPrice::almost_one().cast())
             .ok_or_else(|| err!(TrackableError::ADD))?
-            .checked_div(SqrtPrice::one())
+            .checked_div(SqrtPrice::one().cast())
             .ok_or_else(|| err!(TrackableError::DIV))?,
         false => delta
             .big_mul_to_value(liquidity)
-            .checked_div(SqrtPrice::one())
+            .checked_div(SqrtPrice::one().cast())
             .ok_or_else(|| err!(TrackableError::DIV))?,
     };
 
-    Ok(TokenAmount(delta_y.try_into().map_err(|_| {
-        err!(TrackableError::cast::<TokenAmount>().as_str())
-    })?))
+    Ok(TokenAmount::new(
+        TokenAmount::checked_from_value(delta_y)
+            .map_err(|_| err!(TrackableError::cast::<TokenAmount>().as_str()))?,
+    ))
 }
 
 #[wasm_wrapper]
-pub fn get_next_sqrt_price_from_input(
+fn get_next_sqrt_price_from_input(
     starting_sqrt_price: SqrtPrice,
     liquidity: Liquidity,
     amount: TokenAmount,
@@ -232,7 +236,7 @@ pub fn get_next_sqrt_price_from_input(
 }
 
 #[wasm_wrapper]
-pub fn get_next_sqrt_price_from_output(
+fn get_next_sqrt_price_from_output(
     starting_sqrt_price: SqrtPrice,
     liquidity: Liquidity,
     amount: TokenAmount,
@@ -261,29 +265,34 @@ pub fn get_next_sqrt_price_x_up(
     let price_delta = ok_or_mark_trace!(SqrtPrice::checked_from_decimal_to_value(liquidity)
         .map_err(|_| err!("extending liquidity overflow")))?;
 
-    let denominator = ok_or_mark_trace!(match add_x {
+    let denominator = TokenAmount::from_value(ok_or_mark_trace!(match add_x {
         true => price_delta.checked_add(starting_sqrt_price.big_mul_to_value(x)),
         false => price_delta.checked_sub(starting_sqrt_price.big_mul_to_value(x)),
     }
-    .ok_or_else(|| err!("big_liquidity -/+ sqrt_price * x")))?; // never should be triggered
+    .ok_or_else(|| err!("big_liquidity -/+ sqrt_price * x")))?); // never should be triggered
 
     ok_or_mark_trace!(SqrtPrice::checked_big_div_values_up(
-        starting_sqrt_price.big_mul_to_value_up(liquidity),
+        TokenAmount::from_value(starting_sqrt_price.big_mul_to_value_up(liquidity)),
         denominator
     ))
 }
 
 #[wasm_wrapper]
-pub fn get_next_sqrt_price_y_down(
+fn get_next_sqrt_price_y_down(
     starting_sqrt_price: SqrtPrice,
     liquidity: Liquidity,
     y: TokenAmount,
     add_y: bool,
 ) -> TrackableResult<SqrtPrice> {
-    let numerator: U256 = from_result!(SqrtPrice::checked_from_decimal_to_value(y))?;
+    let numerator: U448 = SqrtPrice::from_value::<U448, U384>(
+        (SqrtPrice::checked_from_decimal_to_value(y))
+            .map_err(|_| err!("extending amount overflow"))?,
+    );
 
-    let denominator: U256 = SqrtPrice::checked_from_decimal_to_value(liquidity)
-        .map_err(|_| err!("extending liquidity overflow"))?;
+    let denominator: U448 = SqrtPrice::from_value::<U448, U384>(
+        SqrtPrice::checked_from_decimal_to_value(liquidity)
+            .map_err(|_| err!("extending liquidity overflow"))?,
+    );
 
     if add_y {
         let quotient =
@@ -308,8 +317,8 @@ pub fn calculate_amount_delta(
     if upper_tick < lower_tick {
         return Err(err!("upper_tick is not greater than lower_tick"));
     }
-    let mut amount_x = TokenAmount(0);
-    let mut amount_y = TokenAmount(0);
+    let mut amount_x = TokenAmount::new(U256::from(0));
+    let mut amount_y = TokenAmount::new(U256::from(0));
     let mut update_liquidity = false;
 
     if current_tick_index < lower_tick {
@@ -375,7 +384,6 @@ pub fn calculate_max_liquidity_per_tick(tick_spacing: u16) -> Liquidity {
     Liquidity::new(Liquidity::max_instance().get() / ticks_amount_spacing_limited)
 }
 
-#[wasm_wrapper]
 pub fn check_ticks(tick_lower: i32, tick_upper: i32, tick_spacing: u16) -> TrackableResult<()> {
     if tick_lower > tick_upper {
         return Err(err!("tick_lower > tick_upper"));

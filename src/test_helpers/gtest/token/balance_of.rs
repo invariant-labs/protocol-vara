@@ -1,10 +1,9 @@
 use crate::{send_query, test_helpers::gtest::REGULAR_USER_1};
 use gtest::*;
 use sails_rtl::ActorId;
+use decimal::U256;
 
-use super::U256;
-
-pub fn balance_of(token: &Program, account: u64) -> u128 {
+pub fn balance_of(token: &Program, account: u64) -> U256 {
     send_query!(
       program: token,
       user: REGULAR_USER_1,
@@ -13,5 +12,4 @@ pub fn balance_of(token: &Program, account: u64) -> u128 {
       payload: (ActorId::from(account)),
       response_type: U256
     )
-    .0
 }

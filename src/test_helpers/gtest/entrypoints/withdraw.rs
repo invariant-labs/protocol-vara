@@ -1,4 +1,5 @@
 use contracts::{InvariantError, PoolKey};
+use decimal::U256;
 use gstd::*;
 use gtest::*;
 use io::*;
@@ -11,7 +12,7 @@ pub fn withdraw_single_token(
     invariant: &Program,
     from: u64,
     token: impl Into<ActorId>,
-    amount: Option<u128>,
+    amount: Option<U256>,
     expected_error: Option<impl Into<String>>,
 ) -> Option<TokenAmount> {
     let res = send_request!(
@@ -44,9 +45,9 @@ pub fn withdraw_token_pair(
     invariant: &Program,
     from: u64,
     token_x: impl Into<ActorId>,
-    token_x_amount: Option<u128>,
+    token_x_amount: Option<U256>,
     token_y: impl Into<ActorId>,
-    token_y_amount: Option<u128>,
+    token_y_amount: Option<U256>,
     expected_error: Option<impl Into<String>>,
 ) -> Option<(TokenAmount, TokenAmount)> {
     let res = send_request!(

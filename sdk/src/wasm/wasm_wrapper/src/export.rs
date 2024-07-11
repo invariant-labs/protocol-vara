@@ -62,9 +62,22 @@ pub fn value_exported_function(
                 BigInt::from(result)
             }
         }
+        "Liquidity" | "TokenAmount" => {
+            quote! {
+                {
+                    let mut v = js_sys::BigInt::default();
+                    for (index, &value) in result.get().as_ref().iter().enumerate() {
+                        v = v | js_sys::BigInt::from(value) << (js_sys::BigInt::from(index) * js_sys::BigInt::from(64));
+                    }
+                    v
+                }
+            }
+        }
         _ => {
             quote! {
-                BigInt::from(result.get())
+                {
+                    BigInt::from(result.get())
+                }
             }
         }
     };

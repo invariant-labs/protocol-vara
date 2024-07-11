@@ -19,7 +19,8 @@ fn test_create_position() {
 
     let invariant = init_invariant(&sys, Percentage(100));
 
-    let (token_x_program, token_y_program) = init_tokens_with_mint(&sys, (500, 500));
+    let (token_x_program, token_y_program) =
+        init_tokens_with_mint(&sys, (U256::from(500), U256::from(500)));
     let token_x = ActorId::from(TOKEN_X_ID);
     let token_y = ActorId::from(TOKEN_Y_ID);
 
@@ -42,9 +43,9 @@ fn test_create_position() {
     .assert_single_event()
     .assert_empty()
     .assert_to(REGULAR_USER_1);
-    increase_allowance(&token_x_program, REGULAR_USER_1, INVARIANT_ID, 500).assert_success();
+    increase_allowance(&token_x_program, REGULAR_USER_1, INVARIANT_ID, U256::from(500)).assert_success();
 
-    increase_allowance(&token_y_program, REGULAR_USER_1, INVARIANT_ID, 500).assert_success();
+    increase_allowance(&token_y_program, REGULAR_USER_1, INVARIANT_ID, U256::from(500)).assert_success();
 
     let pool_key = PoolKey::new(token_x.into(), token_y.into(), fee_tier).unwrap();
     let pool = get_pool(&invariant, token_x, token_y, fee_tier).unwrap();
@@ -53,9 +54,9 @@ fn test_create_position() {
         &invariant,
         REGULAR_USER_1,
         token_x,
-        500,
+        U256::from(500),
         token_y,
-        500,
+        U256::from(500),
         None::<&str>,
     )
     .unwrap();
@@ -66,7 +67,7 @@ fn test_create_position() {
         pool_key,
         -10,
         10,
-        Liquidity::new(10),
+        Liquidity::new(U256::from(10)),
         pool.sqrt_price,
         pool.sqrt_price,
     );
@@ -89,7 +90,7 @@ fn test_create_position() {
         .assert_with_payload(PositionCreatedEvent {
             address: REGULAR_USER_1.into(),
             pool_key,
-            liquidity_delta: Liquidity::new(10),
+            liquidity_delta: Liquidity::new(U256::from(10)),
             timestamp: sys.block_timestamp(),
             lower_tick: -10,
             upper_tick: 10,
@@ -100,14 +101,14 @@ fn test_create_position() {
         .assert_to(REGULAR_USER_1)
         .assert_with_payload(Position {
             pool_key,
-            liquidity: Liquidity::new(10),
+            liquidity: Liquidity::new(U256::from(10)),
             lower_tick_index: -10,
             upper_tick_index: 10,
             fee_growth_inside_x: FeeGrowth::new(0),
             fee_growth_inside_y: FeeGrowth::new(0),
             last_block_number: sys.block_height() as u64,
-            tokens_owed_x: TokenAmount(0),
-            tokens_owed_y: TokenAmount(0),
+            tokens_owed_x: TokenAmount::new(U256::from(0)),
+            tokens_owed_y: TokenAmount::new(U256::from(0)),
         });
 }
 
@@ -118,7 +119,8 @@ fn test_position_same_upper_and_lower_tick() {
 
     let invariant = init_invariant(&sys, Percentage(100));
 
-    let (token_x_program, token_y_program) = init_tokens_with_mint(&sys, (500, 500));
+    let (token_x_program, token_y_program) =
+        init_tokens_with_mint(&sys, (U256::from(500), U256::from(500)));
     let token_x = ActorId::from(TOKEN_X_ID);
     let token_y = ActorId::from(TOKEN_Y_ID);
 
@@ -142,9 +144,9 @@ fn test_position_same_upper_and_lower_tick() {
     .assert_empty()
     .assert_to(REGULAR_USER_1);
 
-    increase_allowance(&token_x_program, REGULAR_USER_1, INVARIANT_ID, 500).assert_success();
+    increase_allowance(&token_x_program, REGULAR_USER_1, INVARIANT_ID, U256::from(500)).assert_success();
 
-    increase_allowance(&token_y_program, REGULAR_USER_1, INVARIANT_ID, 500).assert_success();
+    increase_allowance(&token_y_program, REGULAR_USER_1, INVARIANT_ID, U256::from(500)).assert_success();
 
     let pool_key = PoolKey::new(token_x.into(), token_y.into(), fee_tier).unwrap();
     let pool = get_pool(&invariant, token_x, token_y, fee_tier).unwrap();
@@ -153,9 +155,9 @@ fn test_position_same_upper_and_lower_tick() {
         &invariant,
         REGULAR_USER_1,
         token_x,
-        500,
+        U256::from(500),
         token_y,
-        500,
+        U256::from(500),
         None::<&str>,
     )
     .unwrap();
@@ -166,7 +168,7 @@ fn test_position_same_upper_and_lower_tick() {
         pool_key,
         10,
         10,
-        Liquidity::new(10),
+        Liquidity::new(U256::from(10)),
         pool.sqrt_price,
         pool.sqrt_price,
     )
@@ -193,9 +195,11 @@ fn test_position_below_current_tick() {
 
     let invariant = init_invariant(&sys, Percentage(100));
 
-    let initial_balance = 10_000_000_000;
-    let (token_x_program, token_y_program) =
-        init_tokens_with_mint(&sys, (initial_balance, initial_balance));
+    let initial_balance = U256::from(10_000_000_000u128);
+    let (token_x_program, token_y_program) = init_tokens_with_mint(
+        &sys,
+        (initial_balance, initial_balance),
+    );
     let token_x = ActorId::from(TOKEN_X_ID);
     let token_y = ActorId::from(TOKEN_Y_ID);
 
@@ -264,8 +268,8 @@ fn test_position_below_current_tick() {
         pool_state_before.sqrt_price,
     );
 
-    let expected_x_increase = 0;
-    let expected_y_increase = 2162;
+    let expected_x_increase = U256::from(0);
+    let expected_y_increase = U256::from(2162);
 
     let events = res.emitted_events();
     assert_eq!(events.len(), 2);
@@ -291,8 +295,8 @@ fn test_position_below_current_tick() {
             fee_growth_inside_x: FeeGrowth::new(0),
             fee_growth_inside_y: FeeGrowth::new(0),
             last_block_number: sys.block_height() as u64,
-            tokens_owed_x: TokenAmount(0),
-            tokens_owed_y: TokenAmount(0),
+            tokens_owed_x: TokenAmount::new(U256::from(0)),
+            tokens_owed_y: TokenAmount::new(U256::from(0)),
         });
 
     withdraw_token_pair(
@@ -358,9 +362,11 @@ fn test_position_within_current_tick() {
 
     let invariant = init_invariant(&sys, Percentage(100));
 
-    let initial_balance = 100_000_000;
-    let (token_x_program, token_y_program) =
-        init_tokens_with_mint(&sys, (initial_balance, initial_balance));
+    let initial_balance = U256::from(100_000_000);
+    let (token_x_program, token_y_program) = init_tokens_with_mint(
+        &sys,
+        (initial_balance, initial_balance),
+    );
     let token_x = ActorId::from(TOKEN_X_ID);
     let token_y = ActorId::from(TOKEN_Y_ID);
 
@@ -453,8 +459,8 @@ fn test_position_within_current_tick() {
     let invariant_x = balance_of(&token_x_program, INVARIANT_ID.into());
     let invariant_y = balance_of(&token_y_program, INVARIANT_ID.into());
     let zero_fee = FeeGrowth::new(0);
-    let expected_x_increase = 317;
-    let expected_y_increase = 32;
+    let expected_x_increase = U256::from(317);
+    let expected_y_increase = U256::from(32);
 
     // Check ticks
     assert_eq!(lower_tick.index, lower_tick_index);
@@ -495,9 +501,11 @@ fn test_position_above_current_tick() {
 
     let invariant = init_invariant(&sys, Percentage(100));
 
-    let initial_balance = 100_000_000;
-    let (token_x_program, token_y_program) =
-        init_tokens_with_mint(&sys, (initial_balance, initial_balance));
+    let initial_balance = U256::from(100_000_000);
+    let (token_x_program, token_y_program) = init_tokens_with_mint(
+        &sys,
+        (initial_balance, initial_balance),
+    );
     let token_x = ActorId::from(TOKEN_X_ID);
     let token_y = ActorId::from(TOKEN_Y_ID);
 
@@ -590,8 +598,8 @@ fn test_position_above_current_tick() {
             fee_growth_inside_x: FeeGrowth::new(0),
             fee_growth_inside_y: FeeGrowth::new(0),
             last_block_number: sys.block_height() as u64,
-            tokens_owed_x: TokenAmount(0),
-            tokens_owed_y: TokenAmount(0),
+            tokens_owed_x: TokenAmount::new(U256::from(0)),
+            tokens_owed_y: TokenAmount::new(U256::from(0)),
         });
 
     withdraw_token_pair(
@@ -617,8 +625,8 @@ fn test_position_above_current_tick() {
     let invariant_y = balance_of(&token_y_program, INVARIANT_ID.into());
 
     let zero_fee = FeeGrowth::new(0);
-    let expected_x_increase = 21549;
-    let expected_y_increase = 0;
+    let expected_x_increase = U256::from(21549);
+    let expected_y_increase = U256::from(0);
 
     // Check ticks
     assert_eq!(lower_tick.index, lower_tick_index);
@@ -639,7 +647,7 @@ fn test_position_above_current_tick() {
     assert_eq!(position_state.fee_growth_inside_y, zero_fee);
 
     // Check pool
-    assert_eq!(pool_state.liquidity, Liquidity::new(0));
+    assert_eq!(pool_state.liquidity, Liquidity::new(U256::from(0)));
     assert_eq!(pool_state.current_tick_index, init_tick);
 
     // Check balances
@@ -657,8 +665,9 @@ fn test_create_position_not_enough_token_x() {
 
     let invariant = init_invariant(&sys, Percentage(100));
 
-    let initial_balance = 100_000_000;
-    let (token_x_program, token_y_program) = init_tokens_with_mint(&sys, (1, initial_balance));
+    let initial_balance = U256::from(100_000_000);
+    let (token_x_program, token_y_program) =
+        init_tokens_with_mint(&sys, (U256::from(1), initial_balance));
     let token_x = ActorId::from(TOKEN_X_ID);
     let token_y = ActorId::from(TOKEN_Y_ID);
 
@@ -708,7 +717,7 @@ fn test_create_position_not_enough_token_x() {
         &invariant,
         REGULAR_USER_1,
         token_x,
-        1,
+        U256::from(1),
         token_y,
         initial_balance,
         None::<&str>,
@@ -735,7 +744,7 @@ fn test_create_position_not_enough_token_x() {
 
     assert_eq!(
         vec![
-            (ActorId::from(TOKEN_X_ID), TokenAmount(1)),
+            (ActorId::from(TOKEN_X_ID), TokenAmount::new(U256::from(1))),
             (ActorId::from(TOKEN_Y_ID), TokenAmount(initial_balance)),
         ],
         get_user_balances(&invariant, REGULAR_USER_1.into())
@@ -751,7 +760,10 @@ fn test_create_position_not_enough_token_x() {
             None,
             None::<&str>
         ),
-        Some((TokenAmount(1), TokenAmount(initial_balance),))
+        Some((
+            TokenAmount::new(U256::from(1)),
+            TokenAmount(initial_balance),
+        ))
     );
 
     let user_1_x = balance_of(&token_x_program, REGULAR_USER_1.into());
@@ -759,9 +771,9 @@ fn test_create_position_not_enough_token_x() {
     let invariant_x = balance_of(&token_x_program, INVARIANT_ID.into());
     let invariant_y = balance_of(&token_y_program, INVARIANT_ID.into());
 
-    assert_eq!(invariant_x, 0);
-    assert_eq!(invariant_y, 0);
-    assert_eq!(user_1_x, 1);
+    assert_eq!(invariant_x, U256::from(0));
+    assert_eq!(invariant_y, U256::from(0));
+    assert_eq!(user_1_x, U256::from(1));
     assert_eq!(user_1_y, initial_balance);
     assert_eq!(&pool_state, &pool_state_before);
 }
@@ -773,8 +785,9 @@ fn test_create_position_not_enough_token_y() {
 
     let invariant = init_invariant(&sys, Percentage(100));
 
-    let initial_balance = 100_000_000;
-    let (token_x_program, token_y_program) = init_tokens_with_mint(&sys, (initial_balance, 1));
+    let initial_balance = U256::from(100_000_000u128);
+    let (token_x_program, token_y_program) =
+        init_tokens_with_mint(&sys, (initial_balance, U256::from(1)));
     let token_x = ActorId::from(TOKEN_X_ID);
     let token_y = ActorId::from(TOKEN_Y_ID);
 
@@ -826,7 +839,7 @@ fn test_create_position_not_enough_token_y() {
         token_x,
         initial_balance,
         token_y,
-        1,
+        U256::from(1),
         None::<&str>,
     )
     .unwrap();
@@ -846,7 +859,7 @@ fn test_create_position_not_enough_token_y() {
     assert_eq!(
         vec![
             (ActorId::from(TOKEN_X_ID), TokenAmount(initial_balance)),
-            (ActorId::from(TOKEN_Y_ID), TokenAmount(1))
+            (ActorId::from(TOKEN_Y_ID), TokenAmount::new(U256::from(1)))
         ],
         get_user_balances(&invariant, REGULAR_USER_1.into())
     );
@@ -861,7 +874,10 @@ fn test_create_position_not_enough_token_y() {
             None,
             None::<&str>
         ),
-        Some((TokenAmount(initial_balance), TokenAmount(1)))
+        Some((
+            TokenAmount(initial_balance),
+            TokenAmount::new(U256::from(1))
+        ))
     );
 
     let pool_state = get_pool(&invariant, token_x, token_y, fee_tier).unwrap();
@@ -875,10 +891,10 @@ fn test_create_position_not_enough_token_y() {
     let invariant_x = balance_of(&token_x_program, INVARIANT_ID.into());
     let invariant_y = balance_of(&token_y_program, INVARIANT_ID.into());
 
-    assert_eq!(invariant_x, 0);
-    assert_eq!(invariant_y, 0);
+    assert_eq!(invariant_x, U256::from(0));
+    assert_eq!(invariant_y, U256::from(0));
     assert_eq!(user_1_x, initial_balance);
-    assert_eq!(user_1_y, 1);
+    assert_eq!(user_1_y, U256::from(1));
     assert_eq!(&pool_state, &pool_state_before);
 }
 
@@ -890,7 +906,7 @@ fn test_remove_position() {
     let token_x = ActorId::from(TOKEN_X_ID);
     let token_y = ActorId::from(TOKEN_Y_ID);
 
-    let initial_mint = 10u128.pow(10);
+    let initial_mint = U256::from(10u128.pow(10));
     let invariant = init_invariant(&sys, Percentage::from_scale(1, 2));
     let (token_x_program, token_y_program) = init_tokens(&sys);
 
@@ -1030,7 +1046,7 @@ fn test_remove_position() {
     assert!(position_state.lower_tick_index == incorrect_lower_tick_index);
     assert!(position_state.upper_tick_index == incorrect_upper_tick_index);
 
-    let amount = 1000;
+    let amount = U256::from(1000);
     mint(&token_x_program, REGULAR_USER_2, amount).assert_success();
     assert_eq!(balance_of(&token_x_program, REGULAR_USER_2), amount);
 
@@ -1039,7 +1055,7 @@ fn test_remove_position() {
     let pool_state_before = get_pool(&invariant, token_x, token_y, fee_tier).unwrap();
 
     let swap_amount = TokenAmount::new(amount);
-    let slippage = SqrtPrice::new(MIN_SQRT_PRICE);
+    let slippage = SqrtPrice::new(MIN_SQRT_PRICE.into());
     deposit_single_token(&invariant, REGULAR_USER_2, token_x, amount, None::<&str>).unwrap();
 
     swap(
@@ -1058,10 +1074,16 @@ fn test_remove_position() {
     let pool_state_after = get_pool(&invariant, token_x, token_y, fee_tier).unwrap();
     assert_eq!(
         pool_state_after.fee_growth_global_x,
-        FeeGrowth::new(49999950000049999)
+        FeeGrowth::new(49999950000049999u128)
     );
-    assert_eq!(pool_state_after.fee_protocol_token_x, TokenAmount(1));
-    assert_eq!(pool_state_after.fee_protocol_token_y, TokenAmount(0));
+    assert_eq!(
+        pool_state_after.fee_protocol_token_x,
+        TokenAmount::new(U256::from(1))
+    );
+    assert_eq!(
+        pool_state_after.fee_protocol_token_y,
+        TokenAmount::new(U256::from(0))
+    );
 
     assert!(pool_state_after
         .sqrt_price
@@ -1073,8 +1095,8 @@ fn test_remove_position() {
 
     let amount_x = balance_of(&token_x_program, REGULAR_USER_2);
     let amount_y = balance_of(&token_y_program, REGULAR_USER_2);
-    assert_eq!(amount_x, 0);
-    assert_eq!(amount_y, 993);
+    assert_eq!(amount_x, U256::from(0));
+    assert_eq!(amount_y, U256::from(993));
 
     // pre load dex balances
     let invariant_x_before_remove = balance_of(&token_x_program, INVARIANT_ID);
@@ -1095,7 +1117,10 @@ fn test_remove_position() {
             None,
             None::<&str>
         ),
-        Some((TokenAmount(499), TokenAmount(999)))
+        Some((
+            TokenAmount::new(U256::from(499)),
+            TokenAmount::new(U256::from(999))
+        ))
     );
 
     // Load states
@@ -1106,9 +1131,9 @@ fn test_remove_position() {
     let upper_tick_bit = is_tick_initialized(&invariant, pool_key, upper_tick_index);
     let invariant_x = balance_of(&token_x_program, INVARIANT_ID);
     let invariant_y = balance_of(&token_y_program, INVARIANT_ID);
-    let expected_withdrawn_x = 499;
-    let expected_withdrawn_y = 999;
-    let expected_fee_x = 0;
+    let expected_withdrawn_x = U256::from(499);
+    let expected_withdrawn_y = U256::from(999);
+    let expected_fee_x = U256::from(0);
 
     assert_eq!(
         invariant_x_before_remove - invariant_x,

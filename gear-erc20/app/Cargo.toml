@@ -9,6 +9,8 @@ gstd.workspace = true
 primitive-types.workspace = true
 log.workspace = true
 sails-rtl.workspace = true
+gcore.workspace = true
+gear-core.workspace = true
 
 [dev-dependencies]
 env_logger.workspace = true
@@ -19,6 +21,8 @@ tokio = "1"
 
 [build-dependencies]
 gear-wasm-builder.workspace = true
+gcore.workspace = true
+gear-core.workspace = true
 
 [features]
 default = []

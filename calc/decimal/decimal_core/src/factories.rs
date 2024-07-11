@@ -13,81 +13,90 @@ pub fn generate_factories(characteristics: DecimalCharacteristics) -> proc_macro
         ..
     } = characteristics;
 
+    let pow_type = match underlying_type.clone().to_string().as_str() { 
+        "u128" | "u64" | "u32" | "u16" | "u8" | "i128" | "i64" | "i32" | "i16" | "i8" => string_to_ident("", "u32"),
+        &_ => underlying_type.clone(),
+    };
+
     let name_str = &struct_name.to_string();
-    let underlying_str = &underlying_type.to_string();
 
     let module_name = string_to_ident("tests_factories_", &name_str);
 
     proc_macro::TokenStream::from(quote!(
 
         impl<T> Factories<T> for #struct_name
-            where
-            T: TryInto<u128>,
-            T: TryFrom<u128>,
-            T: TryInto<#underlying_type>,
-            T: From<u8>,
-            T: num_traits::ops::checked::CheckedDiv,
-            T: num_traits::ops::checked::CheckedAdd,
-            T: num_traits::ops::checked::CheckedSub
+        where
+        <Self as Decimal>::U: UintCast<T>,
         {
+
             fn from_integer(integer: T) -> Self {
-                Self::new({
-                    let base: #underlying_type = integer.try_into()
-                        .unwrap_or_else(|_| core::panic!("decimal: integer value can't fit into `{}` type in {}::from_integer()", #underlying_str, #name_str));
-                    base
-                        .checked_mul(Self::one())
-                        .unwrap_or_else(|| core::panic!("decimal: overflow while adjusting scale in method {}::from_integer()", #name_str))
-                })
+                Self::from_integer_underlying(#underlying_type::uint_cast(integer))
             }
 
-            fn from_scale(val: T, scale: u8) -> Self {
+            fn from_scale(integer:T, scale:u8) -> Self {
+                Self::from_scale_underlying(#underlying_type::uint_cast(integer), scale)
+            }
+
+            fn checked_from_scale(integer:T,scale:u8) -> core::result::Result<Self,alloc::string::String> {
+                Self::checked_from_scale_underlying(#underlying_type::uint_cast(integer),scale)
+            }
+
+            fn from_scale_up(integer:T, scale:u8) -> Self {
+                Self::from_scale_up_underlying(#underlying_type::uint_cast(integer), scale)
+            }
+        }
+
+        impl FactoriesUnderlying for #struct_name
+        {
+            type U = #underlying_type;
+
+            fn from_integer_underlying(integer: Self::U) -> Self {
                 Self::new(
-                    if #scale > scale {
-                        let base: #underlying_type = val.try_into().unwrap_or_else(|_| core::panic!("decimal: can't convert value"));
-                        let multiplier: u128 = 10u128.checked_pow((#scale - scale) as u32).unwrap();
-                        base.checked_mul(multiplier.try_into().unwrap_or_else(|_| core::panic!("decimal: can't convert value"))).unwrap()
+                    integer.checked_mul(
+                        Self::one().get()
+                    ).unwrap_or_else(|| core::panic!("decimal: overflow while adjusting scale in method {}::from_integer()", #name_str))
+                )
+            }
+
+            fn from_scale_underlying(integer: Self::U, scale: u8)-> Self {
+                let input_scale:u8 = #scale;
+
+                Self::new(
+                    if input_scale > scale {
+                        let multiplier: #underlying_type = #underlying_type::uint_cast(10u8).checked_pow(#pow_type::from((input_scale - scale))).unwrap();
+                        integer.checked_mul(multiplier).unwrap()
                     } else {
-                        let denominator: u128 = 10u128.checked_pow((scale - #scale) as u32).unwrap();
-                         val.checked_div(
-                            &denominator.try_into().unwrap_or_else(|_| core::panic!("decimal: can't convert value"))
-                        ).unwrap().try_into().unwrap_or_else(|_| core::panic!("decimal: can't convert value"))
+                        let denominator: #underlying_type = #underlying_type::uint_cast(10u8).checked_pow(#pow_type::from((scale - input_scale))).unwrap();
+                        integer.checked_div(denominator).unwrap()
                     }
                 )
             }
 
-            fn checked_from_scale(val: T, scale: u8) -> core::result::Result<Self, alloc::string::String> {
+            fn checked_from_scale_underlying(integer: Self::U, scale: u8) -> core::result::Result<Self, alloc::string::String> {
+                let input_scale:u8 = #scale;
+                
                 Ok(Self::new(
-                    if #scale > scale {
-                        let base: #underlying_type = val.try_into().map_err(|_| "checked_from_scale: can't convert to base")?;
-                        let multiplier: u128 = 10u128.checked_pow((#scale - scale) as u32).ok_or_else(|| "checked_from_scale: multiplier overflow")?;
-                        base.checked_mul(multiplier.try_into().map_err(|_| "checked_from_scale: can't convert to multiplier")?).ok_or_else(|| "checked_from_scale: (multiplier * base) overflow")?
+                    if input_scale > scale {
+                        let multiplier: #underlying_type = #underlying_type::uint_cast(10u8).checked_pow(#pow_type::from((input_scale - scale))).ok_or_else(|| "checked_from_scale: delta scale overflow")?;
+                        integer.checked_mul(multiplier).ok_or_else(|| "checked_from_scale: (multiplier * base) overflow")?
                     } else {
-                        let denominator: u128 = 10u128.checked_pow((scale - #scale) as u32).ok_or_else(|| "checked_from_scale: denominator overflow")?;
-                         val.checked_div(
-                            &denominator.try_into().map_err(|_| "checked_from_scale: can't convert to denominator")?
-                        ).ok_or_else(|| "checked_from_scale: (base / denominator) overflow")?
-                        .try_into().map_err(|_| "checked_from_scale: can't convert to result")?
+                        let denominator: #underlying_type = #underlying_type::uint_cast(10u8).checked_pow(#pow_type::from((scale - input_scale))).ok_or_else(|| "checked_from_scale: delta scale overflow")?;
+                        integer.checked_div(denominator).ok_or_else(|| "checked_from_scale: (base / denominator) overflow")?
                     }
                 ))
             }
 
-            fn from_scale_up(val: T, scale: u8) -> Self {
+            fn from_scale_up_underlying(integer: Self::U, scale: u8) -> Self {
+                let input_scale:u8 = #scale;
+
                 Self::new(
-                    if #scale > scale {
-                        let base: #underlying_type = val.try_into().unwrap_or_else(|_| core::panic!("decimal: can't convert value"));
-                        let multiplier: u128 = 10u128.checked_pow((#scale - scale) as u32).unwrap();
-                        base.checked_mul(multiplier.try_into().unwrap_or_else(|_| core::panic!("decimal: can't convert value"))).unwrap()
+                    if input_scale > scale {
+                        let multiplier: #underlying_type = #underlying_type::uint_cast(10u8).checked_pow(#pow_type::from((input_scale - scale))).unwrap();
+                        integer.checked_mul(multiplier).unwrap()
                     } else {
-                        let multiplier: u128 = 10u128.checked_pow((scale - #scale) as u32).unwrap();
-                        let denominator: T = multiplier.try_into().unwrap_or_else(|_| core::panic!("decimal: can't convert value"));
-                        val
-                        .checked_add(
-                            &denominator.checked_sub(&T::from(1u8)).unwrap()
-                        ).unwrap()
-                        .checked_div(
-                            &denominator
-                        ).unwrap()
-                        .try_into().unwrap_or_else(|_| core::panic!("decimal: can't convert value"))
+                        let denominator: #underlying_type = #underlying_type::uint_cast(10u8).checked_pow(#pow_type::from((scale - input_scale))).unwrap();
+                        integer.checked_add(denominator.checked_sub(#underlying_type::uint_cast(1u8)).unwrap()).unwrap()
+                            .checked_div(denominator).unwrap()
                     }
                 )
             }
@@ -96,6 +105,7 @@ pub fn generate_factories(characteristics: DecimalCharacteristics) -> proc_macro
         impl<T: Decimal> BetweenDecimals<T> for #struct_name
         where
             Self: Factories<T::U>,
+
         {
             fn from_decimal(other: T) -> Self {
                 Self::from_scale(other.get(), T::scale())
@@ -112,34 +122,18 @@ pub fn generate_factories(characteristics: DecimalCharacteristics) -> proc_macro
 
         impl<T> FactoriesToValue<T, #big_type> for #struct_name
         where
-            T: TryInto<#underlying_type>,
+        #big_type: UintCast<T>,
         {
-
             fn checked_from_scale_to_value(val: T, scale: u8) -> core::result::Result<#big_type, alloc::string::String> {
-                Ok(
-                    if #scale > scale {
-                        let base: #big_type = #big_type::try_from(
-                            val.try_into().map_err(|_| "checked_from_scale_to_value: can't convert val to base")?)
-                            .map_err(|_| "checked_from_scale_to_value: can't convert val to big_type"
-                        )?;
-                        // no possibility of overflow because of scale limit
-                        let multiplier: u128 = 10u128.checked_pow((#scale - scale) as u32).ok_or_else(|| "checked_from_scale_to_value: multiplier overflow")?;
+                let base: #big_type = #struct_name::from_value(val);
 
-                        base.checked_mul(multiplier.try_into().map_err(|_| "checked_from_scale_to_value: can't convert multiplier to big_type")?)
-                        .ok_or_else(|| "checked_from_scale_to_value: (multiplier * base) overflow")?
-                    } else {
-                        // no possibility of overflow because of scale limit
-                        let denominator: u128 = 10u128.checked_pow((scale - #scale) as u32).ok_or_else(|| "checked_from_scale_to_value: denominator overflow")?;
-                        let base: #big_type = #big_type::try_from(
-                            val.try_into().map_err(|_| "checked_from_scale_to_value: can't convert val to base")?)
-                            .map_err(|_| "checked_from_scale_to_value: can't convert val to big_type"
-                        )?;
-
-                        base.checked_div(
-                            denominator.try_into().map_err(|_| "checked_from_scale_to_value: can't convert denominator to big_type")?
-                        ).ok_or_else(|| "checked_from_scale_to_value: (base / denominator) overflow")?
-                        .try_into().map_err(|_| "checked_from_scale_to_value: can't convert to result")?
-                    })
+                Ok(if #scale > scale {
+                    let multiplier: u128 = 10u128.checked_pow((#scale - scale) as u32).ok_or_else(|| "checked_from_scale_to_value: multiplier overflow")?;
+                    base.checked_mul(multiplier.try_into().unwrap()).unwrap()
+                } else {
+                    let denominator: u128 = 10u128.checked_pow((scale - #scale) as u32).ok_or_else(|| "checked_from_scale_to_value: denominator overflow")?;
+                    base.checked_div(denominator.try_into().unwrap()).unwrap()
+                })
             }
         }
 
@@ -152,7 +146,6 @@ pub fn generate_factories(characteristics: DecimalCharacteristics) -> proc_macro
             }
         }
 
-
         #[cfg(test)]
         pub mod #module_name {
             use super::*;
@@ -160,93 +153,99 @@ pub fn generate_factories(characteristics: DecimalCharacteristics) -> proc_macro
             #[test]
             fn test_from_integer() {
                 assert_eq!(
-                    #struct_name::from_integer(0),
-                    #struct_name::new(0)
+                    #struct_name::from_integer_underlying(#underlying_type::from(0u8)),
+                    #struct_name::new(#underlying_type::from(0u8))
                 );
             }
 
             #[test]
             fn test_from_scale() {
                 assert_eq!(
-                    #struct_name::from_scale(0, 0),
-                    #struct_name::new(0)
-                );
-                assert_eq!(
-                    #struct_name::from_scale_up(0, 0),
-                    #struct_name::new(0)
+                    #struct_name::from_scale(0u8, 0),
+                    #struct_name::new(#underlying_type::from(0u8))
                 );
 
                 assert_eq!(
-                    #struct_name::from_scale(0, 3),
-                    #struct_name::new(0)
-                );
-                assert_eq!(
-                    #struct_name::from_scale_up(0, 3),
-                    #struct_name::new(0)
+                    #struct_name::from_scale_up(0u8, 0),
+                    #struct_name::new(#underlying_type::from(0u8))
                 );
 
                 assert_eq!(
-                    #struct_name::from_scale(42, #scale),
-                    #struct_name::new(42)
-                );
-                assert_eq!(
-                    #struct_name::from_scale_up(42, #scale),
-                    #struct_name::new(42)
+                    #struct_name::from_scale(0u8, 3),
+                    #struct_name::new(#underlying_type::from(0u8))
                 );
 
                 assert_eq!(
-                    #struct_name::from_scale(42, #scale + 1),
-                    #struct_name::new(4)
-                );
-                assert_eq!(
-                    #struct_name::from_scale_up(42, #scale + 1),
-                    #struct_name::new(5)
+                    #struct_name::from_scale_up(0u8, 3),
+                    #struct_name::new(#underlying_type::from(0u8))
                 );
 
+                assert_eq!(
+                    #struct_name::from_scale(42u8, #scale),
+                    #struct_name::new(#underlying_type::from(42u8))
+                );
+
+                assert_eq!(
+                    #struct_name::from_scale_up(42u8, #scale),
+                    #struct_name::new(#underlying_type::from(42u8))
+                );
+
+                assert_eq!(
+                    #struct_name::from_scale(42u8, #scale + 1),
+                    #struct_name::new(#underlying_type::from(4u8))
+                );
+
+                assert_eq!(
+                    #struct_name::from_scale_up(42u8, #scale + 1),
+                    #struct_name::new(#underlying_type::from(5u8))
+                );
             }
 
             #[test]
             fn test_checked_from_scale() {
                 assert_eq!(
-                    #struct_name::checked_from_scale(0, 0).unwrap(),
-                    #struct_name::new(0)
+                    #struct_name::checked_from_scale_underlying(#underlying_type::from(0u8), 0).unwrap(),
+                    #struct_name::new(#underlying_type::from(0u8))
                 );
 
                 assert_eq!(
-                    #struct_name::checked_from_scale(0, 3).unwrap(),
-                    #struct_name::new(0)
+                    #struct_name::checked_from_scale_underlying(#underlying_type::from(0u8), 3).unwrap(),
+                    #struct_name::new(#underlying_type::from(0u8))
                 );
 
                 assert_eq!(
-                    #struct_name::checked_from_scale(42, #scale).unwrap(),
-                    #struct_name::new(42)
+                    #struct_name::checked_from_scale_underlying(#underlying_type::from(42u8), #scale).unwrap(),
+                    #struct_name::new(#underlying_type::from(42u8))
                 );
 
                 assert_eq!(
-                    #struct_name::checked_from_scale(42, #scale + 1).unwrap(),
-                    #struct_name::new(4)
+                    #struct_name::checked_from_scale_underlying(#underlying_type::from(42u8), #scale + 1).unwrap(),
+                    #struct_name::new(#underlying_type::from(4u8))
                 );
 
-                let max_val = #struct_name::max_value();
+                let max_u128: u128 = u128::MAX;
                 assert_eq!(
-                    #struct_name::checked_from_scale(max_val, 100_000).is_err(),
+                    #struct_name::checked_from_scale_underlying(#underlying_type::from(max_u128), 100_000).is_err(),
                     true
                 );
             }
 
             #[test]
             fn test_checked_from_scale_to_value() {
-                let result: i32 = #struct_name::checked_from_scale_to_value(0, 0).unwrap().try_into().unwrap();
-                assert_eq!(result, 0);
+                let big_zero = #big_type::from(0u8);
+                let underlaying_zero = #underlying_type::from(0u8);
 
-                let result: i32 = #struct_name::checked_from_scale_to_value(0, 3).unwrap().try_into().unwrap();
-                assert_eq!(result, 0);
+                let result = #struct_name::checked_from_scale_to_value(underlaying_zero, 0).unwrap();
+                assert_eq!(result, big_zero);
 
-                let result: i32 = #struct_name::checked_from_scale_to_value(42, #scale).unwrap().try_into().unwrap();
-                assert_eq!(result, 42);
+                let result = #struct_name::checked_from_scale_to_value(underlaying_zero, 3).unwrap();
+                assert_eq!(result, big_zero);
 
-                let result: i32 = #struct_name::checked_from_scale_to_value(42, #scale + 1).unwrap().try_into().unwrap();
-                assert_eq!(result, 4);
+                let result = #struct_name::checked_from_scale_to_value(#underlying_type::from(42u8), #scale).unwrap();
+                assert_eq!(result, #big_type::from(42u8));
+
+                let result = #struct_name::checked_from_scale_to_value(#underlying_type::from(42u8), #scale + 1).unwrap();
+                assert_eq!(result, #big_type::from(4u8));
 
                 let max_val = #struct_name::max_value();
                 assert_eq!(
@@ -254,17 +253,17 @@ pub fn generate_factories(characteristics: DecimalCharacteristics) -> proc_macro
                     true
                 );
 
-                let result: i32 = #struct_name::checked_from_scale_to_value(1, 38).unwrap().try_into().unwrap();
-                assert_eq!(result, 0);
+                let result = #struct_name::checked_from_scale_to_value(#underlying_type::from(1u8), 38).unwrap();
+                assert_eq!(result, big_zero);
             }
 
             #[test]
             fn test_checked_from_decimal_to_value() {
-                let result: i32 = #struct_name::checked_from_decimal_to_value(#struct_name::new(1)).unwrap().try_into().unwrap();
-                assert_eq!(result, 1);
+                let result = #struct_name::checked_from_decimal_to_value(#struct_name::new(#underlying_type::from(1u8))).unwrap();
+                assert_eq!(result, #big_type::from(1u8));
 
-                let result: i32 = #struct_name::checked_from_decimal_to_value(#struct_name::new(42)).unwrap().try_into().unwrap();
-                assert_eq!(result, 42);
+                let result = #struct_name::checked_from_decimal_to_value(#struct_name::new(#underlying_type::from(42u8))).unwrap();
+                assert_eq!(result, #big_type::from(42u8));
             }
         }
     ))

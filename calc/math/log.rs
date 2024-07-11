@@ -166,6 +166,7 @@ mod tests {
             let sqrt_price_x32 = sqrt_price_to_x32(sqrt_price_decimal);
             let (sign, value) = log2_iterative_approximation_x32(sqrt_price_x32);
             assert!(sign);
+
             assert_eq!(value, 0);
         }
         // log2 > 0 when x > 1
@@ -174,6 +175,7 @@ mod tests {
             let sqrt_price_x32 = sqrt_price_to_x32(sqrt_price_decimal);
             let (sign, value) = log2_iterative_approximation_x32(sqrt_price_x32);
             assert!(sign);
+
             assert_eq!(value, 42003464192);
         }
         // log2 < 0 when x < 1
@@ -182,6 +184,7 @@ mod tests {
             let sqrt_price_x32 = sqrt_price_to_x32(sqrt_price_decimal);
             let (sign, value) = log2_iterative_approximation_x32(sqrt_price_x32);
             assert!(!sign);
+
             assert_eq!(value, 31804489728);
         }
         // log2 of max sqrt_price
@@ -190,6 +193,7 @@ mod tests {
             let sqrt_price_x32 = sqrt_price_to_x32(max_sqrt_price);
             let (sign, value) = log2_iterative_approximation_x32(sqrt_price_x32);
             assert!(sign);
+
             assert_eq!(value, 68719345664);
         }
         // log2 of min sqrt_price
@@ -274,14 +278,16 @@ mod tests {
             }
             // get tick slightly below sqrt(1.0001^(-1))
             {
-                let sqrt_price_decimal = SqrtPrice::from_tick(-1).unwrap() - SqrtPrice::new(1);
+                let sqrt_price_decimal =
+                    SqrtPrice::from_tick(-1).unwrap() - SqrtPrice::new(1);
 
                 let tick = get_tick_at_sqrt_price(sqrt_price_decimal, 1);
                 assert_eq!(tick.unwrap(), -2);
             }
             // get tick slightly above sqrt(1.0001^(-1))
             {
-                let sqrt_price_decimal = SqrtPrice::from_tick(-1).unwrap() + SqrtPrice::new(1);
+                let sqrt_price_decimal =
+                    SqrtPrice::from_tick(-1).unwrap() + SqrtPrice::new(1);
                 let tick = get_tick_at_sqrt_price(sqrt_price_decimal, 1);
                 assert_eq!(tick.unwrap(), -1);
             }

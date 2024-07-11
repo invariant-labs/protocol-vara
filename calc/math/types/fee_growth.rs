@@ -1,11 +1,10 @@
 use crate::types::{liquidity::*, token_amount::*};
 use decimal::*;
-use traceable_result::*;
 #[allow(unused_imports)]
 use gstd::ToString;
 use gstd::{Decode, Encode, TypeInfo};
-
-#[decimal(28)]
+use traceable_result::*;
+#[decimal(28, U256)]
 #[derive(Default, Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Encode, Decode, TypeInfo)]
 #[codec(crate = gstd::codec)]
 #[scale_info(crate = gstd::scale_info)]
@@ -13,38 +12,48 @@ pub struct FeeGrowth(pub u128);
 
 impl FeeGrowth {
     pub fn unchecked_add(self, other: FeeGrowth) -> FeeGrowth {
-        FeeGrowth::new(self.get().wrapping_add(other.get()))
+        if other.get() > FeeGrowth::max_instance().get() - self.get() {
+            FeeGrowth::new((other.get() - (FeeGrowth::max_instance().get() - self.get())) - 1)
+        } else {
+            FeeGrowth::new(self.get() + other.get())
+        }
     }
 
     pub fn unchecked_sub(self, other: FeeGrowth) -> FeeGrowth {
-        FeeGrowth::new(self.get().wrapping_sub(other.get()))
+        if other.get() > self.get() {
+            FeeGrowth::new(FeeGrowth::max_instance().get() - (other.get() - self.get()) + 1)
+        } else {
+            FeeGrowth::new(self.get() - other.get())
+        }
     }
 
     pub fn from_fee(liquidity: Liquidity, fee: TokenAmount) -> TrackableResult<Self> {
         Ok(Self::new(
-            U256::from(fee.get())
-                .checked_mul(FeeGrowth::one())
-                .ok_or_else(|| err!(TrackableError::MUL))?
-                .checked_mul(Liquidity::one())
-                .ok_or_else(|| err!(TrackableError::MUL))?
-                .checked_div(liquidity.here())
-                .ok_or_else(|| err!(TrackableError::DIV))?
-                .try_into()
-                .map_err(|_| err!(TrackableError::cast::<Self>().as_str()))?,
+            Self::checked_from_value(
+                fee.cast::<U384>()
+                    .checked_mul(FeeGrowth::one().cast())
+                    .ok_or_else(|| err!(TrackableError::MUL))?
+                    .checked_mul(Liquidity::one().cast())
+                    .ok_or_else(|| err!(TrackableError::MUL))?
+                    .checked_div(liquidity.cast())
+                    .ok_or_else(|| err!(TrackableError::DIV))?,
+            )
+            .map_err(|_| err!(TrackableError::cast::<Self>().as_str()))?,
         ))
     }
 
     pub fn to_fee(self, liquidity: Liquidity) -> TrackableResult<TokenAmount> {
         Ok(TokenAmount::new(
-            U256::from(self.get())
-                .checked_mul(liquidity.here())
-                .ok_or_else(|| err!(TrackableError::MUL))?
-                .checked_div(
-                    U256::from(10).pow(U256::from(FeeGrowth::scale() + Liquidity::scale())),
-                )
-                .ok_or_else(|| err!(TrackableError::MUL))?
-                .try_into()
-                .map_err(|_| err!(TrackableError::cast::<TokenAmount>().as_str()))?,
+            TokenAmount::checked_from_value(
+                self.cast::<U384>()
+                    .checked_mul(liquidity.cast())
+                    .ok_or_else(|| err!(TrackableError::MUL))?
+                    .checked_div(Liquidity::one().cast())
+                    .ok_or_else(|| err!(TrackableError::MUL))?
+                    .checked_div(FeeGrowth::one().cast())
+                    .ok_or_else(|| err!(TrackableError::MUL))?,
+            )
+            .map_err(|_| err!(TrackableError::cast::<TokenAmount>().as_str()))?,
         ))
     }
 }
@@ -103,8 +112,7 @@ pub fn calculate_fee_growth_inside(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::consts::{MAX_TICK, TICK_SEARCH_RANGE};
-    use crate::types::sqrt_price::SqrtPrice;
+    use crate::{consts::MAX_TICK, types::sqrt_price::SqrtPrice};
 
     #[test]
     fn test_unchecked_add() {
@@ -114,7 +122,7 @@ mod tests {
             let result = max.unchecked_add(almost_max);
             assert_eq!(
                 result,
-                FeeGrowth::new(340282366920938463463374607431768211453)
+                FeeGrowth::new(340282366920938463463374607431768211453u128)
             )
         }
         {
@@ -122,7 +130,7 @@ mod tests {
             let result = max.unchecked_add(addend);
             assert_eq!(
                 result,
-                FeeGrowth::new(340282366920938463463374607431768211448)
+                FeeGrowth::new(340282366920938463463374607431768211448u128)
             )
         }
         {
@@ -130,7 +138,7 @@ mod tests {
             let result = max.unchecked_add(addend);
             assert_eq!(
                 result,
-                FeeGrowth::new(340282366920938463463374607431768211434)
+                FeeGrowth::new(340282366920938463463374607431768211434u128)
             )
         }
         {
@@ -138,7 +146,7 @@ mod tests {
             let result = max.unchecked_add(addend);
             assert_eq!(
                 result,
-                FeeGrowth::new(340282366920938463463374607431768211404)
+                FeeGrowth::new(340282366920938463463374607431768211404u128)
             )
         }
         {
@@ -161,7 +169,7 @@ mod tests {
             let result = almost_max.unchecked_sub(max);
             assert_eq!(
                 result,
-                FeeGrowth::new(340282366920938463463374607431768211455)
+                FeeGrowth::new(340282366920938463463374607431768211455u128)
             )
         }
         {
@@ -172,7 +180,7 @@ mod tests {
             let result = ten.unchecked_sub(twenty);
             assert_eq!(
                 result,
-                FeeGrowth::new(340282366920938463463374607431768211446)
+                FeeGrowth::new(340282366920938463463374607431768211446u128)
             )
         }
         {
@@ -186,37 +194,45 @@ mod tests {
         // One
         {
             let fee_growth =
-                FeeGrowth::from_fee(Liquidity::from_integer(1), TokenAmount(1)).unwrap();
+                FeeGrowth::from_fee(Liquidity::from_integer(1), TokenAmount::new(U256::from(1)))
+                    .unwrap();
             assert_eq!(fee_growth, FeeGrowth::from_integer(1));
         }
         // Half
         {
             let fee_growth =
-                FeeGrowth::from_fee(Liquidity::from_integer(2), TokenAmount(1)).unwrap();
+                FeeGrowth::from_fee(Liquidity::from_integer(2), TokenAmount::new(U256::from(1)))
+                    .unwrap();
             assert_eq!(fee_growth, FeeGrowth::from_scale(5, 1))
         }
         // Little
         {
-            let fee_growth =
-                FeeGrowth::from_fee(Liquidity::from_integer(u64::MAX), TokenAmount(1)).unwrap();
+            let fee_growth = FeeGrowth::from_fee(
+                Liquidity::from_integer(u64::MAX),
+                TokenAmount::new(U256::from(1)),
+            )
+            .unwrap();
             // real    5.42101086242752217003726400434970855712890625 × 10^-20
             // expected 542101086
             assert_eq!(fee_growth, FeeGrowth::new(542101086))
         }
         // Fairly big
         {
-            let fee_growth =
-                FeeGrowth::from_fee(Liquidity::from_integer(100), TokenAmount(1_000_000)).unwrap();
+            let fee_growth = FeeGrowth::from_fee(
+                Liquidity::from_integer(100),
+                TokenAmount::new(U256::from(1_000_000)),
+            )
+            .unwrap();
             assert_eq!(fee_growth, FeeGrowth::from_integer(10000))
         }
     }
 
     #[test]
     fn test_domain_from_fee() {
-        // max FeeGrowth case insdie of domain
+        // max FeeGrowth case inside of domain
         {
             let max_tick_spacing = 100;
-            let tick_search_range = TICK_SEARCH_RANGE;
+            let tick_search_range = 256; // TODO: replace it with const
             let p_u = SqrtPrice::from_tick(MAX_TICK).unwrap();
             let p_l =
                 SqrtPrice::from_tick(MAX_TICK - max_tick_spacing * tick_search_range).unwrap();
@@ -226,15 +242,16 @@ mod tests {
             // token / L < delta_price
             // token < L * delta_price
             // token_max = L_max * delta_price_max
-            let max_token = (U256::from(max_l.get()) * U256::from(max_p_delta.get())
-                / U256::from(Liquidity::from_integer(1).get())
-                / U256::from(SqrtPrice::from_integer(1).get()))
-            .as_u128();
-            let fee_growth = FeeGrowth::from_fee(max_l, TokenAmount(max_token)).unwrap();
+            let max_token: U256 = TokenAmount::from_value(
+                max_l.cast::<U384>() * max_p_delta.cast::<U384>()
+                    / Liquidity::from_integer(1).cast::<U384>()
+                    / SqrtPrice::from_integer(1).cast::<U384>(),
+            );
+            let fee_growth = FeeGrowth::from_fee(max_l, TokenAmount::new(max_token)).unwrap();
 
             assert_eq!(
                 fee_growth,
-                FeeGrowth::new(473129365723326089999999999999999)
+                FeeGrowth::new(473129365723326089999999999999999u128)
             );
         }
         // min FeeGrowth case inside of domain
@@ -248,16 +265,15 @@ mod tests {
             //  min_token_amount, min_fee, max_possible_liquidity
             // basis point = 10^-4
             let basis_point = 10000;
-            let min_token = TokenAmount::new(1);
-            let max_l = (U256::from(min_token.get())
-                * U256::from(FeeGrowth::from_integer(1).get())
-                * U256::from(Liquidity::from_integer(1).get())
-                * U256::from(basis_point))
-            .as_u128();
+            let min_token = TokenAmount::new(U256::from(1));
+            let max_l = min_token.get()
+                * FeeGrowth::from_integer(1).cast::<U256>()
+                * Liquidity::from_integer(1).get()
+                * U256::from(basis_point);
 
             let fee_growth = FeeGrowth::from_fee(
                 Liquidity::new(max_l),
-                TokenAmount(min_token.get() * basis_point),
+                TokenAmount::new(min_token.get() * basis_point),
             )
             .unwrap();
 
@@ -265,21 +281,21 @@ mod tests {
         }
         // outside of domain trigger overflow due to result not fit into FeeGrowth
         {
-            let liqudiity = Liquidity::new(1);
+            let liquidity = Liquidity::new(U256::from(1));
             let fee = TokenAmount::max_instance();
-            let (_, _, stack) = FeeGrowth::from_fee(liqudiity, fee).unwrap_err().get();
+            let (_, _, stack) = FeeGrowth::from_fee(liquidity, fee).unwrap_err().get();
             assert_eq!(stack.len(), 1);
         }
         // amount = 0
         {
-            let liqudiity = Liquidity::from_integer(1_000);
-            let fee = TokenAmount::new(0);
-            let fee_growth = FeeGrowth::from_fee(liqudiity, fee).unwrap();
+            let liquidity = Liquidity::from_integer(1_000);
+            let fee = TokenAmount::new(U256::from(0));
+            let fee_growth = FeeGrowth::from_fee(liquidity, fee).unwrap();
             assert_eq!(fee_growth, FeeGrowth::new(0));
         }
         // L = 0
         {
-            let liquidity = Liquidity::new(0);
+            let liquidity = Liquidity::new(U256::from(0));
             let fee = TokenAmount::from_integer(1_000);
 
             let (_format, cause, stack) = FeeGrowth::from_fee(liquidity, fee).unwrap_err().get();
@@ -292,16 +308,16 @@ mod tests {
     fn test_to_fee() {
         // equal
         {
-            let amount = TokenAmount(100);
+            let amount = TokenAmount::new(U256::from(100));
             let liquidity = Liquidity::from_integer(1_000_000);
 
             let fee_growth = FeeGrowth::from_fee(liquidity, amount).unwrap();
             let out = fee_growth.to_fee(liquidity).unwrap();
-            assert_eq!(out, TokenAmount::from_decimal(amount));
+            assert_eq!(out, amount);
         }
         // greater liquidity
         {
-            let amount = TokenAmount(100);
+            let amount = TokenAmount::new(U256::from(100));
             let liquidity_before = Liquidity::from_integer(1_000_000);
             let liquidity_after = Liquidity::from_integer(10_000_000);
 
@@ -311,18 +327,21 @@ mod tests {
         }
         // huge liquidity
         {
-            let amount = TokenAmount(100_000_000_000_000);
+            let amount = TokenAmount::new(U256::from(100_000_000_000_000_u128));
             let liquidity = Liquidity::from_integer(2u128.pow(77));
 
             let fee_growth = FeeGrowth::from_fee(liquidity, amount).unwrap();
             // real    6.61744490042422139897126953655970282852649688720703125 × 10^-10
             // expected 6617444900424221398
-            assert_eq!(fee_growth, FeeGrowth::new(6617444900424221398));
+            assert_eq!(
+                fee_growth,
+                FeeGrowth::new(6617444900424221398u128)
+            );
 
             let out = fee_growth.to_fee(liquidity).unwrap();
             // real    9.99999999999999999853225897430980027744256 × 10^13
             // expected 99999999999999
-            assert_eq!(out, TokenAmount::new(99_999_999_999_999))
+            assert_eq!(out, TokenAmount::new(U256::from(99_999_999_999_999_u128)))
         }
     }
 
@@ -330,13 +349,16 @@ mod tests {
     fn test_domain_to_fee() {
         // overflowing `big_mul`
         {
-            let amount = TokenAmount(600000000000000000);
+            let amount = TokenAmount::new(U256::from(600000000000000000u128));
             let liquidity = Liquidity::from_integer(10000000000000000000u128);
 
             let fee_growth = FeeGrowth::from_fee(liquidity, amount).unwrap();
             // real     0.06
             // expected 0.06
-            assert_eq!(fee_growth, FeeGrowth::new(600000000000000000000000000));
+            assert_eq!(
+                fee_growth,
+                FeeGrowth::new(600000000000000000000000000u128)
+            );
 
             let out = fee_growth.to_fee(liquidity).unwrap();
             // real     600000000000000000
@@ -346,7 +368,7 @@ mod tests {
         // max value inside domain
         {
             let liquidity = Liquidity::max_instance();
-            let fee_growth = FeeGrowth::from_integer(1000000);
+            let fee_growth = FeeGrowth::from_integer(100000);
 
             let out = fee_growth.to_fee(liquidity).unwrap();
             assert_eq!(out, TokenAmount::max_instance())
@@ -369,15 +391,15 @@ mod tests {
             let fee_growth = FeeGrowth::new(0);
 
             let result = fee_growth.to_fee(liquidity).unwrap();
-            assert_eq!(result, TokenAmount::new(0));
+            assert_eq!(result, TokenAmount::new(U256::from(0)));
         }
         // L = 0
         {
-            let liquidity = Liquidity::new(0);
+            let liquidity = Liquidity::new(U256::from(0));
             let fee_growth = FeeGrowth::from_integer(1_000);
 
             let result = fee_growth.to_fee(liquidity).unwrap();
-            assert_eq!(result, TokenAmount::new(0));
+            assert_eq!(result, TokenAmount::new(U256::from(0)));
         }
     }
 
@@ -426,7 +448,7 @@ mod tests {
         //                     |fee_growth_inside| fee_outside_t1
         // ─────── c ─────── t0 ──────────────> t1 ───────────>
         //
-        // fee_growth_inside = t0.fee_outisde - t1.fee_outside
+        // fee_growth_inside = t0.fee_outside - t1.fee_outside
         //
         // current tick below range
         // current  lower       upper
@@ -454,7 +476,7 @@ mod tests {
         // fee_outside_t1  | fee_growth_inside|
         // ────────────── t1 ──────────────── t0 ─────── c ───────────>
 
-        // fee_growth_inside = t0.fee_outisde - t1.fee_outside
+        // fee_growth_inside = t0.fee_outside - t1.fee_outside
 
         // current tick upper range
         // lower    upper       current

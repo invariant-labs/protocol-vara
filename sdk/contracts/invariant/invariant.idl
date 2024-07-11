@@ -4,7 +4,7 @@ type InvariantConfig = struct {
 };
 
 type Percentage = struct {
-  u64,
+  u128,
 };
 
 type FeeTier = struct {
@@ -19,7 +19,7 @@ type PoolKey = struct {
 };
 
 type TokenAmount = struct {
-  u128,
+  u256,
 };
 
 type SqrtPrice = struct {
@@ -27,7 +27,7 @@ type SqrtPrice = struct {
 };
 
 type Liquidity = struct {
-  u128,
+  u256,
 };
 
 type Position = struct {

@@ -5,7 +5,11 @@ use crate::utils::string_to_ident;
 use crate::DecimalCharacteristics;
 
 pub fn generate_checked_ops(characteristics: DecimalCharacteristics) -> proc_macro::TokenStream {
-    let DecimalCharacteristics { struct_name, .. } = characteristics;
+    let DecimalCharacteristics {
+        struct_name,
+        underlying_type,
+        ..
+    } = characteristics;
 
     let name_str = &struct_name.to_string();
     let module_name = string_to_ident("tests_checked_ops_", &name_str);
@@ -29,7 +33,7 @@ pub fn generate_checked_ops(characteristics: DecimalCharacteristics) -> proc_mac
             fn checked_div(self, rhs: Self) -> core::result::Result<Self, alloc::string::String> {
                 Ok(Self::new(
                         self.get()
-                        .checked_mul(Self::one())
+                        .checked_mul(Self::one().get())
                         .ok_or_else(|| "checked_div: (self * Self::one()) multiplication overflow")?
                         .checked_div(rhs.get())
                         .ok_or_else(|| "checked_div: ((self * Self::one()) / rhs) division by zero")?
@@ -38,58 +42,55 @@ pub fn generate_checked_ops(characteristics: DecimalCharacteristics) -> proc_mac
             }
         }
 
-
-
-
         #[cfg(test)]
         pub mod #module_name {
             use super::*;
 
             #[test]
             fn test_checked_add() {
-                let a = #struct_name::new(24);
-                let b = #struct_name::new(11);
+                let a = #struct_name::new(#underlying_type::try_from(24u8).unwrap());
+                let b = #struct_name::new(#underlying_type::try_from(11u8).unwrap());
 
-                assert_eq!(a.checked_add(b), Ok(#struct_name::new(35)));
+                assert_eq!(a.checked_add(b), Ok(#struct_name::new(#underlying_type::try_from(35u8).unwrap())));
             }
 
             #[test]
             fn test_overflow_checked_add() {
                 let max = #struct_name::max_instance();
-                let result = max.checked_add(#struct_name::new(1));
+                let result = max.checked_add(#struct_name::new(#underlying_type::try_from(1u8).unwrap()));
 
-                assert_eq!(result, Err("checked_add: (self + rhs) additional overflow".to_string()));
+                assert_eq!(result, Err(alloc::string::String::from("checked_add: (self + rhs) additional overflow")));
             }
 
             #[test]
             fn test_checked_sub() {
-                let a = #struct_name::new(35);
-                let b = #struct_name::new(11);
+                let a = #struct_name::new(#underlying_type::try_from(35u8).unwrap());
+                let b = #struct_name::new(#underlying_type::try_from(11u8).unwrap());
 
-                assert_eq!(a.checked_sub(b), Ok(#struct_name::new(24)));
+                assert_eq!(a.checked_sub(b), Ok(#struct_name::new(#underlying_type::try_from(24u8).unwrap())));
             }
 
             #[test]
             fn test_checked_div() {
-                let a = #struct_name::new(2);
-                let b = #struct_name::new(#struct_name::one());
-                assert_eq!(a.checked_div(b), Ok(#struct_name::new(2)));
+                let a = #struct_name::new(#underlying_type::try_from(2u8).unwrap());
+                let b = #struct_name::new(#underlying_type::try_from(#struct_name::one().get()).unwrap());
+                assert_eq!(a.checked_div(b), Ok(#struct_name::new(#underlying_type::try_from(2u8).unwrap())));
             }
 
             #[test]
             fn test_0_checked_div() {
-                let a = #struct_name::new(47);
-                let b = #struct_name::new(0);
+                let a = #struct_name::new(#underlying_type::try_from(47u8).unwrap());
+                let b = #struct_name::new(#underlying_type::try_from(0u8).unwrap());
                 let result = a.checked_div(b);
                 assert!(result.is_err());
             }
 
             #[test]
             fn test_underflow_checked_sub() {
-                let min = #struct_name::new(0);
-                let result = min.checked_sub(#struct_name::new(1));
+                let min = #struct_name::new(#underlying_type::try_from(0u8).unwrap());
+                let result = min.checked_sub(#struct_name::new(#underlying_type::try_from(1u8).unwrap()));
 
-                assert_eq!(result, Err("checked_sub: (self - rhs) subtraction underflow".to_string()));
+                assert_eq!(result, Err(alloc::string::String::from("checked_sub: (self - rhs) subtraction underflow")));
             }
         }
     ))

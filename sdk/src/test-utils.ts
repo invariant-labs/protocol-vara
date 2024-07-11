@@ -1,6 +1,6 @@
 import { assert } from 'chai'
-import { isTokenX } from 'invariant-vara-wasm'
 import { HexString } from '@gear-js/api'
+import { isTokenX } from './utils'
 
 export const objectEquals = (
   object: { [key: string]: any },

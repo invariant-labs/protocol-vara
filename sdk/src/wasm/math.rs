@@ -4,7 +4,6 @@ use crate::{
     token_amount::TokenAmount,
     MAX_TICK,
 };
-use core::convert::TryInto;
 use decimal::*;
 use serde::{Deserialize, Serialize};
 use traceable_result::*;
@@ -12,6 +11,14 @@ use tsify::Tsify;
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsValue;
 use wasm_wrapper::wasm_wrapper;
+
+#[derive(Debug, Serialize, Deserialize, Tsify)]
+#[tsify(into_wasm_abi, from_wasm_abi)]
+pub struct LiquidityResult {
+    pub x: TokenAmount,
+    pub y: TokenAmount,
+    pub l: Liquidity,
+}
 
 #[derive(Debug, PartialEq, Eq, Serialize, Deserialize, Tsify)]
 #[tsify(into_wasm_abi, from_wasm_abi)]
@@ -60,16 +67,17 @@ pub fn get_liquidity_by_x_sqrt_price(
             (lower_sqrt_price.big_mul(upper_sqrt_price)).big_div(SqrtPrice::from_integer(1));
         let denominator = upper_sqrt_price - lower_sqrt_price;
         let liquidity = Liquidity::new(
-            (U256::from(x.get())
-                * U256::from(nominator.get())
-                * U256::from(Liquidity::from_integer(1).get())
-                / U256::from(denominator.get()))
-            .try_into()
+            Liquidity::checked_from_value(
+                x.cast::<U512>()
+                    * nominator.cast::<U512>()
+                    * Liquidity::from_integer(1).cast::<U512>()
+                    / denominator.cast::<U512>(),
+            )
             .map_err(|_| err!("Overflow in calculating liquidity"))?,
         );
         return Ok(SingleTokenLiquidity {
             l: liquidity,
-            amount: TokenAmount(0),
+            amount: TokenAmount::new(U256::from(0)),
         });
     }
 
@@ -78,11 +86,10 @@ pub fn get_liquidity_by_x_sqrt_price(
         .big_div(SqrtPrice::from_integer(1));
     let denominator = upper_sqrt_price - current_sqrt_price;
     let liquidity = Liquidity::new(
-        (U256::from(x.get())
-            * U256::from(nominator.get())
-            * U256::from(Liquidity::from_integer(1).get())
-            / U256::from(denominator.get()))
-        .try_into()
+        Liquidity::checked_from_value(
+            x.cast::<U512>() * nominator.cast::<U512>() * Liquidity::from_integer(1).cast::<U512>()
+                / denominator.cast::<U512>(),
+        )
         .map_err(|_| err!("Overflow in calculating liquidity"))?,
     );
 
@@ -133,27 +140,29 @@ pub fn get_liquidity_by_y_sqrt_price(
     if upper_sqrt_price <= current_sqrt_price {
         let sqrt_price_diff = upper_sqrt_price - lower_sqrt_price;
         let liquidity = Liquidity::new(
-            (U256::from(y.get())
-                * U256::from(SqrtPrice::from_integer(1).get())
-                * U256::from(Liquidity::from_integer(1).get())
-                / U256::from(sqrt_price_diff.get()))
-            .try_into()
-            .map_err(|_| err!("Overflow while calculating liquidity"))?,
+            Liquidity::checked_from_value(
+                y.cast::<U512>()
+                    * SqrtPrice::from_integer(1).cast::<U512>()
+                    * Liquidity::from_integer(1).cast::<U512>()
+                    / sqrt_price_diff.cast::<U512>(),
+            )
+            .map_err(|_| err!("Overflow in calculating liquidity"))?,
         );
         return Ok(SingleTokenLiquidity {
             l: liquidity,
-            amount: TokenAmount::new(0),
+            amount: TokenAmount::new(U256::from(0)),
         });
     }
 
     let sqrt_price_diff = current_sqrt_price - lower_sqrt_price;
     let liquidity = Liquidity::new(
-        (U256::from(y.get())
-            * U256::from(SqrtPrice::from_integer(1).get())
-            * U256::from(Liquidity::from_integer(1).get())
-            / U256::from(sqrt_price_diff.get()))
-        .try_into()
-        .map_err(|_| err!("Overflow while calculating liquidity"))?,
+        Liquidity::checked_from_value(
+            y.cast::<U512>()
+                * SqrtPrice::from_integer(1).cast::<U512>()
+                * Liquidity::from_integer(1).cast::<U512>()
+                / sqrt_price_diff.cast::<U512>(),
+        )
+        .map_err(|_| err!("Overflow in calculating liquidity"))?,
     );
     let denominator =
         (current_sqrt_price.big_mul(upper_sqrt_price)).big_div(SqrtPrice::from_integer(1));
@@ -178,17 +187,11 @@ pub fn calculate_x(
 
     Ok(if rounding_up {
         TokenAmount::new(
-            ((U256::from(common) + U256::from(Liquidity::from_integer(1).get()) - U256::from(1))
-                / U256::from(Liquidity::from_integer(1).get()))
-            .try_into()
-            .map_err(|_| err!("Overflow while casting to TokenAmount"))?,
+            (common + Liquidity::from_integer(1).get() - U256::from(1))
+                / Liquidity::from_integer(1).get(),
         )
     } else {
-        TokenAmount::new(
-            (U256::from(common) / U256::from(Liquidity::from_integer(1).get()))
-                .try_into()
-                .map_err(|_| err!("Overflow while casting to TokenAmount"))?,
-        )
+        TokenAmount::new(common / Liquidity::from_integer(1).get())
     })
 }
 
@@ -200,18 +203,15 @@ pub fn calculate_y(
     let shifted_liquidity = liquidity.get() / Liquidity::from_integer(1).get();
     Ok(if rounding_up {
         TokenAmount::new(
-            (((U256::from(sqrt_price_diff.get()) * U256::from(shifted_liquidity))
-                + U256::from(SqrtPrice::from_integer(1).get() - 1))
-                / U256::from(SqrtPrice::from_integer(1).get()))
-            .try_into()
-            .map_err(|_| err!("Overflow in calculating TokenAmount"))?,
+            (sqrt_price_diff.cast::<U256>() * shifted_liquidity
+                + SqrtPrice::from_integer(1).cast::<U256>()
+                - 1)
+                / SqrtPrice::from_integer(1).cast::<U256>(),
         )
     } else {
         TokenAmount::new(
-            (U256::from(sqrt_price_diff.get()) * U256::from(shifted_liquidity)
-                / U256::from(SqrtPrice::from_integer(1).get()))
-            .try_into()
-            .map_err(|_| err!("Overflow in calculating TokenAmount"))?,
+            sqrt_price_diff.cast::<U256>() * shifted_liquidity
+                / SqrtPrice::from_integer(1).cast::<U256>(),
         )
     })
 }

@@ -250,7 +250,7 @@ fn test_create_pool_init_sqrt_price_has_closer_init_tick() {
     res.assert_single_event().assert_empty().assert_to(ADMIN);
 
     let init_tick = 2;
-    let init_sqrt_price = SqrtPrice::new(1000175003749000000000000);
+    let init_sqrt_price = SqrtPrice::new(1000175003749000000000000u128);
 
     let res = create_pool(
         &invariant,
@@ -301,7 +301,7 @@ fn test_create_pool_init_sqrt_price_has_closer_init_tick_spacing_over_one() {
     res.assert_single_event().assert_empty().assert_to(ADMIN);
 
     let init_tick = 0;
-    let init_sqrt_price = SqrtPrice::new(1000225003749000000000000);
+    let init_sqrt_price = SqrtPrice::new(1000225003749000000000000u128);
 
     let res = create_pool(
         &invariant,

@@ -1,7 +1,7 @@
 use sails_rtl::{Decode, Encode, TypeInfo, ActorId};
 use crate::{InvariantError, FeeTier};
 use math::percentage::Percentage;
-use decimal::Decimal;
+use decimal::*;
 
 #[derive(Decode, Encode, TypeInfo, PartialEq, Eq, Clone, Copy, Debug, Hash)]
 #[codec(crate = gstd::codec)]

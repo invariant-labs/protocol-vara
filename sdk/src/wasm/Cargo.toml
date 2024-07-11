@@ -14,14 +14,15 @@ crate-type = ["cdylib", "rlib"]
 
 [dependencies]
 # Contract dependencies
-decimal.path = "../../../calc/decimal"
+decimal = {path = "../../../calc/decimal", features = ["invariant-wasm"]}
 traceable_result.path = "../../../calc/traceable_result"
 wasm_wrapper = { path = "./wasm_wrapper"}
 
 # External dependencies
-wasm-bindgen = "0.2.89"
-serde = { version = "1.0", features = ["derive"] }
-serde-wasm-bindgen = "0.6.3"
+wasm-bindgen = {version = "0.2.89",  default-features = false}
+serde = { version = "1.0", features = ["derive"],  default-features = false }
+serde-wasm-bindgen = {version = "0.6.3", default-features = false}
 tsify = "0.4.5"
 paste = "1.0.14"
 js-sys = "0.3.66"
+console_error_panic_hook = "0.1.7"

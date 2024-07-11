@@ -23,7 +23,7 @@ fn test_liquidity_gap() {
 
     let invariant = init_invariant(&sys, Percentage::from_scale(1, 2));
 
-    let mint_amount = u128::MAX;
+    let mint_amount = U256::from(u128::MAX);
 
     let (token_x_program, token_y_program) = init_tokens(&sys);
 
@@ -101,7 +101,7 @@ fn test_liquidity_gap() {
 
     assert_eq!(pool_state.liquidity, liquidity_delta);
 
-    let swap_amount = TokenAmount::new(10067);
+    let swap_amount = TokenAmount::new(U256::from(10067));
 
     mint(&token_x_program, REGULAR_USER_2, swap_amount.get()).assert_success();
 
@@ -126,7 +126,7 @@ fn test_liquidity_gap() {
     );
     let pool = get_pool(&invariant, token_x, token_y, fee_tier).unwrap();
     let expected_price = calculate_sqrt_price(-10).unwrap();
-    let expected_y_amount_out = 9999;
+    let expected_y_amount_out = U256::from(9999);
 
     assert_eq!(pool.liquidity, liquidity_delta);
     assert_eq!(pool.current_tick_index, lower_tick_index);
@@ -139,21 +139,21 @@ fn test_liquidity_gap() {
     let delta_invariant_x = invariant_x_after - invariant_x_before;
     let delta_invariant_y = invariant_y_before - invariant_y_after;
 
-    assert_eq!(user_x, 0);
+    assert_eq!(user_x, U256::from(0));
     assert_eq!(user_y, expected_y_amount_out);
     assert_eq!(delta_invariant_x, swap_amount.get());
     assert_eq!(delta_invariant_y, expected_y_amount_out);
     assert_eq!(
         pool.fee_growth_global_x,
-        FeeGrowth::new(29991002699190242927121)
+        FeeGrowth::new(29991002699190242927121u128)
     );
     assert_eq!(pool.fee_growth_global_y, FeeGrowth::new(0));
-    assert_eq!(pool.fee_protocol_token_x, TokenAmount::new(1));
-    assert_eq!(pool.fee_protocol_token_y, TokenAmount::new(0));
+    assert_eq!(pool.fee_protocol_token_x, TokenAmount::new(U256::from(1)));
+    assert_eq!(pool.fee_protocol_token_y, TokenAmount::new(U256::from(0)));
 
     // No gain swap
-    let swap_amount = TokenAmount(1);
-    let target_sqrt_price = SqrtPrice::new(MIN_SQRT_PRICE);
+    let swap_amount = TokenAmount::new(U256::from(1));
+    let target_sqrt_price = SqrtPrice::new(MIN_SQRT_PRICE.into());
 
     swap(
         &invariant,
@@ -211,7 +211,7 @@ fn test_liquidity_gap() {
     )
     .assert_success();
 
-    let swap_amount = TokenAmount::new(5000);
+    let swap_amount = TokenAmount::new(U256::from(5000));
 
     mint(&token_x_program, REGULAR_USER_2, swap_amount.get()).assert_success();
 

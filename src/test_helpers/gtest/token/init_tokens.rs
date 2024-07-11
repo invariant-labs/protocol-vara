@@ -1,8 +1,17 @@
 use crate::send_request;
 use crate::test_helpers::gtest::*;
-use gstd::Encode;
+use gstd::{Encode, Decode, TypeInfo};
 use gtest::*;
 use sails_rtl::ActorId;
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Encode, Decode, TypeInfo)]
+#[codec(crate = gstd::codec)]
+#[scale_info(crate = gstd::scale_info)]
+pub enum Role {
+    Admin,
+    Burner,
+    Minter,
+}
+
 pub fn init_tokens(sys: &System) -> (Program<'_>, Program<'_>) {
     let bytes = include_bytes!(
         "../../../../target/wasm32-unknown-unknown/release/gear_erc20_wasm.opt.wasm"

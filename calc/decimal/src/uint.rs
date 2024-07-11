@@ -4,18 +4,111 @@
 #![allow(clippy::assign_op_pattern)]
 #![allow(clippy::ptr_offset_with_cast)]
 #![allow(clippy::manual_range_contains)]
+use crate::{UintCast, UintCheckedCast};
+use alloc::string::{String, ToString};
+use decimal_core::impl_units_casts;
+#[cfg(not(feature = "invariant-wasm"))]
+pub use sails_rtl::{U128, U256, U512};
 
 use uint::construct_uint;
 
 construct_uint! {
+    pub struct U448(7);
+}
+
+construct_uint! {
+    pub struct U384(6);
+}
+
+construct_uint! {
     pub struct U320(5);
 }
-construct_uint! {
-    pub struct U256(4);
-}
+
 construct_uint! {
     pub struct U192(3);
 }
+impl_units_casts!(U512 8, U448 7, U384 6, U320 5, U256 4, U192 3, U128 2);
+
+macro_rules! impl_uint_casts_as_default_from {
+    ($thing:ident, $from:ty) => {
+        impl UintCast<$from> for $thing {
+            fn uint_cast(value: $from) -> $thing {
+                From::from(value)
+            }
+        }
+        impl UintCheckedCast<$from> for $thing {
+            fn uint_checked_cast(value: $from) -> Result<$thing, String> {
+                Ok(From::from(value))
+            }
+        }
+    };
+}
+impl_uint_casts_as_default_from!(u128, u8);
+impl_uint_casts_as_default_from!(u128, u16);
+impl_uint_casts_as_default_from!(u128, u32);
+impl_uint_casts_as_default_from!(u128, u64);
+
+// i32 cast added to allow not specifying the type in from_integer function in decimal factories
+impl UintCast<i32> for u128 {
+    fn uint_cast(value: i32) -> u128 {
+        if value < 0 {
+            panic!("Failed to cast i32 to u128")
+        }
+        From::from(value as u32)
+    }
+}
+
+#[cfg(feature = "invariant-wasm")]
+pub mod invariant_wasm {
+    use alloc::string::{String, ToString};
+    use serde::{Deserialize, Serialize};
+    use uint::construct_uint;
+    construct_uint! {
+        pub struct U128(2);
+    }
+    construct_uint! {
+        pub struct U256(4);
+    }
+    construct_uint! {
+        pub struct U512(8);
+    }
+    impl Serialize for U128 {
+        fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+        where
+            S: serde::Serializer,
+        {
+            self.to_string().serialize(serializer)
+        }
+    }
+    impl<'de> Deserialize<'de> for U128 {
+        fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+        where
+            D: serde::Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            Ok(Self::from_dec_str(&s).unwrap())
+        }
+    }
+    impl Serialize for U256 {
+        fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+        where
+            S: serde::Serializer,
+        {
+            self.to_string().serialize(serializer)
+        }
+    }
+    impl<'de> Deserialize<'de> for U256 {
+        fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+        where
+            D: serde::Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            Ok(Self::from_dec_str(&s).unwrap())
+        }
+    }
+}
+#[cfg(feature = "invariant-wasm")]
+pub use invariant_wasm::*;
 
 #[allow(dead_code)]
 pub fn checked_u320_to_u256(n: U320) -> Option<U256> {
@@ -60,6 +153,59 @@ pub fn to_u320(n: u128) -> U320 {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::traits::{UintCast, UintCheckedCast};
+    use sails_rtl::{U128, U256, U512};
+    #[test]
+    fn test_upcast() {
+        assert_eq!(U256::uint_cast(U128::from(1u8)), U256::from(1u8));
+        assert_eq!(
+            U256::uint_cast(U128::from(U128::MAX)),
+            U256::from(U128::MAX)
+        );
+        assert_eq!(U512::uint_cast(U128::from(1u8)), U512::from(1u8));
+        assert_eq!(
+            U512::uint_cast(U128::from(U128::MAX)),
+            U512::from(U128::MAX)
+        );
+        assert_eq!(U512::uint_cast(U256::from(1u8)), U512::from(1u8));
+        assert_eq!(
+            U512::uint_cast(U256::from(U256::MAX)),
+            U512::from(U256::MAX)
+        );
+
+        assert_eq!(
+            U256::uint_checked_cast(U128::from(1u8)).unwrap(),
+            U256::from(1u8)
+        );
+        assert_eq!(
+            U256::uint_checked_cast(U128::from(U128::MAX)).unwrap(),
+            U256::from(U128::MAX)
+        );
+        assert_eq!(
+            U512::uint_checked_cast(U128::from(1u8)).unwrap(),
+            U512::from(1u8)
+        );
+        assert_eq!(
+            U512::uint_checked_cast(U128::from(U128::MAX)).unwrap(),
+            U512::from(U128::MAX)
+        );
+        assert_eq!(
+            U512::uint_checked_cast(U256::from(1u8)).unwrap(),
+            U512::from(1u8)
+        );
+        assert_eq!(
+            U512::uint_checked_cast(U256::from(U256::MAX)).unwrap(),
+            U512::from(U256::MAX)
+        );
+    }
+    #[test]
+    fn test_downcast() {
+        U128::uint_cast(U256::from(u128::MAX));
+        U128::uint_checked_cast(U256::from(u128::MAX) + U256::from(1u8)).unwrap_err();
+
+        U256::uint_cast(U512::from(U256::MAX));
+        U256::uint_checked_cast(U512::from(U256::MAX) + U512::from(1u8)).unwrap_err();
+    }
 
     #[test]
     fn test_to_u256() {

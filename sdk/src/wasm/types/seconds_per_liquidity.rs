@@ -8,7 +8,7 @@ use traceable_result::*;
 use tsify::Tsify;
 use wasm_bindgen::prelude::*;
 
-#[decimal(24)]
+#[decimal(25, U256)]
 #[derive(Default, Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Serialize, Deserialize, Tsify)]
 #[tsify(into_wasm_abi, from_wasm_abi)]
 pub struct SecondsPerLiquidity(#[tsify(type = "bigint")] pub u128);
@@ -17,13 +17,24 @@ decimal_ops!(SecondsPerLiquidity);
 
 impl SecondsPerLiquidity {
     pub fn unchecked_add(self, other: SecondsPerLiquidity) -> SecondsPerLiquidity {
-        SecondsPerLiquidity::new(self.get().wrapping_add(other.get()))
+        if other.get() > SecondsPerLiquidity::max_instance().get() - self.get() {
+            SecondsPerLiquidity::new(
+                (other.get() - (SecondsPerLiquidity::max_instance().get() - self.get())) - 1,
+            )
+        } else {
+            SecondsPerLiquidity::new(self.get() + other.get())
+        }
     }
 
     pub fn unchecked_sub(self, other: SecondsPerLiquidity) -> SecondsPerLiquidity {
-        SecondsPerLiquidity::new(self.get().wrapping_sub(other.get()))
+        if other.get() > self.get() {
+            SecondsPerLiquidity::new(
+                SecondsPerLiquidity::max_instance().get() - (other.get() - self.get()) + 1,
+            )
+        } else {
+            SecondsPerLiquidity::new(self.get() - other.get())
+        }
     }
-
     pub fn calculate_seconds_per_liquidity_global(
         liquidity: Liquidity,
         current_timestamp: u64,
@@ -35,15 +46,18 @@ impl SecondsPerLiquidity {
         let delta_time = current_timestamp - last_timestamp;
 
         Ok(Self::new(
-            U256::from(delta_time)
-                .checked_mul(SecondsPerLiquidity::one())
-                .ok_or_else(|| err!(TrackableError::MUL))?
-                .checked_mul(Liquidity::one())
-                .ok_or_else(|| err!(TrackableError::MUL))?
-                .checked_div(liquidity.here())
-                .ok_or_else(|| err!(TrackableError::DIV))?
-                .try_into()
-                .map_err(|_| err!(TrackableError::cast::<Self>().as_str()))?,
+            Self::checked_from_value(
+                Self::from_value::<U256, u128>(
+                    u128::from(delta_time)
+                        .checked_mul(Self::one().cast())
+                        .ok_or_else(|| err!(TrackableError::MUL))?
+                        .checked_mul(Liquidity::one().cast())
+                        .ok_or_else(|| err!(TrackableError::MUL))?,
+                )
+                .checked_div(liquidity.get())
+                .ok_or_else(|| err!(TrackableError::DIV))?,
+            )
+            .map_err(|_| err!(TrackableError::cast::<u128>().as_str()))?,
         ))
     }
 }

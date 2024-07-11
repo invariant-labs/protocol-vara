@@ -1,3 +1,5 @@
+use alloc::vec::Vec;
+use alloc::string::String;
 use crate::{
     storage::{pool_key::PoolKey, tick::Tick},
     types::{

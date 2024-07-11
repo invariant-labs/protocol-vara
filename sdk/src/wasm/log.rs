@@ -86,7 +86,7 @@ fn log2_iterative_approximation_x32(mut sqrt_price_x32: u64) -> (bool, u64) {
 
 #[wasm_wrapper("calculateTick")]
 pub fn get_tick_at_sqrt_price(sqrt_price: SqrtPrice, tick_spacing: u16) -> TrackableResult<i32> {
-    if sqrt_price.get() > MAX_SQRT_PRICE || sqrt_price.get() < MIN_SQRT_PRICE {
+    if sqrt_price.get() > MAX_SQRT_PRICE.into() || sqrt_price.get() < MIN_SQRT_PRICE.into() {
         return Err(err!("sqrt_price out of range"));
     }
 

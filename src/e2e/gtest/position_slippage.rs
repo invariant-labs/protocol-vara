@@ -58,8 +58,8 @@ fn test_position_slippage_zero_slippage_and_inside_range() {
     // inside range
     {
         let liquidity_delta = Liquidity::from_integer(1_000_000);
-        let limit_lower = SqrtPrice::new(994734637981406576896367);
-        let limit_upper = SqrtPrice::new(1025038048074314166333500);
+        let limit_lower = SqrtPrice::new(994734637981406576896367u128);
+        let limit_upper = SqrtPrice::new(1025038048074314166333500u128);
 
         let tick = pool_key.fee_tier.tick_spacing as i32;
 
@@ -89,8 +89,8 @@ fn test_position_slippage_below_range() {
     let _pool = get_pool(&invariant, token_x, token_y, pool_key.fee_tier).unwrap();
 
     let liquidity_delta = Liquidity::from_integer(1_000_000);
-    let limit_lower = SqrtPrice::new(1014432353584998786339859);
-    let limit_upper = SqrtPrice::new(1045335831204498605270797);
+    let limit_lower = SqrtPrice::new(1014432353584998786339859u128);
+    let limit_upper = SqrtPrice::new(1045335831204498605270797u128);
     let tick = pool_key.fee_tier.tick_spacing as i32;
 
     create_position(
@@ -122,8 +122,8 @@ fn test_position_slippage_above_range() {
     let _pool = get_pool(&invariant, token_x, token_y, pool_key.fee_tier).unwrap();
 
     let liquidity_delta = Liquidity::from_integer(1_000_000);
-    let limit_lower = SqrtPrice::new(955339206774222158009382);
-    let limit_upper = SqrtPrice::new(984442481813945288458906);
+    let limit_lower = SqrtPrice::new(955339206774222158009382u128);
+    let limit_upper = SqrtPrice::new(984442481813945288458906u128);
     let tick = pool_key.fee_tier.tick_spacing as i32;
 
     create_position(

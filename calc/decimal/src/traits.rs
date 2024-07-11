@@ -1,8 +1,23 @@
-use core::fmt::{Debug, Display};
+use core::fmt::Debug;
 
 use alloc::string::String;
 
-pub trait Decimal {
+// custom traits need to be defined in order to implement the conversion on sails defined types
+pub trait UintCast<T>: Sized {
+    fn uint_cast(value: T) -> Self;
+}
+
+pub trait UintCheckedCast<T>: Sized {
+    fn uint_checked_cast(value: T) -> Result<Self, String>;
+}
+
+impl<T> UintCast<T> for T {
+    fn uint_cast(value: Self) -> Self {
+        value
+    }
+}
+
+pub trait Decimal: Sized {
     type U: Debug + Default;
 
     fn get(&self) -> Self::U;
@@ -11,11 +26,37 @@ pub trait Decimal {
     fn max_value() -> Self::U;
     fn here<Y: TryFrom<Self::U>>(&self) -> Y;
     fn scale() -> u8;
-    fn one<T: TryFrom<u128>>() -> T;
-    fn checked_one<T: TryFrom<u128>>() -> Result<T, String>
+    fn checked_one() -> Result<Self, String>;
+    fn one() -> Self;
+    fn checked_almost_one() -> Result<Self, String>;
+    fn almost_one() -> Self;
+}
+
+pub trait Conversion: Decimal {
+    fn cast<T>(self) -> T
     where
-        T::Error: Display;
-    fn almost_one<T: TryFrom<u128>>() -> T;
+        T: UintCast<<Self as Decimal>::U>,
+    {
+        T::uint_cast(self.get())
+    }
+    fn checked_cast<T>(self) -> Result<T, String>
+    where
+        T: UintCheckedCast<<Self as Decimal>::U>,
+    {
+        T::uint_checked_cast(self.get())
+    }
+    fn from_value<T, R>(from: R) -> T
+    where
+        T: UintCast<R>,
+    {
+        T::uint_cast(from)
+    }
+    fn checked_from_value<T, R>(from: R) -> Result<T, String>
+    where
+        T: UintCheckedCast<R>,
+    {
+        T::uint_checked_cast(from)
+    }
 }
 
 pub trait BigOps<T>: Sized {
@@ -40,6 +81,17 @@ pub trait Factories<T>: Sized {
     fn from_scale(integer: T, scale: u8) -> Self;
     fn checked_from_scale(integer: T, scale: u8) -> Result<Self, String>;
     fn from_scale_up(integer: T, scale: u8) -> Self;
+}
+
+pub trait FactoriesUnderlying {
+    type U: Debug + Default;
+
+    fn from_integer_underlying(integer: Self::U) -> Self;
+    fn from_scale_underlying(integer: Self::U, scale: u8) -> Self;
+    fn checked_from_scale_underlying(integer: Self::U, scale: u8) -> Result<Self, String>
+    where
+        Self: Sized;
+    fn from_scale_up_underlying(integer: Self::U, scale: u8) -> Self;
 }
 
 pub trait BetweenDecimals<T>: Sized {

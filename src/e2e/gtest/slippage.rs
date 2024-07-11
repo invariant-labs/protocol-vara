@@ -20,7 +20,7 @@ fn test_basic_slippage() {
     let pool_key =
         init_slippage_pool_with_liquidity(&sys, &invariant, &token_x_program, &token_y_program);
 
-    let amount = 10u128.pow(8);
+    let amount = U256::from(10u128.pow(8));
     let swap_amount = TokenAmount(amount);
     increase_allowance(
         &token_y_program,
@@ -41,7 +41,7 @@ fn test_basic_slippage() {
         Some(swap_amount)
     );
 
-    let target_sqrt_price = SqrtPrice::new(1009940000000000000000001);
+    let target_sqrt_price = SqrtPrice::new(1009940000000000000000001u128);
     swap(
         &invariant,
         REGULAR_USER_1,
@@ -53,7 +53,7 @@ fn test_basic_slippage() {
     )
     .assert_success();
 
-    let expected_sqrt_price = SqrtPrice::new(1009940000000000000000000);
+    let expected_sqrt_price = SqrtPrice::new(1009940000000000000000000u128);
     let pool = get_pool(&invariant, token_x, token_y, pool_key.fee_tier).unwrap();
     assert_eq!(pool.sqrt_price, expected_sqrt_price);
 }
@@ -66,7 +66,7 @@ fn test_swap_close_to_limit() {
     let (invariant, token_x_program, token_y_program) = init_slippage_invariant_and_tokens(&sys);
     let pool_key =
         init_slippage_pool_with_liquidity(&sys, &invariant, &token_x_program, &token_y_program);
-    let amount = 10u128.pow(8);
+    let amount = U256::from(10u128.pow(8));
     let swap_amount = TokenAmount::new(amount);
     increase_allowance(
         &token_y_program,
@@ -86,7 +86,7 @@ fn test_swap_close_to_limit() {
         Some(swap_amount)
     );
 
-    let target_sqrt_price = SqrtPrice::new(MAX_SQRT_PRICE);
+    let target_sqrt_price = SqrtPrice::new(MAX_SQRT_PRICE.into());
     let quoted_target_sqrt_price = quote(
         &invariant,
         REGULAR_USER_1,
@@ -130,7 +130,7 @@ fn test_swap_exact_limit() {
 
     let pool_key = PoolKey::new(token_x, token_y, fee_tier).unwrap();
 
-    let amount = 1000;
+    let amount = U256::from(1000);
 
     mint(&token_x_program, REGULAR_USER_2, amount).assert_success();
 

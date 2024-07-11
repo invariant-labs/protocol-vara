@@ -18,22 +18,3 @@ pub use init_tokens::*;
 pub use init_tokens_with_mint::*;
 pub use mint::*;
 pub use set_transfer_fail::*;
-
-use gstd::*;
-// temporary workaround for U256
-#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Encode, Decode, TypeInfo)]
-#[codec(crate = gstd::codec)]
-#[scale_info(crate = gstd::scale_info)]
-pub(self) struct U256(pub u128, pub u128);
-
-impl From<u128> for U256 {
-    fn from(num: u128) -> U256 {
-        U256(num, 0)
-    }
-}
-
-impl From<U256> for u128 {
-    fn from(num: U256) -> u128 {
-        num.0
-    }
-}

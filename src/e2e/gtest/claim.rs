@@ -29,7 +29,7 @@ fn test_claim() {
 
     assert_eq!(get_user_balances(&invariant, REGULAR_USER_1), vec![]);
 
-    let expected_tokens_claimed = 5;
+    let expected_tokens_claimed = U256::from(5);
     assert_eq!(
         expected_tokens_claimed,
         claim_fee(&invariant, REGULAR_USER_1, 0, None::<InvariantError>)
@@ -64,7 +64,7 @@ fn test_claim() {
         invariant_amount_before_claim
     );
     assert_eq!(position.fee_growth_inside_x, pool.fee_growth_global_x);
-    assert_eq!(position.tokens_owed_x, TokenAmount(0));
+    assert_eq!(position.tokens_owed_x, TokenAmount::new(U256::from(0)));
 }
 
 #[test]

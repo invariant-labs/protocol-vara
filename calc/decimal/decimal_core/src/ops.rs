@@ -45,17 +45,19 @@ pub fn generate_ops(characteristics: DecimalCharacteristics) -> proc_macro::Toke
             type Output = #struct_name;
 
             fn mul(self, rhs: T) -> Self {
-                Self::new(
-                    self.get()
-                        .checked_mul(
-                            rhs.get()
-                                .try_into()
-                                .unwrap_or_else(|_| core::panic!("decimal: rhs value can't fit into `{}` type in {}::mul()", #underlying_str, #name_str))
-                        )
-                        .unwrap_or_else(|| core::panic!("decimal: overflow in method {}::mul()", #name_str))
-                        .checked_div(T::one())
-                        .unwrap_or_else(|| core::panic!("decimal: overflow in method {}::mul()", #name_str))
-                )
+                let rhs_val: #underlying_type = rhs.get().try_into()
+                    .unwrap_or_else(|_| core::panic!("decimal: rhs value cannot fit into `{}` type in {}::mul()", #underlying_str, #name_str));
+
+                let one: #underlying_type = T::one().get().try_into()
+                    .unwrap_or_else(|_| core::panic!("decimal: one value cannot fit into `{}` type in {}::mul()", #underlying_str, #name_str));
+
+                let both_decimals: #underlying_type = self.get().checked_mul(rhs_val)
+                    .unwrap_or_else(|| core::panic!("decimal: overflow in method {}::mul()", #name_str));
+
+                let result: #underlying_type = both_decimals.checked_div(one)
+                    .unwrap_or_else(|| core::panic!("decimal: div by 0 in {}::mul()", #name_str));
+
+                Self::new(result)
             }
         }
 
@@ -66,17 +68,19 @@ pub fn generate_ops(characteristics: DecimalCharacteristics) -> proc_macro::Toke
             type Output = Self;
 
             fn div(self, rhs: T) -> Self {
-                Self::new(
-                    self.get()
-                        .checked_mul(T::one())
-                        .unwrap_or_else(|| core::panic!("decimal: overflow in method {}::div()", #name_str))
-                        .checked_div(
-                            rhs.get()
-                                .try_into()
-                                .unwrap_or_else(|_| core::panic!("decimal: rhs value can't fit into `{}` type in {}::div()", #underlying_str, #name_str))
-                        )
-                        .unwrap_or_else(|| core::panic!("decimal: overflow in method {}::div()", #name_str))
-                )
+                let rhs_val: #underlying_type = rhs.get().try_into()
+                    .unwrap_or_else(|_| core::panic!("decimal: rhs value cannot fit into `{}` type in {}::div()", #underlying_str, #name_str));
+
+                let one: #underlying_type = T::one().get().try_into()
+                    .unwrap_or_else(|_| core::panic!("decimal: one value cannot fit into `{}` type in {}::div()", #underlying_str, #name_str));
+
+                let extended_self: #underlying_type = self.get().checked_mul(one)
+                    .unwrap_or_else(|| core::panic!("decimal: overflow in method {}::div()", #name_str));
+
+                let result: #underlying_type = extended_self.checked_div(rhs_val)
+                    .unwrap_or_else(|| core::panic!("decimal: div by 0 in {}::div()", #name_str));
+
+                Self::new(result)
             }
         }
 
@@ -111,38 +115,48 @@ pub fn generate_ops(characteristics: DecimalCharacteristics) -> proc_macro::Toke
 
             #[test]
             fn test_add () {
-                let mut a = #struct_name::new(1);
-                let b = #struct_name::new(1);
-                assert_eq!(a + b, #struct_name::new(2));
+                let one_unit = #underlying_type::from(1u8);
+                let two_unit = #underlying_type::from(2u8);
+
+                let mut a = #struct_name::new(one_unit);
+                let b = #struct_name::new(one_unit);
+                assert_eq!(a + b, #struct_name::new(two_unit));
                 a += b;
-                assert_eq!(a, #struct_name::new(2));
+                assert_eq!(a, #struct_name::new(two_unit));
             }
 
             #[test]
             fn test_sub () {
-                let mut a = #struct_name::new(1);
-                let b = #struct_name::new(1);
-                assert_eq!(a - b, #struct_name::new(0));
+                let zero = #underlying_type::from(0u8);
+                let one_unit = #underlying_type::from(1u8);
+
+                let mut a = #struct_name::new(one_unit);
+                let b = #struct_name::new(one_unit);
+                assert_eq!(a - b, #struct_name::new(zero));
                 a -= b;
-                assert_eq!(a, #struct_name::new(0));
+                assert_eq!(a, #struct_name::new(zero));
             }
 
             #[test]
             fn test_mul () {
-                let mut a = #struct_name::new(2);
-                let b = #struct_name::new(#struct_name::one());
-                assert_eq!(a * b, #struct_name::new(2));
+                let two_unit = #underlying_type::from(2u8);
+
+                let mut a = #struct_name::new(two_unit);
+                let b = #struct_name::one();
+                assert_eq!(a * b, #struct_name::new(two_unit));
                 a *= b;
-                assert_eq!(a, #struct_name::new(2));
+                assert_eq!(a, #struct_name::new(two_unit));
             }
 
             #[test]
             fn test_div () {
-                let mut a = #struct_name::new(2);
-                let b = #struct_name::new(#struct_name::one());
-                assert_eq!(a / b, #struct_name::new(2));
+                let two_unit = #underlying_type::from(2u8);
+
+                let mut a = #struct_name::new(two_unit);
+                let b = #struct_name::one();
+                assert_eq!(a / b, #struct_name::new(two_unit));
                 a /= b;
-                assert_eq!(a, #struct_name::new(2));
+                assert_eq!(a, #struct_name::new(two_unit));
             }
         }
     ))

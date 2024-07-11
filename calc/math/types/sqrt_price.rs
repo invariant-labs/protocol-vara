@@ -1,12 +1,12 @@
+use crate::consts::*;
+use crate::types::{fixed_point::FixedPoint, token_amount::TokenAmount};
 use decimal::*;
-use traceable_result::*;
 #[allow(unused_imports)]
 use gstd::ToString;
 use gstd::{Decode, Encode, TypeInfo};
-use crate::consts::*;
-use crate::types::{fixed_point::FixedPoint, token_amount::TokenAmount};
+use traceable_result::*;
 
-#[decimal(24)]
+#[decimal(24, U384)]
 #[derive(Default, Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Encode, Decode, TypeInfo)]
 #[codec(crate = gstd::codec)]
 #[scale_info(crate = gstd::scale_info)]
@@ -18,103 +18,109 @@ impl SqrtPrice {
     }
 
     pub fn big_div_values_to_token(
-        nominator: U256,
-        denominator: U256,
+        nominator: U384,
+        denominator: U384,
     ) -> TrackableResult<TokenAmount> {
-        let nominator = u256_to_u320(nominator);
-        let denominator = u256_to_u320(denominator);
+        let nominator: U448 = SqrtPrice::from_value(nominator);
+        let denominator: U448 = SqrtPrice::from_value(denominator);
 
-        let intermediate_u320 = nominator
-            .checked_mul(Self::one::<U320>())
+        let intermediate = nominator
+            .checked_mul(SqrtPrice::one().cast())
             .ok_or_else(|| err!(TrackableError::MUL))?
             .checked_div(denominator)
             .ok_or_else(|| err!(TrackableError::DIV))?;
 
-        let result = checked_u320_to_u256(intermediate_u320)
-            .ok_or_else(|| err!("Can't parse from u320 to u256"))?
-            .checked_div(Self::one::<U256>())
-            .ok_or_else(|| err!(TrackableError::DIV))?
-            .try_into()
-            .map_err(|_| err!(TrackableError::cast::<Self>().as_str()))?;
-        Ok(TokenAmount(result))
+        let casted_intermediate: U384 = (SqrtPrice::checked_from_value(intermediate))
+            .map_err(|_| err!("Can't parse from U448 to U384"))?;
+
+        let result = casted_intermediate
+            .checked_div(SqrtPrice::one().cast())
+            .ok_or_else(|| err!(TrackableError::DIV))?;
+
+        let casted_result: U256 = TokenAmount::checked_from_value::<U256, U384>(result)
+            .map_err(|_| err!("Can't parse from U384 to U256"))?;
+
+        Ok(TokenAmount::new(casted_result))
     }
 
     pub fn big_div_values_to_token_up(
-        nominator: U256,
-        denominator: U256,
+        nominator: U384,
+        denominator: U384,
     ) -> TrackableResult<TokenAmount> {
-        let nominator = u256_to_u320(nominator);
-        let denominator = u256_to_u320(denominator);
+        let nominator: U448 = SqrtPrice::from_value(nominator);
+        let denominator: U448 = SqrtPrice::from_value(denominator);
 
-        let intermediate_u320 = nominator
-            .checked_mul(Self::one::<U320>())
+        let intermediate = nominator
+            .checked_mul(SqrtPrice::one().cast())
             .ok_or_else(|| err!(TrackableError::MUL))?
             .checked_add(denominator - 1)
             .ok_or_else(|| err!(TrackableError::ADD))?
             .checked_div(denominator)
             .ok_or_else(|| err!(TrackableError::DIV))?;
 
-        let result = checked_u320_to_u256(intermediate_u320)
-            .ok_or_else(|| err!("Can't parse from u320 to u256"))?
-            .checked_add(Self::almost_one::<U256>())
+        let casted_intermediate: U384 = (SqrtPrice::checked_from_value(intermediate))
+            .map_err(|_| err!("Can't parse from U448 to U384"))?;
+
+        let result = casted_intermediate
+            .checked_add(Self::almost_one().cast())
             .ok_or_else(|| err!(TrackableError::ADD))?
-            .checked_div(Self::one::<U256>())
-            .ok_or_else(|| err!(TrackableError::DIV))?
-            .try_into()
-            .map_err(|_| err!(TrackableError::cast::<Self>().as_str()))?;
-        Ok(TokenAmount::new(result))
+            .checked_div(SqrtPrice::one().cast())
+            .ok_or_else(|| err!(TrackableError::DIV))?;
+
+        let casted_result: U256 = TokenAmount::checked_from_value::<U256, U384>(result)
+            .map_err(|_| err!("Can't parse from U384 to U256"))?;
+
+        Ok(TokenAmount::new(casted_result))
     }
 
-    pub fn big_div_values_up(nominator: U256, denominator: U256) -> SqrtPrice {
-        SqrtPrice::new({
-            nominator
-                .checked_mul(Self::one::<U256>())
-                .unwrap()
-                .checked_add(denominator.checked_sub(U256::from(1u32)).unwrap())
-                .unwrap()
-                .checked_div(denominator)
-                .unwrap()
-                .try_into()
-                .unwrap()
-        })
+    // TODO - Configure nominator and denominator types
+    pub fn big_div_values_up(nominator: U384, denominator: U384) -> SqrtPrice {
+        let result = nominator
+            .checked_mul(Self::one().cast())
+            .unwrap()
+            .checked_add(denominator.checked_sub(U384::from(1u32)).unwrap())
+            .unwrap()
+            .checked_div(denominator)
+            .unwrap();
+        let casted_result = SqrtPrice::from_value::<u128, U384>(result);
+        SqrtPrice::new(casted_result)
     }
 
     pub fn checked_big_div_values(
-        nominator: U256,
-        denominator: U256,
+        nominator: U448,
+        denominator: U448,
     ) -> TrackableResult<SqrtPrice> {
-        Ok(SqrtPrice::new(
-            nominator
-                .checked_mul(Self::one::<U256>())
-                .ok_or_else(|| err!(TrackableError::MUL))?
-                .checked_div(denominator)
-                .ok_or_else(|| err!(TrackableError::DIV))?
-                .try_into()
-                .map_err(|_| err!(TrackableError::cast::<Self>().as_str()))?,
-        ))
+        let result = nominator
+            .checked_mul(Self::one().cast())
+            .ok_or_else(|| err!(TrackableError::MUL))?
+            .checked_div(denominator)
+            .ok_or_else(|| err!(TrackableError::DIV))?;
+
+        let casted_result = SqrtPrice::checked_from_value::<u128, U448>(result)
+            .map_err(|_| err!("Can't parse from U448 to u128"))?;
+        Ok(SqrtPrice::new(casted_result))
     }
 
     pub fn checked_big_div_values_up(
-        nominator: U256,
-        denominator: U256,
+        nominator: U448,
+        denominator: U448,
     ) -> TrackableResult<SqrtPrice> {
-        let denominator = u256_to_u320(denominator);
+        let result = nominator
+            .checked_mul(Self::one().cast())
+            .ok_or_else(|| err!(TrackableError::MUL))?
+            .checked_add(
+                denominator
+                    .checked_sub(U448::from(1u32))
+                    .ok_or_else(|| err!(TrackableError::SUB))?,
+            )
+            .ok_or_else(|| err!(TrackableError::ADD))?
+            .checked_div(denominator)
+            .ok_or_else(|| err!(TrackableError::DIV))?;
 
-        Ok(SqrtPrice::new(
-            u256_to_u320(nominator)
-                .checked_mul(Self::one::<U320>())
-                .ok_or_else(|| err!(TrackableError::MUL))?
-                .checked_add(
-                    denominator
-                        .checked_sub(U320::from(1u32))
-                        .ok_or_else(|| err!(TrackableError::SUB))?,
-                )
-                .ok_or_else(|| err!(TrackableError::ADD))?
-                .checked_div(denominator)
-                .ok_or_else(|| err!(TrackableError::DIV))?
-                .try_into()
-                .map_err(|_| err!(TrackableError::cast::<Self>().as_str()))?,
-        ))
+        // TODO - add ok_or_mark_trace!
+        let casted_result = SqrtPrice::checked_from_value::<u128, U448>(result)
+            .map_err(|_| err!("Can't parse from U448 to u128"))?;
+        Ok(SqrtPrice::new(casted_result))
     }
 }
 
@@ -123,7 +129,7 @@ pub fn check_tick_to_sqrt_price_relationship(
     tick_spacing: u16,
     sqrt_price: SqrtPrice,
 ) -> TrackableResult<bool> {
-    if tick_index + tick_spacing as i32 > MAX_TICK {
+    if tick_index.checked_add(tick_spacing as i32).unwrap() > MAX_TICK {
         let max_tick = get_max_tick(tick_spacing);
         let max_sqrt_price = ok_or_mark_trace!(SqrtPrice::from_tick(max_tick))?;
         if sqrt_price != max_sqrt_price {
@@ -131,8 +137,9 @@ pub fn check_tick_to_sqrt_price_relationship(
         }
     } else {
         let lower_bound = ok_or_mark_trace!(SqrtPrice::from_tick(tick_index))?;
-        let upper_bound =
-            ok_or_mark_trace!(SqrtPrice::from_tick(tick_index + tick_spacing as i32))?;
+        let upper_bound = ok_or_mark_trace!(SqrtPrice::from_tick(
+            tick_index.checked_add(tick_spacing as i32).unwrap()
+        ))?;
         if sqrt_price >= upper_bound || sqrt_price < lower_bound {
             return Ok(false);
         }
@@ -151,61 +158,60 @@ pub fn calculate_sqrt_price(tick_index: i32) -> TrackableResult<SqrtPrice> {
     let mut sqrt_price = FixedPoint::from_integer(1);
 
     if tick & 0x1 != 0 {
-        sqrt_price *= FixedPoint::new(1000049998750);
+        sqrt_price *= FixedPoint::new(1000049998750u128);
     }
     if tick & 0x2 != 0 {
-        sqrt_price *= FixedPoint::new(1000100000000);
+        sqrt_price *= FixedPoint::new(1000100000000u128);
     }
     if tick & 0x4 != 0 {
-        sqrt_price *= FixedPoint::new(1000200010000);
+        sqrt_price *= FixedPoint::new(1000200010000u128);
     }
     if tick & 0x8 != 0 {
-        sqrt_price *= FixedPoint::new(1000400060004);
+        sqrt_price *= FixedPoint::new(1000400060004u128);
     }
     if tick & 0x10 != 0 {
-        sqrt_price *= FixedPoint::new(1000800280056);
+        sqrt_price *= FixedPoint::new(1000800280056u128);
     }
     if tick & 0x20 != 0 {
-        sqrt_price *= FixedPoint::new(1001601200560);
+        sqrt_price *= FixedPoint::new(1001601200560u128);
     }
     if tick & 0x40 != 0 {
-        sqrt_price *= FixedPoint::new(1003204964963);
+        sqrt_price *= FixedPoint::new(1003204964963u128);
     }
     if tick & 0x80 != 0 {
-        sqrt_price *= FixedPoint::new(1006420201726);
+        sqrt_price *= FixedPoint::new(1006420201726u128);
     }
     if tick & 0x100 != 0 {
-        sqrt_price *= FixedPoint::new(1012881622442);
+        sqrt_price *= FixedPoint::new(1012881622442u128);
     }
     if tick & 0x200 != 0 {
-        sqrt_price *= FixedPoint::new(1025929181080);
+        sqrt_price *= FixedPoint::new(1025929181080u128);
     }
     if tick & 0x400 != 0 {
-        sqrt_price *= FixedPoint::new(1052530684591);
+        sqrt_price *= FixedPoint::new(1052530684591u128);
     }
     if tick & 0x800 != 0 {
-        sqrt_price *= FixedPoint::new(1107820842005);
+        sqrt_price *= FixedPoint::new(1107820842005u128);
     }
     if tick & 0x1000 != 0 {
-        sqrt_price *= FixedPoint::new(1227267017980);
+        sqrt_price *= FixedPoint::new(1227267017980u128);
     }
     if tick & 0x2000 != 0 {
-        sqrt_price *= FixedPoint::new(1506184333421);
+        sqrt_price *= FixedPoint::new(1506184333421u128);
     }
     if tick & 0x4000 != 0 {
-        sqrt_price *= FixedPoint::new(2268591246242);
+        sqrt_price *= FixedPoint::new(2268591246242u128);
     }
     if tick & 0x8000 != 0 {
-        sqrt_price *= FixedPoint::new(5146506242525);
+        sqrt_price *= FixedPoint::new(5146506242525u128);
     }
     if tick & 0x0001_0000 != 0 {
-        sqrt_price *= FixedPoint::new(26486526504348);
+        sqrt_price *= FixedPoint::new(26486526504348u128);
     }
     if tick & 0x0002_0000 != 0 {
-        sqrt_price *= FixedPoint::new(701536086265529);
+        sqrt_price *= FixedPoint::new(701536086265529u128);
     }
 
-    // Parsing to the Sqrt_price type by the end by convention (should always have 12 zeros at the end)
     Ok(if tick_index >= 0 {
         SqrtPrice::checked_from_decimal(sqrt_price)
             .map_err(|_| err!("calculate_sqrt_price: parsing from scale failed"))?
@@ -213,7 +219,7 @@ pub fn calculate_sqrt_price(tick_index: i32) -> TrackableResult<SqrtPrice> {
         SqrtPrice::checked_from_decimal(
             FixedPoint::from_integer(1)
                 .checked_div(sqrt_price)
-                .map_err(|_| err!("calcaule_sqrt_price::checked_div division failed"))?,
+                .map_err(|_| err!("calculate_sqrt_price::checked_div division failed"))?,
         )
         .map_err(|_| err!("calculate_sqrt_price: parsing scale failed"))?
     })
@@ -311,9 +317,15 @@ mod tests {
     fn test_sqrt_price_limitation() {
         {
             let global_max_sqrt_price = SqrtPrice::from_tick(MAX_TICK).unwrap();
-            assert_eq!(global_max_sqrt_price, SqrtPrice::new(MAX_SQRT_PRICE)); // ceil(log2(this)) = 96
+            assert_eq!(
+                global_max_sqrt_price,
+                SqrtPrice::new(MAX_SQRT_PRICE)
+            ); // ceil(log2(this)) = 96
             let global_min_sqrt_price = SqrtPrice::from_tick(-MAX_TICK).unwrap();
-            assert_eq!(global_min_sqrt_price, SqrtPrice::new(MIN_SQRT_PRICE)); // floor(log2(this)) = 63
+            assert_eq!(
+                global_min_sqrt_price,
+                SqrtPrice::new(MIN_SQRT_PRICE)
+            ); // floor(log2(this)) = 63
         }
         {
             let max_sqrt_price = get_max_sqrt_price(1);
@@ -336,11 +348,11 @@ mod tests {
             let max_tick: i32 = get_max_tick(5);
             assert_eq!(
                 max_sqrt_price,
-                SqrtPrice::new(65525554855399275000000000000)
+                SqrtPrice::new(65525554855399275000000000000u128)
             );
             assert_eq!(
                 SqrtPrice::from_tick(max_tick).unwrap(),
-                SqrtPrice::new(65525554855399275000000000000)
+                SqrtPrice::new(65525554855399275000000000000u128)
             );
 
             let max_sqrt_price = get_max_sqrt_price(10);
@@ -348,11 +360,11 @@ mod tests {
             assert_eq!(max_tick, 221810);
             assert_eq!(
                 max_sqrt_price,
-                SqrtPrice::new(65509176333123237000000000000)
+                SqrtPrice::new(65509176333123237000000000000u128)
             );
             assert_eq!(
                 SqrtPrice::from_tick(max_tick).unwrap(),
-                SqrtPrice::new(65509176333123237000000000000)
+                SqrtPrice::new(65509176333123237000000000000u128)
             );
 
             let max_sqrt_price = get_max_sqrt_price(100);
@@ -361,11 +373,11 @@ mod tests {
 
             assert_eq!(
                 max_sqrt_price,
-                SqrtPrice::new(65476431569071896000000000000)
+                SqrtPrice::new(65476431569071896000000000000u128)
             );
             assert_eq!(
                 SqrtPrice::from_tick(max_tick).unwrap(),
-                SqrtPrice::new(65476431569071896000000000000)
+                SqrtPrice::new(65476431569071896000000000000u128)
             );
         }
         {
@@ -387,28 +399,37 @@ mod tests {
 
             let min_sqrt_price = get_min_sqrt_price(5);
             let min_tick: i32 = get_min_tick(5);
-            assert_eq!(min_sqrt_price, SqrtPrice::new(15261221000000000000));
+            assert_eq!(
+                min_sqrt_price,
+                SqrtPrice::new(15261221000000000000u128)
+            );
             assert_eq!(
                 SqrtPrice::from_tick(min_tick).unwrap(),
-                SqrtPrice::new(15261221000000000000)
+                SqrtPrice::new(15261221000000000000u128)
             );
 
             let min_sqrt_price = get_min_sqrt_price(10);
             let min_tick: i32 = get_min_tick(10);
             assert_eq!(min_tick, -221810);
-            assert_eq!(min_sqrt_price, SqrtPrice::new(15265036000000000000));
+            assert_eq!(
+                min_sqrt_price,
+                SqrtPrice::new(15265036000000000000u128)
+            );
             assert_eq!(
                 SqrtPrice::from_tick(min_tick).unwrap(),
-                SqrtPrice::new(15265036000000000000)
+                SqrtPrice::new(15265036000000000000u128)
             );
 
             let min_sqrt_price = get_min_sqrt_price(100);
             let min_tick: i32 = get_min_tick(100);
             assert_eq!(min_tick, -221800);
-            assert_eq!(min_sqrt_price, SqrtPrice::new(15272671000000000000));
+            assert_eq!(
+                min_sqrt_price,
+                SqrtPrice::new(15272671000000000000u128)
+            );
             assert_eq!(
                 SqrtPrice::from_tick(min_tick).unwrap(),
-                SqrtPrice::new(15272671000000000000)
+                SqrtPrice::new(15272671000000000000u128)
             );
         }
     }

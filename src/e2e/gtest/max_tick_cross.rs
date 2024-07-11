@@ -18,7 +18,7 @@ fn max_tick_cross() {
 
     let invariant = init_invariant(&sys, Percentage::from_scale(1, 2));
 
-    let mint_amount = u128::MAX;
+    let mint_amount = U256::from(u128::MAX);
 
     let (token_x_program, token_y_program) = init_tokens(&sys);
 
@@ -83,7 +83,7 @@ fn max_tick_cross() {
     let pool = get_pool(&invariant, token_x, token_y, fee_tier).unwrap();
     assert_eq!(pool.liquidity, liquidity);
 
-    let amount = 760_000;
+    let amount = U256::from(760_000);
     mint(&token_x_program, REGULAR_USER_2, amount).assert_success();
     assert_eq!(balance_of(&token_x_program, REGULAR_USER_2), amount);
 
@@ -97,7 +97,7 @@ fn max_tick_cross() {
     let pool_before = get_pool(&invariant, token_x, token_y, pool_key.fee_tier).unwrap();
 
     let swap_amount = TokenAmount::new(amount);
-    let slippage = SqrtPrice::new(MIN_SQRT_PRICE);
+    let slippage = SqrtPrice::new(MIN_SQRT_PRICE.into());
 
     let quote_result = quote(
         &invariant,

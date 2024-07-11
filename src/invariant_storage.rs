@@ -46,7 +46,7 @@ impl Invariant {
             .entry(*caller)
             .or_insert(HashMap::new())
             .entry(*token)
-            .or_insert(TokenAmount(0));
+            .or_insert(TokenAmount::new(U256::from(0)));
 
         *token_balance = token_balance
             .checked_add(amount)
@@ -74,7 +74,7 @@ impl Invariant {
         caller: &ActorId,
         amount: Option<TokenAmount>,
     ) -> Result<TokenAmount, InvariantError> {
-        if matches!(amount, Some(TokenAmount(0))) {
+        if matches!(amount, Some(TokenAmount(U256([0,0,0,0])))) {
             return Ok(amount.unwrap());
         }
 
@@ -130,12 +130,12 @@ impl Invariant {
 
         if x_to_y {
             if pool.sqrt_price <= sqrt_price_limit
-                || sqrt_price_limit > SqrtPrice::new(MAX_SQRT_PRICE)
+                || sqrt_price_limit > SqrtPrice::new(MAX_SQRT_PRICE.into())
             {
                 return Err(InvariantError::WrongLimit);
             }
         } else if pool.sqrt_price >= sqrt_price_limit
-            || sqrt_price_limit < SqrtPrice::new(MIN_SQRT_PRICE)
+            || sqrt_price_limit < SqrtPrice::new(MIN_SQRT_PRICE.into())
         {
             return Err(InvariantError::WrongLimit);
         }
@@ -148,11 +148,11 @@ impl Invariant {
 
         let mut remaining_amount = amount;
 
-        let mut total_amount_in = TokenAmount(0);
-        let mut total_amount_out = TokenAmount(0);
+        let mut total_amount_in = TokenAmount::new(U256::from(0));
+        let mut total_amount_out = TokenAmount::new(U256::from(0));
 
         let event_start_sqrt_price = pool.sqrt_price;
-        let mut event_fee_amount = TokenAmount(0);
+        let mut event_fee_amount = TokenAmount::new(U256::from(0));
 
         while !remaining_amount.is_zero() {
             let (swap_limit, limiting_tick) = self.tickmap.get_closer_limit(
@@ -206,8 +206,8 @@ impl Invariant {
 
             let (amount_to_add, amount_after_tick_update, has_crossed) = pool.update_tick(
                 result,
-                &mut tick_update,
                 swap_limit,
+                &mut tick_update,
                 remaining_amount,
                 by_amount_in,
                 x_to_y,
@@ -235,7 +235,7 @@ impl Invariant {
             }
         }
 
-        if total_amount_out.get() == 0 {
+        if total_amount_out.get() == U256::from(0) {
             return Err(InvariantError::NoGainSwap);
         }
 

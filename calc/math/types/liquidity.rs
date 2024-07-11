@@ -3,8 +3,8 @@ use decimal::*;
 use gstd::ToString;
 use gstd::{Decode, Encode, TypeInfo};
 
-#[decimal(6)]
+#[decimal(5, U512)]
 #[derive(Default, Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Encode, Decode, TypeInfo)]
 #[codec(crate = gstd::codec)]
 #[scale_info(crate = gstd::scale_info)]
-pub struct Liquidity(pub u128);
+pub struct Liquidity(pub U256);

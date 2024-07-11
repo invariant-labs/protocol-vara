@@ -1,16 +1,35 @@
 import { GearApi, GearApiOptions, HexString, ProgramMetadata } from '@gear-js/api'
 import { readFile } from 'fs/promises'
 import path from 'path'
+import * as wasmSerializer from './wasm-serializer.js'
 import { IKeyringPair } from '@polkadot/types/types'
 import {
   _calculateFee,
   _newFeeTier,
   _newPoolKey,
-  calculateAmountDelta,
-  calculateAmountDeltaResult,
+  calculateAmountDelta as _calculateAmountDelta,
+  calculateAmountDeltaResult as calculateAmountDeltaResult,
+  getLiquidityByX as _getLiquidityByX,
+  getLiquidityByY as _getLiquidityByY,
+  calculateTick as _calculateTick,
+  isTokenX as _isTokenX,
   getPercentageDenominator,
-  getSqrtPriceDenominator
+  getSqrtPriceDenominator,
+  getMinSqrtPrice as _getMinSqrtPrice,
+  getMinTick as _getMinTick,
+  getMaxChunk as _getMaxChunk,
+  getMaxSqrtPrice as _getMaxSqrtPrice,
+  getMaxTick as _getMaxTick,
+  toFeeGrowth as _toFeeGrowth,
+  toFixedPoint as _toFixedPoint,
+  toLiquidity as _toLiquidity,
+  toPercentage as _toPercentage,
+  toPrice as _toPrice,
+  toSecondsPerLiquidity as _toSecondsPerLiquidity,
+  toSqrtPrice as _toSqrtPrice,
+  toTokenAmount as _toTokenAmount
 } from 'invariant-vara-wasm'
+
 import { TypeRegistry } from '@polkadot/types'
 import {
   TokenAmount,
@@ -82,14 +101,6 @@ export const unwrapResult = <T>(result: Result<T>): T => {
   } else {
     throw new Error('Invalid Result type')
   }
-}
-
-export const newFeeTier = (fee: Percentage, tickSpacing: bigint): FeeTier => {
-  return convertFeeTier(_newFeeTier(fee, integerSafeCast(tickSpacing)))
-}
-
-export const newPoolKey = (token0: HexString, token1: HexString, feeTier: FeeTier): PoolKey => {
-  return convertPoolKey(_newPoolKey(token0, token1, feeTier))
 }
 
 const convertFieldsToBigInt = (returnedObject: any, exclude?: string[]): any => {
@@ -207,28 +218,6 @@ export class TransactionWrapper<U> {
   }
 }
 
-export const calculateTokenAmounts = (
-  pool: Pool,
-  position: Position
-): calculateAmountDeltaResult => {
-  return _calculateTokenAmounts(pool, position, false)
-}
-
-export const _calculateTokenAmounts = (
-  pool: Pool,
-  position: Position,
-  sign: boolean
-): calculateAmountDeltaResult => {
-  return calculateAmountDelta(
-    pool.currentTickIndex,
-    pool.sqrtPrice,
-    position.liquidity,
-    sign,
-    position.upperTickIndex,
-    position.lowerTickIndex
-  )
-}
-
 export type SwapEventCallback = {
   ident: InvariantEvent.SwapEvent
   callback: (event: SwapEvent) => void | Promise<void>
@@ -303,7 +292,7 @@ const newtonIteration = (n: bigint, x0: bigint): bigint => {
   return newtonIteration(n, x1)
 }
 export const sqrtPriceToPrice = (sqrtPrice: SqrtPrice): Price => {
-  return (sqrtPrice * sqrtPrice) / getSqrtPriceDenominator()
+  return ((sqrtPrice * sqrtPrice) / getSqrtPriceDenominator()) as any
 }
 
 export const priceToSqrtPrice = (price: Price): SqrtPrice => {
@@ -319,16 +308,49 @@ export const calculateSqrtPriceAfterSlippage = (
     return sqrtPrice
   }
 
-  const multiplier = getPercentageDenominator() + (up ? slippage : -slippage)
-  const price = sqrtPriceToPrice(sqrtPrice)
-  const priceWithSlippage = price * multiplier * getPercentageDenominator()
-  const sqrtPriceWithSlippage = priceToSqrtPrice(priceWithSlippage) / getPercentageDenominator()
+  const percentageDenominator = getPercentageDenominator()
+  const multiplier = percentageDenominator + (up ? slippage : -slippage)
+  const price = sqrtPriceToPrice(sqrtPrice as any)
+  const priceWithSlippage = price * multiplier * percentageDenominator
+  const sqrtPriceWithSlippage = priceToSqrtPrice(priceWithSlippage) / percentageDenominator
 
   return sqrtPriceWithSlippage
 }
 
 export const delay = (delayMs: number) => {
   return new Promise(resolve => setTimeout(resolve, delayMs))
+}
+
+export const calculateTokenAmounts = (
+  pool: Pool,
+  position: Position
+): calculateAmountDeltaResult => {
+  return _calculateTokenAmounts(pool, position, false)
+}
+
+export const _calculateTokenAmounts = (
+  pool: Pool,
+  position: Position,
+  sign: boolean
+): calculateAmountDeltaResult => {
+  return wasmSerializer.decodeCalculateAmountDeltaResult(
+    _calculateAmountDelta(
+      pool.currentTickIndex,
+      pool.sqrtPrice,
+      wasmSerializer.encodeLiquidity(position.liquidity),
+      sign,
+      position.upperTickIndex,
+      position.lowerTickIndex
+    )
+  )
+}
+
+export const newFeeTier = (fee: Percentage, tickSpacing: bigint): FeeTier => {
+  return _newFeeTier(fee, integerSafeCast(tickSpacing))
+}
+
+export const newPoolKey = (token0: HexString, token1: HexString, feeTier: FeeTier): PoolKey => {
+  return _newPoolKey(token0, token1, feeTier)
 }
 
 export const calculateFee = (
@@ -339,16 +361,112 @@ export const calculateFee = (
 ): [TokenAmount, TokenAmount] => {
   return _calculateFee(
     lowerTick.index,
-    lowerTick.feeGrowthOutsideX,
-    lowerTick.feeGrowthOutsideY,
+    lowerTick.feeGrowthOutsideX as any,
+    lowerTick.feeGrowthOutsideY as any,
     upperTick.index,
-    upperTick.feeGrowthOutsideX,
-    upperTick.feeGrowthOutsideY,
+    upperTick.feeGrowthOutsideX as any,
+    upperTick.feeGrowthOutsideY as any,
     pool.currentTickIndex,
-    pool.feeGrowthGlobalX,
-    pool.feeGrowthGlobalY,
-    position.feeGrowthInsideX,
-    position.feeGrowthInsideY,
-    position.liquidity
+    pool.feeGrowthGlobalX as any,
+    pool.feeGrowthGlobalY as any,
+    position.feeGrowthInsideX as any,
+    position.feeGrowthInsideY as any,
+    wasmSerializer.encodeLiquidity(position.liquidity as any)
+  ).map(wasmSerializer.decodeTokenAmount)
+}
+
+export const getLiquidityByX = (
+  amountX: TokenAmount,
+  lowerTick: bigint,
+  upperTick: bigint,
+  sqrtPrice: SqrtPrice,
+  roundingUp: boolean
+) => {
+  return wasmSerializer.decodeSingleTokenLiquidity(
+    _getLiquidityByX(
+      wasmSerializer.encodeTokenAmount(amountX),
+      lowerTick,
+      upperTick,
+      sqrtPrice,
+      roundingUp
+    )
   )
+}
+
+export const getLiquidityByY = (
+  amountY: TokenAmount,
+  lowerTick: bigint,
+  upperTick: bigint,
+  sqrtPrice: SqrtPrice,
+  roundingUp: boolean
+) => {
+  return wasmSerializer.decodeSingleTokenLiquidity(
+    _getLiquidityByY(
+      wasmSerializer.encodeTokenAmount(amountY),
+      integerSafeCast(lowerTick),
+      integerSafeCast(upperTick),
+      sqrtPrice,
+      roundingUp
+    )
+  )
+}
+
+export const calculateTick = (sqrtPrice: SqrtPrice, tickSpacing: number): number => {
+  return _calculateTick(sqrtPrice, tickSpacing)
+}
+
+export const isTokenX = (token0: HexString, token1: HexString): boolean => {
+  return _isTokenX(token0, token1)
+}
+
+export const getMinSqrtPrice = (index: number): SqrtPrice => {
+  return _getMinSqrtPrice(index) as any
+}
+
+export const getMaxSqrtPrice = (index: number): SqrtPrice => {
+  return _getMaxSqrtPrice(index) as any
+}
+
+export const getMaxChunk = (index: bigint): bigint => {
+  return _getMaxChunk(integerSafeCast(index))
+}
+
+export const getMaxTick = (index: bigint): bigint => {
+  return _getMaxTick(integerSafeCast(index))
+}
+
+export const getMinTick = (index: bigint): bigint => {
+  return _getMinTick(integerSafeCast(index))
+}
+
+export const toFeeGrowth = (val: bigint, scale: bigint): bigint => {
+  return _toFeeGrowth(val, integerSafeCast(scale))
+}
+
+export const toLiquidity = (val: bigint, scale: bigint): bigint => {
+  return _toLiquidity(val, integerSafeCast(scale))
+}
+
+export const toFixedPoint = (val: bigint, scale: bigint): bigint => {
+  return _toFixedPoint(val, integerSafeCast(scale))
+}
+
+export const toPercentage = (val: bigint, scale: bigint): bigint => {
+  return _toPercentage(val, integerSafeCast(scale))
+}
+
+export const toPrice = (val: bigint, scale: bigint): bigint => {
+  return _toPrice(val, integerSafeCast(scale))
+}
+
+export const toSecondsPerLiquidity = (val: bigint, scale: bigint): bigint => {
+  return _toSecondsPerLiquidity(val, integerSafeCast(scale))
+}
+
+export const toSqrtPrice = (val: bigint, scale: bigint): bigint => {
+  return _toSqrtPrice(val, integerSafeCast(scale))
+}
+
+export const toTokenAmount = (val: bigint, scale: bigint): bigint => {
+  return _toTokenAmount(val, integerSafeCast(scale))
 }
