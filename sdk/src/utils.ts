@@ -336,7 +336,7 @@ export const _calculateTokenAmounts = (
   return wasmSerializer.decodeCalculateAmountDeltaResult(
     _calculateAmountDelta(
       pool.currentTickIndex,
-      wasmSerializer.encodeSqrtPrice(pool.sqrtPrice),
+      pool.sqrtPrice,
       wasmSerializer.encodeLiquidity(position.liquidity),
       sign,
       position.upperTickIndex,
@@ -346,15 +346,11 @@ export const _calculateTokenAmounts = (
 }
 
 export const newFeeTier = (fee: Percentage, tickSpacing: bigint): FeeTier => {
-  return wasmSerializer.decodeFeeTier(
-    _newFeeTier(wasmSerializer.encodePercentage(fee), integerSafeCast(tickSpacing))
-  )
+  return _newFeeTier(fee, integerSafeCast(tickSpacing))
 }
 
 export const newPoolKey = (token0: HexString, token1: HexString, feeTier: FeeTier): PoolKey => {
-  return wasmSerializer.decodePoolKey(
-    _newPoolKey(token0, token1, wasmSerializer.encodeFeeTier(feeTier))
-  )
+  return _newPoolKey(token0, token1, feeTier)
 }
 
 export const calculateFee = (
@@ -365,16 +361,16 @@ export const calculateFee = (
 ): [TokenAmount, TokenAmount] => {
   return _calculateFee(
     lowerTick.index,
-    wasmSerializer.encodeFeeGrowth(lowerTick.feeGrowthOutsideX as any),
-    wasmSerializer.encodeFeeGrowth(lowerTick.feeGrowthOutsideY as any),
+    lowerTick.feeGrowthOutsideX as any,
+    lowerTick.feeGrowthOutsideY as any,
     upperTick.index,
-    wasmSerializer.encodeFeeGrowth(upperTick.feeGrowthOutsideX as any),
-    wasmSerializer.encodeFeeGrowth(upperTick.feeGrowthOutsideY as any),
+    upperTick.feeGrowthOutsideX as any,
+    upperTick.feeGrowthOutsideY as any,
     pool.currentTickIndex,
-    wasmSerializer.encodeFeeGrowth(pool.feeGrowthGlobalX as any),
-    wasmSerializer.encodeFeeGrowth(pool.feeGrowthGlobalY as any),
-    wasmSerializer.encodeFeeGrowth(position.feeGrowthInsideX as any),
-    wasmSerializer.encodeFeeGrowth(position.feeGrowthInsideY as any),
+    pool.feeGrowthGlobalX as any,
+    pool.feeGrowthGlobalY as any,
+    position.feeGrowthInsideX as any,
+    position.feeGrowthInsideY as any,
     wasmSerializer.encodeLiquidity(position.liquidity as any)
   ).map(wasmSerializer.decodeTokenAmount)
 }
@@ -391,7 +387,7 @@ export const getLiquidityByX = (
       wasmSerializer.encodeTokenAmount(amountX),
       lowerTick,
       upperTick,
-      wasmSerializer.encodeSqrtPrice(sqrtPrice),
+      sqrtPrice,
       roundingUp
     )
   )
@@ -409,14 +405,14 @@ export const getLiquidityByY = (
       wasmSerializer.encodeTokenAmount(amountY),
       integerSafeCast(lowerTick),
       integerSafeCast(upperTick),
-      wasmSerializer.encodeSqrtPrice(sqrtPrice),
+      sqrtPrice,
       roundingUp
     )
   )
 }
 
 export const calculateTick = (sqrtPrice: SqrtPrice, tickSpacing: number): number => {
-  return _calculateTick(wasmSerializer.encodeSqrtPrice(sqrtPrice), tickSpacing)
+  return _calculateTick(sqrtPrice, tickSpacing)
 }
 
 export const isTokenX = (token0: HexString, token1: HexString): boolean => {
@@ -424,11 +420,11 @@ export const isTokenX = (token0: HexString, token1: HexString): boolean => {
 }
 
 export const getMinSqrtPrice = (index: number): SqrtPrice => {
-  return wasmSerializer.decodeSqrtPrice(_getMinSqrtPrice(index) as any)
+  return _getMinSqrtPrice(index) as any
 }
 
 export const getMaxSqrtPrice = (index: number): SqrtPrice => {
-  return wasmSerializer.decodeSqrtPrice(_getMaxSqrtPrice(index) as any)
+  return _getMaxSqrtPrice(index) as any
 }
 
 export const getMaxChunk = (index: bigint): bigint => {
