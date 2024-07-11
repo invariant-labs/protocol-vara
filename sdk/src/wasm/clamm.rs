@@ -284,12 +284,12 @@ fn get_next_sqrt_price_y_down(
     y: TokenAmount,
     add_y: bool,
 ) -> TrackableResult<SqrtPrice> {
-    let numerator: U448T = SqrtPrice::from_value::<U448T, U384T>(
+    let numerator: U448 = SqrtPrice::from_value::<U448, U384>(
         (SqrtPrice::checked_from_decimal_to_value(y))
             .map_err(|_| err!("extending amount overflow"))?,
     );
 
-    let denominator: U448T = SqrtPrice::from_value::<U448T, U384T>(
+    let denominator: U448 = SqrtPrice::from_value::<U448, U384>(
         SqrtPrice::checked_from_decimal_to_value(liquidity)
             .map_err(|_| err!("extending liquidity overflow"))?,
     );

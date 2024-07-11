@@ -249,12 +249,12 @@ fn get_next_sqrt_price_y_down(
     y: TokenAmount,
     add_y: bool,
 ) -> TrackableResult<SqrtPrice> {
-    let numerator: U448T = SqrtPrice::from_value::<U448T, U384T>(
+    let numerator: U448 = SqrtPrice::from_value::<U448, U384>(
         (SqrtPrice::checked_from_decimal_to_value(y))
             .map_err(|_| err!("extending amount overflow"))?,
     );
 
-    let denominator: U448T = SqrtPrice::from_value::<U448T, U384T>(
+    let denominator: U448 = SqrtPrice::from_value::<U448, U384>(
         SqrtPrice::checked_from_decimal_to_value(liquidity)
             .map_err(|_| err!("extending liquidity overflow"))?,
     );
@@ -547,7 +547,7 @@ mod tests {
                 get_next_sqrt_price_from_input(max_sqrt_price, min_liquidity, max_amount, false)
                     .unwrap_err()
                     .get();
-            assert_eq!(cause, "Can't parse from U448T to u128");
+            assert_eq!(cause, "Can't parse from U448 to u128");
             assert_eq!(stack.len(), 3);
         }
     }
@@ -1430,7 +1430,7 @@ mod tests {
                     get_next_sqrt_price_y_down(max_sqrt_price, min_liquidity, max_y, true)
                         .unwrap_err()
                         .get();
-                assert_eq!(cause, "Can't parse from U448T to u128");
+                assert_eq!(cause, "Can't parse from U448 to u128");
                 assert_eq!(stack.len(), 2);
             }
             {
@@ -1442,7 +1442,7 @@ mod tests {
                 )
                 .unwrap_err()
                 .get();
-                assert_eq!(cause, "Can't parse from U448T to u128");
+                assert_eq!(cause, "Can't parse from U448 to u128");
                 assert_eq!(stack.len(), 2);
             }
         }
@@ -1495,7 +1495,7 @@ mod tests {
                     )
                     .unwrap_err()
                     .get();
-                    assert_eq!(cause, "Can't parse from U448T to u128");
+                    assert_eq!(cause, "Can't parse from U448 to u128");
                     assert_eq!(stack.len(), 2);
                 }
                 {
@@ -1507,7 +1507,7 @@ mod tests {
                     )
                     .unwrap_err()
                     .get();
-                    assert_eq!(cause, "Can't parse from U448T to u128");
+                    assert_eq!(cause, "Can't parse from U448 to u128");
                     assert_eq!(stack.len(), 2);
                 }
             }
@@ -1757,7 +1757,7 @@ mod tests {
 
                     max_big_div_values_to_token_up_intermediate = (max_nominator * SqrtPrice::one() + denominator
                     max_big_div_values_to_token_up_intermediate = 2^332 * 10^24 + 2^96
-                    max_big_div_values_to_token_up_intermediate < 2^412 <-- no more overflow  after adding U448T
+                    max_big_div_values_to_token_up_intermediate < 2^412 <-- no more overflow  after adding U448
             */
 
             assert_eq!(

@@ -13,11 +13,11 @@ pub use sails_rtl::{U128, U256, U512};
 use uint::construct_uint;
 
 construct_uint! {
-    pub struct U448T(7);
+    pub struct U448(7);
 }
 
 construct_uint! {
-    pub struct U384T(6);
+    pub struct U384(6);
 }
 
 construct_uint! {
@@ -25,9 +25,9 @@ construct_uint! {
 }
 
 construct_uint! {
-    pub struct U192T(3);
+    pub struct U192(3);
 }
-impl_units_casts!(U512 8, U448T 7, U384T 6, U320 5, U256 4, U192T 3, U128 2);
+impl_units_casts!(U512 8, U448 7, U384 6, U320 5, U256 4, U192 3, U128 2);
 
 macro_rules! impl_uint_casts_as_default_from {
     ($thing:ident, $from:ty) => {

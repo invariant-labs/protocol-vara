@@ -6,7 +6,7 @@ use gstd::ToString;
 use gstd::{Decode, Encode, TypeInfo};
 use traceable_result::*;
 
-#[decimal(24, U384T)]
+#[decimal(24, U384)]
 #[derive(Default, Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Encode, Decode, TypeInfo)]
 #[codec(crate = gstd::codec)]
 #[scale_info(crate = gstd::scale_info)]
@@ -18,11 +18,11 @@ impl SqrtPrice {
     }
 
     pub fn big_div_values_to_token(
-        nominator: U384T,
-        denominator: U384T,
+        nominator: U384,
+        denominator: U384,
     ) -> TrackableResult<TokenAmount> {
-        let nominator: U448T = SqrtPrice::from_value(nominator);
-        let denominator: U448T = SqrtPrice::from_value(denominator);
+        let nominator: U448 = SqrtPrice::from_value(nominator);
+        let denominator: U448 = SqrtPrice::from_value(denominator);
 
         let intermediate = nominator
             .checked_mul(SqrtPrice::one().cast())
@@ -30,25 +30,25 @@ impl SqrtPrice {
             .checked_div(denominator)
             .ok_or_else(|| err!(TrackableError::DIV))?;
 
-        let casted_intermediate: U384T = (SqrtPrice::checked_from_value(intermediate))
-            .map_err(|_| err!("Can't parse from U448T to U384T"))?;
+        let casted_intermediate: U384 = (SqrtPrice::checked_from_value(intermediate))
+            .map_err(|_| err!("Can't parse from U448 to U384"))?;
 
         let result = casted_intermediate
             .checked_div(SqrtPrice::one().cast())
             .ok_or_else(|| err!(TrackableError::DIV))?;
 
-        let casted_result: U256 = TokenAmount::checked_from_value::<U256, U384T>(result)
-            .map_err(|_| err!("Can't parse from U384T to U256T"))?;
+        let casted_result: U256 = TokenAmount::checked_from_value::<U256, U384>(result)
+            .map_err(|_| err!("Can't parse from U384 to U256"))?;
 
         Ok(TokenAmount::new(casted_result))
     }
 
     pub fn big_div_values_to_token_up(
-        nominator: U384T,
-        denominator: U384T,
+        nominator: U384,
+        denominator: U384,
     ) -> TrackableResult<TokenAmount> {
-        let nominator: U448T = SqrtPrice::from_value(nominator);
-        let denominator: U448T = SqrtPrice::from_value(denominator);
+        let nominator: U448 = SqrtPrice::from_value(nominator);
+        let denominator: U448 = SqrtPrice::from_value(denominator);
 
         let intermediate = nominator
             .checked_mul(SqrtPrice::one().cast())
@@ -58,8 +58,8 @@ impl SqrtPrice {
             .checked_div(denominator)
             .ok_or_else(|| err!(TrackableError::DIV))?;
 
-        let casted_intermediate: U384T = (SqrtPrice::checked_from_value(intermediate))
-            .map_err(|_| err!("Can't parse from U448T to U384T"))?;
+        let casted_intermediate: U384 = (SqrtPrice::checked_from_value(intermediate))
+            .map_err(|_| err!("Can't parse from U448 to U384"))?;
 
         let result = casted_intermediate
             .checked_add(Self::almost_one().cast())
@@ -67,28 +67,28 @@ impl SqrtPrice {
             .checked_div(SqrtPrice::one().cast())
             .ok_or_else(|| err!(TrackableError::DIV))?;
 
-        let casted_result: U256 = TokenAmount::checked_from_value::<U256, U384T>(result)
-            .map_err(|_| err!("Can't parse from U384T to U256T"))?;
+        let casted_result: U256 = TokenAmount::checked_from_value::<U256, U384>(result)
+            .map_err(|_| err!("Can't parse from U384 to U256"))?;
 
         Ok(TokenAmount::new(casted_result))
     }
 
     // TODO - Configure nominator and denominator types
-    pub fn big_div_values_up(nominator: U384T, denominator: U384T) -> SqrtPrice {
+    pub fn big_div_values_up(nominator: U384, denominator: U384) -> SqrtPrice {
         let result = nominator
             .checked_mul(Self::one().cast())
             .unwrap()
-            .checked_add(denominator.checked_sub(U384T::from(1u32)).unwrap())
+            .checked_add(denominator.checked_sub(U384::from(1u32)).unwrap())
             .unwrap()
             .checked_div(denominator)
             .unwrap();
-        let casted_result = SqrtPrice::from_value::<u128, U384T>(result);
+        let casted_result = SqrtPrice::from_value::<u128, U384>(result);
         SqrtPrice::new(casted_result)
     }
 
     pub fn checked_big_div_values(
-        nominator: U448T,
-        denominator: U448T,
+        nominator: U448,
+        denominator: U448,
     ) -> TrackableResult<SqrtPrice> {
         let result = nominator
             .checked_mul(Self::one().cast())
@@ -96,21 +96,21 @@ impl SqrtPrice {
             .checked_div(denominator)
             .ok_or_else(|| err!(TrackableError::DIV))?;
 
-        let casted_result = SqrtPrice::checked_from_value::<u128, U448T>(result)
-            .map_err(|_| err!("Can't parse from U448T to u128"))?;
+        let casted_result = SqrtPrice::checked_from_value::<u128, U448>(result)
+            .map_err(|_| err!("Can't parse from U448 to u128"))?;
         Ok(SqrtPrice::new(casted_result))
     }
 
     pub fn checked_big_div_values_up(
-        nominator: U448T,
-        denominator: U448T,
+        nominator: U448,
+        denominator: U448,
     ) -> TrackableResult<SqrtPrice> {
         let result = nominator
             .checked_mul(Self::one().cast())
             .ok_or_else(|| err!(TrackableError::MUL))?
             .checked_add(
                 denominator
-                    .checked_sub(U448T::from(1u32))
+                    .checked_sub(U448::from(1u32))
                     .ok_or_else(|| err!(TrackableError::SUB))?,
             )
             .ok_or_else(|| err!(TrackableError::ADD))?
@@ -118,8 +118,8 @@ impl SqrtPrice {
             .ok_or_else(|| err!(TrackableError::DIV))?;
 
         // TODO - add ok_or_mark_trace!
-        let casted_result = SqrtPrice::checked_from_value::<u128, U448T>(result)
-            .map_err(|_| err!("Can't parse from U448T to u128"))?;
+        let casted_result = SqrtPrice::checked_from_value::<u128, U448>(result)
+            .map_err(|_| err!("Can't parse from U448 to u128"))?;
         Ok(SqrtPrice::new(casted_result))
     }
 }

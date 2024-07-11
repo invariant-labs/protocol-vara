@@ -30,7 +30,7 @@ impl FeeGrowth {
     pub fn from_fee(liquidity: Liquidity, fee: TokenAmount) -> TrackableResult<Self> {
         Ok(Self::new(
             Self::checked_from_value(
-                fee.cast::<U384T>()
+                fee.cast::<U384>()
                     .checked_mul(FeeGrowth::one().cast())
                     .ok_or_else(|| err!(TrackableError::MUL))?
                     .checked_mul(Liquidity::one().cast())
@@ -45,7 +45,7 @@ impl FeeGrowth {
     pub fn to_fee(self, liquidity: Liquidity) -> TrackableResult<TokenAmount> {
         Ok(TokenAmount::new(
             TokenAmount::checked_from_value(
-                self.cast::<U384T>()
+                self.cast::<U384>()
                     .checked_mul(liquidity.cast())
                     .ok_or_else(|| err!(TrackableError::MUL))?
                     .checked_div(Liquidity::one().cast())
@@ -243,9 +243,9 @@ mod tests {
             // token < L * delta_price
             // token_max = L_max * delta_price_max
             let max_token: U256 = TokenAmount::from_value(
-                max_l.cast::<U384T>() * max_p_delta.cast::<U384T>()
-                    / Liquidity::from_integer(1).cast::<U384T>()
-                    / SqrtPrice::from_integer(1).cast::<U384T>(),
+                max_l.cast::<U384>() * max_p_delta.cast::<U384>()
+                    / Liquidity::from_integer(1).cast::<U384>()
+                    / SqrtPrice::from_integer(1).cast::<U384>(),
             );
             let fee_growth = FeeGrowth::from_fee(max_l, TokenAmount::new(max_token)).unwrap();
 

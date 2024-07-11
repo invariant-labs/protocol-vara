@@ -6,7 +6,7 @@ mod traits;
 mod uint;
 
 pub use crate::uint::{
-    checked_u320_to_u256, to_u256, u256_to_u320, U128, U192T, U256, U320, U384T, U448T, U512,
+    checked_u320_to_u256, to_u256, u256_to_u320, U128, U192, U256, U320, U384, U448, U512,
 };
 pub use decimal_core::decimal;
 pub use num_traits;
@@ -42,16 +42,16 @@ pub mod tests {
     #[test]
     fn test_cast() {
         assert_eq!(R::max_instance().cast::<U256>(), U256::from(u128::MAX));
-        assert_eq!(R::max_instance().cast::<U192T>(), U192T::from(u128::MAX));
+        assert_eq!(R::max_instance().cast::<U192>(), U192::from(u128::MAX));
 
         assert_eq!(M::max_instance().cast::<U256>(), U256::from(u128::MAX));
-        assert_eq!(M::max_instance().cast::<U192T>(), U192T::from(u128::MAX));
+        assert_eq!(M::max_instance().cast::<U192>(), U192::from(u128::MAX));
 
         assert_eq!(Q::max_instance().cast::<U256>(), U256::from(u128::MAX));
-        assert_eq!(Q::max_instance().cast::<U192T>(), U192T::from(u128::MAX));
+        assert_eq!(Q::max_instance().cast::<U192>(), U192::from(u128::MAX));
 
         assert_eq!(N::max_instance().cast::<U256>(), U256::from(u128::MAX));
-        assert_eq!(N::max_instance().cast::<U192T>(), U192T::from(u128::MAX));
+        assert_eq!(N::max_instance().cast::<U192>(), U192::from(u128::MAX));
     }
 
     #[test]
