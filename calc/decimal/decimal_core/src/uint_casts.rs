@@ -136,7 +136,7 @@ pub fn impl_uint_casts(
                 }
             };
 
-            let error_message = alloc::format!("Failed to cast {} to {}", uint, new_uint);
+            let error_message = alloc::format!("Failed to cast {} to {}", smaller_type, bigger_type);
             let cast_down: proc_macro2::TokenStream = quote! {
                 impl #checked_cast_trait_name <#bigger_type> for #smaller_type {
                     fn #checked_cast_function_name(#param_name: #bigger_type)-> Result<#smaller_type, String> {
