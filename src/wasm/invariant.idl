@@ -135,6 +135,7 @@ constructor {
 
 service Service {
   AddFeeTier : (fee_tier: FeeTier) -> FeeTier;
+  AddMultiplePositions : (pool_key: PoolKey, index: i32, amount: u32, step: i32) -> null;
   ChangeFeeReceiver : (pool_key: PoolKey, fee_receiver: actor_id) -> null;
   ChangeProtocolFee : (protocol_fee: Percentage) -> Percentage;
   ClaimFee : (index: u32) -> struct { TokenAmount, TokenAmount };

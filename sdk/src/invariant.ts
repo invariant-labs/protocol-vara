@@ -240,6 +240,24 @@ export class Invariant {
     )
   }
 
+  async addMultiplePositions(
+    signer: Signer,
+    poolKey: PoolKey,
+    index: number,
+    amount: bigint,
+    step: number,
+    gasLimit: bigint = this.gasLimit
+  ): Promise<null> {
+    const { response } = await (
+      await this.contract.service
+        .addMultiplePositions(poolKey as any, index as any, amount as any, step)
+        .withGas(gasLimit)
+    )
+      .withAccount(signer)
+      .signAndSend()
+    return response()
+  }
+
   async changeProtocolFee(
     signer: Signer,
     fee: Percentage,

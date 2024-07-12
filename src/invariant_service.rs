@@ -1,6 +1,7 @@
 extern crate alloc;
 use crate::invariant_storage::Invariant;
 use crate::invariant_storage::InvariantStorage;
+use contracts::CHUNK_SIZE;
 use contracts::{
     AwaitingTransfer, FeeTier, InvariantError, Pool, PoolKey, Position, Tick, TransferType,
 };
@@ -50,8 +51,8 @@ macro_rules! panicking_async {
 type TokenTransferResponse = (String, String, bool);
 
 // TODO: Update once the SDK tests are in place and proper measurement is possible
-pub const TRANSFER_GAS_LIMIT: u64 = 1_600_000_000 * 2;
-pub const TRANSFER_REPLY_HANDLING_COST: u64 = 1_600_000_000 * 2;
+pub const TRANSFER_GAS_LIMIT: u64 = 10_600_000_000 * 2;
+pub const TRANSFER_REPLY_HANDLING_COST: u64 = 10_600_000_000 * 2;
 pub const BALANCE_CHANGE_COST: u64 = 100_000 * 2;
 pub const TRANSFER_COST: u64 =
     TRANSFER_GAS_LIMIT + TRANSFER_REPLY_HANDLING_COST + BALANCE_CHANGE_COST;
@@ -389,6 +390,32 @@ where
 
     pub fn get_all_positions(&self, owner_id: ActorId) -> Vec<Position> {
         InvariantStorage::as_ref().positions.get_all(&owner_id)
+    }
+
+    pub fn add_multiple_positions(&mut self, pool_key: PoolKey, index: i32, amount: u32, step: i32) {
+        let mut index = index;
+        for _ in 0..amount{
+            if step > 0 {
+                self.create_position(
+                    pool_key,
+                    index,
+                    index + step,
+                    Liquidity::from_integer(1000000000000000u128),
+                    SqrtPrice::new(MIN_SQRT_PRICE),
+                    SqrtPrice::new(MAX_SQRT_PRICE),
+                );
+            } else {
+                self.create_position(
+                    pool_key,
+                    index + step,
+                    index,
+                    Liquidity::new(10.into()),
+                    SqrtPrice::new(MIN_SQRT_PRICE),
+                    SqrtPrice::new(MAX_SQRT_PRICE),
+                );
+            }
+            index += step
+        }
     }
 
     pub fn swap(

@@ -165,6 +165,19 @@ export class Service {
     );
   }
 
+  public addMultiplePositions(pool_key: PoolKey, index: number, amount: number, step: number): TransactionBuilder<null> {
+    if (!this._program.programId) throw new Error('Program ID is not set');
+    return new TransactionBuilder<null>(
+      this._program.api,
+      this._program.registry,
+      'send_message',
+      ['Service', 'AddMultiplePositions', pool_key, index, amount, step],
+      '(String, String, PoolKey, i32, u32, i32)',
+      'Null',
+      this._program.programId
+    );
+  }
+
   public changeFeeReceiver(pool_key: PoolKey, fee_receiver: string): TransactionBuilder<null> {
     if (!this._program.programId) throw new Error('Program ID is not set');
     return new TransactionBuilder<null>(
