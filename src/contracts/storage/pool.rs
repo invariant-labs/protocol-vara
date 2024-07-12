@@ -245,7 +245,7 @@ mod tests {
         {
             let init_tick = 0;
             let init_sqrt_price =
-                calculate_sqrt_price(init_tick).unwrap() + SqrtPrice::new(U128::from(1));
+                calculate_sqrt_price(init_tick).unwrap() + SqrtPrice::new(1);
             let tick_spacing = 3;
             let pool = Pool::create(
                 init_sqrt_price,
@@ -259,7 +259,7 @@ mod tests {
         }
         {
             let init_tick = 2;
-            let init_sqrt_price = SqrtPrice::new(U128::from(1000175003749000000000000u128));
+            let init_sqrt_price = SqrtPrice::new(1000175003749000000000000u128);
             let tick_spacing = 1;
             let pool = Pool::create(
                 init_sqrt_price,
@@ -282,7 +282,7 @@ mod tests {
         }
         {
             let init_tick = 0;
-            let init_sqrt_price = SqrtPrice::new(U128::from(1000225003749000000000000u128));
+            let init_sqrt_price = SqrtPrice::new(1000225003749000000000000u128);
             let tick_spacing = 3;
             let pool = Pool::create(
                 init_sqrt_price,
@@ -319,7 +319,7 @@ mod tests {
         {
             let init_tick = MAX_TICK;
             let init_sqrt_price =
-                calculate_sqrt_price(init_tick).unwrap() - SqrtPrice::new(U128::from(1));
+                calculate_sqrt_price(init_tick).unwrap() - SqrtPrice::new(1);
             let tick_spacing = 1;
             Pool::create(
                 init_sqrt_price,
@@ -404,8 +404,8 @@ mod tests {
             let mut pool = pool;
             let amount = TokenAmount::new(U256::from(1));
             pool.add_fee(amount, true, protocol_fee).unwrap();
-            assert_eq!({ pool.fee_growth_global_x }, FeeGrowth::new(U128::from(0)));
-            assert_eq!({ pool.fee_growth_global_y }, FeeGrowth::new(U128::from(0)));
+            assert_eq!({ pool.fee_growth_global_x }, FeeGrowth::new(0));
+            assert_eq!({ pool.fee_growth_global_y }, FeeGrowth::new(0));
             assert_eq!(
                 { pool.fee_protocol_token_x },
                 TokenAmount::new(U256::from(1))
@@ -468,9 +468,9 @@ mod tests {
             pool.add_fee(max_amount, true, min_protocol_fee).unwrap();
             assert_eq!(
                 { pool.fee_growth_global_x },
-                FeeGrowth::new(U128::from(1000000000000000000000000000000000u128))
+                FeeGrowth::new(1000000000000000000000000000000000u128)
             );
-            assert_eq!({ pool.fee_growth_global_y }, FeeGrowth::new(U128::from(0)));
+            assert_eq!({ pool.fee_growth_global_y }, FeeGrowth::new(0));
             assert_eq!(
                 { pool.fee_protocol_token_x },
                 TokenAmount::new(U256::from(0))
@@ -488,7 +488,7 @@ mod tests {
         {
             let mut pool = Pool {
                 liquidity: Liquidity::from_integer(0),
-                sqrt_price: SqrtPrice::new(U128::from(1_000_140_000_000_000_000_000_000u128)),
+                sqrt_price: SqrtPrice::new(1_000_140_000_000_000_000_000_000u128),
                 current_tick_index: 2,
                 ..Default::default()
             };
@@ -510,7 +510,7 @@ mod tests {
         {
             let mut pool = Pool {
                 liquidity: Liquidity::from_integer(0),
-                sqrt_price: SqrtPrice::new(U128::from(1_000_140_000_000_000_000_000_000_u128)),
+                sqrt_price: SqrtPrice::new(1_000_140_000_000_000_000_000_000_u128),
                 current_tick_index: 2,
                 ..Default::default()
             };
@@ -534,7 +534,7 @@ mod tests {
             {
                 let mut pool = Pool {
                     liquidity: Liquidity::from_integer(1),
-                    sqrt_price: SqrtPrice::new(U128::from(1_000_140_000_000_000_000_000_000_u128)),
+                    sqrt_price: SqrtPrice::new(1_000_140_000_000_000_000_000_000_u128),
                     current_tick_index: 6,
                     ..Default::default()
                 };
@@ -555,7 +555,7 @@ mod tests {
             {
                 let mut pool = Pool {
                     liquidity: Liquidity::from_integer(1),
-                    sqrt_price: SqrtPrice::new(U128::from(1_000_140_000_000_000_000_000_000_u128)),
+                    sqrt_price: SqrtPrice::new(1_000_140_000_000_000_000_000_000_u128),
                     current_tick_index: -2,
                     ..Default::default()
                 };
@@ -579,7 +579,7 @@ mod tests {
             let mut pool = Pool {
                 liquidity: Liquidity::from_integer(10),
                 current_tick_index: 2,
-                sqrt_price: SqrtPrice::new(U128::from(1)),
+                sqrt_price: SqrtPrice::new(1),
                 ..Default::default()
             };
 

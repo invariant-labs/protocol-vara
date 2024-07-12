@@ -9,7 +9,7 @@ use traceable_result::*;
 #[derive(Default, Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Encode, Decode, TypeInfo)]
 #[codec(crate = gstd::codec)]
 #[scale_info(crate = gstd::scale_info)]
-pub struct SecondsPerLiquidity(pub U128);
+pub struct SecondsPerLiquidity(pub u128);
 
 impl SecondsPerLiquidity {
     pub fn unchecked_add(self, other: SecondsPerLiquidity) -> SecondsPerLiquidity {
@@ -43,8 +43,8 @@ impl SecondsPerLiquidity {
 
         Ok(Self::new(
             Self::checked_from_value(
-                Self::from_value::<U256, U128>(
-                    U128::from(delta_time)
+                Self::from_value::<U256, u128>(
+                    u128::from(delta_time)
                         .checked_mul(Self::one().cast())
                         .ok_or_else(|| err!(TrackableError::MUL))?
                         .checked_mul(Liquidity::one().cast())
@@ -53,7 +53,7 @@ impl SecondsPerLiquidity {
                 .checked_div(liquidity.get())
                 .ok_or_else(|| err!(TrackableError::DIV))?,
             )
-            .map_err(|_| err!(TrackableError::cast::<U128>().as_str()))?,
+            .map_err(|_| err!(TrackableError::cast::<u128>().as_str()))?,
         ))
     }
 }
@@ -93,16 +93,16 @@ mod tests {
     #[test]
     fn test_unchecked_add() {
         {
-            let one = SecondsPerLiquidity::new(U128::from(1));
+            let one = SecondsPerLiquidity::new(1);
             let max = SecondsPerLiquidity::max_instance();
-            let expected_result = SecondsPerLiquidity::new(U128::from(0));
+            let expected_result = SecondsPerLiquidity::new(0);
             let result = max.unchecked_add(one);
             assert_eq!(result, expected_result);
         }
         {
             let max = SecondsPerLiquidity::max_instance();
-            let other = SecondsPerLiquidity::new(U128::from(1000000));
-            let expected_result = SecondsPerLiquidity::new(U128::from(999999));
+            let other = SecondsPerLiquidity::new(1000000);
+            let expected_result = SecondsPerLiquidity::new(999999);
             let max_other = max.unchecked_add(other);
             let other_max = other.unchecked_add(max);
             assert_eq!(max_other, expected_result);
@@ -112,22 +112,22 @@ mod tests {
     #[test]
     fn test_unchecked_sub() {
         {
-            let one = SecondsPerLiquidity::new(U128::from(1));
-            let two = SecondsPerLiquidity::new(U128::from(2));
+            let one = SecondsPerLiquidity::new(1);
+            let two = SecondsPerLiquidity::new(2);
             let expected_result = SecondsPerLiquidity::max_instance();
             let result = one.unchecked_sub(two);
             assert_eq!(result, expected_result);
         }
         {
             let max = SecondsPerLiquidity::max_instance();
-            let other = SecondsPerLiquidity::new(U128::from(1000000));
-            let expected_result = SecondsPerLiquidity::new(U128::from(1000001));
+            let other = SecondsPerLiquidity::new(1000000);
+            let expected_result = SecondsPerLiquidity::new(1000001);
             let max_other = max.unchecked_sub(other);
             let other_max = other.unchecked_sub(max);
             assert_eq!(
                 max_other,
                 SecondsPerLiquidity::new(
-                    U128::from_dec_str("340282366920938463463374607431767211455").unwrap()
+                    340282366920938463463374607431767211455u128
                 )
             );
             assert_eq!(other_max, expected_result);
@@ -178,7 +178,7 @@ mod tests {
                     last_timestamp,
                 )
                 .unwrap();
-            assert_eq!(seconds_per_liquidity.get(), U128::from(0));
+            assert_eq!(seconds_per_liquidity.get(), 0);
         }
         // max value
         {
@@ -194,7 +194,7 @@ mod tests {
             assert_eq!(
                 result,
                 SecondsPerLiquidity::new(
-                    U128::from_dec_str("315360000000000000000000000000000000000").unwrap()
+                    315360000000000000000000000000000000000u128
                 )
             );
         }
@@ -228,7 +228,7 @@ mod tests {
             assert_eq!(
                 result,
                 SecondsPerLiquidity::new(
-                    U128::from_dec_str("315360000000000000000000000000000000000").unwrap()
+                    315360000000000000000000000000000000000u128
                 )
             );
         }
@@ -240,7 +240,7 @@ mod tests {
                 0,
             )
             .unwrap();
-            assert_eq!(result, SecondsPerLiquidity::new(U128::from(0)))
+            assert_eq!(result, SecondsPerLiquidity::new(0))
         }
         // min time max liq
         {
@@ -250,7 +250,7 @@ mod tests {
                 max_delta_time - 1,
             )
             .unwrap();
-            assert_eq!(result, SecondsPerLiquidity::new(U128::from(0)))
+            assert_eq!(result, SecondsPerLiquidity::new(0))
         }
         // min time and min liq
         {
@@ -263,7 +263,7 @@ mod tests {
             assert_eq!(
                 result,
                 SecondsPerLiquidity::new(
-                    U128::from_dec_str("1000000000000000000000000000000").unwrap()
+                    1000000000000000000000000000000u128
                 )
             )
         }
@@ -274,15 +274,15 @@ mod tests {
         // upper tick
         let tick_lower_index = 0;
         let tick_lower_seconds_per_liquidity_outside =
-            SecondsPerLiquidity::new(U128::from_dec_str("3012300000").unwrap());
+            SecondsPerLiquidity::new(3012300000u128);
 
         // lower tick
         let tick_upper_index = 10;
         let tick_upper_seconds_per_liquidity_outside =
-            SecondsPerLiquidity::new(U128::from_dec_str("2030400000").unwrap());
+            SecondsPerLiquidity::new(2030400000u128);
 
         // pool
-        let pool_seconds_per_liquidity_global = SecondsPerLiquidity::new(U128::from(0));
+        let pool_seconds_per_liquidity_global = SecondsPerLiquidity::new(0);
 
         {
             let pool_current_tick_index = -10;
@@ -297,7 +297,7 @@ mod tests {
             );
             assert_eq!(
                 seconds_per_liquidity_inside.unwrap().get(),
-                U128::from(981900000)
+                981900000
             );
         }
         {
@@ -313,14 +313,14 @@ mod tests {
             );
             assert_eq!(
                 seconds_per_liquidity_inside.unwrap().get(),
-                U128::from_dec_str("340282366920938463463374607426725511456").unwrap()
+                340282366920938463463374607426725511456u128
             );
         }
         {
             let tick_lower_seconds_per_liquidity_outside =
-                SecondsPerLiquidity::new(U128::from(2012333200));
+                SecondsPerLiquidity::new(2012333200);
             let tick_upper_seconds_per_liquidity_outside =
-                SecondsPerLiquidity::new(U128::from_dec_str("3012333310").unwrap());
+                SecondsPerLiquidity::new(3012333310u128);
             let pool_current_tick_index = 20;
 
             let seconds_per_liquidity_inside = calculate_seconds_per_liquidity_inside(
@@ -333,14 +333,14 @@ mod tests {
             );
             assert_eq!(
                 seconds_per_liquidity_inside.unwrap().get(),
-                U128::from(1000000110)
+                1000000110
             );
         }
         {
             let tick_lower_seconds_per_liquidity_outside =
-                SecondsPerLiquidity::new(U128::from_dec_str("201233320000").unwrap());
+                SecondsPerLiquidity::new(201233320000u128);
             let tick_upper_seconds_per_liquidity_outside =
-                SecondsPerLiquidity::new(U128::from_dec_str("301233331000").unwrap());
+                SecondsPerLiquidity::new(301233331000u128);
             let pool_current_tick_index = 20;
 
             let seconds_per_liquidity_inside = calculate_seconds_per_liquidity_inside(
@@ -353,14 +353,14 @@ mod tests {
             );
             assert_eq!(
                 seconds_per_liquidity_inside.unwrap().get(),
-                U128::from_dec_str("100000011000").unwrap()
+                100000011000u128
             );
         }
         {
             let tick_lower_seconds_per_liquidity_outside =
-                SecondsPerLiquidity::new(U128::from_dec_str("201233320000").unwrap());
+                SecondsPerLiquidity::new(201233320000u128);
             let tick_upper_seconds_per_liquidity_outside =
-                SecondsPerLiquidity::new(U128::from_dec_str("301233331000").unwrap());
+                SecondsPerLiquidity::new(301233331000u128);
             let pool_current_tick_index = -20;
 
             let seconds_per_liquidity_inside = calculate_seconds_per_liquidity_inside(
@@ -373,7 +373,7 @@ mod tests {
             );
             assert_eq!(
                 seconds_per_liquidity_inside.unwrap().get(),
-                U128::from_dec_str("340282366920938463463374607331768200456").unwrap()
+                340282366920938463463374607331768200456u128
             );
         }
     }

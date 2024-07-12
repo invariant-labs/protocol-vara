@@ -2,6 +2,21 @@ use core::fmt::Debug;
 
 use alloc::string::String;
 
+// custom traits need to be defined in order to implement the conversion on sails defined types
+pub trait UintCast<T>: Sized {
+    fn uint_cast(value: T) -> Self;
+}
+
+pub trait UintCheckedCast<T>: Sized {
+    fn uint_checked_cast(value: T) -> Result<Self, String>;
+}
+
+impl<T> UintCast<T> for T {
+    fn uint_cast(value: Self) -> Self {
+        value
+    }
+}
+
 pub trait Decimal: Sized {
     type U: Debug + Default;
 
@@ -17,51 +32,31 @@ pub trait Decimal: Sized {
     fn almost_one() -> Self;
 }
 
-pub trait Conversion: Sized {
-    fn cast<
-        T: Default
-            + AsRef<[u64]>
-            + From<u64>
-            + core::ops::Shl<usize, Output = T>
-            + core::ops::BitOrAssign,
-    >(
-        self,
-    ) -> T;
-    fn checked_cast<
-        T: Default
-            + AsRef<[u64]>
-            + From<u64>
-            + core::ops::Shl<usize, Output = T>
-            + core::ops::BitOrAssign,
-    >(
-        self,
-    ) -> Result<T, String>;
-
+pub trait Conversion: Decimal {
+    fn cast<T>(self) -> T
+    where
+        T: UintCast<<Self as Decimal>::U>,
+    {
+        T::uint_cast(self.get())
+    }
+    fn checked_cast<T>(self) -> Result<T, String>
+    where
+        T: UintCheckedCast<<Self as Decimal>::U>,
+    {
+        T::uint_checked_cast(self.get())
+    }
     fn from_value<T, R>(from: R) -> T
     where
-        T: Default
-            + AsRef<[u64]>
-            + From<u64>
-            + core::ops::Shl<usize, Output = T>
-            + core::ops::BitOrAssign,
-        R: Default
-            + AsRef<[u64]>
-            + From<u64>
-            + core::ops::Shl<usize, Output = R>
-            + core::ops::BitOrAssign;
-
+        T: UintCast<R>,
+    {
+        T::uint_cast(from)
+    }
     fn checked_from_value<T, R>(from: R) -> Result<T, String>
     where
-        T: Default
-            + AsRef<[u64]>
-            + From<u64>
-            + core::ops::Shl<usize, Output = T>
-            + core::ops::BitOrAssign,
-        R: Default
-            + AsRef<[u64]>
-            + From<u64>
-            + core::ops::Shl<usize, Output = R>
-            + core::ops::BitOrAssign;
+        T: UintCheckedCast<R>,
+    {
+        T::uint_checked_cast(from)
+    }
 }
 
 pub trait BigOps<T>: Sized {

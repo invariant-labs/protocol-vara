@@ -85,9 +85,9 @@ pub fn init_cross_swap(invariant: &Program, token_x_program: &Program, token_y_p
 
     assert_eq!(
         pool_after.fee_growth_global_x,
-        FeeGrowth::new(U128::from(40000000000000000000000u128))
+        FeeGrowth::new(40000000000000000000000u128)
     );
-    assert_eq!(pool_after.fee_growth_global_y, FeeGrowth::new(U128::from(0)));
+    assert_eq!(pool_after.fee_growth_global_y, FeeGrowth::new(0));
 
     assert_eq!(pool_after.fee_protocol_token_x, TokenAmount::new(U256::from(2)));
     assert_eq!(pool_after.fee_protocol_token_y, TokenAmount::new(U256::from(0)));

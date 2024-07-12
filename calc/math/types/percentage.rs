@@ -9,4 +9,4 @@ use gstd::{Decode, Encode, TypeInfo};
 )]
 #[codec(crate = gstd::codec)]
 #[scale_info(crate = gstd::scale_info)]
-pub struct Percentage(pub U128);
+pub struct Percentage(pub u128);

@@ -1,5 +1,5 @@
 use crate::alloc::string::ToString;
-use crate::{convert, decimal_ops};
+use crate::{convert, decimal_ops_uint};
 use core::convert::{TryFrom, TryInto};
 use decimal::*;
 use js_sys::BigInt;
@@ -12,4 +12,4 @@ use wasm_bindgen::prelude::*;
 #[tsify(into_wasm_abi, from_wasm_abi)]
 pub struct TokenAmount(#[tsify(type = "bigint")] pub U256);
 
-decimal_ops!(TokenAmount);
+decimal_ops_uint!(TokenAmount);

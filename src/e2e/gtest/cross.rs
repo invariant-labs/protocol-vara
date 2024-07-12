@@ -43,10 +43,10 @@ fn test_cross() {
         Liquidity::from_integer(1000000)
     );
 
-    assert_eq!(upper_tick.fee_growth_outside_x, FeeGrowth::new(U128::from(0)));
+    assert_eq!(upper_tick.fee_growth_outside_x, FeeGrowth::new(0));
     assert_eq!(
         middle_tick.fee_growth_outside_x,
-        FeeGrowth::new(U128::from(30000000000000000000000u128))
+        FeeGrowth::new(30000000000000000000000u128)
     );
-    assert_eq!(lower_tick.fee_growth_outside_x, FeeGrowth::new(U128::from(0)));
+    assert_eq!(lower_tick.fee_growth_outside_x, FeeGrowth::new(0));
 }

@@ -65,7 +65,7 @@ mod tests {
       let token_x = ActorId::from([0x01; 32]);
       let token_y = ActorId::from([0x02; 32]);
       let fee_tier = FeeTier {
-          fee: Percentage::new(U128::from(0)),
+          fee: Percentage::new(0),
           tick_spacing: 1,
       };
       let pool_key = PoolKey::new(token_x, token_y, fee_tier).unwrap();
@@ -85,7 +85,7 @@ mod tests {
       let token_x = ActorId::from([0x01; 32]);
       let token_y = ActorId::from([0x02; 32]);
       let fee_tier = FeeTier {
-          fee: Percentage::new(U128::from(0)),
+          fee: Percentage::new(0),
           tick_spacing: 1,
       };
       let pool_key = PoolKey::new(token_x, token_y, fee_tier).unwrap();
@@ -110,7 +110,7 @@ mod tests {
       let token_x = ActorId::from([0x01; 32]);
       let token_y = ActorId::from([0x02; 32]);
       let fee_tier = FeeTier {
-          fee: Percentage::new(U128::from(0)),
+          fee: Percentage::new(0),
           tick_spacing: 1,
       };
       let pool_key = PoolKey::new(token_x, token_y, fee_tier).unwrap();

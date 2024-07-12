@@ -21,11 +21,10 @@ extern "C" {
 // run once in js for debugging purposes
 #[wasm_bindgen(js_name = "_initPanicHook")]
 pub fn init_panic_hook() {
-  console_error_panic_hook::set_once();
+    console_error_panic_hook::set_once();
 }
-
 #[macro_export]
-macro_rules! decimal_ops {
+macro_rules! decimal_ops_uint {
     ($decimal:ident) => {
         ::paste::paste! {
             #[wasm_bindgen]
@@ -50,6 +49,35 @@ macro_rules! decimal_ops {
                 .get().0
                 .iter().rev()
                 .fold(BigInt::from(0), |acc, &x| (acc << BigInt::from(64)) | BigInt::from(x))
+            }
+        }
+    };
+}
+
+#[macro_export]
+macro_rules! decimal_ops {
+    ($decimal:ident) => {
+        ::paste::paste! {
+            #[wasm_bindgen]
+            #[allow(non_snake_case)]
+            pub fn [<get $decimal Scale >] () -> BigInt {
+                BigInt::from($decimal::scale())
+            }
+
+            #[wasm_bindgen]
+            #[allow(non_snake_case)]
+            pub fn [<get $decimal Denominator >] () -> BigInt {
+                // should be enough for current denominators
+                BigInt::from($decimal::from_integer(1).get())
+            }
+
+            #[wasm_bindgen]
+            #[allow(non_snake_case)]
+            pub fn [<_to $decimal >] (js_val: JsValue, js_scale: JsValue) -> BigInt {
+                let js_val: u64 = convert!(js_val).unwrap();
+                let scale: u64 = convert!(js_scale).unwrap();
+                let value = $decimal::from_scale(js_val, scale as u8).get();
+                BigInt::from(value)
             }
         }
     };

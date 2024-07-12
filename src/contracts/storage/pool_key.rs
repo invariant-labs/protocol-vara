@@ -18,7 +18,7 @@ impl Default for PoolKey {
           token_x: ActorId::from([0; 32]),
           token_y: ActorId::from([1; 32]),
           fee_tier: FeeTier {
-              fee: Percentage::new(U128::from(0)),
+              fee: Percentage::new(0),
               tick_spacing: 1,
           },
       }

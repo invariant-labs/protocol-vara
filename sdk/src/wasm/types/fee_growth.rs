@@ -13,7 +13,7 @@ use wasm_bindgen::prelude::*;
 #[decimal(28, U256)]
 #[derive(Default, Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Serialize, Deserialize, Tsify)]
 #[tsify(into_wasm_abi, from_wasm_abi)]
-pub struct FeeGrowth(#[tsify(type = "bigint")] pub U128);
+pub struct FeeGrowth(#[tsify(type = "bigint")] pub u128);
 
 decimal_ops!(FeeGrowth);
 
@@ -37,7 +37,7 @@ impl FeeGrowth {
     pub fn from_fee(liquidity: Liquidity, fee: TokenAmount) -> TrackableResult<Self> {
         Ok(Self::new(
             Self::checked_from_value(
-                fee.cast::<U384T>()
+                fee.cast::<U384>()
                     .checked_mul(FeeGrowth::one().cast())
                     .ok_or_else(|| err!(TrackableError::MUL))?
                     .checked_mul(Liquidity::one().cast())
@@ -52,7 +52,7 @@ impl FeeGrowth {
     pub fn to_fee(self, liquidity: Liquidity) -> TrackableResult<TokenAmount> {
         Ok(TokenAmount::new(
             TokenAmount::checked_from_value(
-                self.cast::<U384T>()
+                self.cast::<U384>()
                     .checked_mul(liquidity.cast())
                     .ok_or_else(|| err!(TrackableError::MUL))?
                     .checked_div(Liquidity::one().cast())

@@ -109,11 +109,11 @@ fn test_swap_not_enough_tokens_x() {
 
     assert_eq!(
         pool_after.fee_growth_global_x,
-        FeeGrowth::new(U128::from(0))
+        FeeGrowth::new(0)
     );
     assert_eq!(
         pool_after.fee_growth_global_y,
-        FeeGrowth::new(U128::from(0))
+        FeeGrowth::new(0)
     );
 
     assert_eq!(
@@ -200,11 +200,11 @@ fn test_swap_not_enough_tokens_y() {
 
     assert_eq!(
         pool_after.fee_growth_global_x,
-        FeeGrowth::new(U128::from(0))
+        FeeGrowth::new(0)
     );
     assert_eq!(
         pool_after.fee_growth_global_y,
-        FeeGrowth::new(U128::from(0))
+        FeeGrowth::new(0)
     );
 
     assert_eq!(
@@ -287,11 +287,11 @@ fn test_swap_not_enough_liquidity_token_y() {
 
     assert_eq!(
         pool_after.fee_growth_global_x,
-        FeeGrowth::new(U128::from(0))
+        FeeGrowth::new(0)
     );
     assert_eq!(
         pool_after.fee_growth_global_y,
-        FeeGrowth::new(U128::from(0))
+        FeeGrowth::new(0)
     );
 
     assert_eq!(
@@ -384,11 +384,11 @@ fn test_swap_not_enough_liquidity_token_x() {
 
     assert_eq!(
         pool_after.fee_growth_global_x,
-        FeeGrowth::new(U128::from(0))
+        FeeGrowth::new(0)
     );
     assert_eq!(
         pool_after.fee_growth_global_y,
-        FeeGrowth::new(U128::from(0))
+        FeeGrowth::new(0)
     );
 
     assert_eq!(
@@ -486,7 +486,7 @@ fn test_swap_x_to_y() {
         lower_tick_index,
         upper_tick_index,
         liquidity_delta,
-        SqrtPrice::new(U128::from(0)),
+        SqrtPrice::new(0),
         SqrtPrice::new(MAX_SQRT_PRICE.into()),
     )
     .assert_success();
@@ -498,7 +498,7 @@ fn test_swap_x_to_y() {
         lower_tick_index - 20,
         middle_tick_index,
         liquidity_delta,
-        SqrtPrice::new(U128::from(0)),
+        SqrtPrice::new(0),
         SqrtPrice::new(MAX_SQRT_PRICE.into()),
     )
     .assert_success();
@@ -557,10 +557,10 @@ fn test_swap_x_to_y() {
     assert_eq!(delta_invariant_y, expected_y);
 
     // Check Pool
-    assert_eq!(pool.fee_growth_global_y, FeeGrowth::new(U128::from(0)));
+    assert_eq!(pool.fee_growth_global_y, FeeGrowth::new(0));
     assert_eq!(
         pool.fee_growth_global_x,
-        FeeGrowth::new(U128::from(40000000000000000000000u128))
+        FeeGrowth::new(40000000000000000000000u128)
     );
     assert_eq!(pool.fee_protocol_token_y, TokenAmount::new(U256::from(0)));
     assert_eq!(pool.fee_protocol_token_x, TokenAmount::new(U256::from(2)));
@@ -571,15 +571,15 @@ fn test_swap_x_to_y() {
     assert_eq!(upper_tick.liquidity_change, liquidity_delta);
     assert_eq!(
         upper_tick.fee_growth_outside_x,
-        FeeGrowth::new(U128::from(0))
+        FeeGrowth::new(0)
     );
     assert_eq!(
         middle_tick.fee_growth_outside_x,
-        FeeGrowth::new(U128::from(30000000000000000000000u128))
+        FeeGrowth::new(30000000000000000000000u128)
     );
     assert_eq!(
         lower_tick.fee_growth_outside_x,
-        FeeGrowth::new(U128::from(0))
+        FeeGrowth::new(0)
     );
     assert!(lower_tick_bit);
     assert!(middle_tick_bit);
@@ -674,7 +674,7 @@ fn test_swap_y_to_x() {
         lower_tick_index,
         upper_tick_index,
         liquidity_delta,
-        SqrtPrice::new(U128::from(0)),
+        SqrtPrice::new(0),
         SqrtPrice::new(MAX_SQRT_PRICE.into()),
     )
     .assert_success();
@@ -686,7 +686,7 @@ fn test_swap_y_to_x() {
         middle_tick_index,
         upper_tick_index + 20,
         liquidity_delta,
-        SqrtPrice::new(U128::from(0)),
+        SqrtPrice::new(0),
         SqrtPrice::new(MAX_SQRT_PRICE.into()),
     )
     .assert_success();
@@ -745,10 +745,10 @@ fn test_swap_y_to_x() {
     assert_eq!(delta_invariant_y, amount);
 
     // Check Pool
-    assert_eq!(pool.fee_growth_global_x, FeeGrowth::new(U128::from(0)));
+    assert_eq!(pool.fee_growth_global_x, FeeGrowth::new(0));
     assert_eq!(
         pool.fee_growth_global_y,
-        FeeGrowth::new(U128::from(40000000000000000000000u128))
+        FeeGrowth::new(40000000000000000000000u128)
     );
     assert_eq!(pool.fee_protocol_token_x, TokenAmount::new(U256::from(0)));
     assert_eq!(pool.fee_protocol_token_y, TokenAmount::new(U256::from(2)));
@@ -759,15 +759,15 @@ fn test_swap_y_to_x() {
     assert_eq!(upper_tick.liquidity_change, liquidity_delta);
     assert_eq!(
         upper_tick.fee_growth_outside_y,
-        FeeGrowth::new(U128::from(0))
+        FeeGrowth::new(0)
     );
     assert_eq!(
         middle_tick.fee_growth_outside_y,
-        FeeGrowth::new(U128::from(30000000000000000000000u128))
+        FeeGrowth::new(30000000000000000000000u128)
     );
     assert_eq!(
         lower_tick.fee_growth_outside_y,
-        FeeGrowth::new(U128::from(0))
+        FeeGrowth::new(0)
     );
     assert!(lower_tick_bit);
     assert!(middle_tick_bit);

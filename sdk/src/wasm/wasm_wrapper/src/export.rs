@@ -62,7 +62,7 @@ pub fn value_exported_function(
                 BigInt::from(result)
             }
         }
-        _ => {
+        "Liquidity" | "TokenAmount" => {
             quote! {
                 {
                     let mut v = js_sys::BigInt::default();
@@ -71,7 +71,13 @@ pub fn value_exported_function(
                     }
                     v
                 }
-
+            }
+        }
+        _ => {
+            quote! {
+                {
+                    BigInt::from(result.get())
+                }
             }
         }
     };

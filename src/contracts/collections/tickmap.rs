@@ -264,7 +264,7 @@ mod tests {
         let token_0: ActorId = ActorId::from([0x01; 32]);
         let token_1: ActorId = ActorId::from([0x02; 32]);
         let fee_tier: FeeTier = FeeTier {
-            fee: Percentage::new(U128::from(1)),
+            fee: Percentage::new(1),
             tick_spacing: 1,
         };
         let pool_key: PoolKey = PoolKey::new(token_0, token_1, fee_tier).unwrap();
@@ -309,7 +309,7 @@ mod tests {
         let token_0: ActorId = ActorId::from([0x01; 32]);
         let token_1: ActorId = ActorId::from([0x02; 32]);
         let fee_tier: FeeTier = FeeTier {
-            fee: Percentage::new(U128::from(1)),
+            fee: Percentage::new(1),
             tick_spacing: 1,
         };
         let pool_key: PoolKey = PoolKey::new(token_0, token_1, fee_tier).unwrap();
@@ -373,7 +373,7 @@ mod tests {
         let token_0: ActorId = ActorId::from([0x01; 32]);
         let token_1: ActorId = ActorId::from([0x02; 32]);
         let fee_tier: FeeTier = FeeTier {
-            fee: Percentage::new(U128::from(1)),
+            fee: Percentage::new(1),
             tick_spacing: 1,
         };
         let pool_key: PoolKey = PoolKey::new(token_0, token_1, fee_tier).unwrap();
@@ -388,7 +388,7 @@ mod tests {
         let token_0: ActorId = ActorId::from([0x01; 32]);
         let token_1: ActorId = ActorId::from([0x02; 32]);
         let fee_tier: FeeTier = FeeTier {
-            fee: Percentage::new(U128::from(1)),
+            fee: Percentage::new(1),
             tick_spacing: 1,
         };
         let pool_key: PoolKey = PoolKey::new(token_0, token_1, fee_tier).unwrap();
@@ -405,7 +405,7 @@ mod tests {
         let token_0: ActorId = ActorId::from([0x01; 32]);
         let token_1: ActorId = ActorId::from([0x02; 32]);
         let fee_tier: FeeTier = FeeTier {
-            fee: Percentage::new(U128::from(1)),
+            fee: Percentage::new(1),
             tick_spacing: 1,
         };
         let pool_key: PoolKey = PoolKey::new(token_0, token_1, fee_tier).unwrap();
@@ -420,7 +420,7 @@ mod tests {
         let token_0: ActorId = ActorId::from([0x01; 32]);
         let token_1: ActorId = ActorId::from([0x02; 32]);
         let fee_tier: FeeTier = FeeTier {
-            fee: Percentage::new(U128::from(1)),
+            fee: Percentage::new(1),
             tick_spacing: 1,
         };
         let pool_key: PoolKey = PoolKey::new(token_0, token_1, fee_tier).unwrap();
@@ -439,7 +439,7 @@ mod tests {
         let token_0: ActorId = ActorId::from([0x01; 32]);
         let token_1: ActorId = ActorId::from([0x02; 32]);
         let fee_tier: FeeTier = FeeTier {
-            fee: Percentage::new(U128::from(1)),
+            fee: Percentage::new(1),
             tick_spacing: 1,
         };
         let pool_key: PoolKey = PoolKey::new(token_0, token_1, fee_tier).unwrap();
@@ -458,7 +458,7 @@ mod tests {
         let token_0: ActorId = ActorId::from([0x01; 32]);
         let token_1: ActorId = ActorId::from([0x02; 32]);
         let fee_tier: FeeTier = FeeTier {
-            fee: Percentage::new(U128::from(1)),
+            fee: Percentage::new(1),
             tick_spacing: 1,
         };
         let pool_key: PoolKey = PoolKey::new(token_0, token_1, fee_tier).unwrap();
@@ -474,7 +474,7 @@ mod tests {
         let token_0: ActorId = ActorId::from([0x01; 32]);
         let token_1: ActorId = ActorId::from([0x02; 32]);
         let fee_tier: FeeTier = FeeTier {
-            fee: Percentage::new(U128::from(1)),
+            fee: Percentage::new(1),
             tick_spacing: 1,
         };
         let pool_key: PoolKey = PoolKey::new(token_0, token_1, fee_tier).unwrap();
@@ -489,7 +489,7 @@ mod tests {
         let token_0: ActorId = ActorId::from([0x01; 32]);
         let token_1: ActorId = ActorId::from([0x02; 32]);
         let fee_tier: FeeTier = FeeTier {
-            fee: Percentage::new(U128::from(1)),
+            fee: Percentage::new(1),
             tick_spacing: 1,
         };
         let pool_key: PoolKey = PoolKey::new(token_0, token_1, fee_tier).unwrap();
@@ -504,7 +504,7 @@ mod tests {
         let token_0: ActorId = ActorId::from([0x01; 32]);
         let token_1: ActorId = ActorId::from([0x02; 32]);
         let fee_tier: FeeTier = FeeTier {
-            fee: Percentage::new(U128::from(1)),
+            fee: Percentage::new(1),
             tick_spacing: 1,
         };
         let pool_key: PoolKey = PoolKey::new(token_0, token_1, fee_tier).unwrap();
@@ -523,7 +523,7 @@ mod tests {
         let token_0: ActorId = ActorId::from([0x01; 32]);
         let token_1: ActorId = ActorId::from([0x02; 32]);
         let fee_tier: FeeTier = FeeTier {
-            fee: Percentage::new(U128::from(1)),
+            fee: Percentage::new(1),
             tick_spacing: 1,
         };
         let pool_key: PoolKey = PoolKey::new(token_0, token_1, fee_tier).unwrap();
@@ -539,7 +539,7 @@ mod tests {
         let token_0: ActorId = ActorId::from([0x01; 32]);
         let token_1: ActorId = ActorId::from([0x02; 32]);
         let fee_tier: FeeTier = FeeTier {
-            fee: Percentage::new(U128::from(1)),
+            fee: Percentage::new(1),
             tick_spacing: 1,
         };
         let pool_key: PoolKey = PoolKey::new(token_0, token_1, fee_tier).unwrap();
@@ -557,7 +557,7 @@ mod tests {
         let token_0: ActorId = ActorId::from([0x01; 32]);
         let token_1: ActorId = ActorId::from([0x02; 32]);
         let fee_tier: FeeTier = FeeTier {
-            fee: Percentage::new(U128::from(1)),
+            fee: Percentage::new(1),
             tick_spacing: 1,
         };
         let pool_key: PoolKey = PoolKey::new(token_0, token_1, fee_tier).unwrap();
@@ -573,7 +573,7 @@ mod tests {
         let token_0: ActorId = ActorId::from([0x01; 32]);
         let token_1: ActorId = ActorId::from([0x02; 32]);
         let fee_tier: FeeTier = FeeTier {
-            fee: Percentage::new(U128::from(1)),
+            fee: Percentage::new(1),
             tick_spacing: 1,
         };
         let pool_key: PoolKey = PoolKey::new(token_0, token_1, fee_tier).unwrap();
@@ -589,7 +589,7 @@ mod tests {
         let token_0: ActorId = ActorId::from([0x01; 32]);
         let token_1: ActorId = ActorId::from([0x02; 32]);
         let fee_tier: FeeTier = FeeTier {
-            fee: Percentage::new(U128::from(1)),
+            fee: Percentage::new(1),
             tick_spacing: 1,
         };
         let pool_key: PoolKey = PoolKey::new(token_0, token_1, fee_tier).unwrap();
@@ -608,7 +608,7 @@ mod tests {
         let token_0: ActorId = ActorId::from([0x01; 32]);
         let token_1: ActorId = ActorId::from([0x02; 32]);
         let fee_tier: FeeTier = FeeTier {
-            fee: Percentage::new(U128::from(1)),
+            fee: Percentage::new(1),
             tick_spacing: 1,
         };
         let pool_key: PoolKey = PoolKey::new(token_0, token_1, fee_tier).unwrap();
@@ -627,7 +627,7 @@ mod tests {
         let token_0: ActorId = ActorId::from([0x01; 32]);
         let token_1: ActorId = ActorId::from([0x02; 32]);
         let fee_tier: FeeTier = FeeTier {
-            fee: Percentage::new(U128::from(1)),
+            fee: Percentage::new(1),
             tick_spacing: 1,
         };
         let pool_key: PoolKey = PoolKey::new(token_0, token_1, fee_tier).unwrap();
@@ -643,7 +643,7 @@ mod tests {
         let token_0: ActorId = ActorId::from([0x01; 32]);
         let token_1: ActorId = ActorId::from([0x02; 32]);
         let fee_tier: FeeTier = FeeTier {
-            fee: Percentage::new(U128::from(1)),
+            fee: Percentage::new(1),
             tick_spacing: 1,
         };
         let pool_key: PoolKey = PoolKey::new(token_0, token_1, fee_tier).unwrap();
@@ -706,7 +706,7 @@ mod tests {
         let token_0: ActorId = ActorId::from([0x01; 32]);
         let token_1: ActorId = ActorId::from([0x02; 32]);
         let fee_tier: FeeTier = FeeTier {
-            fee: Percentage::new(U128::from(1)),
+            fee: Percentage::new(1),
             tick_spacing: 1,
         };
         let pool_key: PoolKey = PoolKey::new(token_0, token_1, fee_tier).unwrap();

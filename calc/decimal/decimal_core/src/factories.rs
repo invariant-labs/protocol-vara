@@ -13,6 +13,11 @@ pub fn generate_factories(characteristics: DecimalCharacteristics) -> proc_macro
         ..
     } = characteristics;
 
+    let pow_type = match underlying_type.clone().to_string().as_str() { 
+        "u128" | "u64" | "u32" | "u16" | "u8" | "i128" | "i64" | "i32" | "i16" | "i8" => string_to_ident("", "u32"),
+        &_ => underlying_type.clone(),
+    };
+
     let name_str = &struct_name.to_string();
 
     let module_name = string_to_ident("tests_factories_", &name_str);
@@ -21,24 +26,23 @@ pub fn generate_factories(characteristics: DecimalCharacteristics) -> proc_macro
 
         impl<T> Factories<T> for #struct_name
         where
-        T: core::ops::Add<Output = T>,
-        #underlying_type: From<T>
+        <Self as Decimal>::U: UintCast<T>,
         {
 
             fn from_integer(integer: T) -> Self {
-                Self::from_integer_underlying(#underlying_type::from(integer))
+                Self::from_integer_underlying(#underlying_type::uint_cast(integer))
             }
 
             fn from_scale(integer:T, scale:u8) -> Self {
-                Self::from_scale_underlying(#underlying_type::from(integer), scale)
+                Self::from_scale_underlying(#underlying_type::uint_cast(integer), scale)
             }
 
             fn checked_from_scale(integer:T,scale:u8) -> core::result::Result<Self,alloc::string::String> {
-                Self::checked_from_scale_underlying(#underlying_type::from(integer),scale)
+                Self::checked_from_scale_underlying(#underlying_type::uint_cast(integer),scale)
             }
 
             fn from_scale_up(integer:T, scale:u8) -> Self {
-                Self::from_scale_up_underlying(#underlying_type::from(integer), scale)
+                Self::from_scale_up_underlying(#underlying_type::uint_cast(integer), scale)
             }
         }
 
@@ -55,37 +59,43 @@ pub fn generate_factories(characteristics: DecimalCharacteristics) -> proc_macro
             }
 
             fn from_scale_underlying(integer: Self::U, scale: u8)-> Self {
+                let input_scale:u8 = #scale;
+
                 Self::new(
-                    if #scale > scale {
-                        let multiplier: #underlying_type = #underlying_type::from(10).checked_pow(#underlying_type::from((#scale - scale))).unwrap();
+                    if input_scale > scale {
+                        let multiplier: #underlying_type = #underlying_type::uint_cast(10u8).checked_pow(#pow_type::from((input_scale - scale))).unwrap();
                         integer.checked_mul(multiplier).unwrap()
                     } else {
-                        let denominator: #underlying_type = #underlying_type::from(10).checked_pow(#underlying_type::from((scale - #scale))).unwrap();
+                        let denominator: #underlying_type = #underlying_type::uint_cast(10u8).checked_pow(#pow_type::from((scale - input_scale))).unwrap();
                         integer.checked_div(denominator).unwrap()
                     }
                 )
             }
 
             fn checked_from_scale_underlying(integer: Self::U, scale: u8) -> core::result::Result<Self, alloc::string::String> {
+                let input_scale:u8 = #scale;
+                
                 Ok(Self::new(
-                    if #scale > scale {
-                        let multiplier: #underlying_type = #underlying_type::from(10).checked_pow(#underlying_type::from((#scale - scale))).ok_or_else(|| "checked_from_scale: delta scale overflow")?;
+                    if input_scale > scale {
+                        let multiplier: #underlying_type = #underlying_type::uint_cast(10u8).checked_pow(#pow_type::from((input_scale - scale))).ok_or_else(|| "checked_from_scale: delta scale overflow")?;
                         integer.checked_mul(multiplier).ok_or_else(|| "checked_from_scale: (multiplier * base) overflow")?
                     } else {
-                        let denominator: #underlying_type = #underlying_type::from(10).checked_pow(#underlying_type::from((scale - #scale))).ok_or_else(|| "checked_from_scale: delta scale overflow")?;
+                        let denominator: #underlying_type = #underlying_type::uint_cast(10u8).checked_pow(#pow_type::from((scale - input_scale))).ok_or_else(|| "checked_from_scale: delta scale overflow")?;
                         integer.checked_div(denominator).ok_or_else(|| "checked_from_scale: (base / denominator) overflow")?
                     }
                 ))
             }
 
             fn from_scale_up_underlying(integer: Self::U, scale: u8) -> Self {
+                let input_scale:u8 = #scale;
+
                 Self::new(
-                    if #scale > scale {
-                        let multiplier: #underlying_type = #underlying_type::from(10).checked_pow(#underlying_type::from((#scale - scale))).unwrap();
+                    if input_scale > scale {
+                        let multiplier: #underlying_type = #underlying_type::uint_cast(10u8).checked_pow(#pow_type::from((input_scale - scale))).unwrap();
                         integer.checked_mul(multiplier).unwrap()
                     } else {
-                        let denominator: #underlying_type = #underlying_type::from(10).checked_pow(#underlying_type::from((scale - #scale))).unwrap();
-                        integer.checked_add(denominator.checked_sub(#underlying_type::from(1u8)).unwrap()).unwrap()
+                        let denominator: #underlying_type = #underlying_type::uint_cast(10u8).checked_pow(#pow_type::from((scale - input_scale))).unwrap();
+                        integer.checked_add(denominator.checked_sub(#underlying_type::uint_cast(1u8)).unwrap()).unwrap()
                             .checked_div(denominator).unwrap()
                     }
                 )
@@ -112,16 +122,7 @@ pub fn generate_factories(characteristics: DecimalCharacteristics) -> proc_macro
 
         impl<T> FactoriesToValue<T, #big_type> for #struct_name
         where
-        T: Default
-            + AsRef<[u64]>
-            + From<u64>
-            + core::ops::Shl<usize, Output = T>
-            + core::ops::BitOrAssign,
-        #big_type: Default
-            + AsRef<[u64]>
-            + From<u64>
-            + core::ops::Shl<usize, Output = #big_type>
-            + core::ops::BitOrAssign,
+        #big_type: UintCast<T>,
         {
             fn checked_from_scale_to_value(val: T, scale: u8) -> core::result::Result<#big_type, alloc::string::String> {
                 let base: #big_type = #struct_name::from_value(val);
@@ -152,7 +153,7 @@ pub fn generate_factories(characteristics: DecimalCharacteristics) -> proc_macro
             #[test]
             fn test_from_integer() {
                 assert_eq!(
-                    #struct_name::from_integer_underlying(#underlying_type::from(0)),
+                    #struct_name::from_integer_underlying(#underlying_type::from(0u8)),
                     #struct_name::new(#underlying_type::from(0u8))
                 );
             }
@@ -160,42 +161,42 @@ pub fn generate_factories(characteristics: DecimalCharacteristics) -> proc_macro
             #[test]
             fn test_from_scale() {
                 assert_eq!(
-                    #struct_name::from_scale(0, 0),
+                    #struct_name::from_scale(0u8, 0),
                     #struct_name::new(#underlying_type::from(0u8))
                 );
 
                 assert_eq!(
-                    #struct_name::from_scale_up(0, 0),
+                    #struct_name::from_scale_up(0u8, 0),
                     #struct_name::new(#underlying_type::from(0u8))
                 );
 
                 assert_eq!(
-                    #struct_name::from_scale(0, 3),
+                    #struct_name::from_scale(0u8, 3),
                     #struct_name::new(#underlying_type::from(0u8))
                 );
 
                 assert_eq!(
-                    #struct_name::from_scale_up(0, 3),
+                    #struct_name::from_scale_up(0u8, 3),
                     #struct_name::new(#underlying_type::from(0u8))
                 );
 
                 assert_eq!(
-                    #struct_name::from_scale(42, #scale),
+                    #struct_name::from_scale(42u8, #scale),
                     #struct_name::new(#underlying_type::from(42u8))
                 );
 
                 assert_eq!(
-                    #struct_name::from_scale_up(42, #scale),
+                    #struct_name::from_scale_up(42u8, #scale),
                     #struct_name::new(#underlying_type::from(42u8))
                 );
 
                 assert_eq!(
-                    #struct_name::from_scale(42, #scale + 1),
+                    #struct_name::from_scale(42u8, #scale + 1),
                     #struct_name::new(#underlying_type::from(4u8))
                 );
 
                 assert_eq!(
-                    #struct_name::from_scale_up(42, #scale + 1),
+                    #struct_name::from_scale_up(42u8, #scale + 1),
                     #struct_name::new(#underlying_type::from(5u8))
                 );
             }
@@ -203,22 +204,22 @@ pub fn generate_factories(characteristics: DecimalCharacteristics) -> proc_macro
             #[test]
             fn test_checked_from_scale() {
                 assert_eq!(
-                    #struct_name::checked_from_scale_underlying(#underlying_type::from(0), 0).unwrap(),
+                    #struct_name::checked_from_scale_underlying(#underlying_type::from(0u8), 0).unwrap(),
                     #struct_name::new(#underlying_type::from(0u8))
                 );
 
                 assert_eq!(
-                    #struct_name::checked_from_scale_underlying(#underlying_type::from(0), 3).unwrap(),
+                    #struct_name::checked_from_scale_underlying(#underlying_type::from(0u8), 3).unwrap(),
                     #struct_name::new(#underlying_type::from(0u8))
                 );
 
                 assert_eq!(
-                    #struct_name::checked_from_scale_underlying(#underlying_type::from(42), #scale).unwrap(),
+                    #struct_name::checked_from_scale_underlying(#underlying_type::from(42u8), #scale).unwrap(),
                     #struct_name::new(#underlying_type::from(42u8))
                 );
 
                 assert_eq!(
-                    #struct_name::checked_from_scale_underlying(#underlying_type::from(42), #scale + 1).unwrap(),
+                    #struct_name::checked_from_scale_underlying(#underlying_type::from(42u8), #scale + 1).unwrap(),
                     #struct_name::new(#underlying_type::from(4u8))
                 );
 

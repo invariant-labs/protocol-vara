@@ -41,7 +41,7 @@ fn test_basic_slippage() {
         Some(swap_amount)
     );
 
-    let target_sqrt_price = SqrtPrice::new(U128::from(1009940000000000000000001u128));
+    let target_sqrt_price = SqrtPrice::new(1009940000000000000000001u128);
     swap(
         &invariant,
         REGULAR_USER_1,
@@ -53,7 +53,7 @@ fn test_basic_slippage() {
     )
     .assert_success();
 
-    let expected_sqrt_price = SqrtPrice::new(U128::from(1009940000000000000000000u128));
+    let expected_sqrt_price = SqrtPrice::new(1009940000000000000000000u128);
     let pool = get_pool(&invariant, token_x, token_y, pool_key.fee_tier).unwrap();
     assert_eq!(pool.sqrt_price, expected_sqrt_price);
 }
@@ -99,7 +99,7 @@ fn test_swap_close_to_limit() {
     .unwrap()
     .target_sqrt_price;
 
-    let target_sqrt_price = quoted_target_sqrt_price - SqrtPrice::new(U128::from(1));
+    let target_sqrt_price = quoted_target_sqrt_price - SqrtPrice::new(1);
 
     swap(
         &invariant,

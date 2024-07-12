@@ -11,7 +11,7 @@ use wasm_bindgen::prelude::*;
 #[decimal(25, U256)]
 #[derive(Default, Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Serialize, Deserialize, Tsify)]
 #[tsify(into_wasm_abi, from_wasm_abi)]
-pub struct SecondsPerLiquidity(#[tsify(type = "bigint")] pub U128);
+pub struct SecondsPerLiquidity(#[tsify(type = "bigint")] pub u128);
 
 decimal_ops!(SecondsPerLiquidity);
 
@@ -47,8 +47,8 @@ impl SecondsPerLiquidity {
 
         Ok(Self::new(
             Self::checked_from_value(
-                Self::from_value::<U256, U128>(
-                    U128::from(delta_time)
+                Self::from_value::<U256, u128>(
+                    u128::from(delta_time)
                         .checked_mul(Self::one().cast())
                         .ok_or_else(|| err!(TrackableError::MUL))?
                         .checked_mul(Liquidity::one().cast())
@@ -57,7 +57,7 @@ impl SecondsPerLiquidity {
                 .checked_div(liquidity.get())
                 .ok_or_else(|| err!(TrackableError::DIV))?,
             )
-            .map_err(|_| err!(TrackableError::cast::<U128>().as_str()))?,
+            .map_err(|_| err!(TrackableError::cast::<u128>().as_str()))?,
         ))
     }
 }

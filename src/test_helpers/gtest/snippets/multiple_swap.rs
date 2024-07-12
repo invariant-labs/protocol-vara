@@ -135,8 +135,8 @@ pub fn multiple_swap(x_to_y: bool) {
     } else {
         assert_eq!(pool.current_tick_index, 820);
     }
-    assert_eq!(pool.fee_growth_global_x, FeeGrowth::new(U128::from(0)));
-    assert_eq!(pool.fee_growth_global_y, FeeGrowth::new(U128::from(0)));
+    assert_eq!(pool.fee_growth_global_x, FeeGrowth::new(0));
+    assert_eq!(pool.fee_growth_global_y, FeeGrowth::new(0));
     if x_to_y {
         assert_eq!(pool.fee_protocol_token_x, TokenAmount::new(U256::from(10)));
         assert_eq!(pool.fee_protocol_token_y, TokenAmount::new(U256::from(0)));
@@ -146,9 +146,9 @@ pub fn multiple_swap(x_to_y: bool) {
     }
     assert_eq!(pool.liquidity, liquidity_delta);
     if x_to_y {
-        assert_eq!(pool.sqrt_price, SqrtPrice::new(U128::from(959805958530842759275220u128)));
+        assert_eq!(pool.sqrt_price, SqrtPrice::new(959805958530842759275220u128));
     } else {
-        assert_eq!(pool.sqrt_price, SqrtPrice::new(U128::from(1041877257701839564633600u128)));
+        assert_eq!(pool.sqrt_price, SqrtPrice::new(1041877257701839564633600u128));
     }
 
     let invariant_amount_x = balance_of(&token_x_program, INVARIANT_ID);
