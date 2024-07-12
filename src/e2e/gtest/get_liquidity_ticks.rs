@@ -10,7 +10,7 @@ fn test_get_liquidity_ticks() {
     let sys = System::new();
     sys.init_logger();
 
-    let invariant = init_invariant(&sys, Percentage(U128::from(100)));
+    let invariant = init_invariant(&sys, Percentage(100));
 
     let (token_x_program, token_y_program) =
         init_tokens_with_mint(&sys, (U256::from(500), U256::from(500)));

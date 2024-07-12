@@ -13,7 +13,7 @@ pub const MIN_SQRT_PRICE: u128 = 15258932000000000000;
 pub const TICK_SEARCH_RANGE: i32 = 256;
 pub const CHUNK_SIZE: i32 = 64;
 
-pub const MAX_TICK_CROSS: u32 = 10;
+pub const MAX_TICK_CROSS: u32 = 1117*8/10;
 
 #[wasm_wrapper]
 pub fn get_global_max_sqrt_price() -> u128 {

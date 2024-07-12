@@ -14,7 +14,7 @@ fn test_get_tickmap() {
     let sys = System::new();
     sys.init_logger();
 
-    let invariant = init_invariant(&sys, Percentage(U128::from(100)));
+    let invariant = init_invariant(&sys, Percentage(100));
 
     let (token_x_program, token_y_program) =
         init_tokens_with_mint(&sys, (U256::from(500), U256::from(500)));
@@ -97,7 +97,7 @@ fn test_get_tickmap_tick_spacing_over_one() {
     let sys = System::new();
     sys.init_logger();
 
-    let invariant = init_invariant(&sys, Percentage(U128::from(100)));
+    let invariant = init_invariant(&sys, Percentage(100));
 
     let (token_x_program, token_y_program) =
         init_tokens_with_mint(&sys, (U256::from(500), U256::from(500)));
@@ -194,7 +194,7 @@ fn test_get_tickmap_edge_ticks_intialized() {
     let sys = System::new();
     sys.init_logger();
 
-    let invariant = init_invariant(&sys, Percentage(U128::from(100)));
+    let invariant = init_invariant(&sys, Percentage(100));
 
     let (token_x_program, token_y_program) =
         init_tokens_with_mint(&sys, (U256::from(500), U256::from(500)));
@@ -290,7 +290,7 @@ fn test_get_tickmap_more_chunks_above() {
     let sys = System::new();
     sys.init_logger();
 
-    let invariant = init_invariant(&sys, Percentage(U128::from(100)));
+    let invariant = init_invariant(&sys, Percentage(100));
 
     let initial_mint = U256::from(u128::MAX);
     let (token_x_program, token_y_program) =
@@ -371,7 +371,7 @@ fn test_get_tickmap_more_chunks_below() {
     let sys = System::new();
     sys.init_logger();
 
-    let invariant = init_invariant(&sys, Percentage(U128::from(100)));
+    let invariant = init_invariant(&sys, Percentage(100));
 
     let initial_mint = U256::from(u128::MAX);
     let (token_x_program, token_y_program) =

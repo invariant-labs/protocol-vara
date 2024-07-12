@@ -15,6 +15,7 @@ import {
 } from '../src/utils'
 import { describe, it } from 'mocha'
 import { HexString } from '@gear-js/api'
+import { assert } from 'chai'
 
 const api = await initGearApi({ providerAddress: Network.Local })
 import { subscribeToNewHeads } from '../src/utils'
@@ -29,7 +30,7 @@ let token1Address: HexString = null as any
 const GRC20 = await FungibleToken.load(api)
 GRC20.setAdmin(admin)
 
-const maxTokenAmount = 2n ** 256n - 1n;
+const maxTokenAmount = 2n ** 256n - 1n
 const feeTier = newFeeTier(10000000000n, 1n)
 
 describe('simulateInvariantSwap', async function () {
@@ -53,7 +54,7 @@ describe('simulateInvariantSwap', async function () {
     await GRC20.approve(admin, invariant.programId(), 10000000000000n, token0Address)
     await GRC20.approve(admin, invariant.programId(), 10000000000000n, token1Address)
     await delay(1000) // response fails to parse occasionally without the timeout
-    await invariant.depositTokenPair  (
+    await invariant.depositTokenPair(
       admin,
       [token0Address, 10000000000000n],
       [token1Address, 10000000000000n]
@@ -582,7 +583,7 @@ describe('simulateInvariantSwap', async function () {
       const xToY = true
 
       const ticks = await invariant.getLiquidityTicks(poolKey)
-      
+
       await invariant.createPosition(
         admin,
         poolKey,
@@ -620,38 +621,55 @@ describe('simulateInvariantSwap', async function () {
     })
   })
   it('max ticks crossed', async function () {
-    this.timeout(2000000)
+    this.timeout(6000000)
     const poolKey = newPoolKey(token0Address, token1Address, feeTier)
 
     const sqrtPriceLimit = getMinSqrtPrice(feeTier.tickSpacing)
-    const amountIn = 1000000n
+    const amountIn = 63309369303010671648n
+    const yToXSwapAmount = 491901187596437n + 100n
     const byAmountIn = true
     const xToY = true
 
-    const mintAmount = 1n << 120n
+    const mintAmount = 2n ** 253n - 1n
     await GRC20.mint(admin.addressRaw, mintAmount, token0Address)
     await GRC20.approve(admin, invariant.programId(), mintAmount, token0Address)
     await GRC20.mint(admin.addressRaw, mintAmount, token1Address)
     await GRC20.approve(admin, invariant.programId(), mintAmount, token1Address)
 
-    const liquidityDelta = 10000000n * 10n ** 6n
+    // clear existing position
+    await invariant.removePosition(admin, 0n)
+    await invariant.depositTokenPair(
+      admin,
+      [token0Address, 2n ** 253n - 1n],
+      [token1Address, 2n ** 253n - 1n]
+    )
+    const liquidityDelta = 1000000000000000n * 10n ** 5n
     const spotSqrtPrice = 1000000000000000000000000n
     const slippageTolerance = 0n
 
     const indexes: bigint[] = []
-
-    for (let i = -10n; i < 5; i += 1n) {
-      indexes.push(i + 1n)
+    indexes.push(-863n * 256n)
+    for (let i = -863n; i < 32n; i += 1n) {
+      indexes.push((i + 1n) * 256n)
       await invariant.createPosition(
         admin,
         poolKey,
-        i,
-        i + 1n,
+        i * 256n,
+        (i + 1n) * 256n,
         liquidityDelta,
         spotSqrtPrice,
         slippageTolerance
       )
     }
+    const initSwap = await invariant.swap(
+      admin,
+      poolKey,
+      true,
+      yToXSwapAmount,
+      true,
+      getMinSqrtPrice(1n)
+    )
+    assert.equal(initSwap.ticks.length, 31)
 
     const pool = await invariant.getPool(token0Address, token1Address, feeTier)
 

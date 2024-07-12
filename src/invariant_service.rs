@@ -53,8 +53,8 @@ macro_rules! panicking_async {
 type TokenTransferResponse = (String, String, bool);
 
 // TODO: Update once the SDK tests are in place and proper measurement is possible
-pub const TRANSFER_GAS_LIMIT: u64 = 1_600_000_000 * 2;
-pub const TRANSFER_REPLY_HANDLING_COST: u64 = 1_600_000_000 * 2;
+pub const TRANSFER_GAS_LIMIT: u64 = 10_600_000_000 * 2;
+pub const TRANSFER_REPLY_HANDLING_COST: u64 = 10_600_000_000 * 2;
 pub const BALANCE_CHANGE_COST: u64 = 100_000 * 2;
 pub const TRANSFER_COST: u64 =
     TRANSFER_GAS_LIMIT + TRANSFER_REPLY_HANDLING_COST + BALANCE_CHANGE_COST;
