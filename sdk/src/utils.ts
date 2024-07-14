@@ -413,11 +413,11 @@ export const _calculateTokenAmounts = (
 }
 
 export const newFeeTier = (fee: Percentage, tickSpacing: bigint): FeeTier => {
-  return _newFeeTier(fee, integerSafeCast(tickSpacing))
+  return convertFeeTier(_newFeeTier(fee, tickSpacing))
 }
 
 export const newPoolKey = (token0: HexString, token1: HexString, feeTier: FeeTier): PoolKey => {
-  return _newPoolKey(token0, token1, feeTier)
+  return convertPoolKey(_newPoolKey(token0, token1, feeTier))
 }
 
 export const calculateFee = (
