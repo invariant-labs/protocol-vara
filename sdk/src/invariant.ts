@@ -20,9 +20,10 @@ import {
   getMaxSqrtPrice,
   getMinSqrtPrice,
   calculateTick,
-  convertLiquidityTick
+  convertLiquidityTick,
+  positionToTick
 } from './utils.js'
-import { DEFAULT_ADDRESS, INVARIANT_GAS_LIMIT } from './consts.js'
+import { CHUNK_SIZE, DEFAULT_ADDRESS, INVARIANT_GAS_LIMIT, LIQUIDITY_TICKS_LIMIT } from './consts.js'
 import { InvariantContract } from './invariant-contract.js'
 import {
   CalculateSwapResult,
@@ -203,10 +204,31 @@ export class Invariant {
     }
   }
 
-  async getLiquidityTicks(key: PoolKey): Promise<LiquidityTick[]> {
-    return (await this.contract.service.getLiquidityTicks(key as any, DEFAULT_ADDRESS)).map(
-      convertLiquidityTick
-    )
+  async getAllLiquidityTicks(key: PoolKey, tickmap: Tickmap): Promise<LiquidityTick[]> {
+    const tickIndexes: bigint[] = []
+    for (const [chunkIndex, chunk] of tickmap.bitmap.entries()) {
+      for (let bit = 0n; bit < CHUNK_SIZE; bit++) {
+        const checkedBit = chunk & (1n << bit)
+        if (checkedBit) {
+          const tickIndex = positionToTick(chunkIndex, bit, key.feeTier.tickSpacing)
+          tickIndexes.push(tickIndex)
+        }
+      }
+    }
+    const tickLimit = integerSafeCast(LIQUIDITY_TICKS_LIMIT)
+    const promises: Promise<LiquidityTick[]>[] = []
+    for (let i = 0; i < tickIndexes.length; i += tickLimit) {
+      promises.push(this.getLiquidityTicks(key, tickIndexes.slice(i, i + tickLimit)))
+    }
+    const tickResults = await Promise.all(promises)
+    return tickResults.flat(1)
+  }
+  async getLiquidityTicks(key: PoolKey, ticks: bigint[]): Promise<LiquidityTick[]> {
+    return (
+      unwrapResult(
+        await this.contract.service.getLiquidityTicks(key as any, ticks as any, DEFAULT_ADDRESS)
+      ) as any
+    ).map(convertLiquidityTick)
   }
 
   async isTickInitialized(key: PoolKey, index: bigint): Promise<boolean> {
@@ -266,11 +288,12 @@ export class Invariant {
     index: number,
     amount: bigint,
     step: number,
+    maxTicks = false,
     gasLimit: bigint = this.gasLimit
   ): Promise<null> {
     const { response } = await (
       await this.contract.service
-        .addMultiplePositions(poolKey as any, index as any, amount as any, step)
+        .addMultiplePositions(poolKey as any, index as any, amount as any, step, maxTicks)
         .withGas(gasLimit)
     )
       .withAccount(signer)

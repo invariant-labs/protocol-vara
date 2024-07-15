@@ -25,7 +25,7 @@
   "scripts": {
     "build": "npx tsc -b --verbose",
     "lint": "npx eslint . --ext .ts",
-    "node:local": "../target/tmp/gear --dev -l=error",
+    "node:local": "../target/tmp/gear --dev -l=error --rpc-max-response-size 3 --rpc-max-request-size 3" ,
     "node:local:stop": "pkill -9 gear",
     "start": "npm run build && node --experimental-wasm-modules --trace-uncaught target/index.js",
     "wasm:build": "cd ./src/wasm && wasm-pack build --features tsify/js && rm ./pkg/.gitignore",
@@ -38,6 +38,8 @@
     "test:events": "npx mocha --config mocharc.json ./tests/events.test.ts",
     "test:math": "npx mocha --config mocharc.json ./tests/math.test.ts",
     "test:example": "npx mocha --config mocharc.json ./tests/example.test.ts",
+    "test:tickmap-limit": "npx mocha --config mocharc.json ./tests/testnet-tickmap-limit.test.ts",
+    "test:liquidity-ticks-limit": "npx mocha --config mocharc.json ./tests/testnet-get-liquidity-ticks-limit.test.ts",
     "test:max-tick-cross": "npx mocha --config mocharc.json ./tests/testnet-max-tick-cross.test.ts",
     "test:get-tickmap": "npx mocha --config mocharc.json ./tests/get-tickmap.test.ts",
     "test:simulate-invariant-swap": "npx mocha --config mocharc.json ./tests/simulate-invariant-swap.test.ts",

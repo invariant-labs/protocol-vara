@@ -141,7 +141,7 @@ constructor {
 
 service Service {
   AddFeeTier : (fee_tier: FeeTier) -> FeeTier;
-  AddMultiplePositions : (pool_key: PoolKey, index: i32, amount: u32, step: i32) -> null;
+  AddMultiplePositions : (pool_key: PoolKey, index: i32, amount: u32, step: i32, max_ticks: bool) -> null;
   ChangeFeeReceiver : (pool_key: PoolKey, fee_receiver: actor_id) -> null;
   ChangeProtocolFee : (protocol_fee: Percentage) -> Percentage;
   ClaimFee : (index: u32) -> struct { TokenAmount, TokenAmount };
@@ -159,7 +159,7 @@ service Service {
   query FeeTierExists : (fee_tier: FeeTier) -> bool;
   query GetAllPositions : (owner_id: actor_id) -> vec Position;
   query GetFeeTiers : () -> vec FeeTier;
-  query GetLiquidityTicks : (pool_key: PoolKey) -> vec LiquidityTick;
+  query GetLiquidityTicks : (pool_key: PoolKey, tickmap: vec i32) -> result (vec LiquidityTick, InvariantError);
   query GetPool : (token_x: actor_id, token_y: actor_id, fee_tier: FeeTier) -> result (Pool, InvariantError);
   query GetPools : (size: u8, offset: u16) -> result (vec PoolKey, InvariantError);
   query GetPosition : (owner_id: actor_id, index: u32) -> result (Position, InvariantError);

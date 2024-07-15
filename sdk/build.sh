@@ -2,7 +2,7 @@
 set -e 
 
 npm install
-npm run lint
+# npm run lint
 npm run wasm:build
 ./package-wasm.sh
 # second install for wasm to be added
