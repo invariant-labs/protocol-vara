@@ -2,12 +2,15 @@ extern crate alloc;
 use crate::invariant_storage::Invariant;
 use crate::invariant_storage::InvariantStorage;
 use contracts::{
-    AwaitingTransfer, FeeTier, InvariantError, Pool, PoolKey, Position, Tick, TransferType,
+    get_bit_at_position, get_max_chunk, get_min_chunk, position_to_tick, tick_to_position,
+    AwaitingTransfer, FeeTier, InvariantError, LiquidityTick, Pool, PoolKey, Position, Tick,
+    TransferType, CHUNK_SIZE,
 };
 use decimal::*;
 use futures;
 use gstd::{exec, format, prelude::*, String};
 use io::*;
+use math::sqrt_price::get_max_tick;
 use math::{
     check_tick, liquidity::Liquidity, percentage::Percentage, sqrt_price::SqrtPrice,
     token_amount::TokenAmount, MAX_SQRT_PRICE, MIN_SQRT_PRICE,
@@ -50,8 +53,8 @@ macro_rules! panicking_async {
 type TokenTransferResponse = (String, String, bool);
 
 // TODO: Update once the SDK tests are in place and proper measurement is possible
-pub const TRANSFER_GAS_LIMIT: u64 = 1_600_000_000 * 2;
-pub const TRANSFER_REPLY_HANDLING_COST: u64 = 1_600_000_000 * 2;
+pub const TRANSFER_GAS_LIMIT: u64 = 10_600_000_000 * 2;
+pub const TRANSFER_REPLY_HANDLING_COST: u64 = 10_600_000_000 * 2;
 pub const BALANCE_CHANGE_COST: u64 = 100_000 * 2;
 pub const TRANSFER_COST: u64 =
     TRANSFER_GAS_LIMIT + TRANSFER_REPLY_HANDLING_COST + BALANCE_CHANGE_COST;
@@ -879,6 +882,50 @@ where
                 _ => Err(InvariantError::RecoverableTransferError),
             },
         }
+    }
+
+    pub fn get_tickmap(&self, pool_key: PoolKey) -> Vec<(u16, u64)> {
+        let tick_spacing = pool_key.fee_tier.tick_spacing;
+
+        let max_chunk_index = get_max_chunk(tick_spacing);
+        let min_chunk_index = get_min_chunk(tick_spacing);
+
+        InvariantStorage::as_ref().tickmap_slice(min_chunk_index..=max_chunk_index, pool_key)
+    }
+
+    pub fn get_liquidity_ticks(&self, pool_key: PoolKey) -> Vec<LiquidityTick> {
+        let mut ticks = vec![];
+        let tick_spacing = pool_key.fee_tier.tick_spacing;
+
+        let max_tick = get_max_tick(tick_spacing);
+        let (chunk_limit, bit_limit) = tick_to_position(max_tick, tick_spacing);
+
+        let invariant = InvariantStorage::as_ref();
+        for i in 0..=chunk_limit {
+            let chunk = invariant.tickmap.bitmap.get(&(i, pool_key)).unwrap_or(&0);
+
+            if chunk != &0 {
+                let end = if *chunk as u16 == chunk_limit {
+                    bit_limit
+                } else {
+                    (CHUNK_SIZE - 1) as u8
+                };
+
+                for bit in 0..=end {
+                    if get_bit_at_position(*chunk, bit) == 1 {
+                        let tick_index = position_to_tick(i, bit, tick_spacing);
+
+                        invariant
+                            .ticks
+                            .get(pool_key, tick_index)
+                            .map(|tick| ticks.push(LiquidityTick::from(tick)))
+                            .unwrap();
+                    }
+                }
+            }
+        }
+
+        ticks
     }
 
     fn send_transfer_token_message(

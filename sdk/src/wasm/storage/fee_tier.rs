@@ -13,7 +13,8 @@ use wasm_bindgen::prelude::*;
 pub struct FeeTier {
     #[tsify(type = "bigint")]
     pub fee: Percentage,
-    pub tick_spacing: u16,
+    #[tsify(type = "bigint")]
+    pub tick_spacing: u64,
 }
 impl FeeTier {
     pub fn new(fee: Percentage, tick_spacing: u16) -> Result<Self, InvariantError> {
@@ -25,13 +26,13 @@ impl FeeTier {
             return Err(InvariantError::InvalidFee);
         }
 
-        Ok(Self { fee, tick_spacing })
+        Ok(Self { fee, tick_spacing: tick_spacing as u64})
     }
 }
 
 #[wasm_bindgen(js_name = "_newFeeTier")]
 pub fn new_fee_tier(js_fee: JsValue, js_tick_spacing: JsValue) -> Result<JsValue, JsValue> {
     let fee: Percentage = convert!(js_fee)?;
-    let tick_spacing: u16 = convert!(js_tick_spacing)?;
-    resolve!(FeeTier::new(fee, tick_spacing))
+    let tick_spacing: u64 = convert!(js_tick_spacing)?;
+    resolve!(FeeTier::new(fee, tick_spacing as u16))
 }

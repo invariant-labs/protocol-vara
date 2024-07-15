@@ -24,6 +24,8 @@ pub enum InvariantError {
     PoolKeyAlreadyExist,
     UnauthorizedFeeReceiver,
     ZeroLiquidity,
+    RecoverableTransferError,
+    UnrecoverableTransferError,
     TransferError,
     TokensAreSame,
     AmountUnderMinimumAmountOut,
@@ -31,6 +33,12 @@ pub enum InvariantError {
     NotEmptyTickDeinitialization,
     InvalidInitTick,
     InvalidInitSqrtPrice,
+    NotEnoughGasToExecute,
+    TickLimitReached,
+    InvalidTickIndex,
+    NoBalanceForTheToken,
+    FailedToChangeTokenBalance,
+    ReplyHandlingFailed,
 }
 
 impl core::fmt::Display for InvariantError {

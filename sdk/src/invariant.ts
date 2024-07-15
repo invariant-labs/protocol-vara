@@ -19,7 +19,8 @@ import {
   convertQuoteResult,
   getMaxSqrtPrice,
   getMinSqrtPrice,
-  calculateTick
+  calculateTick,
+  convertLiquidityTick
 } from './utils.js'
 import { DEFAULT_ADDRESS, INVARIANT_GAS_LIMIT } from './consts.js'
 import { InvariantContract } from './invariant-contract.js'
@@ -35,7 +36,9 @@ import {
   Tick,
   TokenAmount,
   InvariantEvent,
-  QuoteResult
+  QuoteResult,
+  LiquidityTick,
+  Tickmap
 } from './schema.js'
 import { getServiceNamePrefix, ZERO_ADDRESS, getFnNamePrefix } from 'sails-js'
 
@@ -186,6 +189,23 @@ export class Invariant {
       unwrapResult(
         await this.contract.service.getTick(key as any, integerSafeCast(index), DEFAULT_ADDRESS)
       )
+    )
+  }
+
+  async getTickmap(key: PoolKey): Promise<Tickmap> {
+    return {
+      bitmap: new Map(
+        (await this.contract.service.getTickmap(key as any, DEFAULT_ADDRESS)).map(val => [
+          BigInt(val[0]),
+          BigInt(val[1])
+        ])
+      )
+    }
+  }
+
+  async getLiquidityTicks(key: PoolKey): Promise<LiquidityTick[]> {
+    return (await this.contract.service.getLiquidityTicks(key as any, DEFAULT_ADDRESS)).map(
+      convertLiquidityTick
     )
   }
 

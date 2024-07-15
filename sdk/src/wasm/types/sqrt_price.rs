@@ -207,26 +207,26 @@ pub fn calculate_sqrt_price(tick_index: i32) -> TrackableResult<SqrtPrice> {
     })
 }
 
-#[wasm_wrapper]
-pub fn get_max_tick(tick_spacing: u16) -> i32 {
+#[wasm_wrapper("_getMaxTick")]
+pub fn get_max_tick(tick_spacing: u16) -> TrackableResult<i32> {
     let tick_spacing = tick_spacing as i32;
-    MAX_TICK / tick_spacing * tick_spacing
+    Ok(MAX_TICK / tick_spacing * tick_spacing)
 }
 
-#[wasm_wrapper]
-pub fn get_min_tick(tick_spacing: u16) -> i32 {
+#[wasm_wrapper("_getMinTick")]
+pub fn get_min_tick(tick_spacing: u16) -> TrackableResult<i32> {
     let tick_spacing = tick_spacing as i32;
-    MIN_TICK / tick_spacing * tick_spacing
+    Ok(MIN_TICK / tick_spacing * tick_spacing)
 }
 
-#[wasm_wrapper]
-pub fn get_max_sqrt_price(tick_spacing: u16) -> SqrtPrice {
-    let max_tick = get_max_tick(tick_spacing);
-    SqrtPrice::from_tick(max_tick).unwrap()
+#[wasm_wrapper("_getMaxSqrtPrice")]
+pub fn get_max_sqrt_price(tick_spacing: u16) -> TrackableResult<SqrtPrice> {
+    let max_tick = get_max_tick(tick_spacing)?;
+    SqrtPrice::from_tick(max_tick)
 }
 
-#[wasm_wrapper]
-pub fn get_min_sqrt_price(tick_spacing: u16) -> SqrtPrice {
-    let min_tick = get_min_tick(tick_spacing);
-    SqrtPrice::from_tick(min_tick).unwrap()
+#[wasm_wrapper("_getMinSqrtPrice")]
+pub fn get_min_sqrt_price(tick_spacing: u16) -> TrackableResult<SqrtPrice> {
+    let min_tick = get_min_tick(tick_spacing)?;
+    SqrtPrice::from_tick(min_tick)
 }

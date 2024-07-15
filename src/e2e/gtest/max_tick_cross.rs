@@ -1,11 +1,15 @@
 use crate::test_helpers::gtest::*;
 use contracts::*;
 use decimal::*;
+use gstd::String;
 use gtest::*;
+use io::*;
 use math::{
-    get_tick_at_sqrt_price, liquidity::Liquidity, percentage::Percentage, sqrt_price::SqrtPrice,
-    token_amount::TokenAmount, MIN_SQRT_PRICE,
+    get_tick_at_sqrt_price, liquidity::Liquidity, percentage::Percentage,
+    sqrt_price::calculate_sqrt_price, sqrt_price::SqrtPrice, token_amount::TokenAmount,
+    MAX_SQRT_PRICE, MIN_SQRT_PRICE,
 };
+
 use sails_rtl::ActorId;
 
 #[test]
@@ -18,11 +22,27 @@ fn max_tick_cross() {
 
     let invariant = init_invariant(&sys, Percentage::from_scale(1, 2));
 
-    let mint_amount = U256::from(u128::MAX);
+    let mint_amount = U256::from(U256::MAX);
 
     let (token_x_program, token_y_program) = init_tokens(&sys);
 
-    init_basic_pool(&invariant, &token_x, &token_y);
+    let tick_spacing = 1;
+    let fee_tier = FeeTier::new(Percentage::from_scale(6, 3), tick_spacing).unwrap();
+    let init_tick = 0;
+    let init_sqrt_price = calculate_sqrt_price(init_tick).unwrap();
+
+    add_fee_tier(&invariant, ADMIN, fee_tier).assert_success();
+
+    create_pool(
+        &invariant,
+        REGULAR_USER_1,
+        token_x,
+        token_y,
+        fee_tier,
+        init_sqrt_price,
+        init_tick,
+    )
+    .assert_success();
 
     mint(&token_x_program, REGULAR_USER_1, mint_amount).assert_success();
     mint(&token_y_program, REGULAR_USER_1, mint_amount).assert_success();
@@ -54,14 +74,11 @@ fn max_tick_cross() {
         Some(TokenAmount(mint_amount))
     );
 
-    let liquidity = Liquidity::from_integer(10000000);
-
-    let tick_spacing = 10;
-    let fee_tier = FeeTier::new(Percentage::from_scale(6, 3), tick_spacing).unwrap();
+    let liquidity = Liquidity::from_integer(1000000000000000u128);
 
     let pool_key = PoolKey::new(token_x, token_y, fee_tier).unwrap();
 
-    for i in (-2560..20).step_by(tick_spacing as usize) {
+    for i in ((-863 * 256)..(32 * 256)).step_by(256) {
         let pool = get_pool(&invariant, token_x, token_y, fee_tier).unwrap();
 
         let slippage_limit_lower = pool.sqrt_price;
@@ -72,7 +89,7 @@ fn max_tick_cross() {
             REGULAR_USER_1,
             pool_key,
             i,
-            i + tick_spacing as i32,
+            i + 256 as i32,
             liquidity,
             slippage_limit_lower,
             slippage_limit_upper,
@@ -82,21 +99,22 @@ fn max_tick_cross() {
 
     let pool = get_pool(&invariant, token_x, token_y, fee_tier).unwrap();
     assert_eq!(pool.liquidity, liquidity);
+    let swap_amount = TokenAmount(U256::from(489951846302626_u128));
+    let slippage = SqrtPrice::new(MAX_SQRT_PRICE.into());
 
-    let amount = U256::from(760_000);
-    mint(&token_x_program, REGULAR_USER_2, amount).assert_success();
-    assert_eq!(balance_of(&token_x_program, REGULAR_USER_2), amount);
-
-    increase_allowance(&token_x_program, REGULAR_USER_2, INVARIANT_ID, amount).assert_success();
-
-    assert_eq!(
-        deposit_single_token(&invariant, REGULAR_USER_2, TOKEN_X_ID, amount, None::<&str>),
-        Some(TokenAmount(amount))
-    );
+    swap(
+        &invariant,
+        REGULAR_USER_1,
+        pool_key,
+        false,
+        swap_amount,
+        true,
+        slippage,
+    )
+    .assert_success();
 
     let pool_before = get_pool(&invariant, token_x, token_y, pool_key.fee_tier).unwrap();
-
-    let swap_amount = TokenAmount::new(amount);
+    let swap_amount = TokenAmount::new(U256::from(63058587794151558883_u128));
     let slippage = SqrtPrice::new(MIN_SQRT_PRICE.into());
 
     let quote_result = quote(
@@ -112,12 +130,10 @@ fn max_tick_cross() {
 
     let pool_after_quote = get_pool(&invariant, token_x, token_y, pool_key.fee_tier).unwrap();
 
-    let crosses_after_quote =
-        ((pool_after_quote.current_tick_index - pool_before.current_tick_index) / 10).abs();
-    assert_eq!(crosses_after_quote, 0);
-    assert_eq!(quote_result.ticks.len() - 1, 145);
+    assert_eq!(pool_after_quote, pool_before);
+    assert_eq!(quote_result.ticks.len(), 893);
 
-    swap(
+    let res = swap(
         &invariant,
         REGULAR_USER_1,
         pool_key,
@@ -125,15 +141,45 @@ fn max_tick_cross() {
         swap_amount,
         true,
         slippage,
-    )
-    .assert_success();
+    );
+    res.assert_success();
 
     let pool_after = get_pool(&invariant, token_x, token_y, pool_key.fee_tier).unwrap();
+    let events = res.emitted_events();
+    assert_eq!(events.len(), 3);
+    let (cross_tick_event, swap_event, swap_return) = (
+        events[0]
+            .assert_to(EVENT_ADDRESS)
+            .decoded_event::<(String, String, CrossTickEvent)>()
+            .unwrap().2,
+        events[1]
+            .assert_to(EVENT_ADDRESS)
+            .decoded_event::<(String, String, SwapEvent)>()
+            .unwrap().2,
+        events[2]
+            .assert_to(REGULAR_USER_1)
+            .decoded_event::<(String, String, CalculateSwapResult)>()
+            .unwrap().2,
+    );
+    assert_eq!(cross_tick_event.indexes.len(), 893);
+    assert_eq!(swap_return.ticks.len(), 893);
+    assert_eq!(
+        swap_event,
+        SwapEvent {
+            timestamp: sys.block_timestamp(),
+            address: REGULAR_USER_1.into(),
+            pool_key,
+            amount_in: TokenAmount(63058587794151558883u128.into()),
+            amount_out: TokenAmount(1487013034191998_u128.into()),
+            fee: TokenAmount(376123656973987223_u128.into()),
+            start_sqrt_price: SqrtPrice(1487028987445999000000000),
+            target_sqrt_price: SqrtPrice(15953254000000000001),
+            x_to_y: true,
+        }
+    );
 
-    let crosses = ((pool_after.current_tick_index - pool_before.current_tick_index) / 10).abs();
-    assert_eq!(crosses, 146);
     assert_eq!(
         pool_after.current_tick_index,
-        get_tick_at_sqrt_price(quote_result.target_sqrt_price, 10).unwrap()
+        get_tick_at_sqrt_price(pool_after.sqrt_price, pool_key.fee_tier.tick_spacing).unwrap()
     );
 }

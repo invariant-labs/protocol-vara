@@ -38,6 +38,25 @@ impl Default for Tick {
     }
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, Encode, Decode, TypeInfo)]
+#[codec(crate = gstd::codec)]
+#[scale_info(crate = gstd::scale_info)]
+pub struct LiquidityTick {
+    pub index: i32,
+    pub liquidity_change: Liquidity,
+    pub sign: bool,
+}
+
+impl From<&Tick> for LiquidityTick {
+    fn from(tick: &Tick) -> Self {
+        Self {
+            index: tick.index,
+            liquidity_change: tick.liquidity_change,
+            sign: tick.sign,
+        }
+    }
+}
+
 impl Tick {
     pub fn create(index: i32, pool: &Pool, current_timestamp: u64) -> Self {
         let below_current_tick = index <= pool.current_tick_index;

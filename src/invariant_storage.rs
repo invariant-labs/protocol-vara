@@ -290,6 +290,22 @@ impl Invariant {
         self.ticks.remove(key, tick.index)?;
         Ok(())
     }
+
+    pub fn tickmap_slice(
+        &self,
+        range: impl Iterator<Item = u16>,
+        pool_key: PoolKey,
+    ) -> Vec<(u16, u64)> {
+        let mut tickmap_slice: Vec<(u16, u64)> = vec![];
+
+        for chunk_index in range {
+            if let Some(chunk) = self.tickmap.bitmap.get(&(chunk_index, pool_key)) {
+                tickmap_slice.push((chunk_index, *chunk));
+            }
+        }
+
+        tickmap_slice
+    }
 }
 
 declare_storage!(module: invariant, name: InvariantStorage, ty: Invariant);

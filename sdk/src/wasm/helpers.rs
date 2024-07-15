@@ -19,7 +19,7 @@ extern "C" {
     pub fn log_many(a: &str, b: &str);
 }
 // run once in js for debugging purposes
-#[wasm_bindgen]
+#[wasm_bindgen(js_name = "_initPanicHook")]
 pub fn init_panic_hook() {
     console_error_panic_hook::set_once();
 }
@@ -42,7 +42,7 @@ macro_rules! decimal_ops_uint {
 
             #[wasm_bindgen]
             #[allow(non_snake_case)]
-            pub fn [<to $decimal >] (js_val: JsValue, js_scale: JsValue) -> BigInt {
+            pub fn [<_to $decimal >] (js_val: JsValue, js_scale: JsValue) -> BigInt {
                 let js_val: u64 = convert!(js_val).unwrap();
                 let scale: u64 = convert!(js_scale).unwrap();
                 $decimal::from_scale(js_val, scale as u8)
@@ -73,7 +73,7 @@ macro_rules! decimal_ops {
 
             #[wasm_bindgen]
             #[allow(non_snake_case)]
-            pub fn [<to $decimal >] (js_val: JsValue, js_scale: JsValue) -> BigInt {
+            pub fn [<_to $decimal >] (js_val: JsValue, js_scale: JsValue) -> BigInt {
                 let js_val: u64 = convert!(js_val).unwrap();
                 let scale: u64 = convert!(js_scale).unwrap();
                 let value = $decimal::from_scale(js_val, scale as u8).get();
