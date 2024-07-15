@@ -22,3 +22,5 @@ pub mod protocol_fee;
 pub mod remove_fee_tier;
 pub mod slippage;
 pub mod swap;
+pub mod get_tickmap;
+pub mod get_liquidity_ticks;

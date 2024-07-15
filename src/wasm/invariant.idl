@@ -80,6 +80,12 @@ type Tick = struct {
   seconds_outside: u64,
 };
 
+type LiquidityTick = struct {
+  index: i32,
+  liquidity_change: Liquidity,
+  sign: bool,
+};
+
 type InvariantError = enum {
   NotAdmin,
   NotFeeReceiver,
@@ -153,11 +159,13 @@ service Service {
   query FeeTierExists : (fee_tier: FeeTier) -> bool;
   query GetAllPositions : (owner_id: actor_id) -> vec Position;
   query GetFeeTiers : () -> vec FeeTier;
+  query GetLiquidityTicks : (pool_key: PoolKey) -> vec LiquidityTick;
   query GetPool : (token_x: actor_id, token_y: actor_id, fee_tier: FeeTier) -> result (Pool, InvariantError);
   query GetPools : (size: u8, offset: u16) -> result (vec PoolKey, InvariantError);
   query GetPosition : (owner_id: actor_id, index: u32) -> result (Position, InvariantError);
   query GetProtocolFee : () -> Percentage;
   query GetTick : (key: PoolKey, index: i32) -> result (Tick, InvariantError);
+  query GetTickmap : (pool_key: PoolKey) -> vec struct { u16, u64 };
   query GetUserBalances : (user: actor_id) -> vec struct { actor_id, TokenAmount };
   query IsTickInitialized : (key: PoolKey, index: i32) -> bool;
   query Quote : (pool_key: PoolKey, x_to_y: bool, amount: TokenAmount, by_amount_in: bool, sqrt_price_limit: SqrtPrice) -> result (QuoteResult, InvariantError);

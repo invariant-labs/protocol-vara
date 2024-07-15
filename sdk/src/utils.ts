@@ -7,27 +7,29 @@ import {
   _calculateFee,
   _newFeeTier,
   _newPoolKey,
-  calculateAmountDelta as _calculateAmountDelta,
-  calculateAmountDeltaResult as calculateAmountDeltaResult,
-  getLiquidityByX as _getLiquidityByX,
-  getLiquidityByY as _getLiquidityByY,
-  calculateTick as _calculateTick,
-  isTokenX as _isTokenX,
+  _calculateAmountDelta,
+  _getLiquidityByX,
+  _getLiquidityByY,
+  _calculateTick,
+  _isTokenX,
   getPercentageDenominator,
   getSqrtPriceDenominator,
-  getMinSqrtPrice as _getMinSqrtPrice,
-  getMinTick as _getMinTick,
-  getMaxChunk as _getMaxChunk,
-  getMaxSqrtPrice as _getMaxSqrtPrice,
-  getMaxTick as _getMaxTick,
-  toFeeGrowth as _toFeeGrowth,
-  toFixedPoint as _toFixedPoint,
-  toLiquidity as _toLiquidity,
-  toPercentage as _toPercentage,
-  toPrice as _toPrice,
-  toSecondsPerLiquidity as _toSecondsPerLiquidity,
-  toSqrtPrice as _toSqrtPrice,
-  toTokenAmount as _toTokenAmount
+  _getMinSqrtPrice,
+  _getMinTick,
+  _getMaxChunk,
+  _getMaxSqrtPrice,
+  _getMaxTick,
+  _toFeeGrowth,
+  _toFixedPoint,
+  _toLiquidity,
+  _toPercentage,
+  _toPrice,
+  _toSecondsPerLiquidity,
+  _toSqrtPrice,
+  _toTokenAmount,
+  _simulateInvariantSwap,
+  tickIndexToPosition,
+  _positionToTick
 } from 'invariant-vara-wasm'
 
 import { TypeRegistry } from '@polkadot/types'
@@ -47,8 +49,12 @@ import {
   Pool,
   PoolKey,
   Position,
-  Tick
+  Tick,
+  LiquidityTick,
+  Tickmap,
+  _calculateAmountDeltaResult
 } from './schema.js'
+import { MAX_TICK_CROSS } from './consts.js'
 export type Signer = string | IKeyringPair
 export type ActorId = Uint8Array | HexString
 
@@ -119,8 +125,12 @@ export const convertTick = (tick: any): Tick => {
   return convertFieldsToBigInt(tick)
 }
 
+export const convertLiquidityTick = (tick: any): LiquidityTick => {
+  return convertTick(tick)
+}
+
 export const convertFeeTier = (feeTier: any): FeeTier => {
-  return convertFieldsToBigInt(feeTier, ['tickSpacing'])
+  return convertFieldsToBigInt(feeTier)
 }
 
 export const convertPoolKey = (poolKey: any): PoolKey => {
@@ -317,6 +327,63 @@ export const calculateSqrtPriceAfterSlippage = (
   return sqrtPriceWithSlippage
 }
 
+export function filterTicks<T extends Tick | LiquidityTick>(
+  ticks: T[],
+  tickIndex: bigint,
+  xToY: boolean
+): T[] {
+  const filteredTicks = new Array(...ticks)
+  let tickCount = 0
+
+  for (const [index, tick] of filteredTicks.entries()) {
+    if (tickCount >= MAX_TICK_CROSS) {
+      break
+    }
+
+    if (xToY) {
+      if (tick.index > tickIndex) {
+        filteredTicks.splice(index, 1)
+      }
+    } else {
+      if (tick.index < tickIndex) {
+        filteredTicks.splice(index, 1)
+      }
+    }
+    tickCount++
+  }
+
+  return filteredTicks
+}
+
+export function filterTickmap(
+  tickmap: Tickmap,
+  tickSpacing: bigint,
+  index: bigint,
+  xToY: boolean
+): Tickmap {
+  const filteredTickmap = new Map(tickmap.bitmap)
+  const [currentChunkIndex] = tickIndexToPosition(index, tickSpacing)
+  let tickCount = 0
+  for (const [chunkIndex] of filteredTickmap) {
+    if (tickCount >= MAX_TICK_CROSS) {
+      break
+    }
+
+    if (xToY) {
+      if (chunkIndex > currentChunkIndex) {
+        filteredTickmap.delete(chunkIndex)
+      }
+    } else {
+      if (chunkIndex < currentChunkIndex) {
+        filteredTickmap.delete(chunkIndex)
+      }
+    }
+    tickCount++
+  }
+
+  return { bitmap: filteredTickmap }
+}
+
 export const delay = (delayMs: number) => {
   return new Promise(resolve => setTimeout(resolve, delayMs))
 }
@@ -324,7 +391,7 @@ export const delay = (delayMs: number) => {
 export const calculateTokenAmounts = (
   pool: Pool,
   position: Position
-): calculateAmountDeltaResult => {
+): _calculateAmountDeltaResult => {
   return _calculateTokenAmounts(pool, position, false)
 }
 
@@ -332,7 +399,7 @@ export const _calculateTokenAmounts = (
   pool: Pool,
   position: Position,
   sign: boolean
-): calculateAmountDeltaResult => {
+): _calculateAmountDeltaResult => {
   return wasmSerializer.decodeCalculateAmountDeltaResult(
     _calculateAmountDelta(
       pool.currentTickIndex,
@@ -346,11 +413,11 @@ export const _calculateTokenAmounts = (
 }
 
 export const newFeeTier = (fee: Percentage, tickSpacing: bigint): FeeTier => {
-  return _newFeeTier(fee, integerSafeCast(tickSpacing))
+  return convertFeeTier(_newFeeTier(fee, tickSpacing))
 }
 
 export const newPoolKey = (token0: HexString, token1: HexString, feeTier: FeeTier): PoolKey => {
-  return _newPoolKey(token0, token1, feeTier)
+  return convertPoolKey(_newPoolKey(token0, token1, feeTier))
 }
 
 export const calculateFee = (
@@ -411,7 +478,7 @@ export const getLiquidityByY = (
   )
 }
 
-export const calculateTick = (sqrtPrice: SqrtPrice, tickSpacing: number): number => {
+export const calculateTick = (sqrtPrice: SqrtPrice, tickSpacing: bigint): number => {
   return _calculateTick(sqrtPrice, tickSpacing)
 }
 
@@ -419,24 +486,24 @@ export const isTokenX = (token0: HexString, token1: HexString): boolean => {
   return _isTokenX(token0, token1)
 }
 
-export const getMinSqrtPrice = (index: number): SqrtPrice => {
-  return _getMinSqrtPrice(index) as any
+export const getMinSqrtPrice = (tickSpacing: bigint): SqrtPrice => {
+  return _getMinSqrtPrice(tickSpacing) as any
 }
 
-export const getMaxSqrtPrice = (index: number): SqrtPrice => {
-  return _getMaxSqrtPrice(index) as any
+export const getMaxSqrtPrice = (tickSpacing: bigint): SqrtPrice => {
+  return _getMaxSqrtPrice(tickSpacing) as any
 }
 
-export const getMaxChunk = (index: bigint): bigint => {
-  return _getMaxChunk(integerSafeCast(index))
+export const getMaxChunk = (tickSpacing: bigint): bigint => {
+  return BigInt(_getMaxChunk(tickSpacing))
 }
 
-export const getMaxTick = (index: bigint): bigint => {
-  return _getMaxTick(integerSafeCast(index))
+export const getMaxTick = (tickSpacing: bigint): bigint => {
+  return BigInt(_getMaxTick(tickSpacing))
 }
 
-export const getMinTick = (index: bigint): bigint => {
-  return _getMinTick(integerSafeCast(index))
+export const getMinTick = (tickSpacing: bigint): bigint => {
+  return BigInt(_getMinTick(tickSpacing))
 }
 
 export const toFeeGrowth = (val: bigint, scale: bigint): bigint => {
@@ -469,4 +536,34 @@ export const toSqrtPrice = (val: bigint, scale: bigint): bigint => {
 
 export const toTokenAmount = (val: bigint, scale: bigint): bigint => {
   return _toTokenAmount(val, integerSafeCast(scale))
+}
+
+export const positionToTick = (chunk: bigint, bit: bigint, tickSpacing: bigint): bigint => {
+  return BigInt(
+    _positionToTick(integerSafeCast(chunk), integerSafeCast(bit), integerSafeCast(tickSpacing))
+  )
+}
+
+export const simulateInvariantSwap = (
+  tickmap: Tickmap,
+  feeTier: FeeTier,
+  pool: Pool,
+  liquidityTicks: LiquidityTick[],
+  xToY: boolean,
+  amount: bigint,
+  byAmountIn: boolean,
+  sqrtPriceLimit: bigint
+) => {
+  return wasmSerializer.decodeSimulateSwapResult(
+    _simulateInvariantSwap(
+      tickmap,
+      feeTier,
+      wasmSerializer.encodePool(pool),
+      liquidityTicks.map(wasmSerializer.encodeLiquidityTick),
+      xToY,
+      wasmSerializer.encodeTokenAmount(amount) as any,
+      byAmountIn,
+      sqrtPriceLimit as any
+    )
+  )
 }

@@ -5,7 +5,7 @@ import { Network } from '../src/consts'
 import { Invariant } from '../src/invariant'
 import { FungibleToken } from '../src/erc20.js'
 import { SqrtPrice } from '../src/schema'
-import { getMaxSqrtPrice, getMinSqrtPrice, getMinTick } from 'invariant-vara-wasm'
+import { getMaxSqrtPrice, getMinSqrtPrice } from '../src/utils'
 const api = await initGearApi({ providerAddress: Network.Testnet })
 // const admin = await GearKeyring.fromSuri("//Alice")
 const admin = await GearKeyring.fromMnemonic(process.env.VARA_TESTNET_MNEMONIC as string)

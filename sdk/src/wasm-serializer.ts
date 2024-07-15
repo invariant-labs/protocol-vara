@@ -3,7 +3,7 @@ import {
   Position,
   QuoteResult,
   Tick,
-  calculateAmountDeltaResult,
+  _calculateAmountDeltaResult,
   _calculateFeeResult,
   TokenAmounts,
   SwapResult,
@@ -11,7 +11,8 @@ import {
   LiquidityTick,
   LiquidityResult,
   AmountDeltaResult,
-  CalculateSwapResult
+  CalculateSwapResult,
+  SimulateSwapResult
 } from './schema.js'
 
 export const decodeU256FromU64Array = (value: string): bigint => {
@@ -110,7 +111,7 @@ export const encodeCalculateSwapResult = (value: CalculateSwapResult) => {
   return value
 }
 
-export const encodeCalculateAmountDeltaResult = (value: calculateAmountDeltaResult) => {
+export const encodeCalculateAmountDeltaResult = (value: _calculateAmountDeltaResult) => {
   value[0] = encodeTokenAmount(value[0]) as any
   value[1] = encodeTokenAmount(value[1]) as any
 
@@ -199,7 +200,7 @@ export const decodeCalculateSwapResult = (value: CalculateSwapResult) => {
   return value
 }
 
-export const decodeCalculateAmountDeltaResult = (value: calculateAmountDeltaResult) => {
+export const decodeCalculateAmountDeltaResult = (value: _calculateAmountDeltaResult) => {
   value[0] = decodeTokenAmount(value[0] as any)
   value[1] = decodeTokenAmount(value[1] as any)
   return value
@@ -209,5 +210,13 @@ export const decodePosition = (value: Position) => {
   value.liquidity = decodeLiquidity(value.liquidity as any)
   value.tokensOwedX = decodeTokenAmount(value.tokensOwedX as any)
   value.tokensOwedY = decodeTokenAmount(value.tokensOwedY as any)
+  return value
+}
+
+export const decodeSimulateSwapResult = (value: SimulateSwapResult) => {
+  value.amountIn = decodeTokenAmount(value.amountIn as any)
+  value.amountOut = decodeTokenAmount(value.amountOut as any)
+  value.fee = decodeTokenAmount(value.fee as any)
+  value.crossedTicks = value.crossedTicks.map(decodeLiquidityTick)
   return value
 }

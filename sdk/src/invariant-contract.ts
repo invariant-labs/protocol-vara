@@ -74,6 +74,12 @@ export interface Tick {
   seconds_outside: number | string;
 }
 
+export interface LiquidityTick {
+  index: number;
+  liquidity_change: Liquidity;
+  sign: boolean;
+}
+
 export type InvariantError = "notAdmin" | "notFeeReceiver" | "poolAlreadyExist" | "poolNotFound" | "tickAlreadyExist" | "invalidTickIndexOrTickSpacing" | "positionNotFound" | "tickNotFound" | "feeTierNotFound" | "poolKeyNotFound" | "amountIsZero" | "wrongLimit" | "priceLimitReached" | "noGainSwap" | "invalidTickSpacing" | "feeTierAlreadyExist" | "poolKeyAlreadyExist" | "unauthorizedFeeReceiver" | "zeroLiquidity" | "recoverableTransferError" | "unrecoverableTransferError" | "transferError" | "tokensAreSame" | "amountUnderMinimumAmountOut" | "invalidFee" | "notEmptyTickDeinitialization" | "invalidInitTick" | "invalidInitSqrtPrice" | "notEnoughGasToExecute" | "tickLimitReached" | "invalidTickIndex" | "noBalanceForTheToken" | "failedToChangeTokenBalance" | "replyHandlingFailed";
 
 export interface QuoteResult {
@@ -106,6 +112,7 @@ export class InvariantContract {
       CalculateSwapResult: {"amountIn":"TokenAmount","amountOut":"TokenAmount","startSqrtPrice":"SqrtPrice","targetSqrtPrice":"SqrtPrice","fee":"TokenAmount","pool":"Pool","ticks":"Vec<Tick>"},
       Pool: {"liquidity":"Liquidity","sqrtPrice":"SqrtPrice","currentTickIndex":"i32","feeGrowthGlobalX":"FeeGrowth","feeGrowthGlobalY":"FeeGrowth","feeProtocolTokenX":"TokenAmount","feeProtocolTokenY":"TokenAmount","startTimestamp":"u64","lastTimestamp":"u64","feeReceiver":"[u8;32]"},
       Tick: {"index":"i32","sign":"bool","liquidityChange":"Liquidity","liquidityGross":"Liquidity","sqrtPrice":"SqrtPrice","feeGrowthOutsideX":"FeeGrowth","feeGrowthOutsideY":"FeeGrowth","secondsOutside":"u64"},
+      LiquidityTick: {"index":"i32","liquidityChange":"Liquidity","sign":"bool"},
       InvariantError: {"_enum":["NotAdmin","NotFeeReceiver","PoolAlreadyExist","PoolNotFound","TickAlreadyExist","InvalidTickIndexOrTickSpacing","PositionNotFound","TickNotFound","FeeTierNotFound","PoolKeyNotFound","AmountIsZero","WrongLimit","PriceLimitReached","NoGainSwap","InvalidTickSpacing","FeeTierAlreadyExist","PoolKeyAlreadyExist","UnauthorizedFeeReceiver","ZeroLiquidity","RecoverableTransferError","UnrecoverableTransferError","TransferError","TokensAreSame","AmountUnderMinimumAmountOut","InvalidFee","NotEmptyTickDeinitialization","InvalidInitTick","InvalidInitSqrtPrice","NotEnoughGasToExecute","TickLimitReached","InvalidTickIndex","NoBalanceForTheToken","FailedToChangeTokenBalance","ReplyHandlingFailed"]},
       QuoteResult: {"amountIn":"TokenAmount","amountOut":"TokenAmount","targetSqrtPrice":"SqrtPrice","ticks":"Vec<Tick>"},
       SwapHop: {"poolKey":"PoolKey","xToY":"bool"},
@@ -405,6 +412,21 @@ export class Service {
     return result[2].toJSON() as unknown as Array<FeeTier>;
   }
 
+  public async getLiquidityTicks(pool_key: PoolKey, originAddress: string, value?: number | string | bigint, atBlock?: `0x${string}`): Promise<Array<LiquidityTick>> {
+    const payload = this._program.registry.createType('(String, String, PoolKey)', ['Service', 'GetLiquidityTicks', pool_key]).toHex();
+    if (!this._program.programId) throw new Error('Program ID is not set');
+    const reply = await this._program.api.message.calculateReply({
+      destination: this._program.programId,
+      origin: decodeAddress(originAddress),
+      payload,
+      value: value || 0,
+      gasLimit: this._program.api.blockGasLimit.toBigInt(),
+      at: atBlock,
+    });
+    const result = this._program.registry.createType('(String, String, Vec<LiquidityTick>)', reply.payload);
+    return result[2].toJSON() as unknown as Array<LiquidityTick>;
+  }
+
   public async getPool(token_x: string, token_y: string, fee_tier: FeeTier, originAddress: string, value?: number | string | bigint, atBlock?: `0x${string}`): Promise<{ ok: Pool } | { err: InvariantError }> {
     const payload = this._program.registry.createType('(String, String, [u8;32], [u8;32], FeeTier)', ['Service', 'GetPool', token_x, token_y, fee_tier]).toHex();
     if (!this._program.programId) throw new Error('Program ID is not set');
@@ -478,6 +500,21 @@ export class Service {
     });
     const result = this._program.registry.createType('(String, String, Result<Tick, InvariantError>)', reply.payload);
     return result[2].toJSON() as unknown as { ok: Tick } | { err: InvariantError };
+  }
+
+  public async getTickmap(pool_key: PoolKey, originAddress: string, value?: number | string | bigint, atBlock?: `0x${string}`): Promise<Array<[number, number | string]>> {
+    const payload = this._program.registry.createType('(String, String, PoolKey)', ['Service', 'GetTickmap', pool_key]).toHex();
+    if (!this._program.programId) throw new Error('Program ID is not set');
+    const reply = await this._program.api.message.calculateReply({
+      destination: this._program.programId,
+      origin: decodeAddress(originAddress),
+      payload,
+      value: value || 0,
+      gasLimit: this._program.api.blockGasLimit.toBigInt(),
+      at: atBlock,
+    });
+    const result = this._program.registry.createType('(String, String, Vec<(u16, u64)>)', reply.payload);
+    return result[2].toJSON() as unknown as Array<[number, number | string]>;
   }
 
   public async getUserBalances(user: string, originAddress: string, value?: number | string | bigint, atBlock?: `0x${string}`): Promise<Array<[string, TokenAmount]>> {
