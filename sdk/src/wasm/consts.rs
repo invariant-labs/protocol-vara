@@ -12,6 +12,7 @@ pub const MIN_SQRT_PRICE: u128 = 15258932000000000000;
 
 pub const TICK_SEARCH_RANGE: i32 = 256;
 pub const CHUNK_SIZE: i32 = 64;
+pub const LIQUIDITY_TICK_LIMIT: i32 = 21544;
 
 pub const MAX_TICK_CROSS: u32 = 1117*8/10;
 
@@ -46,4 +47,9 @@ pub fn get_chunk_size() -> i32 {
 #[wasm_wrapper]
 pub fn get_max_tick_cross() -> u32 {
     MAX_TICK_CROSS
+}
+
+#[wasm_wrapper]
+pub fn get_liquidity_tick_limit() -> i32 {
+    LIQUIDITY_TICK_LIMIT
 }

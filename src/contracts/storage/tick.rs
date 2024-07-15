@@ -9,6 +9,8 @@ use math::types::{
 use sails_rtl::{Decode, Encode, TypeInfo};
 use traceable_result::*;
 
+pub const LIQUIDITY_TICK_LIMIT: usize = 25144;
+
 #[derive(Debug, Copy, Clone, Decode, Encode, PartialEq, Eq, TypeInfo)]
 #[codec(crate = gstd::codec)]
 #[scale_info(crate = gstd::scale_info)]

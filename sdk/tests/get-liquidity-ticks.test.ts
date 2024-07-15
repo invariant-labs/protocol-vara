@@ -59,7 +59,7 @@ describe('get-liquidity-ticks', async function () {
     }
 
     const tickmap = await invariant.getTickmap(poolKey)
-    const liquidityTicks = await invariant.getLiquidityTicks(poolKey)
+    const liquidityTicks = await invariant.getAllLiquidityTicks(poolKey, tickmap)
     const tickIndexes: bigint[] = []
     for (const [chunkIndex, chunk] of tickmap.bitmap.entries()) {
       for (let bit = 0n; bit < CHUNK_SIZE; bit++) {
