@@ -49,7 +49,7 @@ export class Invariant {
   } = {}
 
   private constructor(
-    private readonly contract: InvariantContract,
+    readonly contract: InvariantContract,
     private readonly gasLimit: bigint
   ) {}
 
