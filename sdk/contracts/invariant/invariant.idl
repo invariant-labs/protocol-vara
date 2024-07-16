@@ -158,7 +158,7 @@ service Service {
   query FeeTierExists : (fee_tier: FeeTier) -> bool;
   query GetAllPositions : (owner_id: actor_id) -> vec Position;
   query GetFeeTiers : () -> vec FeeTier;
-  query GetLiquidityTicks : (pool_key: PoolKey) -> vec LiquidityTick;
+  query GetLiquidityTicks : (pool_key: PoolKey, tickmap: vec i32) -> result (vec LiquidityTick, InvariantError);
   query GetPool : (token_x: actor_id, token_y: actor_id, fee_tier: FeeTier) -> result (Pool, InvariantError);
   query GetPools : (size: u8, offset: u16) -> result (vec PoolKey, InvariantError);
   query GetPosition : (owner_id: actor_id, index: u32) -> result (Position, InvariantError);

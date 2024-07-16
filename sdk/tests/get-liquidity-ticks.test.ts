@@ -24,7 +24,7 @@ let token1Address: HexString = null as any
 let invariant: Invariant = null as any
 const initProtocolFee = 10000000000n
 const feeTier = newFeeTier(10000000000n, 1n)
-let poolKey = newPoolKey(token0Address, token1Address, feeTier)
+let poolKey = null as any
 
 describe('get-liquidity-ticks', async function () {
   this.timeout(40000)
@@ -55,11 +55,10 @@ describe('get-liquidity-ticks', async function () {
     const poolKey = newPoolKey(token0Address, token1Address, feeTier)
 
     for (let i = 1n; i <= 10n; i++) {
-      await invariant.createPosition(admin, poolKey, -i, i, 10n, 1000000000000000000000000n, 0n)
+      await invariant.createPosition(user, poolKey, -i, i, 10n, 1000000000000000000000000n, 0n)
     }
 
     const tickmap = await invariant.getTickmap(poolKey)
-    const liquidityTicks = await invariant.getLiquidityTicks(poolKey)
     const tickIndexes: bigint[] = []
     for (const [chunkIndex, chunk] of tickmap.bitmap.entries()) {
       for (let bit = 0n; bit < CHUNK_SIZE; bit++) {
@@ -70,8 +69,17 @@ describe('get-liquidity-ticks', async function () {
         }
       }
     }
+    const liquidityTicks = await invariant.getLiquidityTicks(poolKey, tickIndexes)
+
     assert.deepEqual(
       liquidityTicks.map(tick => tick.index),
+      tickIndexes
+    )
+
+    const allLiquidityTicks = await invariant.getAllLiquidityTicks(poolKey, tickmap)
+
+    assert.deepEqual(
+      allLiquidityTicks.map(tick => tick.index),
       tickIndexes
     )
   })

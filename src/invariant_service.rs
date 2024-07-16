@@ -2,15 +2,13 @@ extern crate alloc;
 use crate::invariant_storage::Invariant;
 use crate::invariant_storage::InvariantStorage;
 use contracts::{
-    get_bit_at_position, get_max_chunk, get_min_chunk, position_to_tick, tick_to_position,
-    AwaitingTransfer, FeeTier, InvariantError, LiquidityTick, Pool, PoolKey, Position, Tick,
-    TransferType, CHUNK_SIZE,
+    get_max_chunk, get_min_chunk, AwaitingTransfer, FeeTier, InvariantError, LiquidityTick, Pool,
+    PoolKey, Position, Tick, TransferType, LIQUIDITY_TICK_LIMIT,
 };
 use decimal::*;
 use futures;
 use gstd::{exec, format, prelude::*, String};
 use io::*;
-use math::sqrt_price::get_max_tick;
 use math::{
     check_tick, liquidity::Liquidity, percentage::Percentage, sqrt_price::SqrtPrice,
     token_amount::TokenAmount, MAX_SQRT_PRICE, MIN_SQRT_PRICE,
@@ -893,39 +891,21 @@ where
         InvariantStorage::as_ref().tickmap_slice(min_chunk_index..=max_chunk_index, pool_key)
     }
 
-    pub fn get_liquidity_ticks(&self, pool_key: PoolKey) -> Vec<LiquidityTick> {
-        let mut ticks = vec![];
-        let tick_spacing = pool_key.fee_tier.tick_spacing;
-
-        let max_tick = get_max_tick(tick_spacing);
-        let (chunk_limit, bit_limit) = tick_to_position(max_tick, tick_spacing);
-
-        let invariant = InvariantStorage::as_ref();
-        for i in 0..=chunk_limit {
-            let chunk = invariant.tickmap.bitmap.get(&(i, pool_key)).unwrap_or(&0);
-
-            if chunk != &0 {
-                let end = if *chunk as u16 == chunk_limit {
-                    bit_limit
-                } else {
-                    (CHUNK_SIZE - 1) as u8
-                };
-
-                for bit in 0..=end {
-                    if get_bit_at_position(*chunk, bit) == 1 {
-                        let tick_index = position_to_tick(i, bit, tick_spacing);
-
-                        invariant
-                            .ticks
-                            .get(pool_key, tick_index)
-                            .map(|tick| ticks.push(LiquidityTick::from(tick)))
-                            .unwrap();
-                    }
-                }
-            }
+    pub fn get_liquidity_ticks(
+        &self,
+        pool_key: PoolKey,
+        tickmap: Vec<i32>,
+    ) -> Result<Vec<LiquidityTick>, InvariantError> {
+        if tickmap.len() > LIQUIDITY_TICK_LIMIT {
+            return Err(InvariantError::TickLimitReached);
         }
 
-        ticks
+        let invariant = InvariantStorage::as_ref();
+        Ok(tickmap
+            .iter()
+            .map(|tick| invariant.ticks.get(pool_key, *tick).unwrap())
+            .map(|tick| LiquidityTick::from(tick))
+            .collect::<Vec<LiquidityTick>>())
     }
 
     fn send_transfer_token_message(

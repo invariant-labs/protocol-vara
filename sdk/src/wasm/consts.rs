@@ -4,6 +4,8 @@ use wasm_bindgen::prelude::*;
 use wasm_wrapper::wasm_wrapper;
 use traceable_result::*;
 
+pub const LIQUIDITY_TICK_LIMIT: u32 = 21544;
+
 pub const MAX_TICK: i32 = 221_818;
 pub const MIN_TICK: i32 = -MAX_TICK;
 
@@ -46,4 +48,9 @@ pub fn get_chunk_size() -> i32 {
 #[wasm_wrapper]
 pub fn get_max_tick_cross() -> u32 {
     MAX_TICK_CROSS
+}
+
+#[wasm_wrapper]
+pub fn get_liquidity_tick_limit() -> u32 {
+    LIQUIDITY_TICK_LIMIT
 }
