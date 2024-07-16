@@ -203,10 +203,10 @@ export class Invariant {
     }
   }
 
-  async getLiquidityTicks(key: PoolKey): Promise<LiquidityTick[]> {
-    return (await this.contract.service.getLiquidityTicks(key as any, DEFAULT_ADDRESS)).map(
-      convertLiquidityTick
-    )
+  async getLiquidityTicks(key: PoolKey, tickmap: bigint[]): Promise<LiquidityTick[]> {
+    return unwrapResult(
+      await this.contract.service.getLiquidityTicks(key as any, tickmap as any, DEFAULT_ADDRESS)
+    ).map(convertLiquidityTick)
   }
 
   async isTickInitialized(key: PoolKey, index: bigint): Promise<boolean> {
