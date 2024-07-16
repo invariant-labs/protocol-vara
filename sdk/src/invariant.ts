@@ -20,9 +20,15 @@ import {
   getMaxSqrtPrice,
   getMinSqrtPrice,
   calculateTick,
-  convertLiquidityTick
+  convertLiquidityTick,
+  positionToTick
 } from './utils.js'
-import { DEFAULT_ADDRESS, INVARIANT_GAS_LIMIT } from './consts.js'
+import {
+  CHUNK_SIZE,
+  DEFAULT_ADDRESS,
+  INVARIANT_GAS_LIMIT,
+  LIQUIDITY_TICKS_LIMIT
+} from './consts.js'
 import { InvariantContract } from './invariant-contract.js'
 import {
   CalculateSwapResult,
@@ -48,10 +54,7 @@ export class Invariant {
     [key in InvariantEvent]?: ((data: any) => void)[]
   } = {}
 
-  private constructor(
-    readonly contract: InvariantContract,
-    private readonly gasLimit: bigint
-  ) {}
+  private constructor(readonly contract: InvariantContract, private readonly gasLimit: bigint) {}
 
   static async deploy(
     api: GearApi,
@@ -207,6 +210,26 @@ export class Invariant {
     return unwrapResult(
       await this.contract.service.getLiquidityTicks(key as any, tickmap as any, DEFAULT_ADDRESS)
     ).map(convertLiquidityTick)
+  }
+
+  async getAllLiquidityTicks(key: PoolKey, tickmap: Tickmap): Promise<LiquidityTick[]> {
+    const tickIndexes: bigint[] = []
+    for (const [chunkIndex, chunk] of tickmap.bitmap.entries()) {
+      for (let bit = 0n; bit < CHUNK_SIZE; bit++) {
+        const checkedBit = chunk & (1n << bit)
+        if (checkedBit) {
+          const tickIndex = positionToTick(chunkIndex, bit, key.feeTier.tickSpacing)
+          tickIndexes.push(tickIndex)
+        }
+      }
+    }
+    const tickLimit = integerSafeCast(LIQUIDITY_TICKS_LIMIT)
+    const promises: Promise<LiquidityTick[]>[] = []
+    for (let i = 0; i < tickIndexes.length; i += tickLimit) {
+      promises.push(this.getLiquidityTicks(key, tickIndexes.slice(i, i + tickLimit)))
+    }
+    const tickResults = await Promise.all(promises)
+    return tickResults.flat(1)
   }
 
   async isTickInitialized(key: PoolKey, index: bigint): Promise<boolean> {

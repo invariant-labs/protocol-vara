@@ -75,6 +75,13 @@ describe('get-liquidity-ticks', async function () {
       liquidityTicks.map(tick => tick.index),
       tickIndexes
     )
+
+    const allLiquidityTicks = await invariant.getAllLiquidityTicks(poolKey, tickmap)
+
+    assert.deepEqual(
+      allLiquidityTicks.map(tick => tick.index),
+      tickIndexes
+    )
   })
 
   this.afterAll(async function () {
