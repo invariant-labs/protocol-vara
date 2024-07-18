@@ -29,7 +29,9 @@ import {
   _toTokenAmount,
   _simulateInvariantSwap,
   tickIndexToPosition,
-  _positionToTick
+  _positionToTick,
+  _alignTickToSpacing,
+  _calculateSqrtPrice
 } from 'invariant-vara-wasm'
 
 import { TypeRegistry } from '@polkadot/types'
@@ -52,9 +54,12 @@ import {
   Tick,
   LiquidityTick,
   Tickmap,
-  _calculateAmountDeltaResult
+  _calculateAmountDeltaResult,
+  InvariantError
 } from './schema.js'
-import { MAX_TICK_CROSS } from './consts.js'
+import { CONCENTRATION_FACTOR, MAX_TICK_CROSS } from './consts.js'
+export { HexString } from '@gear-js/api'
+
 export type Signer = string | IKeyringPair
 export type ActorId = Uint8Array | HexString
 
@@ -478,7 +483,7 @@ export const getLiquidityByY = (
   )
 }
 
-export const calculateTick = (sqrtPrice: SqrtPrice, tickSpacing: bigint): number => {
+export const calculateTick = (sqrtPrice: SqrtPrice, tickSpacing: bigint): bigint => {
   return _calculateTick(sqrtPrice, tickSpacing)
 }
 
@@ -544,6 +549,10 @@ export const positionToTick = (chunk: bigint, bit: bigint, tickSpacing: bigint):
   )
 }
 
+export const calculateSqrtPrice = (tickIndex: bigint): bigint => {
+  return _calculateSqrtPrice(tickIndex)
+}
+
 export const simulateInvariantSwap = (
   tickmap: Tickmap,
   feeTier: FeeTier,
@@ -566,4 +575,47 @@ export const simulateInvariantSwap = (
       sqrtPriceLimit as any
     )
   )
+}
+
+export const calculateFeeTierWithLinearRatio = (tickCount: bigint): FeeTier => {
+  return newFeeTier(tickCount * toPercentage(1n, 4n), tickCount)
+}
+
+export const calculateConcentration = (tickSpacing: number, minimumRange: number, n: number) => {
+  const concentration = 1 / (1 - Math.pow(1.0001, (-tickSpacing * (minimumRange + 2 * n)) / 4))
+  return concentration / CONCENTRATION_FACTOR
+}
+
+export const getConcentrationArray = (
+  tickSpacing: number,
+  minimumRange: number,
+  currentTick: number
+): number[] => {
+  const concentrations: number[] = []
+  let counter = 0
+  let concentration = 0
+  let lastConcentration = calculateConcentration(tickSpacing, minimumRange, counter) + 1
+  let concentrationDelta = 1
+
+  while (concentrationDelta >= 1) {
+    concentration = calculateConcentration(tickSpacing, minimumRange, counter)
+    concentrations.push(concentration)
+    concentrationDelta = lastConcentration - concentration
+    lastConcentration = concentration
+    counter++
+  }
+  concentration = Math.ceil(concentrations[concentrations.length - 1])
+
+  while (concentration > 1) {
+    concentrations.push(concentration)
+    concentration--
+  }
+  const maxTick = integerSafeCast(_alignTickToSpacing(getMaxTick(1n), tickSpacing))
+  if ((minimumRange / 2) * tickSpacing > maxTick - Math.abs(currentTick)) {
+    throw new Error(String(InvariantError.TickLimitReached))
+  }
+  const limitIndex =
+    (maxTick - Math.abs(currentTick) - (minimumRange / 2) * tickSpacing) / tickSpacing
+
+  return concentrations.slice(0, limitIndex)
 }

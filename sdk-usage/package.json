@@ -1,0 +1,28 @@
+{
+  "name": "sdk-usage",
+  "version": "0.0.0",
+  "main": "target/index.js",
+  "scripts": {
+    "start": "npx tsc && node --experimental-wasm-modules .",
+    "node:start": "substrate-contracts-node purge-chain -y && substrate-contracts-node --rpc-port 9944 --dev",
+    "node:stop": "ps aux | grep substrate-contracts-node | tr -s ' ' | cut -d ' ' -f 2 | head -n 1 | xargs -r kill -9",
+    "deploy-tokens": "npx tsc && node --experimental-wasm-modules target/deploy-tokens.js",
+    "deploy-invariant": "npx tsc && node --experimental-wasm-modules target/deploy-invariant.js",
+    "create-position": "npx tsc && node --experimental-wasm-modules target/create-position.js",
+    "create-pool": "npx tsc && node --experimental-wasm-modules target/create-pool.js",
+    "query-tickmap": "npx tsc && node --experimental-wasm-modules target/query-tickmap.js",
+    "swap": "npx tsc && node --experimental-wasm-modules target/swap.js",
+    "setup": "npx tsc && node --experimental-wasm-modules target/setup.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "@invariant-labs/vara-sdk": "0.1.2",
+    "dotenv": "^16.4.5"
+  },
+  "devDependencies": {
+    "typescript": "^5.5.3"
+  },
+  "type": "module"
+}
