@@ -1,5 +1,5 @@
 {
-  "name": "sdk-usage",
+  "name": "scripts",
   "version": "0.0.0",
   "main": "target/index.js",
   "scripts": {
