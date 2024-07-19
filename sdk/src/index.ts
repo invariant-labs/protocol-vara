@@ -1,7 +1,13 @@
 export { Invariant } from './invariant.js'
 export { FungibleToken } from './erc20.js'
 export { GearKeyring } from '@gear-js/api'
-export { Network } from './consts.js'
+export {
+  Network,
+  TESTNET_BTC_ADDRESS,
+  TESTNET_ETH_ADDRESS,
+  TESTNET_USDC_ADDRESS,
+  TESTNET_INVARIANT_ADDRESS
+} from './consts.js'
 export {
   InvariantEvent,
   PositionCreatedEvent,
@@ -19,7 +25,8 @@ export {
   SwapEvent,
   CalculateSwapResult,
   Tick,
-  TokenAmount
+  TokenAmount,
+  Tickmap
 } from './schema.js'
 export {
   getMaxChunk,
@@ -45,5 +52,14 @@ export {
   newPoolKey,
   priceToSqrtPrice,
   sqrtPriceToPrice,
-  isTokenX
+  isTokenX,
+  initGearApi,
+  simulateInvariantSwap,
+  positionToTick,
+  subscribeToNewHeads,
+  HexString,
+  ActorId,
+  Signer,
+  calculateSqrtPrice
 } from './utils.js'
+export { FEE_TIERS, CONCENTRATION_ARRAY } from './computed-consts.js'

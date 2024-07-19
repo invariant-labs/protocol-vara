@@ -129,6 +129,7 @@ impl SqrtPrice {
     }
 }
 
+#[wasm_wrapper("_calculateSqrtPrice")]
 pub fn calculate_sqrt_price(tick_index: i32) -> TrackableResult<SqrtPrice> {
     // checking if tick be converted to sqrt_price (overflows if more)
     let tick = tick_index.abs();
