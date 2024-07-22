@@ -110,6 +110,7 @@ describe('FungibleToken', function () {
   })
   it('approve and transfer tx', async () => {
     {
+      
       const { response } = await (await GRC20.mintTx(account1.addressRaw, 100n, tokenAddress))
         .withAccount(account0)
         .signAndSend()
