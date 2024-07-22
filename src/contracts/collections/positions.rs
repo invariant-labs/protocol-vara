@@ -1,5 +1,5 @@
-use crate::{Position, InvariantError};
-use sails_rtl::{collections::HashMap, Vec, ActorId};
+use crate::{InvariantError, Position};
+use sails_rtl::{collections::HashMap, ActorId, Vec};
 
 #[derive(Debug, Default)]
 pub struct Positions {
@@ -30,16 +30,13 @@ impl<'a> Positions {
             return Err(InvariantError::PositionNotFound);
         }
 
-        self.positions.insert((account_id.clone(), index), *position);
+        self.positions
+            .insert((account_id.clone(), index), *position);
 
         Ok(())
     }
 
-    pub fn remove(
-        &mut self,
-        account_id: &ActorId,
-        index: u32,
-    ) -> Result<Position, InvariantError> {
+    pub fn remove(&mut self, account_id: &ActorId, index: u32) -> Result<Position, InvariantError> {
         let positions_length = self.get_length(account_id);
         let position = self.get(account_id, index)?.clone();
 
@@ -49,7 +46,8 @@ impl<'a> Positions {
                 .remove(&(account_id.clone(), positions_length - 1))
                 .unwrap();
 
-            self.positions.insert((account_id.clone(), index), last_position);
+            self.positions
+                .insert((account_id.clone(), index), last_position);
         } else {
             self.positions.remove(&(account_id.clone(), index));
         }
@@ -84,6 +82,21 @@ impl<'a> Positions {
     pub fn get_all(&self, account_id: &ActorId) -> Vec<Position> {
         (0..self.get_length(account_id))
             .map(|index| *self.positions.get(&(account_id.clone(), index)).unwrap())
+            .collect()
+    }
+
+    pub fn get_slice(&self, account_id: &ActorId, offset: u32, size: u32) -> Vec<Position> {
+        let length = self.get_length(account_id);
+        let offset_with_size = offset.checked_add(size).unwrap();
+
+        let max = if offset_with_size > length {
+            length
+        } else {
+            offset_with_size
+        };
+
+        (offset..max)
+            .map(|index| *self.positions.get(&(*account_id, index)).unwrap())
             .collect()
     }
 

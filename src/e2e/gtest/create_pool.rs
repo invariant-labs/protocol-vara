@@ -40,8 +40,8 @@ fn test_create_pool() {
         .assert_to(REGULAR_USER_1);
 
     assert_eq!(
-        get_pools(&invariant, u8::MAX, 0).unwrap(),
-        vec![PoolKey::new(token_0, token_1, fee_tier).unwrap()]
+        get_pool_keys(&invariant, u16::MAX, 0),
+        (vec![PoolKey::new(token_0, token_1, fee_tier).unwrap()], 1)
     );
 
     let pool = get_pool(&invariant, token_0, token_1, fee_tier).expect("Pool doesn't exist");
@@ -99,8 +99,8 @@ fn test_create_pool_x_to_y_and_y_to_x() {
     res.assert_panicked_with(InvariantError::PoolAlreadyExist);
 
     assert_eq!(
-        get_pools(&invariant, u8::MAX, 0).unwrap(),
-        vec![PoolKey::new(token_0, token_1, fee_tier).unwrap()]
+        get_pool_keys(&invariant, u16::MAX, 0),
+        (vec![PoolKey::new(token_0, token_1, fee_tier).unwrap()], 1)
     );
 }
 #[test]
@@ -131,7 +131,7 @@ fn test_create_pool_with_same_tokens() {
     );
     res.assert_panicked_with(InvariantError::TokensAreSame);
 
-    assert_eq!(get_pools(&invariant, u8::MAX, 0).unwrap(), vec![]);
+    assert_eq!(get_pool_keys(&invariant, u16::MAX, 0), (vec![], 0));
 }
 
 #[test]
@@ -160,7 +160,7 @@ fn test_create_pool_fee_tier_not_added() {
     );
     res.assert_panicked_with(InvariantError::FeeTierNotFound);
 
-    assert_eq!(get_pools(&invariant, u8::MAX, 0).unwrap(), vec![]);
+    assert_eq!(get_pool_keys(&invariant, u16::MAX, 0), (vec![],0));
 }
 
 #[test]
@@ -192,7 +192,7 @@ fn test_create_pool_init_tick_not_divisible_by_tick_spacing() {
     );
     res.assert_panicked_with(InvariantError::InvalidInitTick);
 
-    assert_eq!(get_pools(&invariant, u8::MAX, 0).unwrap(), vec![]);
+    assert_eq!(get_pool_keys(&invariant, u16::MAX, 0), (vec![], 0));
 }
 
 #[test]

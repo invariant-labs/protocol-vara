@@ -21,13 +21,17 @@ import {
   getMinSqrtPrice,
   calculateTick,
   convertLiquidityTick,
+  convertPositionTick,
+  convertPositions,
   positionToTick
 } from './utils.js'
 import {
   CHUNK_SIZE,
   DEFAULT_ADDRESS,
   INVARIANT_GAS_LIMIT,
-  LIQUIDITY_TICKS_LIMIT
+  LIQUIDITY_TICKS_LIMIT,
+  MAX_POOL_KEYS_RETURNED,
+  POSITIONS_ENTRIES_LIMIT
 } from './consts.js'
 import { InvariantContract } from './invariant-contract.js'
 import {
@@ -44,9 +48,12 @@ import {
   InvariantEvent,
   QuoteResult,
   LiquidityTick,
-  Tickmap
+  Tickmap,
+  PositionTick
 } from './schema.js'
 import { getServiceNamePrefix, ZERO_ADDRESS, getFnNamePrefix } from 'sails-js'
+
+export type Page = { index: number; entries: [Position, Pool][] }
 
 export class Invariant {
   eventListenerStarted: boolean = false
@@ -159,10 +166,29 @@ export class Invariant {
     )
   }
 
-  async getPools(size: bigint, offset: bigint): Promise<PoolKey[]> {
+  async getPoolKeys(size: bigint, offset: bigint): Promise<[PoolKey[], bigint]> {
+    const response = await this.contract.service.getPoolKeys(
+      size as any,
+      offset as any,
+      DEFAULT_ADDRESS
+    )
+    return [response[0].map(convertPoolKey), BigInt(response[1])]
+  }
+
+  async getAllPoolKeys(): Promise<PoolKey[]> {
+    const [poolKeys, poolKeysCount] = await this.getPoolKeys(MAX_POOL_KEYS_RETURNED, 0n)
+    const promises: Promise<[PoolKey[], bigint]>[] = []
+    for (let i = 1; i < Math.ceil(Number(poolKeysCount) / Number(MAX_POOL_KEYS_RETURNED)); i++) {
+      promises.push(this.getPoolKeys(MAX_POOL_KEYS_RETURNED, BigInt(i) * MAX_POOL_KEYS_RETURNED))
+    }
+
+    const poolKeysEntries = await Promise.all(promises)
+    return [...poolKeys, ...poolKeysEntries.map(([poolKeys]) => poolKeys).flat(1)]
+  }
+  async getAllPoolsForPair(token0: ActorId, token1: ActorId): Promise<[FeeTier, Pool][]> {
     return unwrapResult(
-      await this.contract.service.getPools(size as any, offset as any, DEFAULT_ADDRESS)
-    ).map(convertPoolKey)
+      await this.contract.service.getAllPoolsForPair(token0 as any, token1 as any, DEFAULT_ADDRESS)
+    ).map((entry: any) => [convertFeeTier(entry[0]), convertPool(entry[1])])
   }
 
   async getPosition(ownerId: ActorId, index: bigint): Promise<Position> {
@@ -177,7 +203,79 @@ export class Invariant {
     )
   }
 
-  async getAllPositions(ownerId: ActorId): Promise<Position[]> {
+  async getAllPositions(
+    owner: ActorId,
+    positionsCount?: bigint,
+    skipPages?: number[],
+    positionsPerPage?: bigint
+  ) {
+    const firstPageIndex = skipPages?.find(i => !skipPages.includes(i)) || 0
+    const positionsPerPageLimit = positionsPerPage || POSITIONS_ENTRIES_LIMIT
+
+    let pages: Page[] = []
+    let actualPositionsCount = positionsCount
+    if (!positionsCount) {
+      const [positionEntries, positionsCount] = await this.getPositions(
+        owner,
+        positionsPerPageLimit,
+        BigInt(firstPageIndex) * positionsPerPageLimit
+      )
+
+      pages.push({ index: 0, entries: positionEntries })
+      actualPositionsCount = positionsCount
+    }
+
+    const promises: Promise<[[Position, Pool][], bigint]>[] = []
+    const pageIndexes: number[] = []
+
+    for (
+      let i = positionsCount ? firstPageIndex : firstPageIndex + 1;
+      i < Math.ceil(Number(actualPositionsCount) / Number(positionsPerPageLimit));
+      i++
+    ) {
+      if (skipPages?.includes(i)) {
+        continue
+      }
+
+      pageIndexes.push(i)
+      promises.push(
+        this.getPositions(owner, positionsPerPageLimit, BigInt(i) * positionsPerPageLimit)
+      )
+    }
+
+    const positionsEntriesList = await Promise.all(promises)
+    pages = [
+      ...pages,
+      ...positionsEntriesList.map(([positionsEntries], index) => {
+        return { index: pageIndexes[index], entries: positionsEntries }
+      })
+    ]
+
+    return pages
+  }
+  async getPositions(
+    ownerId: ActorId,
+    size: bigint,
+    offset: bigint
+  ): Promise<[[Position, Pool][], bigint]> {
+    const response = unwrapResult(
+      await this.contract.service.getPositions(
+        ownerId as any,
+        size as any,
+        offset as any,
+        DEFAULT_ADDRESS as any
+      )
+    )
+    const mapEntries = ([pool, positions]: [Pool, Position[]]): [Position, Pool][] => {
+      return positions.map(position => {
+        return [position, pool]
+      })
+    }
+
+    return [convertPositions(response[0]).map(mapEntries).flat(1), BigInt(response[1])]
+  }
+
+  async _getAllPositions(ownerId: ActorId): Promise<Position[]> {
     return (
       await this.contract.service.getAllPositions(ownerId as any, DEFAULT_ADDRESS as any)
     ).map(val => convertPosition(val))
@@ -210,6 +308,10 @@ export class Invariant {
     return unwrapResult(
       await this.contract.service.getLiquidityTicks(key as any, tickmap as any, DEFAULT_ADDRESS)
     ).map(convertLiquidityTick)
+  }
+
+  async getLiquidityTicksAmount(key: PoolKey): Promise<TokenAmount> {
+    return BigInt(await this.contract.service.getLiquidityTicksAmount(key as any, DEFAULT_ADDRESS))
   }
 
   async getAllLiquidityTicks(key: PoolKey, tickmap: Tickmap): Promise<LiquidityTick[]> {
@@ -248,6 +350,18 @@ export class Invariant {
       }
     ) as any
     return new Map(result)
+  }
+
+  async getUserPositionAmount(key: PoolKey, owner: ActorId): Promise<TokenAmount> {
+    return BigInt(
+      await this.contract.service.getUserPositionAmount(key as any, owner as any, DEFAULT_ADDRESS)
+    )
+  }
+
+  async getPositionTicks(owner: ActorId, offset: bigint): Promise<PositionTick[]> {
+    return (
+      await this.contract.service.getPositionTicks(owner as any, offset as any, DEFAULT_ADDRESS)
+    ).map(tick => convertPositionTick(tick))
   }
 
   async quote(

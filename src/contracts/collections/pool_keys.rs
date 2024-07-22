@@ -43,17 +43,22 @@ impl PoolKeys {
       self.pool_keys.get(pool_key).is_some()
   }
 
-  pub fn get_all(&self, size: u8, offset: u16) -> Result<Vec<PoolKey>, InvariantError> {
-      let mut pool_keys = Vec::new();
-      for i in offset..self.pool_keys_length {
-          if size as u16 == i {
-              return Ok(pool_keys);
-          }
+  pub fn get_all(&self, size: u16, offset: u16) -> Vec<PoolKey> {
+    let offset_with_size = offset.checked_add(size).unwrap();
 
-          let pool_key = self.pool_keys_by_index.get(&i).unwrap();
-          pool_keys.push(*pool_key);
-      }
-      Ok(pool_keys)
+    let max = if offset_with_size > self.pool_keys_length {
+        self.pool_keys_length
+    } else {
+        offset_with_size
+    };
+
+    (offset..max)
+        .map(|index| *self.pool_keys_by_index.get(&index).unwrap())
+        .collect()
+  }
+
+  pub fn count(&self) -> u16 {
+    self.pool_keys_length
   }
 }
 
@@ -111,14 +116,14 @@ mod tests {
       };
       let new_pool_key = PoolKey::new(token_x, token_y, fee_tier).unwrap();
 
-      let result = pool_keys.get_all(3, 0).unwrap();
+      let result = pool_keys.get_all(3, 0);
       assert_eq!(result, vec![]);
       assert_eq!(result.len(), 0);
 
       pool_keys.add(&pool_key).unwrap();
       pool_keys.add(&new_pool_key).unwrap();
 
-      let result = pool_keys.get_all(3, 0).unwrap();
+      let result = pool_keys.get_all(3, 0);
       assert_eq!(result, vec![pool_key, new_pool_key]);
       assert_eq!(result.len(), 2);
   }

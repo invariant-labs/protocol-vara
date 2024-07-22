@@ -80,12 +80,6 @@ type Tick = struct {
   seconds_outside: u64,
 };
 
-type LiquidityTick = struct {
-  index: i32,
-  liquidity_change: Liquidity,
-  sign: bool,
-};
-
 type InvariantError = enum {
   NotAdmin,
   NotFeeReceiver,
@@ -123,6 +117,19 @@ type InvariantError = enum {
   ReplyHandlingFailed,
 };
 
+type LiquidityTick = struct {
+  index: i32,
+  liquidity_change: Liquidity,
+  sign: bool,
+};
+
+type PositionTick = struct {
+  index: i32,
+  fee_growth_outside_x: FeeGrowth,
+  fee_growth_outside_y: FeeGrowth,
+  seconds_outside: u64,
+};
+
 type QuoteResult = struct {
   amount_in: TokenAmount,
   amount_out: TokenAmount,
@@ -156,16 +163,21 @@ service Service {
   WithdrawSingleToken : (token: actor_id, amount: opt TokenAmount) -> TokenAmount;
   WithdrawTokenPair : (token_x: struct { actor_id, opt TokenAmount }, token_y: struct { actor_id, opt TokenAmount }) -> struct { TokenAmount, TokenAmount };
   query FeeTierExists : (fee_tier: FeeTier) -> bool;
+  query GetAllPoolsForPair : (token0: actor_id, token1: actor_id) -> result (vec struct { FeeTier, Pool }, InvariantError);
   query GetAllPositions : (owner_id: actor_id) -> vec Position;
   query GetFeeTiers : () -> vec FeeTier;
   query GetLiquidityTicks : (pool_key: PoolKey, tickmap: vec i32) -> result (vec LiquidityTick, InvariantError);
+  query GetLiquidityTicksAmount : (pool_key: PoolKey) -> u32;
   query GetPool : (token_x: actor_id, token_y: actor_id, fee_tier: FeeTier) -> result (Pool, InvariantError);
-  query GetPools : (size: u8, offset: u16) -> result (vec PoolKey, InvariantError);
+  query GetPoolKeys : (size: u16, offset: u16) -> struct { vec PoolKey, u16 };
   query GetPosition : (owner_id: actor_id, index: u32) -> result (Position, InvariantError);
+  query GetPositionTicks : (owner: actor_id, offset: u32) -> vec PositionTick;
+  query GetPositions : (owner_id: actor_id, size: u32, offset: u32) -> result (struct { vec struct { Pool, vec Position }, u32 }, InvariantError);
   query GetProtocolFee : () -> Percentage;
   query GetTick : (key: PoolKey, index: i32) -> result (Tick, InvariantError);
   query GetTickmap : (pool_key: PoolKey) -> vec struct { u16, u64 };
   query GetUserBalances : (user: actor_id) -> vec struct { actor_id, TokenAmount };
+  query GetUserPositionAmount : (owner_id: actor_id) -> u32;
   query IsTickInitialized : (key: PoolKey, index: i32) -> bool;
   query Quote : (pool_key: PoolKey, x_to_y: bool, amount: TokenAmount, by_amount_in: bool, sqrt_price_limit: SqrtPrice) -> result (QuoteResult, InvariantError);
   query QuoteRoute : (amount_in: TokenAmount, swaps: vec SwapHop) -> result (TokenAmount, InvariantError);

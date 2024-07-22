@@ -79,7 +79,8 @@ fn test_get_tickmap() {
         Liquidity::new(U256::from(10)),
         pool.sqrt_price,
         pool.sqrt_price,
-    ).assert_success();
+    )
+    .assert_success();
     let tickmap = get_tickmap(&invariant, pool_key);
 
     assert_eq!(
@@ -162,7 +163,8 @@ fn test_get_tickmap_tick_spacing_over_one() {
         Liquidity::new(U256::from(10)),
         pool.sqrt_price,
         pool.sqrt_price,
-    ).assert_success();
+    )
+    .assert_success();
 
     create_position(
         &invariant,
@@ -173,7 +175,8 @@ fn test_get_tickmap_tick_spacing_over_one() {
         Liquidity::new(U256::from(10)),
         pool.sqrt_price,
         pool.sqrt_price,
-    ).assert_success();
+    )
+    .assert_success();
 
     let tickmap = get_tickmap(&invariant, pool_key);
 
@@ -259,7 +262,8 @@ fn test_get_tickmap_edge_ticks_intialized() {
         Liquidity::new(U256::from(10)),
         pool.sqrt_price,
         pool.sqrt_price,
-    ).assert_success();
+    )
+    .assert_success();
 
     let _res = create_position(
         &invariant,
@@ -270,7 +274,8 @@ fn test_get_tickmap_edge_ticks_intialized() {
         Liquidity::new(U256::from(10)),
         pool.sqrt_price,
         pool.sqrt_price,
-    ).assert_success();
+    )
+    .assert_success();
 
     let tickmap = get_tickmap(&invariant, pool_key);
 
@@ -356,7 +361,8 @@ fn test_get_tickmap_more_chunks_above() {
             Liquidity::new(U256::from(10)),
             pool.sqrt_price,
             SqrtPrice::max_instance(),
-        ).assert_success();
+        )
+        .assert_success();
     }
     let tickmap = get_tickmap(&invariant, pool_key);
 
@@ -437,7 +443,8 @@ fn test_get_tickmap_more_chunks_below() {
             Liquidity::new(U256::from(10)),
             pool.sqrt_price,
             SqrtPrice::max_instance(),
-        ).assert_success();
+        )
+        .assert_success();
     }
     let tickmap = get_tickmap(&invariant, pool_key);
 
@@ -452,4 +459,3 @@ fn test_get_tickmap_more_chunks_below() {
         );
     }
 }
-

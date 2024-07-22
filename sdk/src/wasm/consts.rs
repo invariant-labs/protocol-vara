@@ -5,6 +5,10 @@ use wasm_wrapper::wasm_wrapper;
 use traceable_result::*;
 
 pub const LIQUIDITY_TICK_LIMIT: u32 = 21544;
+pub const POSITION_TICK_LIMIT: u32 = 17872;
+pub const MAX_POOL_PAIRS_RETURNED: u32 = 4012;
+pub const MAX_POOL_KEYS_RETURNED: u16 = 9590;
+pub const POSITION_ENTRIES_LIMIT: u32 = 1861;
 
 pub const MAX_TICK: i32 = 221_818;
 pub const MIN_TICK: i32 = -MAX_TICK;
@@ -48,6 +52,26 @@ pub fn get_chunk_size() -> i32 {
 #[wasm_wrapper]
 pub fn get_max_tick_cross() -> u32 {
     MAX_TICK_CROSS
+}
+
+#[wasm_wrapper]
+pub fn get_position_tick_limit() -> u32 {
+    POSITION_TICK_LIMIT
+}
+
+#[wasm_wrapper]
+pub fn get_max_pool_keys_returned() -> u16 {
+    MAX_POOL_KEYS_RETURNED
+}
+
+#[wasm_wrapper]
+pub fn get_position_entries_limit() -> u32 {
+    POSITION_ENTRIES_LIMIT
+}
+
+#[wasm_wrapper]
+pub fn get_max_pool_pairs_returned() -> u32 {
+    MAX_POOL_PAIRS_RETURNED
 }
 
 #[wasm_wrapper]

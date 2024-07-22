@@ -1,0 +1,23 @@
+use contracts::*;
+use gstd::Vec;
+use gtest::*;
+
+use io::*;
+use sails_rtl::ActorId;
+
+use crate::{send_query, test_helpers::gtest::PROGRAM_OWNER};
+pub fn get_positions(
+    invariant: &Program,
+    owner_id: impl Into<ActorId>,
+    size: u32,
+    offset: u32,
+) -> Result<(Vec<(Pool, Vec<Position>)>, u32), InvariantError> {
+    send_query!(
+        program: invariant,
+        user: PROGRAM_OWNER,
+        service_name: "Service",
+        action: "GetPositions",
+        payload: (owner_id.into(), size, offset),
+        response_type: Result<(Vec<(Pool, Vec<Position>)>, u32), InvariantError>
+    )
+}

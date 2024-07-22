@@ -53,9 +53,10 @@ import {
   Position,
   Tick,
   LiquidityTick,
+  PositionTick,
   Tickmap,
   _calculateAmountDeltaResult,
-  InvariantError
+  InvariantError,
 } from './schema.js'
 import { CONCENTRATION_FACTOR, MAX_TICK_CROSS } from './consts.js'
 export { HexString } from '@gear-js/api'
@@ -134,6 +135,10 @@ export const convertLiquidityTick = (tick: any): LiquidityTick => {
   return convertTick(tick)
 }
 
+export const convertPositionTick = (tick: any): PositionTick => {
+  return convertTick(tick)
+}
+
 export const convertFeeTier = (feeTier: any): FeeTier => {
   return convertFieldsToBigInt(feeTier)
 }
@@ -151,6 +156,17 @@ export const convertPosition = (position: any): Position => {
   position = convertFieldsToBigInt(position, ['poolKey'])
   position.poolKey = convertPoolKey(position.poolKey)
   return position as Position
+}
+
+export const convertPositions = (positions: any): [Pool, Position[]][] => {
+  positions = positions.map(([pool, positions]: any[]) => {
+    pool = convertPool(pool)
+    positions = positions.map((position: Position) => {
+      return convertPosition(position)
+    })
+    return [pool, positions]
+  })
+  return positions
 }
 
 export const convertPositionCreatedEvent = (positionEvent: any): PositionCreatedEvent => {

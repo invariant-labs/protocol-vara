@@ -8,7 +8,7 @@ use math::{percentage::Percentage, sqrt_price::calculate_sqrt_price};
 use sails_rtl::ActorId;
 
 #[test]
-fn test_get_pools() {
+fn test_get_pool_keys() {
     let sys = System::new();
     sys.init_logger();
 
@@ -38,10 +38,10 @@ fn test_get_pools() {
     .assert_empty()
     .assert_to(REGULAR_USER_1);
 
-    let pool_keys = get_pools(&invariant, u8::MAX, 0).unwrap();
+    let pool_keys = get_pool_keys(&invariant, u16::MAX, 0);
 
     assert_eq!(
         pool_keys,
-        vec![PoolKey::new(token_0, token_1, fee_tier).unwrap()]
+        (vec![PoolKey::new(token_0, token_1, fee_tier).unwrap()],1)
     )
 }

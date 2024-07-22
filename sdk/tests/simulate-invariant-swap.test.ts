@@ -92,7 +92,7 @@ describe('simulateInvariantSwap', async function () {
       )
 
       const ticks = filterTicks(
-        await invariant.getLiquidityTicks(poolKey),
+        await invariant.getAllLiquidityTicks(poolKey, tickmap),
         pool.currentTickIndex,
         xToY
       )
@@ -136,7 +136,7 @@ describe('simulateInvariantSwap', async function () {
       )
 
       const ticks = filterTicks(
-        await invariant.getLiquidityTicks(poolKey),
+        await invariant.getAllLiquidityTicks(poolKey, tickmap),
         pool.currentTickIndex,
         xToY
       )
@@ -179,7 +179,7 @@ describe('simulateInvariantSwap', async function () {
       )
 
       const ticks = filterTicks(
-        await invariant.getLiquidityTicks(poolKey),
+        await invariant.getAllLiquidityTicks(poolKey, tickmap),
         pool.currentTickIndex,
         xToY
       )
@@ -224,7 +224,7 @@ describe('simulateInvariantSwap', async function () {
       )
 
       const ticks = filterTicks(
-        await invariant.getLiquidityTicks(poolKey),
+        await invariant.getAllLiquidityTicks(poolKey, tickmap),
         pool.currentTickIndex,
         xToY
       )
@@ -271,7 +271,7 @@ describe('simulateInvariantSwap', async function () {
       )
 
       const ticks = filterTicks(
-        await invariant.getLiquidityTicks(poolKey),
+        await invariant.getAllLiquidityTicks(poolKey, tickmap),
         pool.currentTickIndex,
         xToY
       )
@@ -321,7 +321,7 @@ describe('simulateInvariantSwap', async function () {
       )
 
       const ticks = filterTicks(
-        await invariant.getLiquidityTicks(poolKey),
+        await invariant.getAllLiquidityTicks(poolKey, tickmap),
         pool.currentTickIndex,
         xToY
       )
@@ -376,7 +376,7 @@ describe('simulateInvariantSwap', async function () {
       )
 
       const ticks = filterTicks(
-        await invariant.getLiquidityTicks(poolKey),
+        await invariant.getAllLiquidityTicks(poolKey, tickmap),
         pool.currentTickIndex,
         xToY
       )
@@ -432,7 +432,7 @@ describe('simulateInvariantSwap', async function () {
       )
 
       const ticks = filterTicks(
-        await invariant.getLiquidityTicks(poolKey),
+        await invariant.getAllLiquidityTicks(poolKey, tickmap),
         pool.currentTickIndex,
         xToY
       )
@@ -499,7 +499,7 @@ describe('simulateInvariantSwap', async function () {
       )
 
       const ticks = filterTicks(
-        await invariant.getLiquidityTicks(poolKey),
+        await invariant.getAllLiquidityTicks(poolKey, tickmap),
         pool.currentTickIndex,
         xToY
       )
@@ -550,7 +550,7 @@ describe('simulateInvariantSwap', async function () {
       )
 
       const ticks = filterTicks(
-        await invariant.getLiquidityTicks(poolKey),
+        await invariant.getAllLiquidityTicks(poolKey, tickmap),
         pool.currentTickIndex,
         xToY
       )
@@ -582,7 +582,14 @@ describe('simulateInvariantSwap', async function () {
       const byAmountIn = true
       const xToY = true
 
-      const ticks = await invariant.getLiquidityTicks(poolKey)
+      const poolBefore = await invariant.getPool(token0Address, token1Address, feeTier)
+      const tickmapBefore = filterTickmap(
+        await invariant.getTickmap(poolKey),
+        poolKey.feeTier.tickSpacing as any,
+        poolBefore.currentTickIndex,
+        xToY
+      )
+      const ticks = await invariant.getAllLiquidityTicks(poolKey, tickmapBefore)
 
       await invariant.createPosition(
         admin,
@@ -681,7 +688,7 @@ describe('simulateInvariantSwap', async function () {
     )
 
     const ticks = filterTicks(
-      await invariant.getLiquidityTicks(poolKey),
+      await invariant.getAllLiquidityTicks(poolKey, tickmap),
       pool.currentTickIndex,
       xToY
     )
@@ -719,7 +726,7 @@ describe('simulateInvariantSwap', async function () {
       xToY
     )
     const ticks = filterTicks(
-      await invariant.getLiquidityTicks(poolKey),
+      await invariant.getAllLiquidityTicks(poolKey, tickmap),
       pool.currentTickIndex,
       xToY
     )
@@ -761,7 +768,7 @@ describe('simulateInvariantSwap', async function () {
       xToY
     )
     const ticks = filterTicks(
-      await invariant.getLiquidityTicks(poolKey),
+      await invariant.getAllLiquidityTicks(poolKey, tickmap),
       pool.currentTickIndex,
       xToY
     )
@@ -803,7 +810,7 @@ describe('simulateInvariantSwap', async function () {
       xToY
     )
     const ticks = filterTicks(
-      await invariant.getLiquidityTicks(poolKey),
+      await invariant.getAllLiquidityTicks(poolKey, tickmap),
       pool.currentTickIndex,
       xToY
     )
@@ -845,7 +852,7 @@ describe('simulateInvariantSwap', async function () {
       xToY
     )
     const ticks = filterTicks(
-      await invariant.getLiquidityTicks(poolKey),
+      await invariant.getAllLiquidityTicks(poolKey, tickmap),
       pool.currentTickIndex,
       xToY
     )

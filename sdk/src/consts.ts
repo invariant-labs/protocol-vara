@@ -3,7 +3,10 @@ import {
   getGlobalMinSqrtPrice,
   getMaxTickCross,
   getChunkSize,
-  getLiquidityTickLimit
+  getLiquidityTickLimit,
+  getMaxPoolKeysReturned,
+  getPositionEntriesLimit,
+  getMaxPoolPairsReturned
 } from 'invariant-vara-wasm'
 import { HexString } from './utils.js'
 
@@ -21,6 +24,9 @@ export const MIN_SQRT_PRICE = getGlobalMinSqrtPrice()
 export const MAX_TICK_CROSS = getMaxTickCross()
 export const CHUNK_SIZE = getChunkSize()
 export const LIQUIDITY_TICKS_LIMIT = getLiquidityTickLimit()
+export const MAX_POOL_PAIRS_RETURNED = getMaxPoolPairsReturned()
+export const MAX_POOL_KEYS_RETURNED = getMaxPoolKeysReturned()
+export const POSITIONS_ENTRIES_LIMIT = getPositionEntriesLimit()
 
 export const CONCENTRATION_FACTOR = 1.00001526069123
 

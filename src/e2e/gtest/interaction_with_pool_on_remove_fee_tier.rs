@@ -66,8 +66,8 @@ fn test_interaction_with_pool_on_removed_fee_tier() {
     get_pool(&invariant, token_x, token_y, fee_tier).unwrap();
 
     // Get Pools
-    let pools = get_pools(&invariant, u8::MAX, 0).unwrap();
-    assert_eq!(pools.len(), 1);
+    let pools = get_pool_keys(&invariant, u16::MAX, 0);
+    assert_eq!(pools.0.len(), 1);
 
     // Transfer position
     init_basic_position(&sys, &invariant, &token_x_program, &token_y_program);
