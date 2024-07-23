@@ -163,7 +163,9 @@ describe('position', async function () {
 
       await assertThrowsAsync(invariant.getPosition(user.addressRaw, 0n), 'Error: PositionNotFound')
       const positions = await invariant.getAllPositions(admin.addressRaw)
-      assert.deepEqual(positions.length, 0)
+      console.log(positions)
+      assert.deepEqual(positions.length, 1)
+      assert.deepEqual(positions[0].entries.length, 0)
     }
     {
       await assertThrowsAsync(invariant.getTick(poolKey, lowerTickIndex), 'Error: TickNotFound')

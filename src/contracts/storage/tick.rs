@@ -10,6 +10,7 @@ use sails_rtl::{Decode, Encode, TypeInfo};
 use traceable_result::*;
 
 pub const LIQUIDITY_TICK_LIMIT: usize = 21544;
+pub const POSITION_TICK_LIMIT: usize = 17872;
 
 #[derive(Debug, Copy, Clone, Decode, Encode, PartialEq, Eq, TypeInfo)]
 #[codec(crate = gstd::codec)]
@@ -55,6 +56,27 @@ impl From<&Tick> for LiquidityTick {
             index: tick.index,
             liquidity_change: tick.liquidity_change,
             sign: tick.sign,
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Encode, Decode, TypeInfo)]
+#[codec(crate = gstd::codec)]
+#[scale_info(crate = gstd::scale_info)]
+pub struct PositionTick {
+    pub index: i32,
+    pub fee_growth_outside_x: FeeGrowth,
+    pub fee_growth_outside_y: FeeGrowth,
+    pub seconds_outside: u64,
+}
+
+impl From<&Tick> for PositionTick {
+    fn from(tick: &Tick) -> Self {
+        Self {
+            index: tick.index,
+            fee_growth_outside_x: tick.fee_growth_outside_x,
+            fee_growth_outside_y: tick.fee_growth_outside_y,
+            seconds_outside: tick.seconds_outside,
         }
     }
 }

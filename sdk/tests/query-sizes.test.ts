@@ -50,7 +50,7 @@ describe('query sizes', async function () {
     await GRC20.approve(user, invariant.programId(), 1000000000000n, token1Address)
     await invariant.depositSingleToken(user, token0Address, 1000000000000n)
     await invariant.depositSingleToken(user, token1Address, 1000000000000n)
-    for(let i = 0n; i < CHUNK_SIZE; i++) {
+    for (let i = 0n; i < CHUNK_SIZE; i++) {
       await invariant.createPosition(
         user,
         poolKey,
@@ -94,7 +94,71 @@ describe('query sizes', async function () {
       value: 0,
       gasLimit: invariant.contract.api.blockGasLimit.toBigInt()
     })
+
     assert.equal(reply.payload.length, 50)
+  })
+
+  it('positions with one position', async () => {
+    const payload = invariant.contract.registry
+      .createType('(String, String, [u8;32], u32, u32)', [
+        'Service',
+        'GetPositions',
+        user.addressRaw,
+        1,
+        0
+      ])
+      .toHex()
+
+    const reply = await invariant.contract.api.message.calculateReply({
+      destination: invariant.contract.programId!,
+      origin: decodeAddress(DEFAULT_ADDRESS),
+      payload,
+      value: 0,
+      gasLimit: invariant.contract.api.blockGasLimit.toBigInt()
+    })
+
+    assert.equal(reply.payload.length, 450)
+  })
+
+  it('2 position ticks', async () => {
+    const payload = invariant.contract.registry
+      .createType('(String, String, [u8;32], u32)', [
+        'Service',
+        'GetPositionTicks',
+        user.addressRaw,
+        CHUNK_SIZE - 1n
+      ])
+      .toHex()
+
+    const reply = await invariant.contract.api.message.calculateReply({
+      destination: invariant.contract.programId!,
+      origin: decodeAddress(DEFAULT_ADDRESS),
+      payload,
+      value: 0,
+      gasLimit: invariant.contract.api.blockGasLimit.toBigInt()
+    })
+
+    assert.equal(reply.payload.length, 114)
+  })
+
+  it('1 pool for token pair', async () => {
+    const payload = invariant.contract.registry
+      .createType('(String, String, [u8;32], [u8;32])', [
+        'Service',
+        'GetAllPoolsForPair',
+        token0Address,
+        token1Address
+      ])
+      .toHex()
+
+    const reply = await invariant.contract.api.message.calculateReply({
+      destination: invariant.contract.programId!,
+      origin: decodeAddress(DEFAULT_ADDRESS),
+      payload,
+      value: 0,
+      gasLimit: invariant.contract.api.blockGasLimit.toBigInt()
+    })
+    assert.equal(reply.payload.length, 243)
   })
 
   this.afterAll(async function () {

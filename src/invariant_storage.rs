@@ -1,8 +1,7 @@
-
-use contracts::declare_storage;
+use contracts::{declare_storage, get_max_chunk};
 pub use contracts::{
-  FeeTiers, InvariantError, PoolKey, PoolKeys, Pools, Positions, Tick,
-  Tickmap, Ticks, UpdatePoolTick, AwaitingTransfer,
+    AwaitingTransfer, FeeTiers, InvariantError, PoolKey, PoolKeys, Pools, Positions, Tick, Tickmap,
+    Ticks, UpdatePoolTick,
 };
 pub use decimal::*;
 pub use gstd::{collections::HashMap, exec, prelude::*};
@@ -15,7 +14,6 @@ pub use math::{
 };
 pub use sails_rtl::{ActorId, MessageId};
 pub use traceable_result::*;
-
 
 #[derive(Debug, Default)]
 pub struct Invariant {
@@ -74,7 +72,7 @@ impl Invariant {
         caller: &ActorId,
         amount: Option<TokenAmount>,
     ) -> Result<TokenAmount, InvariantError> {
-        if matches!(amount, Some(TokenAmount(U256([0,0,0,0])))) {
+        if matches!(amount, Some(TokenAmount(U256([0, 0, 0, 0])))) {
             return Ok(amount.unwrap());
         }
 
@@ -305,6 +303,17 @@ impl Invariant {
         }
 
         tickmap_slice
+    }
+
+    pub fn liquidity_ticks_count(&self, pool_key: PoolKey) -> u32 {
+        let mut sum = 0;
+        for chunk_index in 0..get_max_chunk(pool_key.fee_tier.tick_spacing) {
+            if let Some(chunk) = self.tickmap.bitmap.get(&(chunk_index, pool_key)) {
+                sum += chunk.count_ones()
+            }
+        }
+
+        sum
     }
 }
 

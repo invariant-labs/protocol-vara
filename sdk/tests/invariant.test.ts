@@ -176,8 +176,9 @@ describe('Invariant', async function () {
     const poolKey = newPoolKey(token0Address, token1Address, feeTier)
 
     await invariant.createPool(user, poolKey, initSqrtPrice)
-    const pools = await invariant.getPools(1n, 0n)
-    assert.deepEqual(pools.length, 1)
+    const pools = await invariant.getPoolKeys(1n, 0n)
+    assert.deepEqual(pools[0].length, 1)
+    assert.deepEqual(pools[1], 1n)
     const pool = await invariant.getPool(token0Address, token1Address, feeTier)
     assert.deepEqual(pool, {
       liquidity: 0n,
@@ -216,8 +217,10 @@ describe('Invariant', async function () {
 
       await invariant.createPool(user, poolKey, initSqrtPrice)
 
-      const pools = await invariant.getPools(1n, 0n)
-      assert.deepEqual(pools.length, 1)
+      const pools = await invariant.getPoolKeys(1n, 0n)
+      assert.deepEqual(pools[0].length, 1)
+      assert.deepEqual(pools[1], 1n)
+
       const pool = await invariant.getPool(token0Address, token1Address, feeTier)
       assert.deepEqual(pool, {
         liquidity: 0n,
@@ -237,8 +240,9 @@ describe('Invariant', async function () {
 
       await assertThrowsAsync(invariant.createPool(user, poolKey, initSqrtPrice))
     }
-    const pools = await invariant.getPools(1n, 0n)
-    assert.deepEqual(pools.length, 1)
+    const pools = await invariant.getPoolKeys(1n, 0n)
+    assert.deepEqual(pools[0].length, 1)
+    assert.deepEqual(pools[1], 1n)
   })
 
   this.afterAll(async function () {

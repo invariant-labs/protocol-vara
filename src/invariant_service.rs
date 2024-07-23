@@ -1,9 +1,10 @@
 extern crate alloc;
 use crate::invariant_storage::Invariant;
 use crate::invariant_storage::InvariantStorage;
+use contracts::PositionTick;
 use contracts::{
-    get_max_chunk, get_min_chunk, AwaitingTransfer, FeeTier, InvariantError, LiquidityTick, Pool,
-    PoolKey, Position, Tick, TransferType, LIQUIDITY_TICK_LIMIT,
+    get_max_chunk, AwaitingTransfer, FeeTier, InvariantError, LiquidityTick, Pool, PoolKey,
+    Position, Tick, TransferType, LIQUIDITY_TICK_LIMIT, POSITION_TICK_LIMIT,
 };
 use decimal::*;
 use futures;
@@ -188,8 +189,11 @@ where
         invariant.pools.get(&pool_key)
     }
 
-    pub fn get_pools(&self, size: u8, offset: u16) -> Result<Vec<PoolKey>, InvariantError> {
-        InvariantStorage::as_ref().pool_keys.get_all(size, offset)
+    pub fn get_pool_keys(&self, size: u16, offset: u16) -> (Vec<PoolKey>, u16) {
+        let invariant =InvariantStorage::as_ref();
+        let pool_keys = invariant.pool_keys.get_all(size, offset);
+        let pool_keys_count = invariant.pool_keys.count();
+        (pool_keys, pool_keys_count)
     }
 
     pub fn change_fee_receiver(&mut self, pool_key: PoolKey, fee_receiver: ActorId) {
@@ -390,6 +394,57 @@ where
 
     pub fn get_all_positions(&self, owner_id: ActorId) -> Vec<Position> {
         InvariantStorage::as_ref().positions.get_all(&owner_id)
+    }
+
+    pub fn get_positions(
+        &self,
+        owner_id: ActorId,
+        size: u32,
+        offset: u32,
+    ) -> Result<(Vec<(Pool, Vec<Position>)>, u32), InvariantError> {
+        let invariant = InvariantStorage::as_ref();
+        let positions = invariant.positions.get_slice(&owner_id, offset, size);
+        let mut grouped_positions: Vec<(Pool, Vec<Position>)> = vec![];
+
+        for position in positions.into_iter() {
+            if let Some(entry) = grouped_positions
+                .iter_mut()
+                .find(|(_pool, positions)| positions.first().unwrap().pool_key == position.pool_key)
+            {
+                entry.1.push(position);
+            } else {
+                let pool = invariant.pools.get(&position.pool_key)?;
+                grouped_positions.push((pool, vec![position]));
+            }
+        }
+
+        Ok((grouped_positions, invariant.positions.get_length(&owner_id)))
+    }
+
+    pub fn get_user_position_amount(&self, owner_id: ActorId) -> u32 {
+        let invariant = InvariantStorage::as_ref();
+        invariant.positions.get_length(&owner_id)
+    }
+
+    pub fn get_liquidity_ticks_amount(&self, pool_key: PoolKey) -> u32 {
+        InvariantStorage::as_ref().liquidity_ticks_count(pool_key)
+    }
+
+    pub fn get_all_pools_for_pair(
+        &self,
+        token0: ActorId,
+        token1: ActorId,
+    ) -> Result<Vec<(FeeTier, Pool)>, InvariantError> {
+        let invariant = InvariantStorage::as_ref();
+        let fee_tiers = invariant.fee_tiers.get_all();
+        let mut pools: Vec<(FeeTier, Pool)> = vec![];
+        for fee_tier in fee_tiers {
+            let pool_key = PoolKey::new(token0, token1, fee_tier)?;
+            if let Ok(pool) = invariant.pools.get(&pool_key) {
+                pools.push((fee_tier, pool));
+            }
+        }
+        Ok(pools)
     }
 
     pub fn swap(
@@ -886,7 +941,7 @@ where
         let tick_spacing = pool_key.fee_tier.tick_spacing;
 
         let max_chunk_index = get_max_chunk(tick_spacing);
-        let min_chunk_index = get_min_chunk(tick_spacing);
+        let min_chunk_index = 0;
 
         InvariantStorage::as_ref().tickmap_slice(min_chunk_index..=max_chunk_index, pool_key)
     }
@@ -906,6 +961,42 @@ where
             .map(|tick| invariant.ticks.get(pool_key, *tick).unwrap())
             .map(|tick| LiquidityTick::from(tick))
             .collect::<Vec<LiquidityTick>>())
+    }
+
+    pub fn get_position_ticks(&self, owner: ActorId, offset: u32) -> Vec<PositionTick> {
+        let invariant = InvariantStorage::as_ref();
+        let positions_length = invariant.positions.get_length(&owner);
+        let mut ticks = vec![];
+
+        for i in offset..positions_length {
+            invariant
+                .positions
+                .get(&owner, i)
+                .map(|position| {
+                    invariant
+                        .ticks
+                        .get(position.pool_key, position.lower_tick_index)
+                        .map(|tick| {
+                            ticks.push(PositionTick::from(tick));
+                        })
+                        .ok();
+
+                    invariant
+                        .ticks
+                        .get(position.pool_key, position.upper_tick_index)
+                        .map(|tick| {
+                            ticks.push(PositionTick::from(tick));
+                        })
+                        .ok();
+                })
+                .ok();
+
+            if ticks.len() >= POSITION_TICK_LIMIT {
+                break;
+            }
+        }
+
+        ticks
     }
 
     fn send_transfer_token_message(

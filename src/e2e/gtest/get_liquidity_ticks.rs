@@ -39,10 +39,20 @@ fn test_get_liquidity_ticks() {
     )
     .assert_success();
 
-    increase_allowance(&token_x_program, REGULAR_USER_1, INVARIANT_ID, initial_amount.into())
-        .assert_success();
-    increase_allowance(&token_y_program, REGULAR_USER_1, INVARIANT_ID, initial_amount.into())
-        .assert_success();
+    increase_allowance(
+        &token_x_program,
+        REGULAR_USER_1,
+        INVARIANT_ID,
+        initial_amount.into(),
+    )
+    .assert_success();
+    increase_allowance(
+        &token_y_program,
+        REGULAR_USER_1,
+        INVARIANT_ID,
+        initial_amount.into(),
+    )
+    .assert_success();
 
     deposit_single_token(
         &invariant,
@@ -87,6 +97,8 @@ fn test_get_liquidity_ticks() {
         }
     });
     assert_eq!(ticks, vec![-10i32, 10]);
+
+    assert_eq!(get_liquidity_ticks_amount(&invariant, pool_key), 2);
 
     let result = get_liquidity_ticks(&invariant, pool_key, ticks.clone()).unwrap();
     assert_eq!(result.len(), 2);
@@ -144,10 +156,20 @@ fn test_get_liquidity_ticks_different_tick_spacings() {
     )
     .assert_success();
 
-    increase_allowance(&token_x_program, REGULAR_USER_1, INVARIANT_ID, initial_amount.into())
-        .assert_success();
-    increase_allowance(&token_y_program, REGULAR_USER_1, INVARIANT_ID, initial_amount.into())
-        .assert_success();
+    increase_allowance(
+        &token_x_program,
+        REGULAR_USER_1,
+        INVARIANT_ID,
+        initial_amount.into(),
+    )
+    .assert_success();
+    increase_allowance(
+        &token_y_program,
+        REGULAR_USER_1,
+        INVARIANT_ID,
+        initial_amount.into(),
+    )
+    .assert_success();
 
     deposit_single_token(
         &invariant,
@@ -190,6 +212,9 @@ fn test_get_liquidity_ticks_different_tick_spacings() {
     )
     .assert_success();
 
+    assert_eq!(get_liquidity_ticks_amount(&invariant, pool_key_1), 2);
+    assert_eq!(get_liquidity_ticks_amount(&invariant, pool_key_2), 2);
+
     let result = get_liquidity_ticks(&invariant, pool_key_1, vec![-10, 30]).unwrap();
     assert_eq!(result.len(), 2);
 
@@ -226,10 +251,20 @@ fn test_get_liquidity_ticks_limit() {
     )
     .assert_success();
 
-    increase_allowance(&token_x_program, REGULAR_USER_1, INVARIANT_ID, initial_amount.into())
-        .assert_success();
-    increase_allowance(&token_y_program, REGULAR_USER_1, INVARIANT_ID, initial_amount.into())
-        .assert_success();
+    increase_allowance(
+        &token_x_program,
+        REGULAR_USER_1,
+        INVARIANT_ID,
+        initial_amount.into(),
+    )
+    .assert_success();
+    increase_allowance(
+        &token_y_program,
+        REGULAR_USER_1,
+        INVARIANT_ID,
+        initial_amount.into(),
+    )
+    .assert_success();
 
     deposit_single_token(
         &invariant,
@@ -266,6 +301,11 @@ fn test_get_liquidity_ticks_limit() {
         .assert_success();
     }
 
+    assert_eq!(
+        get_liquidity_ticks_amount(&invariant, pool_key),
+        LIQUIDITY_TICK_LIMIT as u32
+    );
+
     let result = get_liquidity_ticks(&invariant, pool_key, ticks.clone()).unwrap();
     assert_eq!(result.len(), LIQUIDITY_TICK_LIMIT);
 }
@@ -299,10 +339,20 @@ fn test_get_liquidity_ticks_limit_with_spread() {
     )
     .assert_success();
 
-    increase_allowance(&token_x_program, REGULAR_USER_1, INVARIANT_ID, initial_amount.into())
-        .assert_success();
-    increase_allowance(&token_y_program, REGULAR_USER_1, INVARIANT_ID, initial_amount.into())
-        .assert_success();
+    increase_allowance(
+        &token_x_program,
+        REGULAR_USER_1,
+        INVARIANT_ID,
+        initial_amount.into(),
+    )
+    .assert_success();
+    increase_allowance(
+        &token_y_program,
+        REGULAR_USER_1,
+        INVARIANT_ID,
+        initial_amount.into(),
+    )
+    .assert_success();
 
     deposit_single_token(
         &invariant,
@@ -340,6 +390,11 @@ fn test_get_liquidity_ticks_limit_with_spread() {
         .assert_success();
     }
 
+    assert_eq!(
+        get_liquidity_ticks_amount(&invariant, pool_key),
+        LIQUIDITY_TICK_LIMIT as u32
+    );
+
     let result = get_liquidity_ticks(&invariant, pool_key, ticks.clone()).unwrap();
     assert_eq!(result.len(), LIQUIDITY_TICK_LIMIT);
 }
@@ -373,10 +428,20 @@ fn test_get_liquidity_ticks_partial_query() {
     )
     .assert_success();
 
-    increase_allowance(&token_x_program, REGULAR_USER_1, INVARIANT_ID, initial_amount.into())
-        .assert_success();
-    increase_allowance(&token_y_program, REGULAR_USER_1, INVARIANT_ID, initial_amount.into())
-        .assert_success();
+    increase_allowance(
+        &token_x_program,
+        REGULAR_USER_1,
+        INVARIANT_ID,
+        initial_amount.into(),
+    )
+    .assert_success();
+    increase_allowance(
+        &token_y_program,
+        REGULAR_USER_1,
+        INVARIANT_ID,
+        initial_amount.into(),
+    )
+    .assert_success();
 
     deposit_single_token(
         &invariant,
@@ -405,6 +470,7 @@ fn test_get_liquidity_ticks_partial_query() {
     )
     .assert_success();
 
+    assert_eq!(get_liquidity_ticks_amount(&invariant, pool_key), 2);
     let result_1 = get_liquidity_ticks(&invariant, pool_key, vec![-10i32, 10]).unwrap();
     assert_eq!(result_1.len(), 2);
 

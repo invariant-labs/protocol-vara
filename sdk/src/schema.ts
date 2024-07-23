@@ -29,7 +29,7 @@ export {
   _calculateAmountDeltaResult,
   Tickmap,
   SimulateSwapResult,
-  InvariantError
+  InvariantError,
 } from 'invariant-vara-wasm'
 
 export enum InvariantEvent {
