@@ -1,3 +1,4 @@
+import 'mocha'
 import { assert, expect } from 'chai'
 import { GearKeyring } from '@gear-js/api'
 import { initGearApi, subscribeToNewHeads } from '../src/utils.js'
@@ -35,20 +36,20 @@ describe('FungibleToken', function () {
   })
   it('mint and burn tx', async function () {
     {
-      const { response } = await (await GRC20.mintTx(account0.addressRaw, 100n, tokenAddress))
+      const response = await (await GRC20.mintTx(account0.addressRaw, 100n, tokenAddress))
         .withAccount(account0)
         .signAndSend()
-      assert.strictEqual(await response(), true)
+      assert.strictEqual(response, true)
     }
 
     await GRC20.balanceOf(account0.addressRaw, tokenAddress).then(balance => {
       assert.deepStrictEqual(balance, 100n)
     })
     {
-      const { response } = await (await GRC20.burnTx(account0.addressRaw, 100n, tokenAddress))
+      const response = await (await GRC20.burnTx(account0.addressRaw, 100n, tokenAddress))
         .withAccount(account0)
         .signAndSend()
-      assert.strictEqual(await response(), true)
+      assert.strictEqual(response, true)
     }
     await GRC20.balanceOf(account0.addressRaw, tokenAddress).then(balance => {
       assert.deepStrictEqual(balance, 0n)
@@ -110,17 +111,16 @@ describe('FungibleToken', function () {
   })
   it('approve and transfer tx', async () => {
     {
-      
-      const { response } = await (await GRC20.mintTx(account1.addressRaw, 100n, tokenAddress))
+      const response = await (await GRC20.mintTx(account1.addressRaw, 100n, tokenAddress))
         .withAccount(account0)
         .signAndSend()
-      assert.strictEqual(await response(), true)
+      assert.strictEqual(response, true)
     }
     {
-      const { response } = await (await GRC20.approveTx(account0.addressRaw, 100n, tokenAddress))
+      const response = await (await GRC20.approveTx(account0.addressRaw, 100n, tokenAddress))
         .withAccount(account1)
         .signAndSend()
-      assert.strictEqual(await response(), true)
+      assert.strictEqual(response, true)
     }
     {
       const allowance = GRC20.allowance(account1.addressRaw, account0.addressRaw, tokenAddress)
@@ -135,35 +135,35 @@ describe('FungibleToken', function () {
       assert.deepStrictEqual(await decimals, 12n, 'decimals mismatch')
     }
     {
-      const { response } = await (await GRC20.mintTx(account1.addressRaw, 300n, tokenAddress))
+      const response = await (await GRC20.mintTx(account1.addressRaw, 300n, tokenAddress))
         .withAccount(account0)
         .signAndSend()
-      assert.strictEqual(await response(), true)
+      assert.strictEqual(response, true)
     }
     await assertThrowsAsync(
       (async () => {
-        const { response } = await (
+        const response = await (
           await GRC20.transferFromTx(account1.addressRaw, account0.addressRaw, 300n, tokenAddress)
         )
           .withAccount(account0)
           .signAndSend()
-        assert.strictEqual(await response(), true)
+        assert.strictEqual(response, true)
       })(),
       'Error: Panic occurred: InsufficientAllowance'
     )
     {
-      const { response } = await (await GRC20.approveTx(account0.addressRaw, 300n, tokenAddress))
+      const response = await (await GRC20.approveTx(account0.addressRaw, 300n, tokenAddress))
         .withAccount(account1)
         .signAndSend()
-      assert.strictEqual(await response(), true)
+      assert.strictEqual(response, true)
     }
     {
-      const { response } = await (
+      const response = await (
         await GRC20.transferFromTx(account1.addressRaw, account0.addressRaw, 300n, tokenAddress)
       )
         .withAccount(account0)
         .signAndSend()
-      assert.strictEqual(await response(), true)
+      assert.strictEqual(response, true)
     }
     {
       const allowance = GRC20.allowance(account1.addressRaw, account0.addressRaw, tokenAddress)

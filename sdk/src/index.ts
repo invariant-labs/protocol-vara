@@ -60,6 +60,9 @@ export {
   HexString,
   ActorId,
   Signer,
-  calculateSqrtPrice
+  calculateSqrtPrice,
+  TransactionWrapper,
+  BatchError,
+  batchTxs
 } from './utils.js'
 export { FEE_TIERS, CONCENTRATION_ARRAY } from './computed-consts.js'

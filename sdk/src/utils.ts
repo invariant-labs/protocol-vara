@@ -1,8 +1,16 @@
-import { GearApi, GearApiOptions, HexString, ProgramMetadata } from '@gear-js/api'
+import {
+  MessageQueuedData,
+  UserMessageSent,
+  GearApi,
+  GearApiOptions,
+  HexString,
+  ProgramMetadata
+} from '@gear-js/api'
 import { readFile } from 'fs/promises'
 import path from 'path'
 import * as wasmSerializer from './wasm-serializer.js'
-import { IKeyringPair } from '@polkadot/types/types'
+import { ISubmittableResult, IKeyringPair } from '@polkadot/types/types'
+import { SignerOptions, SubmittableExtrinsic } from '@polkadot/api/types'
 import {
   _calculateFee,
   _newFeeTier,
@@ -56,7 +64,7 @@ import {
   PositionTick,
   Tickmap,
   _calculateAmountDeltaResult,
-  InvariantError,
+  InvariantError
 } from './schema.js'
 import { CONCENTRATION_FACTOR, MAX_TICK_CROSS } from './consts.js'
 export { HexString } from '@gear-js/api'
@@ -225,11 +233,12 @@ export interface ITransactionBuilder {
 export class TransactionWrapper<U> {
   private txBuilder: ITransactionBuilder
   private decodeCallback: ((t: any) => U) | null = null
+  private validateCallback: ((t: UserMessageSent) => string | null) | null = null
   constructor(txBuilder: ITransactionBuilder) {
     this.txBuilder = txBuilder
   }
 
-  async send(): Promise<U> {
+  async signAndSend(): Promise<U> {
     const { response } = await this.txBuilder.signAndSend()
     if (this.decodeCallback) {
       return this.decodeCallback(await response())
@@ -247,7 +256,53 @@ export class TransactionWrapper<U> {
     this.decodeCallback = decodeFn
     return this
   }
+
+  withValidate(validateFn: (t: UserMessageSent) => string | null): this {
+    this.validateCallback = validateFn
+    return this
+  }
+
+  public get extrinsic(): SubmittableExtrinsic<'promise', ISubmittableResult> {
+    return (this.txBuilder as any)._tx
+  }
+
+  public get validation(): ((t: UserMessageSent) => string | null) | null {
+    return this.validateCallback
+  }
 }
+
+export const validateFungibleTokenResponse = (message: UserMessageSent) => {
+  const registry = new TypeRegistry()
+  const json = registry.createType('(String, String, bool', message.data.message.payload)
+  return json[2].isTrue ? null : 'Token response invalid'
+}
+
+const validateInvariantSingleTransfer = (message: UserMessageSent) => {
+  try {
+    const registry = new TypeRegistry()
+    registry.createType('(String, String, U256)', message.data.message.payload)
+  } catch (e) {
+    // this may happen if the gas runs out during reply handling
+    return 'Deposit response invalid'
+  }
+  return null
+}
+export const validateInvariantSingleDeposit = validateInvariantSingleTransfer
+export const validateInvariantSingleWithdraw = validateInvariantSingleTransfer
+
+const validateInvariantPairTransfer = (message: UserMessageSent) => {
+  try {
+    const registry = new TypeRegistry()
+    registry.createType('(String, String, (U256, U256))', message.data.message.payload)
+  } catch (e) {
+    // this may happen if the gas runs out during reply handling
+    return 'Deposit response invalid'
+  }
+  return null
+}
+
+export const validateInvariantPairDeposit = validateInvariantPairTransfer
+export const validateInvariantPairWithdraw = validateInvariantPairTransfer
 
 export type SwapEventCallback = {
   ident: InvariantEvent.SwapEvent
@@ -634,4 +689,88 @@ export const getConcentrationArray = (
     (maxTick - Math.abs(currentTick) - (minimumRange / 2) * tickSpacing) / tickSpacing
 
   return concentrations.slice(0, limitIndex)
+}
+
+type MsgId = HexString
+type BlockHash = any
+type ProgramId = HexString
+export class BatchError extends Error {
+  failedTxs: Map<number, string>
+  constructor(failedTxs: Map<number, string>) {
+    super('Batch error occurred')
+    this.failedTxs = failedTxs
+  }
+}
+export const batchTxs = async (
+  api: GearApi,
+  account: Signer,
+  transactions: TransactionWrapper<any>[],
+  options: Partial<SignerOptions> = {}
+) => {
+  const methods = transactions.map(val => val.extrinsic)
+  const validationCallbacks = transactions.map(val => val.validation)
+
+  const tx = api.tx.utility.batchAll([...methods])
+
+  const res = await new Promise<[MsgId, BlockHash, ProgramId][]>((resolve, reject) =>
+    tx
+      .signAndSend(account, options, ({ events, status }) => {
+        if (status.isInBlock) {
+          const msgData: [MsgId, BlockHash, ProgramId][] = []
+
+          events.forEach(({ event }) => {
+            const { method, section, data } = event
+            if (method === 'MessageQueued' && section === 'gear') {
+              const { id, destination } = data as MessageQueuedData
+              msgData.push([id.toHex(), status.asInBlock.toHex(), destination.toHex()])
+            } else if (method === 'ExtrinsicSuccess') {
+              resolve(msgData)
+            } else if (method === 'ExtrinsicFailed') {
+              reject(api.getExtrinsicFailedError(event))
+            }
+          })
+        }
+      })
+      .catch(error => {
+        reject(error.message)
+      })
+  )
+
+  const messages = await res
+
+  const responsePromises: Promise<UserMessageSent>[] = messages.map(
+    ([msgId, blockHash, programId]) => {
+      return new Promise(async resolve => {
+        const res = await api.message.getReplyEvent(programId, msgId as any, blockHash)
+        resolve(res)
+      })
+    }
+  )
+
+  const responses: UserMessageSent[] = await Promise.all(responsePromises)
+  const errors: Map<number, string> = new Map()
+  for (let i = 0; i < responses.length; i++) {
+    const response = responses[i]
+    const message = response.data.message
+
+    const validationCallback = validationCallbacks[i]
+
+    if (!message.details.unwrap().code.isSuccess) {
+      errors.set(i, api.registry.createType('String', message.payload).toString())
+      continue
+    }
+
+    if (validationCallback) {
+      const errorFromAdditionalCheck = validationCallback(response)
+      if (errorFromAdditionalCheck) {
+        errors.set(i, errorFromAdditionalCheck)
+      }
+    }
+  }
+
+  if (errors.size) {
+    throw new BatchError(errors)
+  }
+
+  return responses
 }

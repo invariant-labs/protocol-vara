@@ -23,7 +23,11 @@ import {
   convertLiquidityTick,
   convertPositionTick,
   convertPositions,
-  positionToTick
+  positionToTick,
+  validateInvariantPairDeposit,
+  validateInvariantPairWithdraw,
+  validateInvariantSingleDeposit,
+  validateInvariantSingleWithdraw
 } from './utils.js'
 import {
   CHUNK_SIZE,
@@ -403,7 +407,7 @@ export class Invariant {
     gasLimit: bigint = this.gasLimit
   ): Promise<Percentage> {
     const tx = (await this.changeProtocolFeeTx(fee, gasLimit)).withAccount(signer)
-    return tx.send()
+    return tx.signAndSend()
   }
 
   async addFeeTierTx(
@@ -421,7 +425,7 @@ export class Invariant {
     gasLimit: bigint = this.gasLimit
   ): Promise<FeeTier> {
     const tx = (await this.addFeeTierTx(feeTier as any, gasLimit)).withAccount(signer)
-    return tx.send()
+    return tx.signAndSend()
   }
 
   async changeFeeReceiverTx(
@@ -445,7 +449,7 @@ export class Invariant {
     const tx = (
       await this.changeFeeReceiverTx(poolKey as any, feeReceiver as any, gasLimit)
     ).withAccount(signer)
-    return tx.send()
+    return tx.signAndSend()
   }
 
   async claimFeeTx(
@@ -463,7 +467,7 @@ export class Invariant {
     gasLimit: bigint = this.gasLimit
   ): Promise<[TokenAmount, TokenAmount]> {
     const tx = (await this.claimFeeTx(index, gasLimit)).withAccount(signer)
-    return tx.send()
+    return tx.signAndSend()
   }
 
   async createPoolTx(
@@ -492,7 +496,7 @@ export class Invariant {
     gasLimit: bigint = this.gasLimit
   ): Promise<null> {
     const tx = (await this.createPoolTx(key, initSqrtPrice, gasLimit)).withAccount(signer)
-    return tx.send()
+    return tx.signAndSend()
   }
 
   async createPositionTx(
@@ -550,17 +554,17 @@ export class Invariant {
         gasLimit
       )
     ).withAccount(signer)
-    return tx.send()
+    return tx.signAndSend()
   }
 
-  async depositTx(
+  async depositSingleTokenTx(
     token: ActorId,
     amount: bigint,
     gasLimit: bigint = this.gasLimit
   ): Promise<TransactionWrapper<TokenAmount>> {
     return new TransactionWrapper<TokenAmount>(
       await this.contract.service.depositSingleToken(token as any, amount as any).withGas(gasLimit)
-    )
+    ).withValidate(validateInvariantSingleDeposit)
   }
 
   async depositSingleToken(
@@ -569,8 +573,8 @@ export class Invariant {
     amount: bigint,
     gasLimit: bigint = this.gasLimit
   ): Promise<TokenAmount> {
-    const tx = (await this.depositTx(token, amount, gasLimit)).withAccount(signer)
-    return tx.send()
+    const tx = (await this.depositSingleTokenTx(token, amount, gasLimit)).withAccount(signer)
+    return tx.signAndSend()
   }
 
   async depositTokenPairTx(
@@ -580,7 +584,9 @@ export class Invariant {
   ): Promise<TransactionWrapper<[TokenAmount, TokenAmount]>> {
     return new TransactionWrapper<[TokenAmount, TokenAmount]>(
       await this.contract.service.depositTokenPair(tokenX as any, tokenY as any).withGas(gasLimit)
-    ).withDecode(arr => arr.map(BigInt))
+    )
+      .withDecode(arr => arr.map(BigInt))
+      .withValidate(validateInvariantPairDeposit)
   }
 
   async depositTokenPair(
@@ -590,7 +596,7 @@ export class Invariant {
     gasLimit: bigint = this.gasLimit
   ): Promise<[TokenAmount, TokenAmount]> {
     const tx = (await this.depositTokenPairTx(tokenX, tokenY, gasLimit)).withAccount(signer)
-    return tx.send()
+    return tx.signAndSend()
   }
 
   async removeFeeTierTx(
@@ -608,7 +614,7 @@ export class Invariant {
     gasLimit: bigint = this.gasLimit
   ): Promise<FeeTier> {
     const tx = (await this.removeFeeTierTx(feeTier as any, gasLimit)).withAccount(signer)
-    return tx.send()
+    return tx.signAndSend()
   }
 
   async removePositionTx(
@@ -626,7 +632,7 @@ export class Invariant {
     gasLimit: bigint = this.gasLimit
   ): Promise<[TokenAmount, TokenAmount]> {
     const tx = (await this.removePositionTx(index, gasLimit)).withAccount(signer)
-    return tx.send()
+    return tx.signAndSend()
   }
 
   async transferPositionTx(
@@ -646,7 +652,7 @@ export class Invariant {
     gasLimit: bigint = this.gasLimit
   ): Promise<null> {
     const tx = (await this.transferPositionTx(index, receiver, gasLimit)).withAccount(signer)
-    return tx.send()
+    return tx.signAndSend()
   }
 
   async swapTx(
@@ -676,7 +682,7 @@ export class Invariant {
     const tx = (
       await this.swapTx(poolKey, xToY, amount, byAmountIn, sqrtPriceLimit, gasLimit)
     ).withAccount(signer)
-    return tx.send()
+    return tx.signAndSend()
   }
 
   async withdrawProtocolFeeTx(
@@ -694,7 +700,7 @@ export class Invariant {
     gasLimit: bigint = this.gasLimit
   ): Promise<[TokenAmount, TokenAmount]> {
     const tx = (await this.withdrawProtocolFeeTx(poolKey, gasLimit)).withAccount(signer)
-    return tx.send()
+    return tx.signAndSend()
   }
 
   async withdrawSingleTokenTx(
@@ -704,7 +710,7 @@ export class Invariant {
   ): Promise<TransactionWrapper<TokenAmount>> {
     return new TransactionWrapper<TokenAmount>(
       await this.contract.service.withdrawSingleToken(token as any, amount as any).withGas(gasLimit)
-    )
+    ).withValidate(validateInvariantSingleWithdraw)
   }
 
   async withdrawSingleToken(
@@ -714,7 +720,7 @@ export class Invariant {
     gasLimit: bigint = this.gasLimit
   ): Promise<TokenAmount> {
     const tx = (await this.withdrawSingleTokenTx(token, amount, gasLimit)).withAccount(signer)
-    return tx.send()
+    return tx.signAndSend()
   }
 
   async withdrawTokenPairTx(
@@ -724,7 +730,9 @@ export class Invariant {
   ): Promise<TransactionWrapper<[TokenAmount, TokenAmount]>> {
     return new TransactionWrapper<[TokenAmount, TokenAmount]>(
       await this.contract.service.withdrawTokenPair(tokenX as any, tokenY as any).withGas(gasLimit)
-    ).withDecode(arr => arr.map(BigInt))
+    )
+      .withDecode(arr => arr.map(BigInt))
+      .withValidate(validateInvariantPairWithdraw)
   }
 
   async withdrawTokenPair(
@@ -734,6 +742,6 @@ export class Invariant {
     gasLimit: bigint = this.gasLimit
   ): Promise<[TokenAmount, TokenAmount]> {
     const tx = (await this.withdrawTokenPairTx(tokenX, tokenY, gasLimit)).withAccount(signer)
-    return tx.send()
+    return tx.signAndSend()
   }
 }

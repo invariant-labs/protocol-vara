@@ -29,7 +29,7 @@
     "node:local:stop": "pkill -9 gear",
     "start": "npm run build && node --experimental-wasm-modules --trace-uncaught target/index.js",
     "wasm:build": "cd ./src/wasm && wasm-pack build --features tsify/js && rm ./pkg/.gitignore",
-    "test:local": "npm run test:fungible-token && npm run test:deposits && npm run test:invariant && npm run test:example && npm run test:protocol-fee && npm run test:position && npm run test:math && npm run test:events && npm run test:get-liquidity-ticks && npm run test:query-sizes",
+    "test:local": "npm run test:fungible-token && npm run test:deposits && npm run test:invariant && npm run test:example && npm run test:protocol-fee && npm run test:position && npm run test:math && npm run test:events && npm run test:get-liquidity-ticks && npm run test:query-sizes && npm run test:batch",
     "test:fungible-token": "npx mocha --config mocharc.json ./tests/fungible-token.test.ts",
     "test:invariant": "npx mocha --config mocharc.json ./tests/invariant.test.ts",
     "test:protocol-fee": "npx mocha --config mocharc.json ./tests/protocol-fee.test.ts",
@@ -43,6 +43,7 @@
     "test:get-tickmap": "npx mocha --config mocharc.json ./tests/get-tickmap.test.ts",
     "test:query-sizes": "npx mocha --config mocharc.json ./tests/query-sizes.test.ts",
     "test:query-on-pair": "npx mocha --config mocharc.json ./tests/query-on-pair.test.ts",
+    "test:batch": "npx mocha --config mocharc.json ./tests/batch.test.ts",
     "test:simulate-invariant-swap": "npx mocha --config mocharc.json ./tests/simulate-invariant-swap.test.ts",
     "contract:build": "cd ../ && ./build.sh dev-sdk",
     "invariant:copy": "cp ../src/wasm/invariant.idl ./contracts/invariant/invariant.idl && cp ../target/wasm32-unknown-unknown/release/invariant_wasm.opt.wasm ./contracts/invariant/invariant.opt.wasm",
@@ -53,10 +54,10 @@
   },
   "dependencies": {
     "@gear-js/api": "^0.38.1",
-    "sails-js": "^0.1.4",
-    "typescript": "^5.4.5"
+    "sails-js": "^0.1.4"
   },
   "devDependencies": {
+    "typescript": "5.5.3",
     "@types/chai": "^4.3.11",
     "@types/mocha": "^10.0.6",
     "@typescript-eslint/eslint-plugin": "^6.16.0",
