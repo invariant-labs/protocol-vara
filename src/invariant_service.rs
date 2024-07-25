@@ -10,6 +10,7 @@ use decimal::*;
 use futures;
 use gstd::{exec, format, prelude::*, String};
 use io::*;
+use math::calculate_min_amount_out;
 use math::{
     check_tick, liquidity::Liquidity, percentage::Percentage, sqrt_price::SqrtPrice,
     token_amount::TokenAmount, MAX_SQRT_PRICE, MIN_SQRT_PRICE,
@@ -58,6 +59,10 @@ pub const BALANCE_CHANGE_COST: u64 = 100_000 * 2;
 pub const TRANSFER_COST: u64 =
     TRANSFER_GAS_LIMIT + TRANSFER_REPLY_HANDLING_COST + BALANCE_CHANGE_COST;
 
+pub enum RouteType<'a, TExecContext> {
+    Swap(&'a mut InvariantService<TExecContext>),
+    Quote,
+}
 pub struct InvariantService<TExecContext> {
     exec_context: TExecContext,
 }
@@ -190,7 +195,7 @@ where
     }
 
     pub fn get_pool_keys(&self, size: u16, offset: u16) -> (Vec<PoolKey>, u16) {
-        let invariant =InvariantStorage::as_ref();
+        let invariant = InvariantStorage::as_ref();
         let pool_keys = invariant.pool_keys.get_all(size, offset);
         let pool_keys_count = invariant.pool_keys.count();
         (pool_keys, pool_keys_count)
@@ -524,6 +529,26 @@ where
         })
     }
 
+    pub fn swap_route(
+        &mut self,
+        amount_in: TokenAmount,
+        expected_amount_out: TokenAmount,
+        slippage: Percentage,
+        swaps: Vec<SwapHop>,
+    ) -> TokenAmount {
+        panicking!(move || {
+            let amount_out = Self::route(RouteType::Swap(self), amount_in, swaps)?;
+
+            let min_amount_out = calculate_min_amount_out(expected_amount_out, slippage);
+
+            if amount_out < min_amount_out {
+                return Err(InvariantError::AmountUnderMinimumAmountOut);
+            } else {
+                Ok(amount_out)
+            }
+        })
+    }
+
     pub fn quote(
         &self,
         pool_key: PoolKey,
@@ -550,16 +575,16 @@ where
         amount_in: TokenAmount,
         swaps: Vec<SwapHop>,
     ) -> Result<TokenAmount, InvariantError> {
-        Self::route(amount_in, swaps)
+        Self::route(RouteType::Quote, amount_in, swaps)
     }
 
-    pub fn route(
+    fn route<'a>(
+        mut route_type: RouteType<'a, TExecContext>,
         amount_in: TokenAmount,
         swaps: Vec<SwapHop>,
     ) -> Result<TokenAmount, InvariantError> {
-        let invariant = InvariantStorage::as_ref();
-
         let mut next_swap_amount = amount_in;
+        let invariant = InvariantStorage::as_ref();
 
         for swap in swaps.iter() {
             let SwapHop { pool_key, x_to_y } = *swap;
@@ -569,14 +594,18 @@ where
             } else {
                 SqrtPrice::new(MAX_SQRT_PRICE.into())
             };
-
-            let result = invariant.calculate_swap(
-                pool_key,
-                x_to_y,
-                next_swap_amount,
-                true,
-                sqrt_price_limit,
-            )?;
+            let result = match &mut route_type {
+                RouteType::Swap(contract) => {
+                    contract.swap(pool_key, x_to_y, next_swap_amount, true, sqrt_price_limit)
+                }
+                RouteType::Quote => invariant.calculate_swap(
+                    pool_key,
+                    x_to_y,
+                    next_swap_amount,
+                    true,
+                    sqrt_price_limit,
+                )?,
+            };
 
             next_swap_amount = result.amount_out;
         }

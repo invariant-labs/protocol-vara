@@ -80,6 +80,11 @@ type Tick = struct {
   seconds_outside: u64,
 };
 
+type SwapHop = struct {
+  pool_key: PoolKey,
+  x_to_y: bool,
+};
+
 type InvariantError = enum {
   NotAdmin,
   NotFeeReceiver,
@@ -137,11 +142,6 @@ type QuoteResult = struct {
   ticks: vec Tick,
 };
 
-type SwapHop = struct {
-  pool_key: PoolKey,
-  x_to_y: bool,
-};
-
 constructor {
   New : (config: InvariantConfig);
 };
@@ -158,6 +158,7 @@ service Service {
   RemoveFeeTier : (fee_tier: FeeTier) -> FeeTier;
   RemovePosition : (index: u32) -> struct { TokenAmount, TokenAmount };
   Swap : (pool_key: PoolKey, x_to_y: bool, amount: TokenAmount, by_amount_in: bool, sqrt_price_limit: SqrtPrice) -> CalculateSwapResult;
+  SwapRoute : (amount_in: TokenAmount, expected_amount_out: TokenAmount, slippage: Percentage, swaps: vec SwapHop) -> TokenAmount;
   TransferPosition : (index: u32, receiver: actor_id) -> null;
   WithdrawProtocolFee : (pool_key: PoolKey) -> null;
   WithdrawSingleToken : (token: actor_id, amount: opt TokenAmount) -> TokenAmount;

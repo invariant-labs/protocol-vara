@@ -122,7 +122,6 @@ fn test_get_liquidity_ticks_different_tick_spacings() {
 
     let token_x = ActorId::from(TOKEN_X_ID);
     let token_y = ActorId::from(TOKEN_Y_ID);
-    let fee_tier = FeeTier::new(Percentage::from_scale(1, 2), 1).unwrap();
 
     let fee_tier_1 = FeeTier::new(Percentage::from_scale(1, 2), 2).unwrap();
     let fee_tier_2 = FeeTier::new(Percentage::from_scale(1, 2), 10).unwrap();
