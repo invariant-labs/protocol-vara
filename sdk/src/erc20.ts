@@ -3,6 +3,7 @@ import { KeyringPair } from '@polkadot/keyring/types'
 import { Erc20Token } from './erc20-token.js'
 import { ActorId, Signer, getWasm, integerSafeCast } from './utils.js'
 import { FUNGIBLE_TOKEN_GAS_LIMIT, DEFAULT_ADDRESS } from './consts.js'
+import { TransactionWrapper } from './utils.js'
 
 export class FungibleToken {
   private constructor(
@@ -72,7 +73,7 @@ export class FungibleToken {
   setAdmin(admin: KeyringPair) {
     this.admin = admin
   }
-  
+
   async allowance(owner: ActorId, spender: ActorId, tokenAddress: HexString): Promise<bigint> {
     this.erc20.programId = tokenAddress
 
@@ -112,19 +113,27 @@ export class FungibleToken {
   async approveTx(spender: ActorId, amount: bigint, tokenAddress: HexString) {
     this.erc20.programId = tokenAddress
 
-    return this.erc20.erc20.approve(spender as any, amount as any).withGas(this.gasLimit)
+    return new TransactionWrapper<boolean>(
+      await this.erc20.erc20.approve(spender as any, amount as any).withGas(this.gasLimit)
+    )
   }
 
-  async approve(owner: Signer, spender: ActorId, amount: bigint, tokenAddress: HexString): Promise<boolean> {
+  async approve(
+    owner: Signer,
+    spender: ActorId,
+    amount: bigint,
+    tokenAddress: HexString
+  ): Promise<boolean> {
     const tx = await this.approveTx(spender, amount, tokenAddress)
-    const { response } = await tx.withAccount(owner).signAndSend()
-    return response()
+    return tx.withAccount(owner).signAndSend()
   }
 
   async burnTx(account: ActorId, amount: bigint, tokenAddress: HexString) {
     this.erc20.programId = tokenAddress
 
-    return this.erc20.admin.burn(account as any, amount as any).withGas(this.gasLimit)
+    return new TransactionWrapper<boolean>(
+      await this.erc20.admin.burn(account as any, amount as any).withGas(this.gasLimit)
+    )
   }
 
   async burn(account: ActorId, amount: bigint, tokenAddress: HexString) {
@@ -133,14 +142,15 @@ export class FungibleToken {
     }
 
     const tx = await this.burnTx(account, amount, tokenAddress)
-    const { response } = await tx.withAccount(this.admin).signAndSend()
-    return response()
+    return tx.withAccount(this.admin).signAndSend()
   }
 
   async mintTx(account: ActorId, amount: bigint, tokenAddress: HexString) {
     this.erc20.programId = tokenAddress
 
-    return this.erc20.admin.mint(account as any, amount as any).withGas(this.gasLimit)
+    return new TransactionWrapper<boolean>(
+      await this.erc20.admin.mint(account as any, amount as any).withGas(this.gasLimit)
+    )
   }
 
   async mint(account: ActorId, amount: bigint, tokenAddress: HexString) {
@@ -149,8 +159,7 @@ export class FungibleToken {
     }
 
     const tx = await this.mintTx(account, amount, tokenAddress)
-    const { response } = await tx.withAccount(this.admin).signAndSend()
-    return response()
+    return tx.withAccount(this.admin).signAndSend()
   }
 
   async setTransferFail(flag: boolean, tokenAddress: HexString) {
@@ -159,7 +168,7 @@ export class FungibleToken {
     if (!this.admin) {
       throw new Error('Admin account is required to set transfer failure')
     }
-    
+
     const tx = await this.erc20.erc20.setFailTransfer(flag).withGas(this.gasLimit)
     const { response } = await tx.withAccount(this.admin).signAndSend()
     return response()
@@ -168,26 +177,34 @@ export class FungibleToken {
   async transferTx(to: ActorId, amount: bigint, tokenAddress: HexString) {
     this.erc20.programId = tokenAddress
 
-    return this.erc20.erc20.transfer(to as any, amount as any).withGas(this.gasLimit)
+    return new TransactionWrapper<boolean>(
+      await this.erc20.erc20.transfer(to as any, amount as any).withGas(this.gasLimit)
+    )
   }
 
   async transfer(signer: Signer, to: ActorId, amount: bigint, tokenAddress: HexString) {
     const tx = await this.transferTx(to, amount, tokenAddress)
-    const { response } = await tx.withAccount(signer).signAndSend()
-    return response()
+    return tx.withAccount(signer).signAndSend()
   }
 
   async transferFromTx(from: ActorId, to: ActorId, amount: bigint, tokenAddress: HexString) {
     this.erc20.programId = tokenAddress
 
-    return this.erc20.erc20
-      .transferFrom(from as any, to as any, amount as any)
-      .withGas(this.gasLimit)
+    return new TransactionWrapper<boolean>(
+      await this.erc20.erc20
+        .transferFrom(from as any, to as any, amount as any)
+        .withGas(this.gasLimit)
+    )
   }
 
-  async transferFrom(signer: Signer, from: ActorId, to: ActorId, amount: bigint, tokenAddress: HexString) {
+  async transferFrom(
+    signer: Signer,
+    from: ActorId,
+    to: ActorId,
+    amount: bigint,
+    tokenAddress: HexString
+  ) {
     const tx = await this.transferFromTx(from, to, amount, tokenAddress)
-    const { response } = await tx.withAccount(signer).signAndSend()
-    return response()
+    return tx.withAccount(signer).signAndSend()
   }
 }
