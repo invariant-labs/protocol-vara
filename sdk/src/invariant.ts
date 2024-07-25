@@ -53,7 +53,8 @@ import {
   QuoteResult,
   LiquidityTick,
   Tickmap,
-  PositionTick
+  PositionTick,
+  SwapHop
 } from './schema.js'
 import { getServiceNamePrefix, ZERO_ADDRESS, getFnNamePrefix } from 'sails-js'
 
@@ -681,6 +682,85 @@ export class Invariant {
   ): Promise<CalculateSwapResult> {
     const tx = (
       await this.swapTx(poolKey, xToY, amount, byAmountIn, sqrtPriceLimit, gasLimit)
+    ).withAccount(signer)
+    return tx.signAndSend()
+  }
+
+  async swapWithSlippageTx(
+    poolKey: PoolKey,
+    xToY: boolean,
+    amount: TokenAmount,
+    byAmountIn: boolean,
+    estimatedSqrtPrice: SqrtPrice,
+    slippage: Percentage,
+    gasLimit: bigint = this.gasLimit
+  ): Promise<TransactionWrapper<CalculateSwapResult>> {
+    const sqrtPriceAfterSlippage = calculateSqrtPriceAfterSlippage(
+      estimatedSqrtPrice,
+      slippage,
+      !xToY
+    )
+    return new TransactionWrapper<CalculateSwapResult>(
+      await this.contract.service
+        .swap(
+          poolKey as any,
+          xToY,
+          amount as any,
+          byAmountIn,
+          xToY ? sqrtPriceAfterSlippage - 1n : ((sqrtPriceAfterSlippage + 1n) as any)
+        )
+        .withGas(gasLimit)
+    ).withDecode(convertCalculateSwapResult)
+  }
+
+  async swapWithSlippage(
+    signer: Signer,
+    poolKey: PoolKey,
+    xToY: boolean,
+    amount: TokenAmount,
+    byAmountIn: boolean,
+    estimatedSqrtPrice: SqrtPrice,
+    slippage: Percentage,
+    gasLimit: bigint = this.gasLimit
+  ): Promise<CalculateSwapResult> {
+    const tx = (
+      await this.swapWithSlippageTx(
+        poolKey,
+        xToY,
+        amount,
+        byAmountIn,
+        estimatedSqrtPrice,
+        slippage,
+        gasLimit
+      )
+    ).withAccount(signer)
+    return tx.signAndSend()
+  }
+
+  async swapRouteTx(
+    amountIn: TokenAmount,
+    expectedAmountOut: TokenAmount,
+    slippage: Percentage,
+    swaps: SwapHop[],
+    gasLimit: bigint = this.gasLimit
+  ): Promise<TransactionWrapper<TokenAmount>> {
+    return new TransactionWrapper<TokenAmount>(
+      await this.contract.service
+        .swapRoute(amountIn as any, expectedAmountOut as any, slippage as any, swaps as any[])
+        .withGas(gasLimit)
+    )
+  }
+
+  async swapRoute(
+    signer: Signer,
+    amountIn: TokenAmount,
+    expectedAmountOut: TokenAmount,
+    slippage: Percentage,
+    swaps: SwapHop[],
+    gasLimit: bigint = this.gasLimit
+  ): Promise<TokenAmount> {
+    const tx = (
+      await this.swapRouteTx(amountIn, expectedAmountOut, slippage, swaps, gasLimit)
     ).withAccount(signer)
     return tx.signAndSend()
   }

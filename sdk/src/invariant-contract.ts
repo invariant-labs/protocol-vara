@@ -74,6 +74,11 @@ export interface Tick {
   seconds_outside: number | string;
 }
 
+export interface SwapHop {
+  pool_key: PoolKey;
+  x_to_y: boolean;
+}
+
 export type InvariantError = "notAdmin" | "notFeeReceiver" | "poolAlreadyExist" | "poolNotFound" | "tickAlreadyExist" | "invalidTickIndexOrTickSpacing" | "positionNotFound" | "tickNotFound" | "feeTierNotFound" | "poolKeyNotFound" | "amountIsZero" | "wrongLimit" | "priceLimitReached" | "noGainSwap" | "invalidTickSpacing" | "feeTierAlreadyExist" | "poolKeyAlreadyExist" | "unauthorizedFeeReceiver" | "zeroLiquidity" | "recoverableTransferError" | "unrecoverableTransferError" | "transferError" | "tokensAreSame" | "amountUnderMinimumAmountOut" | "invalidFee" | "notEmptyTickDeinitialization" | "invalidInitTick" | "invalidInitSqrtPrice" | "notEnoughGasToExecute" | "tickLimitReached" | "invalidTickIndex" | "noBalanceForTheToken" | "failedToChangeTokenBalance" | "replyHandlingFailed";
 
 export interface LiquidityTick {
@@ -96,11 +101,6 @@ export interface QuoteResult {
   ticks: Array<Tick>;
 }
 
-export interface SwapHop {
-  pool_key: PoolKey;
-  x_to_y: boolean;
-}
-
 export class InvariantContract {
   public readonly registry: TypeRegistry;
   public readonly service: Service;
@@ -119,11 +119,11 @@ export class InvariantContract {
       CalculateSwapResult: {"amountIn":"TokenAmount","amountOut":"TokenAmount","startSqrtPrice":"SqrtPrice","targetSqrtPrice":"SqrtPrice","fee":"TokenAmount","pool":"Pool","ticks":"Vec<Tick>"},
       Pool: {"liquidity":"Liquidity","sqrtPrice":"SqrtPrice","currentTickIndex":"i32","feeGrowthGlobalX":"FeeGrowth","feeGrowthGlobalY":"FeeGrowth","feeProtocolTokenX":"TokenAmount","feeProtocolTokenY":"TokenAmount","startTimestamp":"u64","lastTimestamp":"u64","feeReceiver":"[u8;32]"},
       Tick: {"index":"i32","sign":"bool","liquidityChange":"Liquidity","liquidityGross":"Liquidity","sqrtPrice":"SqrtPrice","feeGrowthOutsideX":"FeeGrowth","feeGrowthOutsideY":"FeeGrowth","secondsOutside":"u64"},
+      SwapHop: {"poolKey":"PoolKey","xToY":"bool"},
       InvariantError: {"_enum":["NotAdmin","NotFeeReceiver","PoolAlreadyExist","PoolNotFound","TickAlreadyExist","InvalidTickIndexOrTickSpacing","PositionNotFound","TickNotFound","FeeTierNotFound","PoolKeyNotFound","AmountIsZero","WrongLimit","PriceLimitReached","NoGainSwap","InvalidTickSpacing","FeeTierAlreadyExist","PoolKeyAlreadyExist","UnauthorizedFeeReceiver","ZeroLiquidity","RecoverableTransferError","UnrecoverableTransferError","TransferError","TokensAreSame","AmountUnderMinimumAmountOut","InvalidFee","NotEmptyTickDeinitialization","InvalidInitTick","InvalidInitSqrtPrice","NotEnoughGasToExecute","TickLimitReached","InvalidTickIndex","NoBalanceForTheToken","FailedToChangeTokenBalance","ReplyHandlingFailed"]},
       LiquidityTick: {"index":"i32","liquidityChange":"Liquidity","sign":"bool"},
       PositionTick: {"index":"i32","feeGrowthOutsideX":"FeeGrowth","feeGrowthOutsideY":"FeeGrowth","secondsOutside":"u64"},
       QuoteResult: {"amountIn":"TokenAmount","amountOut":"TokenAmount","targetSqrtPrice":"SqrtPrice","ticks":"Vec<Tick>"},
-      SwapHop: {"poolKey":"PoolKey","xToY":"bool"},
     }
 
     this.registry = new TypeRegistry();
@@ -306,6 +306,19 @@ export class Service {
       ['Service', 'Swap', pool_key, x_to_y, amount, by_amount_in, sqrt_price_limit],
       '(String, String, PoolKey, bool, U256, bool, u128)',
       'CalculateSwapResult',
+      this._program.programId
+    );
+  }
+
+  public swapRoute(amount_in: TokenAmount, expected_amount_out: TokenAmount, slippage: Percentage, swaps: Array<SwapHop>): TransactionBuilder<TokenAmount> {
+    if (!this._program.programId) throw new Error('Program ID is not set');
+    return new TransactionBuilder<TokenAmount>(
+      this._program.api,
+      this._program.registry,
+      'send_message',
+      ['Service', 'SwapRoute', amount_in, expected_amount_out, slippage, swaps],
+      '(String, String, U256, U256, u128, Vec<SwapHop>)',
+      'U256',
       this._program.programId
     );
   }

@@ -7,3 +7,4 @@ pub const PROGRAM_OWNER: u64 = USERS[2];
 pub const INVARIANT_ID: u64 = 105;
 pub const TOKEN_X_ID: u64 = 106;
 pub const TOKEN_Y_ID: u64 = 107;
+pub const TOKEN_Z_ID: u64 = 108;
