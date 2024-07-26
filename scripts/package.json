@@ -4,8 +4,8 @@
   "main": "target/index.js",
   "scripts": {
     "start": "npx tsc && node --experimental-wasm-modules .",
-    "node:start": "substrate-contracts-node purge-chain -y && substrate-contracts-node --rpc-port 9944 --dev",
-    "node:stop": "ps aux | grep substrate-contracts-node | tr -s ' ' | cut -d ' ' -f 2 | head -n 1 | xargs -r kill -9",
+    "node:local": "../target/tmp/gear --dev -l=error",
+    "node:local:stop": "pkill -9 gear",
     "deploy-tokens": "npx tsc && node --experimental-wasm-modules target/deploy-tokens.js",
     "deploy-invariant": "npx tsc && node --experimental-wasm-modules target/deploy-invariant.js",
     "create-position": "npx tsc && node --experimental-wasm-modules target/create-position.js",
@@ -18,7 +18,7 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
-    "@invariant-labs/vara-sdk": "0.1.2",
+    "@invariant-labs/vara-sdk": "0.1.3",
     "dotenv": "^16.4.5"
   },
   "devDependencies": {
