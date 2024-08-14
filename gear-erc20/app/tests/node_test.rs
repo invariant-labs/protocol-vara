@@ -3,7 +3,7 @@ use gclient::{EventProcessor, GearApi, Result};
 use gstd::{ActorId, Encode};
 
 mod utils_gclient;
-use sails_rtl::U256;
+use sails_rs::U256;
 use utils_gclient::*;
 const GEAR_PATH: &str = "../../target/tmp/gear";
 

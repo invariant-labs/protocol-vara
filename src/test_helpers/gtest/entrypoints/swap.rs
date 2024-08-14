@@ -8,7 +8,7 @@ use io::*;
 use math::{
     liquidity::Liquidity, percentage::Percentage, sqrt_price::SqrtPrice, token_amount::TokenAmount,
 };
-use sails_rtl::ActorId;
+use sails_rs::ActorId;
 
 pub fn swap(
     invariant: &Program,

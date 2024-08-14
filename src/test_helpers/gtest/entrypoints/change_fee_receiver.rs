@@ -6,7 +6,7 @@ use contracts::{FeeTier, PoolKey};
 use gtest::*;
 use io::*;
 use math::percentage::Percentage;
-use sails_rtl::ActorId;
+use sails_rs::ActorId;
 
 pub fn change_fee_receiver(
     invariant: &Program,

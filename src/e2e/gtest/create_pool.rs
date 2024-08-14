@@ -6,7 +6,7 @@ use math::{
     percentage::Percentage,
     sqrt_price::{calculate_sqrt_price, SqrtPrice},
 };
-use sails_rtl::{prelude::*, ActorId};
+use sails_rs::{prelude::*, ActorId};
 
 #[test]
 fn test_create_pool() {

@@ -5,10 +5,10 @@ use core::marker::PhantomData;
 use gstd::{exec, msg, String};
 use gstd::{ActorId, Decode, Encode, ToString, TypeInfo, Vec};
 use primitive_types::U256;
-use sails_rtl::gstd::gservice;
-use sails_rtl::Box;
+use sails_rs::gstd::service;
+use sails_rs::Box;
 use super::erc20::storage::{AllowancesStorage, BalancesStorage, TotalSupplyStorage};
-use sails_rtl::format;
+use sails_rs::format;
 pub mod funcs;
 
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Encode, Decode, TypeInfo)]
@@ -16,15 +16,15 @@ pub mod funcs;
 #[scale_info(crate = gstd::scale_info)]
 pub enum Event {
     Minted {
-        to: sails_rtl::ActorId,
+        to: sails_rs::ActorId,
         value: U256,
     },
     Burned {
-        from: sails_rtl::ActorId,
+        from: sails_rs::ActorId,
         value: U256,
     },
     Killed {
-        inheritor: sails_rtl::ActorId,
+        inheritor: sails_rs::ActorId,
     },
 }
 
@@ -54,7 +54,7 @@ impl AdminService {
     }
 }
 
-#[gservice(events=Event)]
+#[service(events=Event)]
 impl AdminService {
     pub fn new(
         roles_service: services::roles::RolesService,
@@ -66,7 +66,7 @@ impl AdminService {
         }
     }
 
-    pub fn mint(&mut self, to: sails_rtl::ActorId, value: U256) -> bool {
+    pub fn mint(&mut self, to: sails_rs::ActorId, value: U256) -> bool {
         services::utils::panicking(|| {
             (!self.pausable_service.is_paused())
                 .then_some(())
@@ -95,7 +95,7 @@ impl AdminService {
         mutated
     }
 
-    pub fn burn(&mut self, from: sails_rtl::ActorId, value: U256) -> bool {
+    pub fn burn(&mut self, from: sails_rs::ActorId, value: U256) -> bool {
         services::utils::panicking(|| {
             (!self.pausable_service.is_paused())
                 .then_some(())
@@ -155,20 +155,20 @@ impl AdminService {
         &self,
         skip: u32,
         take: u32,
-    ) -> Vec<((sails_rtl::ActorId, sails_rtl::ActorId), U256)> {
+    ) -> Vec<((sails_rs::ActorId, sails_rs::ActorId), U256)> {
         funcs::allowances(AllowancesStorage::as_ref(), skip as usize, take as usize)
             .into_iter()
             .map(|((id1, id2), v)| ((id1.into(), id2.into()), v.into()))
             .collect()
     }
 
-    pub fn balances(&self, skip: u32, take: u32) -> Vec<(sails_rtl::ActorId, U256)> {
+    pub fn balances(&self, skip: u32, take: u32) -> Vec<(sails_rs::ActorId, U256)> {
         funcs::balances(BalancesStorage::as_ref(), skip as usize, take as usize)
             .into_iter()
             .map(|(id, v)| (id.into(), v.into()))
             .collect()
     }
-    pub fn has_role(&self, actor: sails_rtl::ActorId, role: String) -> bool {
+    pub fn has_role(&self, actor: sails_rs::ActorId, role: String) -> bool {
         self.roles_service.has_role(actor, role)
     }
 
@@ -176,7 +176,7 @@ impl AdminService {
         self.roles_service.roles()
     }
 
-    pub fn grant_role(&mut self, to: sails_rtl::ActorId, role: Role) -> bool {
+    pub fn grant_role(&mut self, to: sails_rs::ActorId, role: Role) -> bool {
         services::utils::panicking(|| {
             (!self.pausable_service.is_paused())
                 .then_some(())
@@ -197,7 +197,7 @@ impl AdminService {
         })
     }
 
-    pub fn remove_role(&mut self, from: sails_rtl::ActorId, role: Role) -> bool {
+    pub fn remove_role(&mut self, from: sails_rs::ActorId, role: Role) -> bool {
         services::utils::panicking(|| {
             (!self.pausable_service.is_paused())
                 .then_some(())
@@ -223,7 +223,7 @@ impl AdminService {
     }
 
     // TODO (sails): self `pub fn kill(&mut self) -> !`
-    pub fn kill(&mut self, inheritor: sails_rtl::ActorId) -> () {
+    pub fn kill(&mut self, inheritor: sails_rs::ActorId) -> () {
         services::utils::panicking(|| {
             self.roles_service
                 .ensure_has_role::<FungibleAdmin>(msg::source())

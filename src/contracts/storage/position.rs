@@ -11,7 +11,7 @@ use math::{
         token_amount::TokenAmount,
     },
 };
-use sails_rtl::{Decode, Encode, TypeInfo};
+use sails_rs::{Decode, Encode, TypeInfo};
 use traceable_result::*;
 
 #[derive(PartialEq, Eq, Debug, Default, Clone, Copy, Decode, Encode, TypeInfo)]

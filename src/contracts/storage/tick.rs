@@ -6,7 +6,7 @@ use math::types::{
     fee_growth::FeeGrowth, liquidity::Liquidity, sqrt_price::calculate_sqrt_price,
     sqrt_price::SqrtPrice,
 };
-use sails_rtl::{Decode, Encode, TypeInfo};
+use sails_rs::{Decode, Encode, TypeInfo};
 use traceable_result::*;
 
 pub const LIQUIDITY_TICK_LIMIT: usize = 21544;

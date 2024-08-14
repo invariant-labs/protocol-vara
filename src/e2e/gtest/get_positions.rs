@@ -7,7 +7,7 @@ use math::types::{
     percentage::Percentage,
     sqrt_price::{calculate_sqrt_price, SqrtPrice},
 };
-use sails_rtl::ActorId;
+use sails_rs::ActorId;
 
 #[test]
 fn test_get_positions() {

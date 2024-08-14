@@ -8,7 +8,7 @@ license = "GPL-3.0"
 gstd.workspace = true
 primitive-types.workspace = true
 log.workspace = true
-sails-rtl.workspace = true
+sails-rs.workspace = true
 gcore.workspace = true
 gear-core.workspace = true
 

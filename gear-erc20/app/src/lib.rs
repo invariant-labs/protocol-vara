@@ -6,18 +6,18 @@
 // TODO (sails): consider sub-services inside (for observing state, for example)
 // TODO (sails): rename gstd event depositor here to use `notifier`::`Notifier`/`Informer`.
 use gstd::{msg, ActorId, String};
-use sails_rtl::gstd::{gprogram, groute};
+use sails_rs::gstd::{program, route};
 use services::{admin, aggregated, erc20, pausable, roles};
 
 pub mod services;
 
-type ServiceOf<T> = <T as sails_rtl::gstd::services::Service>::Exposure;
+type ServiceOf<T> = <T as sails_rs::gstd::services::Service>::Exposure;
 
 pub struct Program(());
 
-// TODO (sails): allow to import all necessary macros at once (gprogram, grout, etc).
+// TODO (sails): allow to import all necessary macros at once (program, grout, etc).
 // TODO (sails): stop forcing deriving default on `Program`.
-#[gprogram]
+#[program]
 impl Program {
     pub fn handle() -> u8 {
         return 1;
@@ -48,7 +48,7 @@ impl Program {
 
     // TODO (sails): service Erc20: Pausable [pipeline]
     // TODO (sails): Should reflect on multiple names as pipeline (aliasing)
-    #[groute("erc20")]
+    #[route("erc20")]
     pub fn aggregated(&self) -> aggregated::AggregatedService {
         aggregated::AggregatedService::new(self.erc20(), self.pausable())
     }

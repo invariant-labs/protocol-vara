@@ -10,7 +10,7 @@ use math::{
     token_amount::TokenAmount,
     MAX_SQRT_PRICE, MIN_SQRT_PRICE,
 };
-use sails_rtl::ActorId;
+use sails_rs::ActorId;
 #[test]
 fn test_cross_both_sides() {
     let sys = System::new();

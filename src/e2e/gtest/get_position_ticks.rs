@@ -7,7 +7,7 @@ use math::types::{
     percentage::Percentage,
     sqrt_price::{calculate_sqrt_price, SqrtPrice},
 };
-use sails_rtl::prelude::*;
+use sails_rs::prelude::*;
 
 #[test]
 fn test_get_position_ticks() {

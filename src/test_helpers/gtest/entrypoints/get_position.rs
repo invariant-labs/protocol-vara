@@ -5,7 +5,7 @@ use crate::{
 use contracts::*;
 use gtest::*;
 use io::*;
-use sails_rtl::ActorId;
+use sails_rs::ActorId;
 
 pub fn get_position(
     invariant: &Program,

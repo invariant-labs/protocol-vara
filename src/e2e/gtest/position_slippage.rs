@@ -4,7 +4,7 @@ use decimal::*;
 use gstd::prelude::*;
 use gtest::*;
 use math::{liquidity::Liquidity, sqrt_price::SqrtPrice};
-use sails_rtl::ActorId;
+use sails_rs::ActorId;
 
 #[test]
 fn test_position_slippage_zero_slippage_and_inside_range() {

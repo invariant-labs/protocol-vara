@@ -15,12 +15,12 @@ use math::{
     check_tick, liquidity::Liquidity, percentage::Percentage, sqrt_price::SqrtPrice,
     token_amount::TokenAmount, MAX_SQRT_PRICE, MIN_SQRT_PRICE,
 };
-use sails_rtl::gstd::{
-    gservice,
+use sails_rs::gstd::{
+    service,
     msg::{self, reply, CodecMessageFuture},
     ExecContext,
 };
-use sails_rtl::{ActorId, Decode, Encode, MessageId};
+use sails_rs::{ActorId, Decode, Encode, MessageId};
 
 fn program_id() -> ActorId {
     exec::program_id().into()
@@ -67,14 +67,14 @@ pub struct InvariantService<TExecContext> {
     exec_context: TExecContext,
 }
 
-// methods are split from main impl block to avoid having them added as methods by gservice macro
+// methods are split from main impl block to avoid having them added as methods by service macro
 impl<TExecContext> InvariantService<TExecContext> {
     pub fn seed(config: InvariantConfig) {
         InvariantStorage::with_config(config).expect("Invariant storage already set")
     }
 }
 
-#[gservice(events=InvariantEvent)]
+#[service(events=InvariantEvent)]
 impl<TExecContext> InvariantService<TExecContext>
 where
     TExecContext: ExecContext,

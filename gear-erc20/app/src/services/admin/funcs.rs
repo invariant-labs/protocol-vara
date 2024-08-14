@@ -2,7 +2,7 @@ use crate::services::erc20::{
     funcs,
     utils::{Result, *},
 };
-use sails_rtl::ActorId;
+use sails_rs::ActorId;
 use gstd::Vec;
 use primitive_types::U256;
 
@@ -187,7 +187,7 @@ mod tests {
 
     mod utils {
         use super::{AllowancesMap, BalancesMap};
-        use sails_rtl::{ActorId, ToString};
+        use sails_rs::{ActorId, ToString};
         use primitive_types::U256;
 
         pub fn allowances_map<const N: usize>(

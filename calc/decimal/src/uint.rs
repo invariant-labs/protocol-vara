@@ -8,7 +8,7 @@ use crate::{UintCast, UintCheckedCast};
 use alloc::string::{String, ToString};
 use decimal_core::impl_units_casts;
 #[cfg(not(feature = "invariant-wasm"))]
-pub use sails_rtl::{U128, U256, U512};
+pub use sails_rs::{U128, U256, U512};
 
 use uint::construct_uint;
 
@@ -154,7 +154,7 @@ pub fn to_u320(n: u128) -> U320 {
 mod tests {
     use super::*;
     use crate::traits::{UintCast, UintCheckedCast};
-    use sails_rtl::{U128, U256, U512};
+    use sails_rs::{U128, U256, U512};
     #[test]
     fn test_upcast() {
         assert_eq!(U256::uint_cast(U128::from(1u8)), U256::from(1u8));

@@ -12,7 +12,7 @@ math.workspace = true
 decimal.workspace = true
 io.workspace = true
 contracts.workspace = true
-sails-rtl.workspace = true
+sails-rs.workspace = true
 futures = { version = "0.3.30", features = [
   "async-await",
 ], default-features = false }
@@ -57,24 +57,23 @@ invariant.path = "."
 io.path = "io"
 
 # Gear dependencies
-gstd.version = "=1.4.1"
-gtest.version = "=1.4.1"
-gear-core.version = "=1.4.1"
-gcore.version = "=1.4.1"
-gsys.version = "=1.4.1"
-gear-wasm-builder.version = "=1.4.1"
-gwasm-builder = {version = "=1.4.1", package = "gear-wasm-builder"}
-gmeta.version = "=1.4.1"
-gclient.version = "=1.4.1"
-gear-core-errors.version = "=1.4.1"
-sails-idl-gen = { git = "https://github.com/gear-tech/sails", rev = "31a3c1a06817b69040af0c069967dd0b31c9530b" }
-sails-rtl = { git = "https://github.com/gear-tech/sails", rev = "31a3c1a06817b69040af0c069967dd0b31c9530b" }
+gstd = "1.4.2"
+gtest = "1.4.2"
+gear-core = "1.4.2"
+gcore = "1.4.2"
+gsys = "1.4.2"
+gear-wasm-builder = "1.4.2"
+gwasm-builder = {version = "1.4.2", package = "gear-wasm-builder"}
+gmeta = "1.4.2"
+gclient = "1.4.2"
+gear-core-errors = "1.4.2"
+sails-idl-gen = "0.2.0" # { git = "https://github.com/gear-tech/sails", rev = "31a3c1a06817b69040af0c069967dd0b31c9530b" }
+sails-rs = "0.2.0" # { git = "https://github.com/gear-tech/sails", rev = "31a3c1a06817b69040af0c069967dd0b31c9530b" }
 
 # External
 tokio = { version = "1.36", features = ["full"] }
 xshell = "0.2"
-anyhow = "1"
+anyhow = "1"  
 log = "*"
 env_logger = "*"
 primitive-types = { version = "*", default-features = false }
-

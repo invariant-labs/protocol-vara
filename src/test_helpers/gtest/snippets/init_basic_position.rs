@@ -6,7 +6,7 @@ use gtest::*;
 use math::{
     fee_growth::FeeGrowth, liquidity::Liquidity, percentage::Percentage, token_amount::TokenAmount,
 };
-use sails_rtl::ActorId;
+use sails_rs::ActorId;
 
 pub fn init_basic_position(
     sys: &System,

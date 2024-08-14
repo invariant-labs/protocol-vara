@@ -1,6 +1,6 @@
 use contracts::*;
 use gtest::*;
-use sails_rtl::{ActorId, Vec};
+use sails_rs::{ActorId, Vec};
 
 use io::*;
 use math::{percentage::Percentage, token_amount::TokenAmount};

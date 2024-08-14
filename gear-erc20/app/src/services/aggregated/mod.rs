@@ -3,9 +3,9 @@ use core::marker::PhantomData;
 use gstd::String;
 use gstd::{ActorId, Decode, Encode, ToString, TypeInfo, Vec};
 use primitive_types::U256;
-use sails_rtl::format;
-use sails_rtl::gstd::gservice;
-use sails_rtl::Box;
+use sails_rs::format;
+use sails_rs::gstd::service;
+use sails_rs::Box;
 
 // TODO (breathx): once supported in sails impl Clone here
 pub struct AggregatedService {
@@ -25,7 +25,7 @@ impl AggregatedService {
     }
 }
 
-#[gservice]
+#[service]
 impl AggregatedService {
     pub fn new(
         erc20_service: services::erc20::ERC20Service,
@@ -37,11 +37,11 @@ impl AggregatedService {
         }
     }
 
-    pub fn allowance(&self, owner: sails_rtl::ActorId, spender: sails_rtl::ActorId) -> U256 {
+    pub fn allowance(&self, owner: sails_rs::ActorId, spender: sails_rs::ActorId) -> U256 {
         self.erc20_service.allowance(owner, spender)
     }
 
-    pub fn approve(&mut self, spender: sails_rtl::ActorId, value: U256) -> bool {
+    pub fn approve(&mut self, spender: sails_rs::ActorId, value: U256) -> bool {
         services::utils::panicking(|| {
             (!self.pausable_service.is_paused())
                 .then_some(())
@@ -50,7 +50,7 @@ impl AggregatedService {
         self.erc20_service.approve(spender, value)
     }
 
-    pub fn balance_of(&self, owner: sails_rtl::ActorId) -> U256 {
+    pub fn balance_of(&self, owner: sails_rs::ActorId) -> U256 {
         self.erc20_service.balance_of(owner)
     }
 
@@ -70,7 +70,7 @@ impl AggregatedService {
         self.erc20_service.total_supply()
     }
 
-    pub fn transfer(&mut self, to: sails_rtl::ActorId, value: U256) -> bool {
+    pub fn transfer(&mut self, to: sails_rs::ActorId, value: U256) -> bool {
         services::utils::panicking(|| {
             (!self.pausable_service.is_paused())
                 .then_some(())
@@ -81,8 +81,8 @@ impl AggregatedService {
 
     pub fn transfer_from(
         &mut self,
-        from: sails_rtl::ActorId,
-        to: sails_rtl::ActorId,
+        from: sails_rs::ActorId,
+        to: sails_rs::ActorId,
         value: U256,
     ) -> bool {
         services::utils::panicking(|| {

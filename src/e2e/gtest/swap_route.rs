@@ -7,7 +7,7 @@ use math::types::{
     liquidity::Liquidity, percentage::Percentage, sqrt_price::calculate_sqrt_price,
     token_amount::TokenAmount,
 };
-use sails_rtl::ActorId;
+use sails_rs::ActorId;
 #[test]
 fn swap_route_test() {
     let sys = System::new();

@@ -1,7 +1,7 @@
 use gclient::{EventProcessor, GearApi, Result};
 use gear_core::ids::{MessageId, ProgramId};
 use gstd::{ActorId, Decode, Encode};
-use sails_rtl::U256;
+use sails_rs::U256;
 
 pub const USERS_STR: &[&str] = &["//John", "//Mike", "//Dan"];
 
@@ -95,7 +95,7 @@ pub async fn get_state_balances(
     listener: &mut gclient::EventListener,
     skip: u32,
     take: u32,
-) -> Vec<(sails_rtl::ActorId, U256)> {
+) -> Vec<(sails_rs::ActorId, U256)> {
     let request = [
         "Admin".encode(),
         "Balances".to_string().encode(),
@@ -118,7 +118,7 @@ pub async fn get_state_balances(
         .await
         .expect("Error listen reply");
 
-    let decoded_reply: (String, String, Vec<(sails_rtl::ActorId, U256)>) = match raw_reply {
+    let decoded_reply: (String, String, Vec<(sails_rs::ActorId, U256)>) = match raw_reply {
         Ok(raw_reply) => decode(raw_reply).expect("Erroe decode reply"),
         Err(_error) => gstd::panic!("Error in getting reply"),
     };

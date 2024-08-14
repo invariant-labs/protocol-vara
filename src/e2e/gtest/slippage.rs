@@ -5,7 +5,7 @@ use gtest::*;
 use math::{
     percentage::Percentage, sqrt_price::SqrtPrice, token_amount::TokenAmount, MAX_SQRT_PRICE,
 };
-use sails_rtl::ActorId;
+use sails_rs::ActorId;
 
 #[test]
 fn test_basic_slippage() {

@@ -1,10 +1,10 @@
 use crate::services::{self, pausable::roles::PauseAdmin, roles::storage::RolesStorage};
 use core::marker::PhantomData;
 use gstd::{msg, ActorId, Decode, Encode, String, TypeInfo, Vec};
-use sails_rtl::format;
-use sails_rtl::gstd::gservice;
+use sails_rs::format;
+use sails_rs::gstd::service;
 use storage::StateStorage;
-use sails_rtl::Box;
+use sails_rs::Box;
 
 pub use utils::*;
 
@@ -39,7 +39,7 @@ impl Service {
     }
 }
 
-#[gservice(events=Event)]
+#[service(events=Event)]
 impl Service {
     pub fn new(roles_service: services::roles::RolesService) -> Self {
         Self { roles_service }
@@ -80,7 +80,7 @@ impl Service {
     }
 
     // TODO (breathx): consider as atomic
-    pub fn delegate_admin(&mut self, actor: sails_rtl::ActorId) -> bool {
+    pub fn delegate_admin(&mut self, actor: sails_rs::ActorId) -> bool {
         services::utils::panicking(move || -> services::roles::Result<bool> {
             let source = msg::source();
 

@@ -6,7 +6,7 @@ use gtest::*;
 use math::{
     percentage::Percentage, sqrt_price::*, token_amount::*, MAX_SQRT_PRICE, MIN_SQRT_PRICE,
 };
-use sails_rtl::ActorId;
+use sails_rs::ActorId;
 
 pub fn big_deposit_and_swap(sys: &System, x_to_y: bool) {
     let token_x = ActorId::from(TOKEN_X_ID);

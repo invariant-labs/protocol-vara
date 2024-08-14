@@ -11,7 +11,7 @@ use math::{
     sqrt_price::{calculate_sqrt_price, check_tick_to_sqrt_price_relationship, SqrtPrice},
     token_amount::TokenAmount,
 };
-use sails_rtl::{ActorId, Decode, Encode, TypeInfo};
+use sails_rs::{ActorId, Decode, Encode, TypeInfo};
 use traceable_result::*;
 
 #[derive(PartialEq, Debug, Clone, Decode, Encode, TypeInfo, Eq)]

@@ -3,7 +3,7 @@ use contracts::*;
 use decimal::*;
 use gtest::*;
 use math::{fee_growth::FeeGrowth, liquidity::Liquidity, percentage::Percentage};
-use sails_rtl::ActorId;
+use sails_rs::ActorId;
 #[test]
 fn test_cross() {
     let sys = System::new();

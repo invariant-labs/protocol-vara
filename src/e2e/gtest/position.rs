@@ -10,7 +10,7 @@ use math::{
     token_amount::TokenAmount,
     MIN_SQRT_PRICE,
 };
-use sails_rtl::{prelude::*, ActorId};
+use sails_rs::{prelude::*, ActorId};
 
 #[test]
 fn test_create_position() {

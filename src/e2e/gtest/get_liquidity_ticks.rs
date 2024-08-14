@@ -7,8 +7,8 @@ use math::{
     percentage::Percentage,
     sqrt_price::{calculate_sqrt_price, SqrtPrice},
 };
-use sails_rtl::prelude::*;
-use sails_rtl::From;
+use sails_rs::prelude::*;
+use sails_rs::From;
 
 #[test]
 fn test_get_liquidity_ticks() {

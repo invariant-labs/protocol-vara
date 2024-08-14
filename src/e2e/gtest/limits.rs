@@ -11,7 +11,7 @@ use math::{
     token_amount::TokenAmount,
     MAX_SQRT_PRICE, MAX_TICK, MIN_SQRT_PRICE,
 };
-use sails_rtl::ActorId;
+use sails_rs::ActorId;
 
 #[test]
 fn test_limits_big_deposit_x_and_swap_y() {

@@ -1,7 +1,7 @@
 use crate::{send_request, test_helpers::gtest::PROGRAM_OWNER};
 use gstd::{Decode, Encode, TypeInfo};
 use gtest::*;
-use sails_rtl::ActorId;
+use sails_rs::ActorId;
 use decimal::U256;
 
 #[must_use]
