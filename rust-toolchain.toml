@@ -1,2 +1,2 @@
-rustup show active-toolchain[toolchain]
-channel = "1.80"
+[toolchain]
+channel = "1.78"
