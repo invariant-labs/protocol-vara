@@ -134,15 +134,15 @@ fn gtest_test_transfer_fail() {
     let res = send_request!(ft: ft, user: USERS[0], service_name: "Admin", action: "Mint", payload: (admin_user, U256::from(value)));
     assert!(!res.main_failed());
 
-    let res = send_request!(ft: ft, user: USERS[0], service_name: "Erc20", action: "SetFailTransfer", payload: (true));
+    let res = send_request!(ft: ft, user: USERS[0], service_name: "Vft", action: "SetFailTransfer", payload: (true));
     assert!(!res.main_failed());
 
-    let res = send_request!(ft: ft, user: USERS[0], service_name: "Erc20", action: "Transfer", payload: (user, U256::from(value)));
+    let res = send_request!(ft: ft, user: USERS[0], service_name: "Vft", action: "Transfer", payload: (user, U256::from(value)));
     res.assert_panicked_with("Manually forced panic");
     
-    let res = send_request!(ft: ft, user: USERS[0], service_name: "Erc20", action: "SetFailTransfer", payload: (false));
+    let res = send_request!(ft: ft, user: USERS[0], service_name: "Vft", action: "SetFailTransfer", payload: (false));
     assert!(!res.main_failed());
 
-    let res = send_request!(ft: ft, user: USERS[0], service_name: "Erc20", action: "Transfer", payload: (user, U256::from(value)));
+    let res = send_request!(ft: ft, user: USERS[0], service_name: "Vft", action: "Transfer", payload: (user, U256::from(value)));
     assert!(!res.main_failed());
 }

@@ -77,44 +77,44 @@ export class FungibleToken {
   async allowance(owner: ActorId, spender: ActorId, tokenAddress: HexString): Promise<bigint> {
     this.erc20.programId = tokenAddress
 
-    return this.erc20.erc20.allowance(owner as any, spender as any, DEFAULT_ADDRESS)
+    return this.erc20.vft.allowance(owner as any, spender as any, DEFAULT_ADDRESS)
   }
 
   async balanceOf(owner: ActorId, tokenAddress: HexString): Promise<bigint> {
     this.erc20.programId = tokenAddress
 
-    return this.erc20.erc20.balanceOf(owner as any, DEFAULT_ADDRESS)
+    return this.erc20.vft.balanceOf(owner as any, DEFAULT_ADDRESS)
   }
 
   async decimals(tokenAddress: HexString): Promise<bigint> {
     this.erc20.programId = tokenAddress
 
-    return BigInt(await this.erc20.erc20.decimals(DEFAULT_ADDRESS))
+    return BigInt(await this.erc20.vft.decimals(DEFAULT_ADDRESS))
   }
 
   async name(tokenAddress: HexString): Promise<string> {
     this.erc20.programId = tokenAddress
 
-    return this.erc20.erc20.name(DEFAULT_ADDRESS)
+    return this.erc20.vft.name(DEFAULT_ADDRESS)
   }
 
   async symbol(tokenAddress: HexString): Promise<string> {
     this.erc20.programId = tokenAddress
 
-    return this.erc20.erc20.symbol(DEFAULT_ADDRESS)
+    return this.erc20.vft.symbol(DEFAULT_ADDRESS)
   }
 
   async totalSupply(tokenAddress: HexString): Promise<bigint> {
     this.erc20.programId = tokenAddress
 
-    return this.erc20.erc20.totalSupply(DEFAULT_ADDRESS)
+    return this.erc20.vft.totalSupply(DEFAULT_ADDRESS)
   }
 
   async approveTx(spender: ActorId, amount: bigint, tokenAddress: HexString) {
     this.erc20.programId = tokenAddress
 
     return new TransactionWrapper<boolean>(
-      await this.erc20.erc20.approve(spender as any, amount as any).withGas(this.gasLimit)
+      await this.erc20.vft.approve(spender as any, amount as any).withGas(this.gasLimit)
     )
   }
 
@@ -169,7 +169,7 @@ export class FungibleToken {
       throw new Error('Admin account is required to set transfer failure')
     }
 
-    const tx = await this.erc20.erc20.setFailTransfer(flag).withGas(this.gasLimit)
+    const tx = await this.erc20.vft.setFailTransfer(flag).withGas(this.gasLimit)
     const { response } = await tx.withAccount(this.admin).signAndSend()
     return response()
   }
@@ -178,7 +178,7 @@ export class FungibleToken {
     this.erc20.programId = tokenAddress
 
     return new TransactionWrapper<boolean>(
-      await this.erc20.erc20.transfer(to as any, amount as any).withGas(this.gasLimit)
+      await this.erc20.vft.transfer(to as any, amount as any).withGas(this.gasLimit)
     )
   }
 
@@ -191,7 +191,7 @@ export class FungibleToken {
     this.erc20.programId = tokenAddress
 
     return new TransactionWrapper<boolean>(
-      await this.erc20.erc20
+      await this.erc20.vft
         .transferFrom(from as any, to as any, amount as any)
         .withGas(this.gasLimit)
     )

@@ -1044,7 +1044,7 @@ where
             return Err(InvariantError::TransferError);
         }
 
-        let service_name = "Erc20".encode();
+        let service_name = "Vft".encode();
         let action = "TransferFrom".encode();
 
         let request = [

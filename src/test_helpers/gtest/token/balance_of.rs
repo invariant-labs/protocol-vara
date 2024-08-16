@@ -7,7 +7,7 @@ pub fn balance_of(token: &Program, account: u64) -> U256 {
     send_query!(
       program: token,
       user: REGULAR_USER_1,
-      service_name: "Erc20",
+      service_name: "Vft",
       action: "BalanceOf",
       payload: (ActorId::from(account)),
       response_type: U256

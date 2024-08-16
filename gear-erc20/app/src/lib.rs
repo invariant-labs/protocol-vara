@@ -48,7 +48,7 @@ impl Program {
 
     // TODO (sails): service Erc20: Pausable [pipeline]
     // TODO (sails): Should reflect on multiple names as pipeline (aliasing)
-    #[route("erc20")]
+    #[route("vft")]
     pub fn aggregated(&self) -> aggregated::AggregatedService {
         aggregated::AggregatedService::new(self.erc20(), self.pausable())
     }
