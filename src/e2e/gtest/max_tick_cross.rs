@@ -10,7 +10,7 @@ use math::{
     MAX_SQRT_PRICE, MIN_SQRT_PRICE,
 };
 
-use sails_rtl::ActorId;
+use sails_rs::ActorId;
 
 #[test]
 fn max_tick_cross() {

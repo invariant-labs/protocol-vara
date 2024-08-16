@@ -9,7 +9,7 @@ use math::{
     sqrt_price::{calculate_sqrt_price, SqrtPrice},
     token_amount::TokenAmount,
 };
-use sails_rtl::ActorId;
+use sails_rs::ActorId;
 
 pub fn multiple_swap(x_to_y: bool) {
     let sys = System::new();

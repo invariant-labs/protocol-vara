@@ -6,7 +6,7 @@ use math::{
     fee_growth::FeeGrowth, liquidity::Liquidity, percentage::Percentage, sqrt_price::SqrtPrice,
     token_amount::TokenAmount, MIN_SQRT_PRICE,
 };
-use sails_rtl::ActorId;
+use sails_rs::ActorId;
 pub fn init_cross_swap(invariant: &Program, token_x_program: &Program, token_y_program: &Program) {
     let token_x = ActorId::from(TOKEN_X_ID);
     let token_y = ActorId::from(TOKEN_Y_ID);

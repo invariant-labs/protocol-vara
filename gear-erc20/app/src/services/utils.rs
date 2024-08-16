@@ -13,6 +13,11 @@ pub fn panic(err: impl Debug) -> ! {
     ext::panic(&format!("{err:?}"))
 }
 
+// this only exists to
+pub fn wrapped_panic(err: impl Debug) -> ! {
+    ext::panic(&format!("panicked with '{err:?}'"))
+}
+
 #[macro_export]
 macro_rules! declare_storage {
     (name: $name: ident, ty: $ty: ty $(,)?) => {

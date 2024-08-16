@@ -6,7 +6,7 @@ use contracts::{FeeTier, PoolKey};
 use gtest::*;
 use io::*;
 use math::{percentage::Percentage, sqrt_price::SqrtPrice};
-use sails_rtl::ActorId;
+use sails_rs::ActorId;
 
 pub fn create_pool(
     invariant: &Program,

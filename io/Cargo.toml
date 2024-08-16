@@ -8,4 +8,4 @@ gmeta.workspace = true
 gstd.workspace = true
 contracts.workspace = true
 math.workspace = true
-sails-rtl.workspace = true
+sails-rs.workspace = true

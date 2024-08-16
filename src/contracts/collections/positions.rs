@@ -1,5 +1,5 @@
 use crate::{InvariantError, Position};
-use sails_rtl::{collections::HashMap, ActorId, Vec};
+use sails_rs::{collections::HashMap, ActorId, Vec};
 
 #[derive(Debug, Default)]
 pub struct Positions {

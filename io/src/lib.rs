@@ -1,6 +1,6 @@
 #![no_std]
 use contracts::*;
-use sails_rtl::{ActorId, Decode, Encode, TypeInfo, Vec};
+use sails_rs::{ActorId, Decode, Encode, TypeInfo, Vec};
 use math::{
     percentage::Percentage,
     token_amount::TokenAmount,

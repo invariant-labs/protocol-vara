@@ -3,7 +3,7 @@ use contracts::*;
 use decimal::*;
 use gtest::*;
 use math::{liquidity::Liquidity, percentage::Percentage, token_amount::TokenAmount};
-use sails_rtl::ActorId;
+use sails_rs::ActorId;
 
 pub fn init_cross_position(
     invariant: &Program,

@@ -1,6 +1,6 @@
 use crate::errors::InvariantError;
 use crate::storage::fee_tier::FeeTier;
-use sails_rtl::{Decode, Encode, TypeInfo, Vec};
+use sails_rs::{Decode, Encode, TypeInfo, Vec};
 
 #[derive(Decode, Encode, TypeInfo, PartialEq, Eq, Clone, Debug, Default)]
 #[codec(crate = gstd::codec)]

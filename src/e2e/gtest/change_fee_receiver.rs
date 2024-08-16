@@ -5,7 +5,7 @@ use contracts::*;
 use decimal::*;
 use gtest::*;
 use math::{percentage::Percentage, sqrt_price::calculate_sqrt_price};
-use sails_rtl::ActorId;
+use sails_rs::ActorId;
 
 #[test]
 fn test_change_fee_receiver() {

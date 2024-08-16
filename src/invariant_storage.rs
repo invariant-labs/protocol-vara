@@ -12,7 +12,7 @@ pub use math::{
     token_amount::TokenAmount,
     MAX_SQRT_PRICE, MIN_SQRT_PRICE,
 };
-pub use sails_rtl::{ActorId, MessageId};
+pub use sails_rs::{ActorId, MessageId};
 pub use traceable_result::*;
 
 #[derive(Debug, Default)]

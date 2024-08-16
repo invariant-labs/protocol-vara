@@ -4,7 +4,7 @@ use contracts::*;
 use decimal::*;
 use gtest::*;
 use math::{percentage::Percentage, sqrt_price::calculate_sqrt_price, token_amount::TokenAmount};
-use sails_rtl::ActorId;
+use sails_rs::ActorId;
 
 #[test]
 fn test_interaction_with_pool_on_removed_fee_tier() {

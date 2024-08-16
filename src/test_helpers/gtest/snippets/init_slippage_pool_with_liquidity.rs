@@ -7,7 +7,7 @@ use math::{
     fee_growth::FeeGrowth, liquidity::Liquidity, percentage::Percentage,
     sqrt_price::calculate_sqrt_price, token_amount::TokenAmount,
 };
-use sails_rtl::ActorId;
+use sails_rs::ActorId;
 
 pub fn init_slippage_pool_with_liquidity(
     sys: &System,

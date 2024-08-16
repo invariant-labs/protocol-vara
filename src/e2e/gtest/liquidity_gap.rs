@@ -11,7 +11,7 @@ use math::{
     token_amount::TokenAmount,
     MIN_SQRT_PRICE,
 };
-use sails_rtl::ActorId;
+use sails_rs::ActorId;
 
 #[test]
 fn test_liquidity_gap() {

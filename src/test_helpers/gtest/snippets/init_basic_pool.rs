@@ -3,7 +3,7 @@ use contracts::*;
 use decimal::*;
 use gtest::*;
 use math::{percentage::Percentage, sqrt_price::calculate_sqrt_price};
-use sails_rtl::ActorId;
+use sails_rs::ActorId;
 
 pub fn init_basic_pool(invariant: &Program<'_>, token_x: &ActorId, token_y: &ActorId) {
     let fee_tier = FeeTier {

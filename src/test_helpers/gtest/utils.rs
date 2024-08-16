@@ -10,9 +10,9 @@ macro_rules! send_query {
     response_type: $response_type:ty
   ) => {
         {
-          use sails_rtl::gstd::*;
+          use sails_rs::gstd::*;
           use gstd::ToString;
-          use sails_rtl::{Decode, Encode};
+          use sails_rs::{Decode, Encode};
           use crate::test_helpers::gtest::entrypoints::utils::InvariantResult;
 
           let name = $name.to_string().encode();

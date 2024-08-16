@@ -9,7 +9,7 @@ use io::*;
 use math::{
     liquidity::Liquidity, percentage::Percentage, sqrt_price::SqrtPrice, token_amount::TokenAmount,
 };
-use sails_rtl::hex::decode;
+use sails_rs::hex::decode;
 use std::println;
 
 pub type ProgramId = [u8; 32];

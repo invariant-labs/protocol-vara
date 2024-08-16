@@ -8,7 +8,7 @@ license = "GPL-3.0"
 gstd.workspace = true
 primitive-types.workspace = true
 log.workspace = true
-sails-rtl.workspace = true
+sails-rs.workspace = true
 gcore.workspace = true
 gear-core.workspace = true
 
@@ -23,6 +23,23 @@ tokio = "1"
 gear-wasm-builder.workspace = true
 gcore.workspace = true
 gear-core.workspace = true
+gmeta.workspace = true
+gtest.workspace = true
+gsys.workspace = true
+gclient.workspace = true
+galloc.workspace = true
+actor-system-error.workspace = true
+gear-core-errors.workspace = true
+gear-common-codegen.workspace = true
+gear-sandbox.workspace = true
+gear-sandbox-env.workspace = true
+gear-sandbox-host.workspace = true
+numerated.workspace = true
+gear-wasm-instrument.workspace = true
+gsdk-codegen.workspace = true
+gear-stack-buffer.workspace = true
+gear-ss58.workspace = true
+gear-node-wrapper.workspace = true
 
 [features]
 default = []

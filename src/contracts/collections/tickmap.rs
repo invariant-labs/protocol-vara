@@ -1,5 +1,5 @@
 use crate::{InvariantError, PoolKey};
-use sails_rtl::collections::HashMap;
+use sails_rs::collections::HashMap;
 use math::{
     types::sqrt_price::{calculate_sqrt_price, get_max_tick, SqrtPrice}, MAX_TICK
 };
@@ -248,7 +248,7 @@ mod tests {
     use super::*;
     use crate::FeeTier;
     use decimal::*;
-    use sails_rtl::ActorId;
+    use sails_rs::ActorId;
     use math::{percentage::Percentage, sqrt_price::get_min_tick};
 
 

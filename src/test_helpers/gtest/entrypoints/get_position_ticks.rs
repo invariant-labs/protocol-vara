@@ -2,7 +2,7 @@ use contracts::*;
 use gstd::Vec;
 use gtest::*;
 use io::*;
-use sails_rtl::ActorId;
+use sails_rs::ActorId;
 
 use crate::{send_query, test_helpers::gtest::PROGRAM_OWNER};
 pub fn get_position_ticks(

@@ -1,13 +1,13 @@
-// TODO (breathx): replace sails_rtl::ActorId with gstd's one.
+// TODO (breathx): replace sails_rs::ActorId with gstd's one.
 #![allow(clippy::unused_unit)]
 
 use crate::services;
 use core::{cmp::Ordering, fmt::Debug, marker::PhantomData};
 use gstd::{ext, format, Decode, Encode, String, TypeInfo, Vec};
 use primitive_types::U256;
-use sails_rtl::gstd::{gservice, msg};
-use sails_rtl::ActorId;
-use sails_rtl::Box;
+use sails_rs::gstd::{service, msg};
+use sails_rs::ActorId;
+use sails_rs::Box;
 #[cfg(feature = "test")]
 use storage::TransferFailStorage;
 use storage::{AllowancesStorage, BalancesStorage, MetaStorage, TotalSupplyStorage};
@@ -23,13 +23,13 @@ pub(crate) mod utils;
 #[scale_info(crate = gstd::scale_info)]
 pub enum Event {
     Approval {
-        owner: sails_rtl::ActorId,
-        spender: sails_rtl::ActorId,
+        owner: sails_rs::ActorId,
+        spender: sails_rs::ActorId,
         value: U256,
     },
     Transfer {
-        from: sails_rtl::ActorId,
-        to: sails_rtl::ActorId,
+        from: sails_rs::ActorId,
+        to: sails_rs::ActorId,
         // TODO (breathx and team): use or not to use `NonZeroU256`?
         value: U256,
     },
@@ -68,20 +68,20 @@ impl ERC20Service {
 // TODO (sails): fix that requires explicit `-> ()`. ALREADY EXISTS
 // TODO (sails): let me specify error as subset of strings (Display of my Error) -> thats common flow for us.
 // TODO (sails): gstd::ActorId, primitive_types::H256/U256, [u8; 32], NonZeroStuff are primitives!.
-// TODO (sails): gservice(events = Event, error = Error)
-// #[gservice(events = Event, error = Error)]
-#[gservice(events = Event)]
+// TODO (sails): service(events = Event, error = Error)
+// #[service(events = Event, error = Error)]
+#[service(events = Event)]
 impl ERC20Service {
     // TODO (sails): hide this into macro.
     pub fn new() -> Self {
         Self {}
     }
 
-    pub fn allowance(&self, owner: sails_rtl::ActorId, spender: sails_rtl::ActorId) -> U256 {
+    pub fn allowance(&self, owner: sails_rs::ActorId, spender: sails_rs::ActorId) -> U256 {
         funcs::allowance(AllowancesStorage::as_ref(), owner.into(), spender.into())
     }
 
-    pub fn approve(&mut self, spender: sails_rtl::ActorId, value: U256) -> bool {
+    pub fn approve(&mut self, spender: sails_rs::ActorId, value: U256) -> bool {
         let owner = msg::source().into();
 
         let mutated = funcs::approve(AllowancesStorage::as_mut(), owner, spender.into(), value);
@@ -98,7 +98,7 @@ impl ERC20Service {
         mutated
     }
 
-    pub fn balance_of(&self, owner: sails_rtl::ActorId) -> U256 {
+    pub fn balance_of(&self, owner: sails_rs::ActorId) -> U256 {
         funcs::balance_of(BalancesStorage::as_ref(), owner.into())
     }
 
@@ -119,7 +119,7 @@ impl ERC20Service {
         TotalSupplyStorage::get()
     }
 
-    pub fn transfer(&mut self, to: sails_rtl::ActorId, value: U256) -> bool {
+    pub fn transfer(&mut self, to: sails_rs::ActorId, value: U256) -> bool {
         #[cfg(feature = "test")]
         {
             if *TransferFailStorage::as_ref() {
@@ -152,8 +152,8 @@ impl ERC20Service {
     // TODO (breathx): rename me once bug in sails fixed.
     pub fn transfer_from(
         &mut self,
-        from: sails_rtl::ActorId,
-        to: sails_rtl::ActorId,
+        from: sails_rs::ActorId,
+        to: sails_rs::ActorId,
         value: U256,
     ) -> bool {
         #[cfg(feature = "test")]

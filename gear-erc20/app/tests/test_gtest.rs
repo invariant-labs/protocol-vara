@@ -1,7 +1,7 @@
 use gear_erc20::services::admin::utils::Role;
 use gstd::{ActorId, Encode};
 use gtest::System;
-use sails_rtl::U256;
+use sails_rs::U256;
 
 mod utils_gtest;
 use utils_gtest::*;

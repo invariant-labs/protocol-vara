@@ -3,7 +3,7 @@ use contracts::*;
 use decimal::*;
 use gtest::*;
 use math::{percentage::Percentage, token_amount::TokenAmount};
-use sails_rtl::ActorId;
+use sails_rs::ActorId;
 
 #[test]
 fn test_protocol_fee() {

@@ -8,7 +8,7 @@ use math::{
     fee_growth::FeeGrowth, percentage::Percentage, sqrt_price::SqrtPrice,
     token_amount::TokenAmount, MIN_SQRT_PRICE,
 };
-use sails_rtl::ActorId;
+use sails_rs::ActorId;
 
 pub fn init_basic_swap(
     sys: &System,

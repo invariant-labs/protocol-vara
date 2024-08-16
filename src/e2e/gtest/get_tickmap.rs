@@ -7,7 +7,7 @@ use math::{
     percentage::Percentage,
     sqrt_price::{calculate_sqrt_price, get_max_tick, get_min_tick, SqrtPrice},
 };
-use sails_rtl::{prelude::*, ActorId};
+use sails_rs::{prelude::*, ActorId};
 
 #[test]
 fn test_get_tickmap() {

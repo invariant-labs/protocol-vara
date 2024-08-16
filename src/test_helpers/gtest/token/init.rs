@@ -2,7 +2,7 @@ use crate::send_request;
 use crate::test_helpers::gtest::*;
 use gstd::{Encode, Decode, TypeInfo};
 use gtest::*;
-use sails_rtl::ActorId;
+use sails_rs::ActorId;
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Encode, Decode, TypeInfo)]
 #[codec(crate = gstd::codec)]
 #[scale_info(crate = gstd::scale_info)]

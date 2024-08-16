@@ -6,7 +6,7 @@ use math::{
     fee_growth::FeeGrowth, liquidity::Liquidity, percentage::Percentage,
     sqrt_price::calculate_sqrt_price,
 };
-use sails_rtl::ActorId;
+use sails_rs::ActorId;
 
 #[test]
 fn test_remove_position_from_empty_list() {

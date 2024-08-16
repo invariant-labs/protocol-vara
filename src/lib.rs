@@ -6,7 +6,7 @@ mod e2e;
 mod test_helpers;
 
 use io::InvariantConfig;
-use sails_rtl::gstd::{gprogram, GStdExecContext};
+use sails_rs::gstd::{program, GStdExecContext};
 mod invariant_service;
 mod invariant_storage;
 pub use contracts::{
@@ -16,8 +16,8 @@ pub use contracts::{
 use gstd::exec::program_id;
 use invariant_service::InvariantService;
 use invariant_storage::InvariantStorage;
-use sails_rtl::{gstd::msg, String};
-use sails_rtl::{ActorId, MessageId};
+use sails_rs::{gstd::msg, String};
+use sails_rs::{ActorId, MessageId};
 
 pub fn handle_panic() {
     if program_id() == msg::source().into() {
@@ -166,7 +166,7 @@ pub fn reply_handler() {
 }
 pub struct InvariantProgram(());
 
-#[gprogram(handle_reply = reply_handler)]
+#[program(handle_reply = reply_handler)]
 impl InvariantProgram {
     pub fn new(config: InvariantConfig) -> Self {
         InvariantService::<GStdExecContext>::seed(config);

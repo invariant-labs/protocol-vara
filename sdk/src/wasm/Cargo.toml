@@ -14,7 +14,7 @@ crate-type = ["cdylib", "rlib"]
 
 [dependencies]
 # Contract dependencies
-decimal = {path = "../../../calc/decimal", features = ["invariant-wasm"]}
+decimal = {path = "../../../calc/decimal", features = ["invariant-wasm"], default-features = false}
 traceable_result.path = "../../../calc/traceable_result"
 wasm_wrapper = { path = "./wasm_wrapper"}
 

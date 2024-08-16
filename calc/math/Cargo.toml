@@ -7,7 +7,7 @@ edition = "2021"
 decimal.workspace = true
 traceable_result.workspace = true
 gstd.workspace = true
-sails-rtl.workspace = true
+sails-rs.workspace = true
 uint = { version = "0.9", default-features = false }
 
 [lib]

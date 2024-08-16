@@ -1,6 +1,6 @@
 use crate::{send_query, test_helpers::gtest::REGULAR_USER_1};
 use gtest::*;
-use sails_rtl::ActorId;
+use sails_rs::ActorId;
 use decimal::U256;
 
 pub fn balance_of(token: &Program, account: u64) -> U256 {

@@ -1,6 +1,6 @@
 use contracts::*;
 use gtest::*;
-use sails_rtl::ActorId;
+use sails_rs::ActorId;
 
 use io::*;
 

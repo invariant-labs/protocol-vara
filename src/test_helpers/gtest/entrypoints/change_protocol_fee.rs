@@ -6,7 +6,7 @@ use contracts::{FeeTier, PoolKey};
 use gtest::*;
 use io::*;
 use math::percentage::Percentage;
-use sails_rtl::ActorId;
+use sails_rs::ActorId;
 
 pub fn change_protocol_fee(invariant: &Program, user: u64, protocol_fee: Percentage) -> RunResult {
     send_request!(

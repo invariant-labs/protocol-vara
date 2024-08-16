@@ -1,9 +1,9 @@
 use crate::services;
 use core::{any::TypeId, marker::PhantomData};
 use gstd::{ActorId, Decode, Encode, String, ToString, TypeInfo, Vec};
-use sails_rtl::format;
-use sails_rtl::gstd::gservice;
-use sails_rtl::Box;
+use sails_rs::format;
+use sails_rs::gstd::service;
+use sails_rs::Box;
 use storage::{RolesRegistryStorage, RolesStorage};
 
 pub mod funcs;
@@ -17,11 +17,11 @@ pub use utils::*;
 #[scale_info(crate = gstd::scale_info)]
 pub enum Event {
     RoleGranted {
-        actor: sails_rtl::ActorId,
+        actor: sails_rs::ActorId,
         role: String,
     },
     RoleRemoved {
-        actor: sails_rtl::ActorId,
+        actor: sails_rs::ActorId,
         role: String,
     },
 }
@@ -130,13 +130,13 @@ impl RolesService {
     }
 }
 
-#[gservice(events=Event)]
+#[service(events=Event)]
 impl RolesService {
     pub fn new() -> Self {
         Self {}
     }
 
-    pub fn has_role(&self, actor: sails_rtl::ActorId, role: String) -> bool {
+    pub fn has_role(&self, actor: sails_rs::ActorId, role: String) -> bool {
         services::utils::panicking(move || self.has_role_by_name(actor.into(), role))
     }
 
