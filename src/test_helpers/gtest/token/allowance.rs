@@ -7,7 +7,7 @@ pub fn allowance(token: &Program, owner: u64, spender: u64) -> U256 {
     send_query!(
       program: token,
       user: REGULAR_USER_1,
-      service_name: "Erc20",
+      service_name: "Vft",
       action: "Allowance",
       payload: (ActorId::from(owner), ActorId::from(spender)),
       response_type: U256

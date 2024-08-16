@@ -48,7 +48,7 @@ async fn test_basic_functionality() -> Result<()> {
     // transfer
     let to = api.get_specific_actor_id(USERS_STR[0]);
     let value: U256 = 250.into();
-    let message_id = send_request!(api: &api, program_id: program_id, service_name: "Erc20", action: "Transfer", payload: (to, value));
+    let message_id = send_request!(api: &api, program_id: program_id, service_name: "Vft", action: "Transfer", payload: (to, value));
     assert!(listener.message_processed(message_id).await?.succeed());
 
     // check state
@@ -58,7 +58,7 @@ async fn test_basic_functionality() -> Result<()> {
     // approve
     let spender = api.get_specific_actor_id(USERS_STR[0]);
     let value: U256 = 250.into();
-    let message_id = send_request!(api: &api, program_id: program_id, service_name: "Erc20", action: "Approve", payload: (spender, value));
+    let message_id = send_request!(api: &api, program_id: program_id, service_name: "Vft", action: "Approve", payload: (spender, value));
     assert!(listener.message_processed(message_id).await?.succeed());
 
     // transfer from
@@ -66,7 +66,7 @@ async fn test_basic_functionality() -> Result<()> {
     let to = api.get_specific_actor_id(USERS_STR[1]);
     let new_api = get_new_client(&api, USERS_STR[0]).await;
     let value: U256 = 250.into();
-    let message_id = send_request!(api: &new_api, program_id: program_id, service_name: "Erc20", action: "TransferFrom", payload: (from, to, value));
+    let message_id = send_request!(api: &new_api, program_id: program_id, service_name: "Vft", action: "TransferFrom", payload: (from, to, value));
     assert!(listener.message_processed(message_id).await?.succeed());
 
     // check state

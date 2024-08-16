@@ -7,8 +7,8 @@ export type Role = "admin" | "burner" | "minter";
 export class Erc20Token {
   public readonly registry: TypeRegistry;
   public readonly admin: Admin;
-  public readonly erc20: Erc20;
   public readonly pausable: Pausable;
+  public readonly vft: Vft;
 
   constructor(public api: GearApi, public programId?: `0x${string}`) {
     const types: Record<string, any> = {
@@ -20,8 +20,8 @@ export class Erc20Token {
     this.registry.register(types);
 
     this.admin = new Admin(this);
-    this.erc20 = new Erc20(this);
     this.pausable = new Pausable(this);
+    this.vft = new Vft(this);
   }
 
   newCtorFromCode(code: Uint8Array | Buffer, name: string, symbol: string, decimals: number): TransactionBuilder<null> {
@@ -264,152 +264,6 @@ export class Admin {
   }
 }
 
-export class Erc20 {
-  constructor(private _program: Erc20Token) {}
-
-  public approve(spender: string, value: number | string): TransactionBuilder<boolean> {
-    if (!this._program.programId) throw new Error('Program ID is not set');
-    return new TransactionBuilder<boolean>(
-      this._program.api,
-      this._program.registry,
-      'send_message',
-      ['Erc20', 'Approve', spender, value],
-      '(String, String, [u8;32], U256)',
-      'bool',
-      this._program.programId
-    );
-  }
-
-  public setFailTransfer(fail: boolean): TransactionBuilder<null> {
-    if (!this._program.programId) throw new Error('Program ID is not set');
-    return new TransactionBuilder<null>(
-      this._program.api,
-      this._program.registry,
-      'send_message',
-      ['Erc20', 'SetFailTransfer', fail],
-      '(String, String, bool)',
-      'Null',
-      this._program.programId
-    );
-  }
-
-  public transfer(to: string, value: number | string): TransactionBuilder<boolean> {
-    if (!this._program.programId) throw new Error('Program ID is not set');
-    return new TransactionBuilder<boolean>(
-      this._program.api,
-      this._program.registry,
-      'send_message',
-      ['Erc20', 'Transfer', to, value],
-      '(String, String, [u8;32], U256)',
-      'bool',
-      this._program.programId
-    );
-  }
-
-  public transferFrom(from: string, to: string, value: number | string): TransactionBuilder<boolean> {
-    if (!this._program.programId) throw new Error('Program ID is not set');
-    return new TransactionBuilder<boolean>(
-      this._program.api,
-      this._program.registry,
-      'send_message',
-      ['Erc20', 'TransferFrom', from, to, value],
-      '(String, String, [u8;32], [u8;32], U256)',
-      'bool',
-      this._program.programId
-    );
-  }
-
-  public async allowance(owner: string, spender: string, originAddress: string, value?: number | string | bigint, atBlock?: `0x${string}`): Promise<bigint> {
-    const payload = this._program.registry.createType('(String, String, [u8;32], [u8;32])', ['Erc20', 'Allowance', owner, spender]).toHex();
-    if (!this._program.programId) throw new Error('Program ID is not set');
-    const reply = await this._program.api.message.calculateReply({
-      destination: this._program.programId,
-      origin: decodeAddress(originAddress),
-      payload,
-      value: value || 0,
-      gasLimit: this._program.api.blockGasLimit.toBigInt(),
-      at: atBlock,
-    });
-    const result = this._program.registry.createType('(String, String, U256)', reply.payload);
-    return result[2].toBigInt() as unknown as bigint;
-  }
-
-  public async balanceOf(owner: string, originAddress: string, value?: number | string | bigint, atBlock?: `0x${string}`): Promise<bigint> {
-    const payload = this._program.registry.createType('(String, String, [u8;32])', ['Erc20', 'BalanceOf', owner]).toHex();
-    if (!this._program.programId) throw new Error('Program ID is not set');
-    const reply = await this._program.api.message.calculateReply({
-      destination: this._program.programId,
-      origin: decodeAddress(originAddress),
-      payload,
-      value: value || 0,
-      gasLimit: this._program.api.blockGasLimit.toBigInt(),
-      at: atBlock,
-    });
-    const result = this._program.registry.createType('(String, String, U256)', reply.payload);
-    return result[2].toBigInt() as unknown as bigint;
-  }
-
-  public async decimals(originAddress: string, value?: number | string | bigint, atBlock?: `0x${string}`): Promise<number> {
-    const payload = this._program.registry.createType('(String, String)', ['Erc20', 'Decimals']).toHex();
-    if (!this._program.programId) throw new Error('Program ID is not set');
-    const reply = await this._program.api.message.calculateReply({
-      destination: this._program.programId,
-      origin: decodeAddress(originAddress),
-      payload,
-      value: value || 0,
-      gasLimit: this._program.api.blockGasLimit.toBigInt(),
-      at: atBlock,
-    });
-    const result = this._program.registry.createType('(String, String, u8)', reply.payload);
-    return result[2].toNumber() as unknown as number;
-  }
-
-  public async name(originAddress: string, value?: number | string | bigint, atBlock?: `0x${string}`): Promise<string> {
-    const payload = this._program.registry.createType('(String, String)', ['Erc20', 'Name']).toHex();
-    if (!this._program.programId) throw new Error('Program ID is not set');
-    const reply = await this._program.api.message.calculateReply({
-      destination: this._program.programId,
-      origin: decodeAddress(originAddress),
-      payload,
-      value: value || 0,
-      gasLimit: this._program.api.blockGasLimit.toBigInt(),
-      at: atBlock,
-    });
-    const result = this._program.registry.createType('(String, String, String)', reply.payload);
-    return result[2].toString() as unknown as string;
-  }
-
-  public async symbol(originAddress: string, value?: number | string | bigint, atBlock?: `0x${string}`): Promise<string> {
-    const payload = this._program.registry.createType('(String, String)', ['Erc20', 'Symbol']).toHex();
-    if (!this._program.programId) throw new Error('Program ID is not set');
-    const reply = await this._program.api.message.calculateReply({
-      destination: this._program.programId,
-      origin: decodeAddress(originAddress),
-      payload,
-      value: value || 0,
-      gasLimit: this._program.api.blockGasLimit.toBigInt(),
-      at: atBlock,
-    });
-    const result = this._program.registry.createType('(String, String, String)', reply.payload);
-    return result[2].toString() as unknown as string;
-  }
-
-  public async totalSupply(originAddress: string, value?: number | string | bigint, atBlock?: `0x${string}`): Promise<bigint> {
-    const payload = this._program.registry.createType('(String, String)', ['Erc20', 'TotalSupply']).toHex();
-    if (!this._program.programId) throw new Error('Program ID is not set');
-    const reply = await this._program.api.message.calculateReply({
-      destination: this._program.programId,
-      origin: decodeAddress(originAddress),
-      payload,
-      value: value || 0,
-      gasLimit: this._program.api.blockGasLimit.toBigInt(),
-      at: atBlock,
-    });
-    const result = this._program.registry.createType('(String, String, U256)', reply.payload);
-    return result[2].toBigInt() as unknown as bigint;
-  }
-}
-
 export class Pausable {
   constructor(private _program: Erc20Token) {}
 
@@ -491,5 +345,151 @@ export class Pausable {
         callback(null);
       }
     });
+  }
+}
+
+export class Vft {
+  constructor(private _program: Erc20Token) {}
+
+  public approve(spender: string, value: number | string): TransactionBuilder<boolean> {
+    if (!this._program.programId) throw new Error('Program ID is not set');
+    return new TransactionBuilder<boolean>(
+      this._program.api,
+      this._program.registry,
+      'send_message',
+      ['Vft', 'Approve', spender, value],
+      '(String, String, [u8;32], U256)',
+      'bool',
+      this._program.programId
+    );
+  }
+
+  public setFailTransfer(fail: boolean): TransactionBuilder<null> {
+    if (!this._program.programId) throw new Error('Program ID is not set');
+    return new TransactionBuilder<null>(
+      this._program.api,
+      this._program.registry,
+      'send_message',
+      ['Vft', 'SetFailTransfer', fail],
+      '(String, String, bool)',
+      'Null',
+      this._program.programId
+    );
+  }
+
+  public transfer(to: string, value: number | string): TransactionBuilder<boolean> {
+    if (!this._program.programId) throw new Error('Program ID is not set');
+    return new TransactionBuilder<boolean>(
+      this._program.api,
+      this._program.registry,
+      'send_message',
+      ['Vft', 'Transfer', to, value],
+      '(String, String, [u8;32], U256)',
+      'bool',
+      this._program.programId
+    );
+  }
+
+  public transferFrom(from: string, to: string, value: number | string): TransactionBuilder<boolean> {
+    if (!this._program.programId) throw new Error('Program ID is not set');
+    return new TransactionBuilder<boolean>(
+      this._program.api,
+      this._program.registry,
+      'send_message',
+      ['Vft', 'TransferFrom', from, to, value],
+      '(String, String, [u8;32], [u8;32], U256)',
+      'bool',
+      this._program.programId
+    );
+  }
+
+  public async allowance(owner: string, spender: string, originAddress: string, value?: number | string | bigint, atBlock?: `0x${string}`): Promise<bigint> {
+    const payload = this._program.registry.createType('(String, String, [u8;32], [u8;32])', ['Vft', 'Allowance', owner, spender]).toHex();
+    if (!this._program.programId) throw new Error('Program ID is not set');
+    const reply = await this._program.api.message.calculateReply({
+      destination: this._program.programId,
+      origin: decodeAddress(originAddress),
+      payload,
+      value: value || 0,
+      gasLimit: this._program.api.blockGasLimit.toBigInt(),
+      at: atBlock,
+    });
+    const result = this._program.registry.createType('(String, String, U256)', reply.payload);
+    return result[2].toBigInt() as unknown as bigint;
+  }
+
+  public async balanceOf(owner: string, originAddress: string, value?: number | string | bigint, atBlock?: `0x${string}`): Promise<bigint> {
+    const payload = this._program.registry.createType('(String, String, [u8;32])', ['Vft', 'BalanceOf', owner]).toHex();
+    if (!this._program.programId) throw new Error('Program ID is not set');
+    const reply = await this._program.api.message.calculateReply({
+      destination: this._program.programId,
+      origin: decodeAddress(originAddress),
+      payload,
+      value: value || 0,
+      gasLimit: this._program.api.blockGasLimit.toBigInt(),
+      at: atBlock,
+    });
+    const result = this._program.registry.createType('(String, String, U256)', reply.payload);
+    return result[2].toBigInt() as unknown as bigint;
+  }
+
+  public async decimals(originAddress: string, value?: number | string | bigint, atBlock?: `0x${string}`): Promise<number> {
+    const payload = this._program.registry.createType('(String, String)', ['Vft', 'Decimals']).toHex();
+    if (!this._program.programId) throw new Error('Program ID is not set');
+    const reply = await this._program.api.message.calculateReply({
+      destination: this._program.programId,
+      origin: decodeAddress(originAddress),
+      payload,
+      value: value || 0,
+      gasLimit: this._program.api.blockGasLimit.toBigInt(),
+      at: atBlock,
+    });
+    const result = this._program.registry.createType('(String, String, u8)', reply.payload);
+    return result[2].toNumber() as unknown as number;
+  }
+
+  public async name(originAddress: string, value?: number | string | bigint, atBlock?: `0x${string}`): Promise<string> {
+    const payload = this._program.registry.createType('(String, String)', ['Vft', 'Name']).toHex();
+    if (!this._program.programId) throw new Error('Program ID is not set');
+    const reply = await this._program.api.message.calculateReply({
+      destination: this._program.programId,
+      origin: decodeAddress(originAddress),
+      payload,
+      value: value || 0,
+      gasLimit: this._program.api.blockGasLimit.toBigInt(),
+      at: atBlock,
+    });
+    const result = this._program.registry.createType('(String, String, String)', reply.payload);
+    return result[2].toString() as unknown as string;
+  }
+
+  public async symbol(originAddress: string, value?: number | string | bigint, atBlock?: `0x${string}`): Promise<string> {
+    const payload = this._program.registry.createType('(String, String)', ['Vft', 'Symbol']).toHex();
+    if (!this._program.programId) throw new Error('Program ID is not set');
+    const reply = await this._program.api.message.calculateReply({
+      destination: this._program.programId,
+      origin: decodeAddress(originAddress),
+      payload,
+      value: value || 0,
+      gasLimit: this._program.api.blockGasLimit.toBigInt(),
+      at: atBlock,
+    });
+    const result = this._program.registry.createType('(String, String, String)', reply.payload);
+    return result[2].toString() as unknown as string;
+  }
+
+  public async totalSupply(originAddress: string, value?: number | string | bigint, atBlock?: `0x${string}`): Promise<bigint> {
+    const payload = this._program.registry.createType('(String, String)', ['Vft', 'TotalSupply']).toHex();
+    if (!this._program.programId) throw new Error('Program ID is not set');
+    const reply = await this._program.api.message.calculateReply({
+      destination: this._program.programId,
+      origin: decodeAddress(originAddress),
+      payload,
+      value: value || 0,
+      gasLimit: this._program.api.blockGasLimit.toBigInt(),
+      at: atBlock,
+    });
+    const result = this._program.registry.createType('(String, String, U256)', reply.payload);
+    return result[2].toBigInt() as unknown as bigint;
   }
 }

@@ -29,19 +29,6 @@ service Admin {
   }
 };
 
-service Erc20 {
-  Approve : (spender: actor_id, value: u256) -> bool;
-  SetFailTransfer : (fail: bool) -> null;
-  Transfer : (to: actor_id, value: u256) -> bool;
-  TransferFrom : (from: actor_id, to: actor_id, value: u256) -> bool;
-  query Allowance : (owner: actor_id, spender: actor_id) -> u256;
-  query BalanceOf : (owner: actor_id) -> u256;
-  query Decimals : () -> u8;
-  query Name : () -> str;
-  query Symbol : () -> str;
-  query TotalSupply : () -> u256;
-};
-
 service Pausable {
   DelegateAdmin : (actor: actor_id) -> bool;
   Pause : () -> bool;
@@ -52,5 +39,18 @@ service Pausable {
     Paused;
     Unpaused;
   }
+};
+
+service Vft {
+  Approve : (spender: actor_id, value: u256) -> bool;
+  SetFailTransfer : (fail: bool) -> null;
+  Transfer : (to: actor_id, value: u256) -> bool;
+  TransferFrom : (from: actor_id, to: actor_id, value: u256) -> bool;
+  query Allowance : (owner: actor_id, spender: actor_id) -> u256;
+  query BalanceOf : (owner: actor_id) -> u256;
+  query Decimals : () -> u8;
+  query Name : () -> str;
+  query Symbol : () -> str;
+  query TotalSupply : () -> u256;
 };
 

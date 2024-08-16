@@ -12,7 +12,7 @@ pub fn set_allowance(token: &Program, owner: u64, spender: u64, amount: U256) ->
     send_request!(
         program: token,
         user: owner,
-        service_name: "Erc20",
+        service_name: "Vft",
         action: "Approve",
         payload: (ActorId::from(spender), amount)
     )
