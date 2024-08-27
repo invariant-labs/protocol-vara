@@ -100,6 +100,8 @@ jobs:
           node-version: ${{ env.NVMRC }}
           cache: 'npm'
           cache-dependency-path: ./sdk/package-lock.json
+        run: |
+          npm install -g npm@10.8.1
 
       - name: Build SDK
         working-directory: ./sdk
