@@ -22,16 +22,16 @@ jobs:
         with:
           path: ~/.cargo
           key: ${{ runner.os }}-substrate-contracts-node-${{ hashFiles('rust-toolchain.toml') }}
-      
+
       - name: Install prerequisites
         run: sudo apt install -y build-essential clang cmake curl binaryen
 
       - name: Install rust 1.78
         uses: actions-rs/toolchain@v1
         with:
-            toolchain: 1.78
-            default: true
-            target: wasm32-unknown-unknown
+          toolchain: 1.78
+          default: true
+          target: wasm32-unknown-unknown
 
       - name: Build
         run: |
@@ -51,7 +51,7 @@ jobs:
         with:
           path: ~/.cargo
           key: ${{ runner.os }}-substrate-contracts-node-${{ hashFiles('rust-toolchain.toml') }}
-      
+
       - name: Install prerequisites
         run: sudo apt install -y build-essential clang cmake curl binaryen
 
@@ -87,19 +87,21 @@ jobs:
       - name: Install rust 1.78
         uses: actions-rs/toolchain@v1
         with:
-            toolchain: 1.78
-            default: true
-            target: wasm32-unknown-unknown
+          toolchain: 1.78
+          default: true
+          target: wasm32-unknown-unknown
 
       - name: Read .nvmrc
         run: echo NVMRC=`cat ./sdk/.nvmrc` >> $GITHUB_ENV
-      
+
       - name: Setup node
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NVMRC }}
           cache: 'npm'
           cache-dependency-path: ./sdk/package-lock.json
+
+      - name: Setup npm
         run: |
           npm install -g npm@10.8.1
 
@@ -109,7 +111,7 @@ jobs:
           chmod +x build.sh
           ./build.sh
         shell: bash
-      
+
       - name: Install Gear node
         run: |
           cargo xtask node

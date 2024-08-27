@@ -55,7 +55,7 @@
   "dependencies": {
     "@gear-js/api": "^0.38.1",
     "sails-js": "^0.1.4",
-    "invariant-vara-wasm": "workspace:invariant-vara-wasm"
+    "invariant-vara-wasm": "*"
   },
   "devDependencies": {
     "typescript": "5.5.3",
