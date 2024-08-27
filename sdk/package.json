@@ -1,6 +1,6 @@
 {
   "name": "@invariant-labs/vara-sdk",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "collaborators": [
     "Invariant Labs"
   ],
@@ -54,7 +54,8 @@
   },
   "dependencies": {
     "@gear-js/api": "^0.38.1",
-    "sails-js": "^0.1.4"
+    "sails-js": "^0.1.4",
+    "invariant-vara-wasm": "*"
   },
   "devDependencies": {
     "typescript": "5.5.3",
