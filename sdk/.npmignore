@@ -2,12 +2,9 @@ node_modules
 src/**/*
 tests/**/*
 target/test-utils.*
-!src/wasm/pkg/*
 # build scripts
-build.sh
 fix-generate.js
-tests.sh
-package-wasm.sh
+*.sh
 # config files
 .eslintrc
 .nvmrc

@@ -1,6 +1,6 @@
 {
   "name": "@invariant-labs/vara-sdk",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "collaborators": [
     "Invariant Labs"
   ],
@@ -53,9 +53,11 @@
     "fix-generate": "node fix-generate.js"
   },
   "dependencies": {
-    "@gear-js/api": "^0.38.1",
-    "sails-js": "^0.1.4",
-    "invariant-vara-wasm": "*"
+    "@gear-js/api": "0.38.1",
+    "sails-js": "0.1.4",
+    "@invariant-labs/vara-sdk-wasm": "0.1.0",
+    "@polkadot/api": "11.0.2",
+    "@polkadot/types": "11.0.2"
   },
   "devDependencies": {
     "typescript": "5.5.3",

@@ -40,7 +40,7 @@ import {
   _positionToTick,
   _alignTickToSpacing,
   _calculateSqrtPrice
-} from 'invariant-vara-wasm'
+} from '@invariant-labs/vara-sdk-wasm'
 
 import { TypeRegistry } from '@polkadot/types'
 import {

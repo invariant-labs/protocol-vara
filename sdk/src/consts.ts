@@ -7,7 +7,7 @@ import {
   getMaxPoolKeysReturned,
   getPositionEntriesLimit,
   getMaxPoolPairsReturned
-} from 'invariant-vara-wasm'
+} from '@invariant-labs/vara-sdk-wasm'
 import { HexString } from './utils.js'
 
 export const enum Network {

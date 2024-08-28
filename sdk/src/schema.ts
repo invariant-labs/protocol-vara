@@ -30,7 +30,7 @@ export {
   Tickmap,
   SimulateSwapResult,
   InvariantError,
-} from 'invariant-vara-wasm'
+} from '@invariant-labs/vara-sdk-wasm'
 
 export enum InvariantEvent {
   CrossTickEvent = 'CrossTickEvent',
