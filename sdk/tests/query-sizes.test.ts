@@ -12,7 +12,7 @@ import { CHUNK_SIZE, DEFAULT_ADDRESS, Network } from '../src/consts.js'
 import { Invariant } from '../src/invariant.js'
 import { FungibleToken } from '../src/erc20.js'
 import { assert } from 'chai'
-import { getPercentageDenominator } from 'invariant-vara-wasm'
+import { getPercentageDenominator } from '@invariant-labs/vara-sdk-wasm'
 
 const api = await initGearApi({ providerAddress: Network.Local })
 const admin = await GearKeyring.fromSuri('//Alice')

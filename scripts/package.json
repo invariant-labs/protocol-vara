@@ -19,7 +19,7 @@
   "description": "",
   "dependencies": {
     "@polkadot/api": "^10.11.2",
-    "@invariant-labs/vara-sdk": "file:../sdk",
+    "@invariant-labs/vara-sdk": "0.1.5",
     "dotenv": "^16.4.5"
   },
   "devDependencies": {

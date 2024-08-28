@@ -23,7 +23,7 @@ import {
   SwapEvent
 } from '../src/schema'
 import { decodeAddress } from '@gear-js/api'
-import { getGlobalMinSqrtPrice  } from 'invariant-vara-wasm'
+import { getGlobalMinSqrtPrice  } from '@invariant-labs/vara-sdk-wasm'
 
 const api = await initGearApi({ providerAddress: Network.Local })
 const admin = await GearKeyring.fromSuri('//Alice')
