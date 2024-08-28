@@ -3,10 +3,16 @@ export { FungibleToken } from './erc20.js'
 export { GearKeyring } from '@gear-js/api'
 export {
   Network,
+  CONCENTRATION_FACTOR,
+  LIQUIDITY_TICKS_LIMIT,
+  MAX_SQRT_PRICE,
+  MIN_SQRT_PRICE,
   TESTNET_BTC_ADDRESS,
   TESTNET_ETH_ADDRESS,
   TESTNET_USDC_ADDRESS,
-  TESTNET_INVARIANT_ADDRESS
+  TESTNET_INVARIANT_ADDRESS,
+  PERCENTAGE_SCALE,
+  SQRT_PRICE_SCALE
 } from './consts.js'
 export {
   InvariantEvent,
@@ -24,11 +30,16 @@ export {
   SqrtPrice,
   SwapEvent,
   CalculateSwapResult,
+  SwapResult,
   Tick,
   TokenAmount,
-  Tickmap
+  Tickmap,
+  LiquidityTick,
+  LiquidityBreakpoint
 } from './schema.js'
 export {
+  filterTickmap,
+  filterTicks,
   getMaxChunk,
   getMaxTick,
   getMinTick,
@@ -63,6 +74,9 @@ export {
   calculateSqrtPrice,
   TransactionWrapper,
   BatchError,
-  batchTxs
+  batchTxs,
+  calculateTickDelta,
+  calculateLiquidityBreakpoints,
+  calculatePriceImpact
 } from './utils.js'
 export { FEE_TIERS, CONCENTRATION_ARRAY } from './computed-consts.js'

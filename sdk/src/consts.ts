@@ -6,7 +6,23 @@ import {
   getLiquidityTickLimit,
   getMaxPoolKeysReturned,
   getPositionEntriesLimit,
-  getMaxPoolPairsReturned
+  getMaxPoolPairsReturned,
+  getPriceScale,
+  getPercentageScale,
+  getLiquidityScale,
+  getFixedPointScale,
+  getFeeGrowthScale,
+  getSecondsPerLiquidityScale,
+  getSqrtPriceScale,
+  getTokenAmountScale,
+  getFeeGrowthDenominator,
+  getFixedPointDenominator,
+  getLiquidityDenominator,
+  getPercentageDenominator,
+  getPriceDenominator,
+  getSecondsPerLiquidityDenominator,
+  getSqrtPriceDenominator,
+  getTokenAmountDenominator
 } from '@invariant-labs/vara-sdk-wasm'
 import { HexString } from './utils.js'
 
@@ -27,6 +43,24 @@ export const LIQUIDITY_TICKS_LIMIT = getLiquidityTickLimit()
 export const MAX_POOL_PAIRS_RETURNED = getMaxPoolPairsReturned()
 export const MAX_POOL_KEYS_RETURNED = getMaxPoolKeysReturned()
 export const POSITIONS_ENTRIES_LIMIT = getPositionEntriesLimit()
+
+export const FEE_GROWTH_DENOMINATOR = getFeeGrowthDenominator()
+export const FIXED_POINT_DENOMINATOR = getFixedPointDenominator()
+export const LIQUIDITY_DENOMINATOR = getLiquidityDenominator()
+export const PERCENTAGE_DENOMINATOR = getPercentageDenominator()
+export const PRICE_DENOMINATOR = getPriceDenominator()
+export const SECONDS_PER_LIQUIDITY_DENOMINATOR = getSecondsPerLiquidityDenominator()
+export const SQRT_PRICE_DENOMINATOR = getSqrtPriceDenominator()
+export const TOKEN_AMOUNT_DENOMINATOR = getTokenAmountDenominator()
+
+export const FEE_GROWTH_SCALE = getFeeGrowthScale()
+export const FIXED_POINT_SCALE = getFixedPointScale()
+export const LIQUIDITY_SCALE = getLiquidityScale()
+export const PERCENTAGE_SCALE = getPercentageScale()
+export const PRICE_SCALE = getPriceScale()
+export const SECONDS_PER_LIQUIDITY_SCALE = getSecondsPerLiquidityScale()
+export const SQRT_PRICE_SCALE = getSqrtPriceScale()
+export const TOKEN_AMOUNT_SCALE = getTokenAmountScale()
 
 export const CONCENTRATION_FACTOR = 1.00001526069123
 

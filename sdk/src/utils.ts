@@ -64,7 +64,9 @@ import {
   PositionTick,
   Tickmap,
   _calculateAmountDeltaResult,
-  InvariantError
+  InvariantError,
+  LiquidityBreakpoint,
+  Liquidity
 } from './schema.js'
 import { CONCENTRATION_FACTOR, MAX_TICK_CROSS } from './consts.js'
 export { HexString } from '@gear-js/api'
@@ -377,12 +379,41 @@ const newtonIteration = (n: bigint, x0: bigint): bigint => {
   }
   return newtonIteration(n, x1)
 }
+
+export const calculatePriceImpact = (
+  startingSqrtPrice: SqrtPrice,
+  endingSqrtPrice: SqrtPrice
+): Percentage => {
+  const startingPrice = startingSqrtPrice * startingSqrtPrice
+  const endingPrice = endingSqrtPrice * endingSqrtPrice
+  const diff = startingPrice - endingPrice
+
+  const nominator = diff > 0n ? diff : -diff
+  const denominator = startingPrice > endingPrice ? startingPrice : endingPrice
+
+  return (nominator * getPercentageDenominator()) / denominator
+}
+
 export const sqrtPriceToPrice = (sqrtPrice: SqrtPrice): Price => {
   return ((sqrtPrice * sqrtPrice) / getSqrtPriceDenominator()) as any
 }
 
 export const priceToSqrtPrice = (price: Price): SqrtPrice => {
   return sqrt(price * getSqrtPriceDenominator())
+}
+
+export const calculateLiquidityBreakpoints = (
+  ticks: (Tick | LiquidityTick)[]
+): LiquidityBreakpoint[] => {
+  let currentLiquidity = 0n
+
+  return ticks.map(tick => {
+    currentLiquidity = currentLiquidity + tick.liquidityChange * (tick.sign ? 1n : -1n)
+    return {
+      liquidity: currentLiquidity,
+      index: tick.index
+    }
+  })
 }
 
 export const calculateSqrtPriceAfterSlippage = (
@@ -657,6 +688,19 @@ export const calculateConcentration = (tickSpacing: number, minimumRange: number
   return concentration / CONCENTRATION_FACTOR
 }
 
+export const calculateTickDelta = (
+  tickSpacing: number,
+  minimumRange: number,
+  concentration: number
+) => {
+  const base = Math.pow(1.0001, -(tickSpacing / 4))
+  const logArg =
+    (1 - 1 / (concentration * CONCENTRATION_FACTOR)) /
+    Math.pow(1.0001, (-tickSpacing * minimumRange) / 4)
+
+  return Math.ceil(Math.log(logArg) / Math.log(base) / 2)
+}
+
 export const getConcentrationArray = (
   tickSpacing: number,
   minimumRange: number,
@@ -689,6 +733,42 @@ export const getConcentrationArray = (
     (maxTick - Math.abs(currentTick) - (minimumRange / 2) * tickSpacing) / tickSpacing
 
   return concentrations.slice(0, limitIndex)
+}
+
+export const calculateTokenAmountsWithSlippage = (
+  tickSpacing: bigint,
+  currentSqrtPrice: SqrtPrice,
+  liquidity: Liquidity,
+  lowerTickIndex: bigint,
+  upperTickIndex: bigint,
+  slippage: Percentage,
+  roundingUp: boolean
+): [bigint, bigint] => {
+  const lowerBound = calculateSqrtPriceAfterSlippage(currentSqrtPrice, slippage, false)
+  const upperBound = calculateSqrtPriceAfterSlippage(currentSqrtPrice, slippage, true)
+
+  const currentTickIndex = calculateTick(currentSqrtPrice, tickSpacing)
+
+  const [lowerX, lowerY] = _calculateAmountDelta(
+    currentTickIndex,
+    lowerBound,
+    liquidity,
+    roundingUp,
+    upperTickIndex,
+    lowerTickIndex
+  )
+  const [upperX, upperY] = _calculateAmountDelta(
+    currentTickIndex,
+    upperBound,
+    liquidity,
+    roundingUp,
+    upperTickIndex,
+    lowerTickIndex
+  )
+
+  const x = lowerX > upperX ? lowerX : upperX
+  const y = lowerY > upperY ? lowerY : upperY
+  return [x, y]
 }
 
 type MsgId = HexString
