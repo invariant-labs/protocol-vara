@@ -1,3 +1,5 @@
+import { Liquidity } from '@invariant-labs/vara-sdk-wasm'
+
 export {
   Liquidity,
   PoolKey,
@@ -37,4 +39,9 @@ export enum InvariantEvent {
   SwapEvent = 'SwapEvent',
   PositionCreatedEvent = 'PositionCreatedEvent',
   PositionRemovedEvent = 'PositionRemovedEvent'
+}
+
+export interface LiquidityBreakpoint {
+  liquidity: Liquidity
+  index: bigint
 }
