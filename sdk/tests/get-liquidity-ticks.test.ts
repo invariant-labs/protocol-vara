@@ -12,7 +12,7 @@ import { Invariant } from '../src/invariant.js'
 import { FungibleToken } from '../src/erc20.js'
 import { assert } from 'chai'
 
-const api = await initGearApi({ providerAddress: Network.Local })
+const api = await initGearApi(Network.Local)
 const admin = await GearKeyring.fromSuri('//Alice')
 const user = await GearKeyring.fromSuri('//Bob')
 

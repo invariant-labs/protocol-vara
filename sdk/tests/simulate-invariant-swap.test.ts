@@ -17,7 +17,7 @@ import { describe, it } from 'mocha'
 import { HexString } from '@gear-js/api'
 import { assert } from 'chai'
 
-const api = await initGearApi({ providerAddress: Network.Local })
+const api = await initGearApi(Network.Local)
 import { subscribeToNewHeads } from '../src/utils'
 const keyring = new Keyring({ type: 'sr25519' })
 const admin = await keyring.addFromUri('//Alice')

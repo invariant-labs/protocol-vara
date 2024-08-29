@@ -15,7 +15,7 @@ import { FungibleToken } from '../src/erc20.js'
 import { PoolKey } from '../src/schema.js'
 import { assert } from 'chai'
 
-const api = await initGearApi({ providerAddress: Network.Local })
+const api = await initGearApi(Network.Local)
 const admin = await GearKeyring.fromSuri('//Alice')
 
 let unsub: Promise<VoidFunction> | null = null

@@ -7,7 +7,7 @@ import { Network } from '../src/consts'
 import { FungibleToken } from '../src/erc20'
 import { HexString, initGearApi, newFeeTier, newPoolKey } from '../src/utils'
 
-const api = await initGearApi({ providerAddress: Network.Local })
+const api = await initGearApi(Network.Local)
 
 const admin = await GearKeyring.fromSuri('//Alice')
 

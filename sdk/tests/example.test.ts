@@ -19,7 +19,7 @@ import { FungibleToken } from '../src/erc20.js'
 import { Pool, Tick, Position } from '../src/schema'
 import { sortTokens } from '../src/test-utils.js'
 
-const api = await initGearApi({ providerAddress: Network.Local })
+const api = await initGearApi(Network.Local)
 const admin = await GearKeyring.fromSuri('//Alice')
 const GRC20 = await FungibleToken.load(api)
 GRC20.setAdmin(admin)

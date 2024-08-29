@@ -7,7 +7,7 @@ import { FungibleToken } from '../src/erc20.js'
 import { SqrtPrice } from '../src/schema.js'
 import { getMinSqrtPrice } from '../src/utils.js'
 import { assert } from 'chai'
-const api = await initGearApi({ providerAddress: Network.Testnet })
+const api = await initGearApi(Network.Testnet)
 // const admin = await GearKeyring.fromSuri("//Alice")
 const admin = await GearKeyring.fromMnemonic(process.env.VARA_TESTNET_MNEMONIC as string)
 let unsub: Promise<VoidFunction> | null = null
