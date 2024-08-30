@@ -2,7 +2,6 @@ import {
   MessageQueuedData,
   UserMessageSent,
   GearApi,
-  GearApiOptions,
   HexString,
   ProgramMetadata
 } from '@gear-js/api'
@@ -68,14 +67,29 @@ import {
   LiquidityBreakpoint,
   Liquidity
 } from './schema.js'
-import { CONCENTRATION_FACTOR, MAX_TICK_CROSS } from './consts.js'
+import { CONCENTRATION_FACTOR, LOCAL, MAINNET, MAX_TICK_CROSS, Network, TESTNET } from './consts.js'
 export { HexString } from '@gear-js/api'
 
 export type Signer = string | IKeyringPair
 export type ActorId = Uint8Array | HexString
 
-export const initGearApi = async (gearApiOptions: GearApiOptions | undefined) => {
-  const gearApi = await GearApi.create(gearApiOptions)
+export const initGearApi = async (network: Network) => {
+  let address
+  switch (network) {
+    case Network.Local:
+      address = LOCAL
+      break
+    case Network.Testnet:
+      address = TESTNET
+      break
+    case Network.Mainnet:
+      address = MAINNET
+      break
+    default:
+      throw new Error("Network unknown")
+  }
+
+  const gearApi = await GearApi.create({providerAddress: address})
 
   const [chain, nodeName, nodeVersion] = await Promise.all([
     gearApi.chain(),

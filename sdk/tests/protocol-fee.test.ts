@@ -6,7 +6,7 @@ import { assert } from 'chai'
 import { FungibleToken } from '../src/erc20.js'
 import { assertThrowsAsync } from '../src/test-utils.js'
 
-const api = await initGearApi({ providerAddress: Network.Local })
+const api = await initGearApi(Network.Local)
 const admin = await GearKeyring.fromSuri('//Alice')
 const user = await GearKeyring.fromSuri('//Bob')
 

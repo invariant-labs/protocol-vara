@@ -25,7 +25,7 @@ import { u8aToHex } from '@polkadot/util'
 import { GearKeyring, HexString } from '@gear-js/api'
 import { Network } from '../src/consts'
 
-const api = await initGearApi({ providerAddress: Network.Local })
+const api = await initGearApi(Network.Local)
 const admin = await GearKeyring.fromSuri('//Alice')
 const user = await GearKeyring.fromSuri('//Bob')
 

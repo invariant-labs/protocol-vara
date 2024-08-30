@@ -8,7 +8,7 @@ import { objectEquals } from '../src/test-utils'
 import { describe, it } from 'mocha'
 import { GearKeyring, HexString } from '@gear-js/api'
 
-const api = await initGearApi({ providerAddress: Network.Local })
+const api = await initGearApi(Network.Local)
 
 const admin = await GearKeyring.fromSuri('//Alice')
 
