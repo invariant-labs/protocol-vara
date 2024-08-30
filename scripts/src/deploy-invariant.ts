@@ -16,7 +16,7 @@ dotenv.config()
 
 const main = async () => {
   const network = Network.Testnet
-  const api = await initGearApi({ providerAddress: network })
+  const api = await initGearApi(network)
 
   const mnemonic = process.env.DEPLOYER_MNEMONIC ?? ''
   const account = await GearKeyring.fromMnemonic(mnemonic)
