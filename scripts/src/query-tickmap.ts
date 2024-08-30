@@ -34,7 +34,7 @@ const POOL_KEY_FOUR = newPoolKey(TESTNET_TOKEN_0, TESTNET_TOKEN_1, FEE_TIER_TWO)
 const main = async () => {
   const network = Network.Testnet
 
-  const api = await initGearApi({ providerAddress: network })
+  const api = await initGearApi(network)
   await subscribeToNewHeads(api)
   const invariant = await Invariant.load(api, TESTNET_INVARIANT_ADDRESS)
 

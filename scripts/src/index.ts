@@ -20,7 +20,7 @@ import {
 } from '@invariant-labs/vara-sdk'
 
 const main = async () => {
-  const api = await initGearApi({ providerAddress: Network.Local })
+  const api = await initGearApi(Network.Local)
   await subscribeToNewHeads(api)
   const admin = await GearKeyring.fromSuri('//Alice')
   const GRC20 = await FungibleToken.load(api)
