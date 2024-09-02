@@ -258,6 +258,16 @@ export class Invariant {
 
     return pages
   }
+
+  async getPositionWithAssociates(owner: ActorId, index: bigint) {
+    const result = unwrapResult(await this.contract.service.getPositionWithAssociates(owner as any, index as any, DEFAULT_ADDRESS))
+    const position = convertPosition(result[0]);
+    const pool = convertPool(result[1]);
+    const lowerTick = convertTick(result[2]);
+    const upperTick = convertTick(result[3]);
+
+    return [position, pool, lowerTick, upperTick]
+  }
   async getPositions(
     ownerId: ActorId,
     size: bigint,

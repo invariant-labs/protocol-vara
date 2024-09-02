@@ -173,6 +173,7 @@ service Service {
   query GetPoolKeys : (size: u16, offset: u16) -> struct { vec PoolKey, u16 };
   query GetPosition : (owner_id: actor_id, index: u32) -> result (Position, InvariantError);
   query GetPositionTicks : (owner: actor_id, offset: u32) -> vec PositionTick;
+  query GetPositionWithAssociates : (owner: actor_id, index: u32) -> result (struct { Position, Pool, Tick, Tick }, InvariantError);
   query GetPositions : (owner_id: actor_id, size: u32, offset: u32) -> result (struct { vec struct { Pool, vec Position }, u32 }, InvariantError);
   query GetProtocolFee : () -> Percentage;
   query GetTick : (key: PoolKey, index: i32) -> result (Tick, InvariantError);

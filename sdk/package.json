@@ -1,6 +1,6 @@
 {
   "name": "@invariant-labs/vara-sdk",
-  "version": "0.1.7",
+  "version": "0.1.8",
   "collaborators": [
     "Invariant Labs"
   ],
@@ -37,6 +37,7 @@
     "test:position": "npx mocha --config mocharc.json ./tests/position.test.ts",
     "test:events": "npx mocha --config mocharc.json ./tests/events.test.ts",
     "test:math": "npx mocha --config mocharc.json ./tests/math.test.ts",
+    "test:get-position-with-associates": "npx mocha --config mocharc.json ./tests/get-position-with-associates.test.ts",
     "test:example": "npx mocha --config mocharc.json ./tests/example.test.ts",
     "test:get-positions": "npx mocha --config mocharc.json ./tests/get-positions.test.ts",
     "test:get-liquidity-ticks": "npx mocha --config mocharc.json ./tests/get-liquidity-ticks.test.ts",

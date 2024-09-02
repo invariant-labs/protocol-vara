@@ -758,6 +758,7 @@ export const calculateTokenAmountsWithSlippage = (
   slippage: Percentage,
   roundingUp: boolean
 ): [bigint, bigint] => {
+  const encodedLiquidity = wasmSerializer.encodeLiquidity(liquidity)
   const lowerBound = calculateSqrtPriceAfterSlippage(currentSqrtPrice, slippage, false)
   const upperBound = calculateSqrtPriceAfterSlippage(currentSqrtPrice, slippage, true)
 
@@ -766,7 +767,7 @@ export const calculateTokenAmountsWithSlippage = (
   const [lowerX, lowerY] = _calculateAmountDelta(
     currentTickIndex,
     lowerBound,
-    liquidity,
+    encodedLiquidity,
     roundingUp,
     upperTickIndex,
     lowerTickIndex
@@ -774,7 +775,7 @@ export const calculateTokenAmountsWithSlippage = (
   const [upperX, upperY] = _calculateAmountDelta(
     currentTickIndex,
     upperBound,
-    liquidity,
+    encodedLiquidity,
     roundingUp,
     upperTickIndex,
     lowerTickIndex
