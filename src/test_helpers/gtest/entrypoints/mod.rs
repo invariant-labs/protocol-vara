@@ -34,6 +34,7 @@ pub mod transfer_position;
 pub mod utils;
 pub mod withdraw;
 pub mod withdraw_protocol_fee;
+pub mod get_position_with_associates;
 
 pub use add_fee_tier::*;
 pub use change_fee_receiver::*;
@@ -68,3 +69,4 @@ pub use transfer_position::*;
 pub use utils::*;
 pub use withdraw::*;
 pub use withdraw_protocol_fee::*;
+pub use get_position_with_associates::*;

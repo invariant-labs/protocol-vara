@@ -27,3 +27,4 @@ pub mod get_liquidity_ticks;
 pub mod get_position_ticks;
 pub mod get_positions;
 pub mod swap_route;
+pub mod get_position_with_associates;

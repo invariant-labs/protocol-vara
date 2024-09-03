@@ -525,6 +525,21 @@ export class Service {
     return result[2].toJSON() as unknown as Array<PositionTick>;
   }
 
+  public async getPositionWithAssociates(owner: string, index: number, originAddress: string, value?: number | string | bigint, atBlock?: `0x${string}`): Promise<{ ok: [Position, Pool, Tick, Tick] } | { err: InvariantError }> {
+    const payload = this._program.registry.createType('(String, String, [u8;32], u32)', ['Service', 'GetPositionWithAssociates', owner, index]).toHex();
+    if (!this._program.programId) throw new Error('Program ID is not set');
+    const reply = await this._program.api.message.calculateReply({
+      destination: this._program.programId,
+      origin: decodeAddress(originAddress),
+      payload,
+      value: value || 0,
+      gasLimit: this._program.api.blockGasLimit.toBigInt(),
+      at: atBlock,
+    });
+    const result = this._program.registry.createType('(String, String, Result<(Position, Pool, Tick, Tick), InvariantError>)', reply.payload);
+    return result[2].toJSON() as unknown as { ok: [Position, Pool, Tick, Tick] } | { err: InvariantError };
+  }
+
   public async getPositions(owner_id: string, size: number, offset: number, originAddress: string, value?: number | string | bigint, atBlock?: `0x${string}`): Promise<{ ok: [Array<[Pool, Array<Position>]>, number] } | { err: InvariantError }> {
     const payload = this._program.registry.createType('(String, String, [u8;32], u32, u32)', ['Service', 'GetPositions', owner_id, size, offset]).toHex();
     if (!this._program.programId) throw new Error('Program ID is not set');

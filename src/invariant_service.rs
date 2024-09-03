@@ -16,9 +16,8 @@ use math::{
     token_amount::TokenAmount, MAX_SQRT_PRICE, MIN_SQRT_PRICE,
 };
 use sails_rs::gstd::{
-    service,
     msg::{self, reply, CodecMessageFuture},
-    ExecContext,
+    service, ExecContext,
 };
 use sails_rs::{ActorId, Decode, Encode, MessageId};
 
@@ -424,6 +423,24 @@ where
         }
 
         Ok((grouped_positions, invariant.positions.get_length(&owner_id)))
+    }
+
+    pub fn get_position_with_associates(
+        &self,
+        owner: ActorId,
+        index: u32,
+    ) -> Result<(Position, Pool, Tick, Tick), InvariantError> {
+        let invariant = InvariantStorage::as_ref();
+        let position = invariant.positions.get(&owner, index)?;
+
+        let pool = invariant.pools.get(&position.pool_key)?;
+        let tick_lower = invariant
+            .ticks
+            .get(position.pool_key, position.lower_tick_index)?;
+        let tick_upper = invariant
+            .ticks
+            .get(position.pool_key, position.upper_tick_index)?;
+        Ok((*position, pool, *tick_lower, *tick_upper))
     }
 
     pub fn get_user_position_amount(&self, owner_id: ActorId) -> u32 {

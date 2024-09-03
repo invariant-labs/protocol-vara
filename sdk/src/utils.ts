@@ -758,6 +758,7 @@ export const calculateTokenAmountsWithSlippage = (
   slippage: Percentage,
   roundingUp: boolean
 ): [bigint, bigint] => {
+  const encodedLiquidity = wasmSerializer.encodeLiquidity(liquidity)
   const lowerBound = calculateSqrtPriceAfterSlippage(currentSqrtPrice, slippage, false)
   const upperBound = calculateSqrtPriceAfterSlippage(currentSqrtPrice, slippage, true)
 
@@ -766,7 +767,7 @@ export const calculateTokenAmountsWithSlippage = (
   const [lowerX, lowerY] = _calculateAmountDelta(
     currentTickIndex,
     lowerBound,
-    liquidity,
+    encodedLiquidity,
     roundingUp,
     upperTickIndex,
     lowerTickIndex
@@ -774,7 +775,7 @@ export const calculateTokenAmountsWithSlippage = (
   const [upperX, upperY] = _calculateAmountDelta(
     currentTickIndex,
     upperBound,
-    liquidity,
+    encodedLiquidity,
     roundingUp,
     upperTickIndex,
     lowerTickIndex
@@ -791,7 +792,12 @@ type ProgramId = HexString
 export class BatchError extends Error {
   failedTxs: Map<number, string>
   constructor(failedTxs: Map<number, string>) {
-    super('Batch error occurred')
+    let message = 'Batch error occurred'
+    failedTxs.forEach(function (err, nr) {
+      message = message + `\nRequest number ${nr} failed: ${err}`
+    })
+
+    super(message)
     this.failedTxs = failedTxs
   }
 }
@@ -806,9 +812,10 @@ export const batchTxs = async (
 
   const tx = api.tx.utility.batchAll([...methods])
 
+  await tx.signAsync(account, options)
   const res = await new Promise<[MsgId, BlockHash, ProgramId][]>((resolve, reject) =>
     tx
-      .signAndSend(account, options, ({ events, status }) => {
+      .send(({ events, status }) => {
         if (status.isInBlock) {
           const msgData: [MsgId, BlockHash, ProgramId][] = []
 
