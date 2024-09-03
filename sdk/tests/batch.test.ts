@@ -97,6 +97,14 @@ describe('events', async function () {
     } catch (e) {
       assert(e instanceof BatchError)
       assert.deepEqual(
+        e.message,
+        `Batch error occurred\n` +
+          `Request number 0 failed: Panic occurred: Underflow\n` +
+          `Request number 1 failed: Panic occurred: Underflow\n` +
+          `Request number 4 failed: Panic occurred: panicked with 'InvariantError: UnrecoverableTransferError'\n` +
+          `Request number 5 failed: Panic occurred: panicked with 'InvariantError: UnrecoverableTransferError'`
+      )
+      assert.deepEqual(
         e.failedTxs,
         new Map([
           [0, 'Panic occurred: Underflow'],
