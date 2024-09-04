@@ -15,6 +15,23 @@ import {
   SimulateSwapResult
 } from './schema.js'
 
+function copyObject(obj: any): any {
+  if (obj === null || typeof obj !== 'object') {
+    return obj
+  }
+
+  if (Array.isArray(obj)) {
+    return obj.map(copyObject)
+  }
+
+  const copiedObject = {} as any
+  for (const key in obj) {
+    copiedObject[key] = copyObject(obj[key])
+  }
+
+  return copiedObject
+}
+
 export const decodeU256FromU64Array = (value: string): bigint => {
   return BigInt(value)
 }
@@ -31,192 +48,215 @@ export const encodeU128ToU64Array = (value: bigint): string => {
   return value.toString()
 }
 
-export const encodeLiquidity = encodeU256ToU64Array;
-export const encodeTokenAmount = encodeU256ToU64Array;
+export const encodeLiquidity = encodeU256ToU64Array
+export const encodeTokenAmount = encodeU256ToU64Array
 
-export const decodeLiquidity = decodeU256FromU64Array;
-export const decodeTokenAmount = decodeU256FromU64Array;
+export const decodeLiquidity = decodeU256FromU64Array
+export const decodeTokenAmount = decodeU256FromU64Array
 
 export const encodeTick = (value: Tick) => {
-  value.liquidityChange = encodeLiquidity(value.liquidityChange) as any
-  value.liquidityGross = encodeLiquidity(value.liquidityGross) as any
-  return value
+  const newVal = copyObject(value)
+  newVal.liquidityChange = encodeLiquidity(value.liquidityChange) as any
+  newVal.liquidityGross = encodeLiquidity(value.liquidityGross) as any
+  return newVal
 }
 
 export const encodeLiquidityTick = (value: LiquidityTick) => {
-  value.liquidityChange = encodeLiquidity(value.liquidityChange) as any
-  return value
+  const newVal = copyObject(value)
+  newVal.liquidityChange = encodeLiquidity(value.liquidityChange) as any
+  return newVal
 }
 
 export const encodePool = (value: Pool) => {
-  value.liquidity = encodeLiquidity(value.liquidity) as any
-  value.feeProtocolTokenX = encodeTokenAmount(value.feeProtocolTokenX) as any
-  value.feeProtocolTokenY = encodeTokenAmount(value.feeProtocolTokenY) as any
-  return value
+  const newVal = copyObject(value)
+  newVal.liquidity = encodeLiquidity(value.liquidity) as any
+  newVal.feeProtocolTokenX = encodeTokenAmount(value.feeProtocolTokenX) as any
+  newVal.feeProtocolTokenY = encodeTokenAmount(value.feeProtocolTokenY) as any
+  return newVal
 }
 
 export const encodeLiquidityResult = (value: LiquidityResult) => {
-  value.x = encodeTokenAmount(value.x) as any
-  value.y = encodeTokenAmount(value.y) as any
-  value.l = encodeTokenAmount(value.l) as any
-  return value
-
+  const newVal = copyObject(value)
+  newVal.x = encodeTokenAmount(value.x) as any
+  newVal.y = encodeTokenAmount(value.y) as any
+  newVal.l = encodeTokenAmount(value.l) as any
+  return newVal
 }
 
 export const encodeSingleTokenLiquidity = (value: SingleTokenLiquidity) => {
-  value.amount = encodeTokenAmount(value.amount) as any
-  value.l = encodeLiquidity(value.l) as any
-  return value
+  const newVal = copyObject(value)
+  newVal.amount = encodeTokenAmount(value.amount) as any
+  newVal.l = encodeLiquidity(value.l) as any
+  return newVal
 }
 
 export const encodeQuoteResult = (value: QuoteResult) => {
-  value.amountIn = encodeTokenAmount(value.amountIn) as any
-  value.amountOut = encodeTokenAmount(value.amountOut) as any
-  value.ticks = value.ticks.map(encodeTick)
-  return value
+  const newVal = copyObject(value)
+  newVal.amountIn = encodeTokenAmount(value.amountIn) as any
+  newVal.amountOut = encodeTokenAmount(value.amountOut) as any
+  newVal.ticks = value.ticks.map(encodeTick)
+  return newVal
 }
 
 export const encodeTokenAmounts = (value: TokenAmounts) => {
-  value.x = encodeTokenAmount(value.x) as any
-  value.y = encodeTokenAmount(value.y) as any
-  return value
+  const newVal = copyObject(value)
+  newVal.x = encodeTokenAmount(value.x) as any
+  newVal.y = encodeTokenAmount(value.y) as any
+  return newVal
 }
 
 export const encodeCalculateFeeResult = (value: _calculateFeeResult) => {
-  value[0] = encodeTokenAmount(value[0]) as any
-  value[1] = encodeTokenAmount(value[1]) as any
-  return value
+  const newVal = copyObject(value)
+  newVal[0] = encodeTokenAmount(value[0]) as any
+  newVal[1] = encodeTokenAmount(value[1]) as any
+  return newVal
 }
 
 export const encodeAmountDeltaResult = (value: AmountDeltaResult) => {
-  value.x = encodeTokenAmount(value.x) as any
-  value.y = encodeTokenAmount(value.y) as any
-  return value
+  const newVal = copyObject(value)
+  newVal.x = encodeTokenAmount(value.x) as any
+  newVal.y = encodeTokenAmount(value.y) as any
+  return newVal
 }
 
 export const encodeSwapResult = (value: SwapResult) => {
-  value.amountIn = encodeTokenAmount(value.amountIn) as any
-  value.amountOut = encodeTokenAmount(value.amountOut) as any
-  value.feeAmount = encodeTokenAmount(value.feeAmount) as any
-  return value
+  const newVal = copyObject(value)
+  newVal.amountIn = encodeTokenAmount(value.amountIn) as any
+  newVal.amountOut = encodeTokenAmount(value.amountOut) as any
+  newVal.feeAmount = encodeTokenAmount(value.feeAmount) as any
+  return newVal
 }
 
 export const encodeCalculateSwapResult = (value: CalculateSwapResult) => {
-  value.amountIn = encodeTokenAmount(value.amountIn) as any
-  value.amountOut = encodeTokenAmount(value.amountOut) as any
-  value.fee = encodeTokenAmount(value.fee) as any
-  value.pool = encodePool(value.pool) as any
-  value.ticks = value.ticks.map(encodeTick)
-
-  return value
+  const newVal = copyObject(value)
+  newVal.amountIn = encodeTokenAmount(value.amountIn) as any
+  newVal.amountOut = encodeTokenAmount(value.amountOut) as any
+  newVal.fee = encodeTokenAmount(value.fee) as any
+  newVal.pool = encodePool(value.pool) as any
+  newVal.ticks = value.ticks.map(encodeTick)
+  return newVal
 }
 
 export const encodeCalculateAmountDeltaResult = (value: _calculateAmountDeltaResult) => {
-  value[0] = encodeTokenAmount(value[0]) as any
-  value[1] = encodeTokenAmount(value[1]) as any
+  const newVal = copyObject(value)
+  newVal[0] = encodeTokenAmount(value[0]) as any
+  newVal[1] = encodeTokenAmount(value[1]) as any
 
-  return value
+  return newVal
 }
 
 export const encodePosition = (value: Position) => {
-  value.liquidity = encodeLiquidity(value.liquidity) as any
-  value.tokensOwedX = encodeTokenAmount(value.tokensOwedX) as any
-  value.tokensOwedY = encodeTokenAmount(value.tokensOwedY) as any
-  return value
+  const newVal = copyObject(value)
+  newVal.liquidity = encodeLiquidity(value.liquidity) as any
+  newVal.tokensOwedX = encodeTokenAmount(value.tokensOwedX) as any
+  newVal.tokensOwedY = encodeTokenAmount(value.tokensOwedY) as any
+  return newVal
 }
 
 export const decodeTick = (value: Tick) => {
-  value.liquidityChange = decodeLiquidity(value.liquidityChange as any)
-  value.liquidityGross = decodeLiquidity(value.liquidityGross as any)
-  return value
+  const newVal = copyObject(value)
+  newVal.liquidityChange = decodeLiquidity(value.liquidityChange as any)
+  newVal.liquidityGross = decodeLiquidity(value.liquidityGross as any)
+  return newVal
 }
 
 export const decodeLiquidityTick = (value: LiquidityTick) => {
-  value.liquidityChange = decodeLiquidity(value.liquidityChange as any)
-  return value
-
+  const newVal = copyObject(value)
+  newVal.liquidityChange = decodeLiquidity(value.liquidityChange as any)
+  return newVal
 }
 
 export const decodePool = (value: Pool) => {
-  value.liquidity = decodeLiquidity(value.liquidity as any)
-  value.feeProtocolTokenX = decodeTokenAmount(value.feeProtocolTokenX as any)
-  value.feeProtocolTokenY = decodeTokenAmount(value.feeProtocolTokenY as any)
-  return value
+  const newVal = copyObject(value)
+  newVal.liquidity = decodeLiquidity(value.liquidity as any)
+  newVal.feeProtocolTokenX = decodeTokenAmount(value.feeProtocolTokenX as any)
+  newVal.feeProtocolTokenY = decodeTokenAmount(value.feeProtocolTokenY as any)
+  return newVal
 }
 
 export const decodeLiquidityResult = (value: LiquidityResult) => {
-  value.x = decodeTokenAmount(value.x as any)
-  value.y = decodeTokenAmount(value.y as any)
-  value.l = decodeTokenAmount(value.l as any)
-  return value
-
+  const newVal = copyObject(value)
+  newVal.x = decodeTokenAmount(value.x as any)
+  newVal.y = decodeTokenAmount(value.y as any)
+  newVal.l = decodeTokenAmount(value.l as any)
+  return newVal
 }
 
 export const decodeSingleTokenLiquidity = (value: SingleTokenLiquidity) => {
-  value.amount = decodeTokenAmount(value.amount as any)
-  value.l = decodeLiquidity(value.l as any)
-  return value
-
+  const newVal = copyObject(value)
+  newVal.amount = decodeTokenAmount(value.amount as any)
+  newVal.l = decodeLiquidity(value.l as any)
+  return newVal
 }
 
 export const decodeQuoteResult = (value: QuoteResult) => {
-  value.amountIn = decodeTokenAmount(value.amountIn as any)
-  value.amountOut = decodeTokenAmount(value.amountOut as any)
-  value.ticks = value.ticks.map(decodeTick)
-  return value
+  const newVal = copyObject(value)
+  newVal.amountIn = decodeTokenAmount(value.amountIn as any)
+  newVal.amountOut = decodeTokenAmount(value.amountOut as any)
+  newVal.ticks = value.ticks.map(decodeTick)
+  return newVal
 }
 
 export const decodeTokenAmounts = (value: TokenAmounts) => {
-  value.x = decodeTokenAmount(value.x as any)
-  value.y = decodeTokenAmount(value.y as any)
-  return value
+  const newVal = copyObject(value)
+  newVal.x = decodeTokenAmount(value.x as any)
+  newVal.y = decodeTokenAmount(value.y as any)
+  return newVal
 }
 
 export const decodeCalculateFeeResult = (value: _calculateFeeResult) => {
-  value[0] = decodeTokenAmount(value[0] as any)
-  value[1] = decodeTokenAmount(value[1] as any)
-  return value
+  const newVal = copyObject(value)
+  newVal[0] = decodeTokenAmount(value[0] as any)
+  newVal[1] = decodeTokenAmount(value[1] as any)
+  return newVal
 }
 
 export const decodeAmountDeltaResult = (value: AmountDeltaResult) => {
-  value.x = decodeTokenAmount(value.x as any)
-  value.y = decodeTokenAmount(value.y as any)
-  return value
+  const newVal = copyObject(value)
+
+  newVal.x = decodeTokenAmount(value.x as any)
+  newVal.y = decodeTokenAmount(value.y as any)
+  return newVal
 }
 
 export const decodeSwapResult = (value: SwapResult) => {
-  value.amountIn = decodeTokenAmount(value.amountIn as any)
-  value.amountOut = decodeTokenAmount(value.amountOut as any)
-  value.feeAmount = decodeTokenAmount(value.feeAmount as any)
-  return value
+  const newVal = copyObject(value)
+  newVal.amountIn = decodeTokenAmount(value.amountIn as any)
+  newVal.amountOut = decodeTokenAmount(value.amountOut as any)
+  newVal.feeAmount = decodeTokenAmount(value.feeAmount as any)
+  return newVal
 }
 
 export const decodeCalculateSwapResult = (value: CalculateSwapResult) => {
-  value.amountIn = decodeTokenAmount(value.amountIn as any)
-  value.amountOut = decodeTokenAmount(value.amountOut as any)
-  value.fee = decodeTokenAmount(value.fee as any)
-  value.pool = decodePool(value.pool as any)
-  value.ticks = value.ticks.map(decodeTick)
-  return value
+  const newVal = copyObject(value)
+  newVal.amountIn = decodeTokenAmount(value.amountIn as any)
+  newVal.amountOut = decodeTokenAmount(value.amountOut as any)
+  newVal.fee = decodeTokenAmount(value.fee as any)
+  newVal.pool = decodePool(value.pool as any)
+  newVal.ticks = value.ticks.map(decodeTick)
+  return newVal
 }
 
 export const decodeCalculateAmountDeltaResult = (value: _calculateAmountDeltaResult) => {
-  value[0] = decodeTokenAmount(value[0] as any)
-  value[1] = decodeTokenAmount(value[1] as any)
-  return value
+  const newVal = copyObject(value)
+  newVal[0] = decodeTokenAmount(value[0] as any)
+  newVal[1] = decodeTokenAmount(value[1] as any)
+  return newVal
 }
 
 export const decodePosition = (value: Position) => {
-  value.liquidity = decodeLiquidity(value.liquidity as any)
-  value.tokensOwedX = decodeTokenAmount(value.tokensOwedX as any)
-  value.tokensOwedY = decodeTokenAmount(value.tokensOwedY as any)
-  return value
+  const newVal = copyObject(value)
+  newVal.liquidity = decodeLiquidity(value.liquidity as any)
+  newVal.tokensOwedX = decodeTokenAmount(value.tokensOwedX as any)
+  newVal.tokensOwedY = decodeTokenAmount(value.tokensOwedY as any)
+  return newVal
 }
 
 export const decodeSimulateSwapResult = (value: SimulateSwapResult) => {
-  value.amountIn = decodeTokenAmount(value.amountIn as any)
-  value.amountOut = decodeTokenAmount(value.amountOut as any)
-  value.fee = decodeTokenAmount(value.fee as any)
-  value.crossedTicks = value.crossedTicks.map(decodeLiquidityTick)
-  return value
+  const newVal = copyObject(value)
+  newVal.amountIn = decodeTokenAmount(value.amountIn as any)
+  newVal.amountOut = decodeTokenAmount(value.amountOut as any)
+  newVal.fee = decodeTokenAmount(value.fee as any)
+  newVal.crossedTicks = value.crossedTicks.map(decodeLiquidityTick)
+  return newVal
 }
