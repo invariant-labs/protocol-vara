@@ -79,7 +79,7 @@ export interface SwapHop {
   x_to_y: boolean;
 }
 
-export type InvariantError = "notAdmin" | "notFeeReceiver" | "poolAlreadyExist" | "poolNotFound" | "tickAlreadyExist" | "invalidTickIndexOrTickSpacing" | "positionNotFound" | "tickNotFound" | "feeTierNotFound" | "poolKeyNotFound" | "amountIsZero" | "wrongLimit" | "priceLimitReached" | "noGainSwap" | "invalidTickSpacing" | "feeTierAlreadyExist" | "poolKeyAlreadyExist" | "unauthorizedFeeReceiver" | "zeroLiquidity" | "recoverableTransferError" | "unrecoverableTransferError" | "transferError" | "tokensAreSame" | "amountUnderMinimumAmountOut" | "invalidFee" | "notEmptyTickDeinitialization" | "invalidInitTick" | "invalidInitSqrtPrice" | "notEnoughGasToExecute" | "tickLimitReached" | "invalidTickIndex" | "noBalanceForTheToken" | "failedToChangeTokenBalance" | "replyHandlingFailed";
+export type InvariantError = "notAdmin" | "notFeeReceiver" | "poolAlreadyExist" | "poolNotFound" | "tickAlreadyExist" | "invalidTickIndexOrTickSpacing" | "positionNotFound" | "tickNotFound" | "feeTierNotFound" | "poolKeyNotFound" | "amountIsZero" | "wrongLimit" | "priceLimitReached" | "noGainSwap" | "invalidTickSpacing" | "feeTierAlreadyExist" | "poolKeyAlreadyExist" | "unauthorizedFeeReceiver" | "zeroLiquidity" | "recoverableTransferError" | "unrecoverableTransferError" | "transferError" | "tokensAreSame" | "amountUnderMinimumAmountOut" | "invalidFee" | "notEmptyTickDeinitialization" | "invalidInitTick" | "invalidInitSqrtPrice" | "notEnoughGasToExecute" | "tickLimitReached" | "invalidTickIndex" | "noBalanceForTheToken" | "failedToChangeTokenBalance" | "replyHandlingFailed" | "invalidVaraDepositAttempt" | "invalidVaraWithdrawAttempt";
 
 export interface LiquidityTick {
   index: number;
@@ -120,7 +120,7 @@ export class InvariantContract {
       Pool: {"liquidity":"Liquidity","sqrtPrice":"SqrtPrice","currentTickIndex":"i32","feeGrowthGlobalX":"FeeGrowth","feeGrowthGlobalY":"FeeGrowth","feeProtocolTokenX":"TokenAmount","feeProtocolTokenY":"TokenAmount","startTimestamp":"u64","lastTimestamp":"u64","feeReceiver":"[u8;32]"},
       Tick: {"index":"i32","sign":"bool","liquidityChange":"Liquidity","liquidityGross":"Liquidity","sqrtPrice":"SqrtPrice","feeGrowthOutsideX":"FeeGrowth","feeGrowthOutsideY":"FeeGrowth","secondsOutside":"u64"},
       SwapHop: {"poolKey":"PoolKey","xToY":"bool"},
-      InvariantError: {"_enum":["NotAdmin","NotFeeReceiver","PoolAlreadyExist","PoolNotFound","TickAlreadyExist","InvalidTickIndexOrTickSpacing","PositionNotFound","TickNotFound","FeeTierNotFound","PoolKeyNotFound","AmountIsZero","WrongLimit","PriceLimitReached","NoGainSwap","InvalidTickSpacing","FeeTierAlreadyExist","PoolKeyAlreadyExist","UnauthorizedFeeReceiver","ZeroLiquidity","RecoverableTransferError","UnrecoverableTransferError","TransferError","TokensAreSame","AmountUnderMinimumAmountOut","InvalidFee","NotEmptyTickDeinitialization","InvalidInitTick","InvalidInitSqrtPrice","NotEnoughGasToExecute","TickLimitReached","InvalidTickIndex","NoBalanceForTheToken","FailedToChangeTokenBalance","ReplyHandlingFailed"]},
+      InvariantError: {"_enum":["NotAdmin","NotFeeReceiver","PoolAlreadyExist","PoolNotFound","TickAlreadyExist","InvalidTickIndexOrTickSpacing","PositionNotFound","TickNotFound","FeeTierNotFound","PoolKeyNotFound","AmountIsZero","WrongLimit","PriceLimitReached","NoGainSwap","InvalidTickSpacing","FeeTierAlreadyExist","PoolKeyAlreadyExist","UnauthorizedFeeReceiver","ZeroLiquidity","RecoverableTransferError","UnrecoverableTransferError","TransferError","TokensAreSame","AmountUnderMinimumAmountOut","InvalidFee","NotEmptyTickDeinitialization","InvalidInitTick","InvalidInitSqrtPrice","NotEnoughGasToExecute","TickLimitReached","InvalidTickIndex","NoBalanceForTheToken","FailedToChangeTokenBalance","ReplyHandlingFailed","InvalidVaraDepositAttempt","InvalidVaraWithdrawAttempt"]},
       LiquidityTick: {"index":"i32","liquidityChange":"Liquidity","sign":"bool"},
       PositionTick: {"index":"i32","feeGrowthOutsideX":"FeeGrowth","feeGrowthOutsideY":"FeeGrowth","secondsOutside":"u64"},
       QuoteResult: {"amountIn":"TokenAmount","amountOut":"TokenAmount","targetSqrtPrice":"SqrtPrice","ticks":"Vec<Tick>"},
@@ -271,6 +271,19 @@ export class Service {
     );
   }
 
+  public depositVara(): TransactionBuilder<TokenAmount> {
+    if (!this._program.programId) throw new Error('Program ID is not set');
+    return new TransactionBuilder<TokenAmount>(
+      this._program.api,
+      this._program.registry,
+      'send_message',
+      ['Service', 'DepositVara'],
+      '(String, String)',
+      'U256',
+      this._program.programId
+    );
+  }
+
   public removeFeeTier(fee_tier: FeeTier): TransactionBuilder<FeeTier> {
     if (!this._program.programId) throw new Error('Program ID is not set');
     return new TransactionBuilder<FeeTier>(
@@ -371,6 +384,19 @@ export class Service {
       ['Service', 'WithdrawTokenPair', token_x, token_y],
       '(String, String, ([u8;32], Option<U256>), ([u8;32], Option<U256>))',
       '(U256, U256)',
+      this._program.programId
+    );
+  }
+
+  public withdrawVara(value: TokenAmount | null): TransactionBuilder<TokenAmount> {
+    if (!this._program.programId) throw new Error('Program ID is not set');
+    return new TransactionBuilder<TokenAmount>(
+      this._program.api,
+      this._program.registry,
+      'send_message',
+      ['Service', 'WithdrawVara', value],
+      '(String, String, Option<U256>)',
+      'U256',
       this._program.programId
     );
   }

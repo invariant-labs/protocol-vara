@@ -57,6 +57,7 @@ pub const TRANSFER_REPLY_HANDLING_COST: u64 = 10_600_000_000 * 2;
 pub const BALANCE_CHANGE_COST: u64 = 100_000 * 2;
 pub const TRANSFER_COST: u64 =
     TRANSFER_GAS_LIMIT + TRANSFER_REPLY_HANDLING_COST + BALANCE_CHANGE_COST;
+pub const VARA_ADDRESS: ActorId = ActorId::zero();
 
 pub enum RouteType<'a, TExecContext> {
     Swap(&'a mut InvariantService<TExecContext>),
@@ -707,6 +708,31 @@ where
             .collect()
     }
 
+    pub fn deposit_vara(&mut self) -> TokenAmount {
+        panicking!(|| {
+            let invariant = InvariantStorage::as_mut();
+            let value = TokenAmount(msg::value().into());
+
+            invariant
+                .increase_token_balance(&VARA_ADDRESS, &msg::source(), value)
+                .map(|_| value)
+        })
+    }
+
+    pub fn withdraw_vara(&mut self, value: Option<TokenAmount>) -> TokenAmount {
+        panicking!(|| {
+            let invariant = InvariantStorage::as_mut();
+
+            let value = invariant.decrease_token_balance(&VARA_ADDRESS, &msg::source(), value)?;
+            
+            // Reply has to be hardcoded since sails 
+            // doesn't allow for specifying value in the reply yet
+            gstd::dbg!(value.0.as_u128());
+            reply(("Service","WithdrawVara", value), value.0.as_u128()).expect("Failed to send message");
+            exec::leave();
+        })
+    }
+
     pub async fn deposit_single_token(
         &mut self,
         token: ActorId,
@@ -880,6 +906,17 @@ where
         amount: TokenAmount,
         transfer_type: TransferType,
     ) -> Result<(), InvariantError> {
+        if token == &VARA_ADDRESS {
+            return match transfer_type {
+                TransferType::Deposit => {
+                     Err(InvariantError::InvalidVaraDepositAttempt)
+                }
+                TransferType::Withdrawal => {
+                    Err(InvariantError::InvalidVaraWithdrawAttempt)
+               }
+            }
+        }
+
         if exec::gas_available() < TRANSFER_COST {
             return Err(InvariantError::NotEnoughGasToExecute);
         }
@@ -915,6 +952,17 @@ where
         token_y: &(ActorId, TokenAmount),
         transfer_type: TransferType,
     ) -> Result<(), InvariantError> {
+        if token_x.0 == VARA_ADDRESS || token_y.0 == VARA_ADDRESS {
+            return match transfer_type {
+                TransferType::Deposit => {
+                     Err(InvariantError::InvalidVaraDepositAttempt)
+                }
+                TransferType::Withdrawal => {
+                    Err(InvariantError::InvalidVaraWithdrawAttempt)
+               }
+            }
+        }
+
         if exec::gas_available() < 2 * TRANSFER_COST {
             return Err(InvariantError::NotEnoughGasToExecute);
         }
@@ -1047,7 +1095,6 @@ where
 
     fn send_transfer_token_message(
         invariant: &mut Invariant,
-
         token_address: &ActorId,
         from: &ActorId,
         to: &ActorId,

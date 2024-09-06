@@ -1,4 +1,4 @@
-use gstd::{Vec, vec};
+use gstd::{vec, Vec};
 #[macro_export]
 macro_rules! send_query {
   (
@@ -58,4 +58,18 @@ macro_rules! send_request {
         }
 
     };
+    (program: $program: expr, user: $user: expr, service_name: $name: literal, action: $action: literal, payload: ($($val: expr),*), value: $value: expr ) => {
+      {
+          use gstd::*;
+          let request = [
+              $name.encode(),
+              $action.encode(),
+              ( $( $val, )*).encode(),
+          ]
+          .concat();
+
+          $program.send_bytes_with_value($user, request, $value)
+      }
+
+  };
 }

@@ -38,6 +38,8 @@ pub enum InvariantError {
   NoBalanceForTheToken,
   FailedToChangeTokenBalance,
   ReplyHandlingFailed,
+  InvalidVaraDepositAttempt,
+  InvalidVaraWithdrawAttempt,
 }
 
 impl Into<String>for InvariantError {
