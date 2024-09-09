@@ -75,3 +75,36 @@ pub fn withdraw_token_pair(
         .2
         .into()
 }
+
+#[track_caller]
+pub fn withdraw_vara(
+    invariant: &Program,
+    from: u64,
+    amount: Option<u128>,
+    expected_error: Option<impl Into<String>>,
+) -> Option<TokenAmount> {
+    extern crate std;
+    let res = send_request!(
+        program: invariant,
+        user: from,
+        service_name: "Service",
+        action: "WithdrawVara",
+        payload: (amount.and_then(|am| TokenAmount(am.into()).into()))
+    );
+
+    if let Some(err) = expected_error {
+        res.assert_panicked_with(err);
+        return None;
+    }
+
+    res.assert_success();
+    let events = res.emitted_events();
+    assert_eq!(events.len(), 1);
+    events
+        .last()
+        .unwrap()
+        .decoded_event::<(String, String, TokenAmount)>()
+        .unwrap()
+        .2
+        .into()
+}

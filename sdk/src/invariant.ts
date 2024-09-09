@@ -27,7 +27,9 @@ import {
   validateInvariantPairDeposit,
   validateInvariantPairWithdraw,
   validateInvariantSingleDeposit,
-  validateInvariantSingleWithdraw
+  validateInvariantSingleWithdraw,
+  validateInvariantVaraWithdraw,
+  validateInvariantVaraDeposit
 } from './utils.js'
 import {
   CHUNK_SIZE,
@@ -619,6 +621,28 @@ export class Invariant {
     return tx.signAndSend()
   }
 
+  async depositVaraTx(
+    amount: bigint,
+    gasLimit: bigint = this.gasLimit
+  ): Promise<TransactionWrapper<TokenAmount>> {
+    if (amount < this.contract.api.existentialDeposit.toBigInt()) {
+      throw new Error('Value is less than existential deposit')
+    }
+
+    let tx = await this.contract.service.depositVara().withGas(gasLimit)
+    tx = await tx.withValue(amount)
+    return new TransactionWrapper<TokenAmount>(tx).withValidate(validateInvariantVaraDeposit)
+  }
+
+  async depositVara(
+    account: Signer,
+    amount: bigint,
+    gasLimit: bigint = this.gasLimit
+  ): Promise<TokenAmount> {
+    const tx = (await this.depositVaraTx(amount, gasLimit)).withAccount(account)
+    return tx.signAndSend()
+  }
+
   async removeFeeTierTx(
     feeTier: FeeTier,
     gasLimit: bigint = this.gasLimit
@@ -819,6 +843,27 @@ export class Invariant {
     gasLimit: bigint = this.gasLimit
   ): Promise<TokenAmount> {
     const tx = (await this.withdrawSingleTokenTx(token, amount, gasLimit)).withAccount(signer)
+    return tx.signAndSend()
+  }
+
+  async withdrawVaraTx(
+    amount: bigint | null,
+    gasLimit: bigint = this.gasLimit
+  ): Promise<TransactionWrapper<TokenAmount>> {
+    if (amount && amount < this.contract.api.existentialDeposit.toBigInt()) {
+      throw new Error('Value is less than existential deposit')
+    }
+
+    const tx = await this.contract.service.withdrawVara(amount as any).withGas(gasLimit)
+    return new TransactionWrapper<TokenAmount>(tx).withValidate(validateInvariantVaraWithdraw)
+  }
+
+  async withdrawVara(
+    account: Signer,
+    amount: bigint | null,
+    gasLimit: bigint = this.gasLimit
+  ): Promise<TokenAmount> {
+    const tx = (await this.withdrawVaraTx(amount, gasLimit)).withAccount(account)
     return tx.signAndSend()
   }
 

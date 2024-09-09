@@ -86,10 +86,10 @@ export const initGearApi = async (network: Network) => {
       address = MAINNET
       break
     default:
-      throw new Error("Network unknown")
+      throw new Error('Network unknown')
   }
 
-  const gearApi = await GearApi.create({providerAddress: address})
+  const gearApi = await GearApi.create({ providerAddress: address })
 
   const [chain, nodeName, nodeVersion] = await Promise.all([
     gearApi.chain(),
@@ -255,12 +255,21 @@ export class TransactionWrapper<U> {
   }
 
   async signAndSend(): Promise<U> {
-    const { response } = await this.txBuilder.signAndSend()
-    if (this.decodeCallback) {
-      return this.decodeCallback(await response())
-    }
+    try {
+      const { response } = await this.txBuilder.signAndSend()
+      if (this.decodeCallback) {
+        return this.decodeCallback(await response())
+      }
 
-    return await response()
+      return await response()
+    } catch (e: any) {
+      const message = e.message
+      if (message) {
+        throw e
+      } else {
+        throw JSON.stringify(e)
+      }
+    }
   }
 
   withAccount(signer: Signer): this {
@@ -305,6 +314,8 @@ const validateInvariantSingleTransfer = (message: UserMessageSent) => {
 }
 export const validateInvariantSingleDeposit = validateInvariantSingleTransfer
 export const validateInvariantSingleWithdraw = validateInvariantSingleTransfer
+export const validateInvariantVaraDeposit = validateInvariantSingleTransfer
+export const validateInvariantVaraWithdraw = validateInvariantSingleTransfer
 
 const validateInvariantPairTransfer = (message: UserMessageSent) => {
   try {

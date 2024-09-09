@@ -155,8 +155,12 @@ pub fn handle_valid_reply() {
 
 pub fn reply_handler() {
     // message is a valid reply
-    if msg::load::<(String, String, bool)>().is_ok() {
-        handle_valid_reply()
+    if let Ok(msg) = msg::load::<(String, String, bool)>() {
+        if msg.0 == "Vft" && msg.1 == "TransferFrom" {
+            handle_valid_reply()
+        } else {
+            gstd::debug!("Unknown message type");
+        }
     // message is a valid panic
     } else if msg::load::<String>().is_ok() {
         handle_panic()

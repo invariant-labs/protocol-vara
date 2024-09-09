@@ -120,6 +120,8 @@ type InvariantError = enum {
   NoBalanceForTheToken,
   FailedToChangeTokenBalance,
   ReplyHandlingFailed,
+  InvalidVaraDepositAttempt,
+  InvalidVaraWithdrawAttempt,
 };
 
 type LiquidityTick = struct {
@@ -155,6 +157,7 @@ service Service {
   CreatePosition : (pool_key: PoolKey, lower_tick: i32, upper_tick: i32, liquidity_delta: Liquidity, slippage_limit_lower: SqrtPrice, slippage_limit_upper: SqrtPrice) -> Position;
   DepositSingleToken : (token: actor_id, amount: TokenAmount) -> TokenAmount;
   DepositTokenPair : (token_x: struct { actor_id, TokenAmount }, token_y: struct { actor_id, TokenAmount }) -> struct { TokenAmount, TokenAmount };
+  DepositVara : () -> TokenAmount;
   RemoveFeeTier : (fee_tier: FeeTier) -> FeeTier;
   RemovePosition : (index: u32) -> struct { TokenAmount, TokenAmount };
   Swap : (pool_key: PoolKey, x_to_y: bool, amount: TokenAmount, by_amount_in: bool, sqrt_price_limit: SqrtPrice) -> CalculateSwapResult;
@@ -163,6 +166,7 @@ service Service {
   WithdrawProtocolFee : (pool_key: PoolKey) -> null;
   WithdrawSingleToken : (token: actor_id, amount: opt TokenAmount) -> TokenAmount;
   WithdrawTokenPair : (token_x: struct { actor_id, opt TokenAmount }, token_y: struct { actor_id, opt TokenAmount }) -> struct { TokenAmount, TokenAmount };
+  WithdrawVara : (value: opt TokenAmount) -> TokenAmount;
   query FeeTierExists : (fee_tier: FeeTier) -> bool;
   query GetAllPoolsForPair : (token0: actor_id, token1: actor_id) -> result (vec struct { FeeTier, Pool }, InvariantError);
   query GetAllPositions : (owner_id: actor_id) -> vec Position;
