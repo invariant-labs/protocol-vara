@@ -133,7 +133,7 @@ export class InvariantContract {
     this.service = new Service(this);
   }
 
-  newCtorFromCode(code: Uint8Array | Buffer, config: InvariantConfig): TransactionBuilder<null> {
+  newCtorFromCode(code: Uint8Array | any, config: InvariantConfig): TransactionBuilder<null> {
     const builder = new TransactionBuilder<null>(
       this.api,
       this.registry,

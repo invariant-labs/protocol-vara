@@ -5,8 +5,6 @@ import {
   HexString,
   ProgramMetadata
 } from '@gear-js/api'
-import { readFile } from 'fs/promises'
-import path from 'path'
 import * as wasmSerializer from './wasm-serializer.js'
 import { ISubmittableResult, IKeyringPair } from '@polkadot/types/types'
 import { SignerOptions, SubmittableExtrinsic } from '@polkadot/api/types'
@@ -110,11 +108,28 @@ export const subscribeToNewHeads = async (api: GearApi): Promise<VoidFunction> =
     )
   })
 }
+let nodeModules: typeof import('./node.js')
 
-export const getWasm = async (contractName: string): Promise<Buffer> => {
+// This is necessary to avoid import issues on the fronted
+const loadNodeModules = async () => {
+  if (typeof window !== 'undefined') {
+    throw new Error('cannot load node modules in a browser environment')
+  }
+
+  await import('./node.js')
+    .then(node => {
+      nodeModules = node
+    })
+    .catch(error => {
+      console.error('error while loading node modules:', error)
+    })
+}
+
+export const getWasm = async (contractName: string): Promise<any> => {
+  await loadNodeModules();
   const __dirname = new URL('.', import.meta.url).pathname
 
-  return readFile(path.join(__dirname, `../contracts/${contractName}/${contractName}.opt.wasm`))
+  return nodeModules.readFile(nodeModules.join(__dirname, `../contracts/${contractName}/${contractName}.opt.wasm`))
 }
 
 export const createTypeByName = (meta: ProgramMetadata, type: string, payload: any) => {
