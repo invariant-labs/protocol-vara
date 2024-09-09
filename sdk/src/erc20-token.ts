@@ -24,7 +24,7 @@ export class Erc20Token {
     this.vft = new Vft(this);
   }
 
-  newCtorFromCode(code: Uint8Array | Buffer, name: string, symbol: string, decimals: number): TransactionBuilder<null> {
+  newCtorFromCode(code: Uint8Array | any, name: string, symbol: string, decimals: number): TransactionBuilder<null> {
     const builder = new TransactionBuilder<null>(
       this.api,
       this.registry,

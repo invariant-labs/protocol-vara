@@ -56,13 +56,12 @@
   },
   "dependencies": {
     "@gear-js/api": "0.38.1",
-    "sails-js": "0.1.4",
     "@invariant-labs/vara-sdk-wasm": "0.1.0",
     "@polkadot/api": "11.0.2",
-    "@polkadot/types": "11.0.2"
+    "@polkadot/types": "11.0.2",
+    "sails-js": "0.1.4"
   },
   "devDependencies": {
-    "typescript": "5.5.3",
     "@types/chai": "^4.3.11",
     "@types/mocha": "^10.0.6",
     "@typescript-eslint/eslint-plugin": "^6.16.0",
@@ -71,6 +70,7 @@
     "eslint": "^8.56.0",
     "ts-mocha": "^10.0.0",
     "ts-node": "^10.9.2",
+    "typescript": "5.5.3",
     "wasm-pack": "^0.12.1"
   }
 }

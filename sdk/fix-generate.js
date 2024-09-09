@@ -22,7 +22,7 @@ for (const path of filesToModify) {
       ').toHex();\n    const reply = await this._program.api.message.calculateReply',
       ").toHex();\n    if (!this._program.programId) throw new Error('Program ID is not set');\n    const reply = await this._program.api.message.calculateReply"
     )
-
+    .replaceAll(' Buffer,', ' any,')
   // fix no parameter queries
   {
     let regex = /\'\(String, String\)\', '\[(.+?), (.+?)\]'/g
