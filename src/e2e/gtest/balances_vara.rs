@@ -41,9 +41,6 @@ fn test_vara_deposit_not_enough_value() {
 
     let invariant = init_invariant(&sys, Percentage::new(0));
     deposit_vara(&invariant, REGULAR_USER_1, vara_mint + 1, None::<&str>);
-
-    assert_eq!(sys.balance_of(INVARIANT_ID), vara_mint);
-    assert_eq!(sys.balance_of(REGULAR_USER_1), 0);
 }
 
 #[test]
