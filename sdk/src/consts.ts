@@ -26,12 +26,6 @@ import {
 } from '@invariant-labs/vara-sdk-wasm'
 import { HexString } from './utils.js'
 
-export const enum Network {
-  Local = 'Local',
-  Testnet = 'Testnet',
-  Mainnet = 'Mainnet'
-}
-
 export const LOCAL = 'ws://127.0.0.1:9944'
 export const TESTNET = 'wss://testnet.vara.network'
 export const MAINNET = 'wss://rpc.vara.network'

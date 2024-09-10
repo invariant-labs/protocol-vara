@@ -65,7 +65,8 @@ import {
   LiquidityBreakpoint,
   Liquidity
 } from './schema.js'
-import { CONCENTRATION_FACTOR, LOCAL, MAINNET, MAX_TICK_CROSS, Network, TESTNET } from './consts.js'
+import { Network } from './network.js'
+import { CONCENTRATION_FACTOR, LOCAL, MAINNET, MAX_TICK_CROSS, TESTNET } from './consts.js'
 export { HexString } from '@gear-js/api'
 
 export type Signer = string | IKeyringPair
@@ -126,10 +127,12 @@ const loadNodeModules = async () => {
 }
 
 export const getWasm = async (contractName: string): Promise<any> => {
-  await loadNodeModules();
+  await loadNodeModules()
   const __dirname = new URL('.', import.meta.url).pathname
 
-  return nodeModules.readFile(nodeModules.join(__dirname, `../contracts/${contractName}/${contractName}.opt.wasm`))
+  return nodeModules.readFile(
+    nodeModules.join(__dirname, `../contracts/${contractName}/${contractName}.opt.wasm`)
+  )
 }
 
 export const createTypeByName = (meta: ProgramMetadata, type: string, payload: any) => {
@@ -775,6 +778,28 @@ export const getConcentrationArray = (
   return concentrations.slice(0, limitIndex)
 }
 
+export const calculateAmountDelta = (
+  currentTickIndex: bigint,
+  currentSqrtPrice: bigint,
+  liquidity: bigint,
+  roundingUp: boolean,
+  upperTickIndex: bigint,
+  lowerTickIndex: bigint
+) => {
+  const encodedLiquidity = wasmSerializer.encodeLiquidity(liquidity)
+
+  const [x, y] = _calculateAmountDelta(
+    currentTickIndex,
+    currentSqrtPrice,
+    encodedLiquidity,
+    roundingUp,
+    upperTickIndex,
+    lowerTickIndex
+  )
+
+  return [wasmSerializer.decodeTokenAmount(x), wasmSerializer.decodeTokenAmount(y)]
+}
+
 export const calculateTokenAmountsWithSlippage = (
   tickSpacing: bigint,
   currentSqrtPrice: SqrtPrice,
@@ -784,24 +809,23 @@ export const calculateTokenAmountsWithSlippage = (
   slippage: Percentage,
   roundingUp: boolean
 ): [bigint, bigint] => {
-  const encodedLiquidity = wasmSerializer.encodeLiquidity(liquidity)
   const lowerBound = calculateSqrtPriceAfterSlippage(currentSqrtPrice, slippage, false)
   const upperBound = calculateSqrtPriceAfterSlippage(currentSqrtPrice, slippage, true)
 
   const currentTickIndex = calculateTick(currentSqrtPrice, tickSpacing)
 
-  const [lowerX, lowerY] = _calculateAmountDelta(
+  const [lowerX, lowerY] = calculateAmountDelta(
     currentTickIndex,
     lowerBound,
-    encodedLiquidity,
+    liquidity,
     roundingUp,
     upperTickIndex,
     lowerTickIndex
   )
-  const [upperX, upperY] = _calculateAmountDelta(
+  const [upperX, upperY] = calculateAmountDelta(
     currentTickIndex,
     upperBound,
-    encodedLiquidity,
+    liquidity,
     roundingUp,
     upperTickIndex,
     lowerTickIndex

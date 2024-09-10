@@ -1,6 +1,6 @@
 import { Pool, PoolKey } from '../src/schema'
 import { Invariant } from '../src/invariant'
-import { Network } from '../src/consts'
+import { Network } from '../src/network'
 import { FungibleToken } from '../src/erc20'
 import { initGearApi, newFeeTier, newPoolKey } from '../src/utils'
 import { assert } from 'chai'
