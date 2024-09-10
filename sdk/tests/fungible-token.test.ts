@@ -2,7 +2,7 @@ import 'mocha'
 import { assert, expect } from 'chai'
 import { GearKeyring } from '@gear-js/api'
 import { initGearApi, subscribeToNewHeads } from '../src/utils.js'
-import { Network } from '../src/consts.js'
+import { Network } from '../src/network'
 import { FungibleToken } from '../src/erc20.js'
 import { assertThrowsAsync } from '../src/test-utils.js'
 

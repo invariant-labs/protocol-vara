@@ -8,7 +8,8 @@ import {
   getMaxTick
 } from '../src/utils.js'
 import { decodeAddress, GearKeyring, HexString } from '@gear-js/api'
-import { CHUNK_SIZE, DEFAULT_ADDRESS, Network } from '../src/consts.js'
+import { Network } from '../src/network.js'
+import { CHUNK_SIZE, DEFAULT_ADDRESS } from '../src/consts.js'
 import { Invariant } from '../src/invariant.js'
 import { FungibleToken } from '../src/erc20.js'
 import { assert } from 'chai'

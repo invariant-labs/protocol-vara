@@ -9,7 +9,7 @@ import {
   
 } from '../src/utils.js'
 import { GearKeyring, HexString } from '@gear-js/api'
-import { Network } from '../src/consts'
+import { Network } from '../src/network'
 import { Invariant } from '../src/invariant'
 import { assert } from 'chai'
 import { FungibleToken } from '../src/erc20.js'

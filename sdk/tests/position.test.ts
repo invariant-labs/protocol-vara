@@ -23,7 +23,7 @@ import {
 } from '../src/utils'
 import { u8aToHex } from '@polkadot/util'
 import { GearKeyring, HexString } from '@gear-js/api'
-import { Network } from '../src/consts'
+import { Network } from '../src/network'
 
 const api = await initGearApi(Network.Local)
 const admin = await GearKeyring.fromSuri('//Alice')

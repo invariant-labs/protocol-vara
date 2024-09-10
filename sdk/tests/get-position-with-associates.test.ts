@@ -5,7 +5,7 @@ import {
 } from '@invariant-labs/vara-sdk-wasm'
 import { assert } from 'chai'
 import { Invariant } from '../src/invariant'
-import { Network } from '../src/consts'
+import { Network } from '../src/network'
 import { FungibleToken } from '../src/erc20'
 import { assertThrowsAsync, objectEquals } from '../src/test-utils'
 import { HexString, initGearApi, newFeeTier, newPoolKey } from '../src/utils'

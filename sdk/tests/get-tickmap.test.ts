@@ -9,7 +9,7 @@ import {
   subscribeToNewHeads
 } from '../src/utils.js'
 import { GearKeyring, HexString } from '@gear-js/api'
-import { Network } from '../src/consts.js'
+import { Network } from '../src/network'
 import { Invariant } from '../src/invariant.js'
 import { FungibleToken } from '../src/erc20.js'
 import { PoolKey } from '../src/schema.js'

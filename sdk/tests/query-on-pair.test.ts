@@ -3,7 +3,7 @@ import { PoolKey } from '../src/schema'
 import { GearKeyring } from '@gear-js/api'
 import { assert } from 'chai'
 import { Invariant } from '../src/invariant'
-import { Network } from '../src/consts'
+import { Network } from '../src/network'
 import { FungibleToken } from '../src/erc20'
 import { HexString, initGearApi, newFeeTier, newPoolKey } from '../src/utils'
 

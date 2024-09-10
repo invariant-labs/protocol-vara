@@ -1,8 +1,8 @@
 export { Invariant } from './invariant.js'
 export { FungibleToken } from './erc20.js'
 export { GearKeyring } from '@gear-js/api'
+export { Network } from './network.js'
 export {
-  Network,
   CONCENTRATION_FACTOR,
   LIQUIDITY_TICKS_LIMIT,
   MAX_SQRT_PRICE,

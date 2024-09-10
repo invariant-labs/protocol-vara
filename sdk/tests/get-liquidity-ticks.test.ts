@@ -7,7 +7,8 @@ import {
   subscribeToNewHeads
 } from '../src/utils.js'
 import { GearKeyring, HexString } from '@gear-js/api'
-import { CHUNK_SIZE, Network } from '../src/consts.js'
+import { CHUNK_SIZE } from '../src/consts.js'
+import { Network } from '../src/network.js'
 import { Invariant } from '../src/invariant.js'
 import { FungibleToken } from '../src/erc20.js'
 import { assert } from 'chai'
