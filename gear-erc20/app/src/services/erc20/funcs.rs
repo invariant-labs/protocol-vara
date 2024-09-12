@@ -1,6 +1,6 @@
 use super::utils::{Result, *};
 use sails_rs::ActorId;
-use primitive_types::U256;
+use sails_rs::U256;
 
 pub fn allowance(allowances: &AllowancesMap, owner: ActorId, spender: ActorId) -> U256 {
     allowances
@@ -602,7 +602,7 @@ mod tests {
     mod utils {
         use super::{AllowancesMap, BalancesMap};
         use sails_rs::ActorId;
-        use primitive_types::U256;
+        use sails_rs::U256;
 
         pub fn allowances_map<const N: usize>(
             content: [(ActorId, ActorId, U256); N],

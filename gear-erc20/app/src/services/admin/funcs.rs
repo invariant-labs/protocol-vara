@@ -3,8 +3,8 @@ use crate::services::erc20::{
     utils::{Result, *},
 };
 use sails_rs::ActorId;
+use sails_rs::U256;
 use gstd::Vec;
-use primitive_types::U256;
 
 pub fn mint(
     balances: &mut BalancesMap,
@@ -187,8 +187,8 @@ mod tests {
 
     mod utils {
         use super::{AllowancesMap, BalancesMap};
+        use sails_rs::U256;
         use sails_rs::{ActorId, ToString};
-        use primitive_types::U256;
 
         pub fn allowances_map<const N: usize>(
             content: [(ActorId, ActorId, U256); N],

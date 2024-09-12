@@ -1,7 +1,7 @@
 // TODO (sails): impl such macro
 use super::utils::{AllowancesMap, BalancesMap};
 use gstd::String;
-use primitive_types::U256;
+use sails_rs::U256;
 
 crate::declare_storage!(module: allowances, name: AllowancesStorage, ty: AllowancesMap);
 
