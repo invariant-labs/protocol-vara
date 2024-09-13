@@ -118,7 +118,7 @@ describe('query sizes', async function () {
       gasLimit: invariant.contract.api.blockGasLimit.toBigInt()
     })
 
-    assert.equal(reply.payload.length, 450)
+    assert.equal(reply.payload.length, 454)
   })
 
   it('2 position ticks', async () => {

@@ -406,20 +406,26 @@ where
         owner_id: ActorId,
         size: u32,
         offset: u32,
-    ) -> Result<(Vec<(Pool, Vec<Position>)>, u32), InvariantError> {
+    ) -> Result<(Vec<(Pool, Vec<(Position, u32)>)>, u32), InvariantError> {
         let invariant = InvariantStorage::as_ref();
         let positions = invariant.positions.get_slice(&owner_id, offset, size);
-        let mut grouped_positions: Vec<(Pool, Vec<Position>)> = vec![];
+        let mut grouped_positions: Vec<(Pool, Vec<(Position, u32)>)> = vec![];
 
-        for position in positions.into_iter() {
-            if let Some(entry) = grouped_positions
-                .iter_mut()
-                .find(|(_pool, positions)| positions.first().unwrap().pool_key == position.pool_key)
-            {
-                entry.1.push(position);
+        for (index, position) in positions.into_iter().enumerate() {
+            let position_index = offset + index as u32;
+
+            if let Some(entry) = grouped_positions.iter_mut().find(|(_pool, positions)| {
+                positions
+                    .first()
+                    .expect("Entires have at least one position")
+                    .0
+                    .pool_key
+                    == position.pool_key
+            }) {
+                entry.1.push((position, position_index));
             } else {
                 let pool = invariant.pools.get(&position.pool_key)?;
-                grouped_positions.push((pool, vec![position]));
+                grouped_positions.push((pool, vec![(position, position_index)]));
             }
         }
 
@@ -724,11 +730,12 @@ where
             let invariant = InvariantStorage::as_mut();
 
             let value = invariant.decrease_token_balance(&VARA_ADDRESS, &msg::source(), value)?;
-            
-            // Reply has to be hardcoded since sails 
+
+            // Reply has to be hardcoded since sails
             // doesn't allow for specifying value in the reply yet
             gstd::dbg!(value.0.as_u128());
-            reply(("Service","WithdrawVara", value), value.0.as_u128()).expect("Failed to send message");
+            reply(("Service", "WithdrawVara", value), value.0.as_u128())
+                .expect("Failed to send message");
             exec::leave();
         })
     }
@@ -762,16 +769,29 @@ where
             let invariant = InvariantStorage::as_mut();
             let caller = &self.exec_context.actor_id();
 
-            let amount = invariant.decrease_token_balance(&token, &caller, amount)?;
+            let amount = match amount {
+                Some(amount) => {
+                    if amount.get() == 0.into() {
+                        return Err(InvariantError::AmountIsZero);
+                    }
 
-            Self::transfer_single_token(
-                invariant,
-                &token,
-                &caller,
-                amount,
-                TransferType::Withdrawal,
-            )
-            .await?;
+                    invariant.decrease_token_balance(&token, &caller, Some(amount))?
+                }
+                None => invariant
+                    .decrease_token_balance(&token, &caller, None)
+                    .unwrap_or(TokenAmount::new(0.into())),
+            };
+
+            if amount.get() != 0.into() {
+                Self::transfer_single_token(
+                    invariant,
+                    &token,
+                    &caller,
+                    amount,
+                    TransferType::Withdrawal,
+                )
+                .await?;
+            }
 
             Ok(amount)
         })
@@ -908,13 +928,9 @@ where
     ) -> Result<(), InvariantError> {
         if token == &VARA_ADDRESS {
             return match transfer_type {
-                TransferType::Deposit => {
-                     Err(InvariantError::InvalidVaraDepositAttempt)
-                }
-                TransferType::Withdrawal => {
-                    Err(InvariantError::InvalidVaraWithdrawAttempt)
-               }
-            }
+                TransferType::Deposit => Err(InvariantError::InvalidVaraDepositAttempt),
+                TransferType::Withdrawal => Err(InvariantError::InvalidVaraWithdrawAttempt),
+            };
         }
 
         if exec::gas_available() < TRANSFER_COST {
@@ -954,13 +970,9 @@ where
     ) -> Result<(), InvariantError> {
         if token_x.0 == VARA_ADDRESS || token_y.0 == VARA_ADDRESS {
             return match transfer_type {
-                TransferType::Deposit => {
-                     Err(InvariantError::InvalidVaraDepositAttempt)
-                }
-                TransferType::Withdrawal => {
-                    Err(InvariantError::InvalidVaraWithdrawAttempt)
-               }
-            }
+                TransferType::Deposit => Err(InvariantError::InvalidVaraDepositAttempt),
+                TransferType::Withdrawal => Err(InvariantError::InvalidVaraWithdrawAttempt),
+            };
         }
 
         if exec::gas_available() < 2 * TRANSFER_COST {

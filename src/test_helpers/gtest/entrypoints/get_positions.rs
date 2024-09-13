@@ -18,6 +18,6 @@ pub fn get_positions(
         service_name: "Service",
         action: "GetPositions",
         payload: (owner_id.into(), size, offset),
-        response_type: Result<(Vec<(Pool, Vec<Position>)>, u32), InvariantError>
+        response_type: Result<(Vec<(Pool, Vec<(Position, u32)>)>, u32), InvariantError>
     )
 }

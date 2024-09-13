@@ -64,6 +64,13 @@ fn test_single_deposit_and_withdraw() {
 
     assert_eq!(get_user_balances(&invariant, REGULAR_USER_2), vec![]);
 
+    // Withdraw with none with empty balances;
+    assert_eq!(
+        withdraw_single_token(&invariant, REGULAR_USER_2, token, None, None::<&str>).unwrap(),
+        TokenAmount(0.into())
+    );
+    assert_eq!(get_user_balances(&invariant, REGULAR_USER_2), vec![]);
+
     // deposit and withdraw with multiple requests
     assert_eq!(
         deposit_single_token(&invariant, REGULAR_USER_2, token, U256::from(250), None::<&str>).unwrap(),
@@ -212,7 +219,7 @@ fn test_single_withdraw_failures() {
 
     // no balance
     withdraw_fails(amount.into(), InvariantError::NoBalanceForTheToken.into());
-    withdraw_fails(None, InvariantError::NoBalanceForTheToken.into());
+    withdraw_fails(Some(0.into()), InvariantError::AmountIsZero.into());
 
     assert_eq!(
         deposit_single_token(&invariant, REGULAR_USER_2, token, amount, None::<&str>).unwrap(),

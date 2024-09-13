@@ -566,7 +566,7 @@ export class Service {
     return result[2].toJSON() as unknown as { ok: [Position, Pool, Tick, Tick] } | { err: InvariantError };
   }
 
-  public async getPositions(owner_id: string, size: number, offset: number, originAddress: string, value?: number | string | bigint, atBlock?: `0x${string}`): Promise<{ ok: [Array<[Pool, Array<Position>]>, number] } | { err: InvariantError }> {
+  public async getPositions(owner_id: string, size: number, offset: number, originAddress: string, value?: number | string | bigint, atBlock?: `0x${string}`): Promise<{ ok: [Array<[Pool, Array<[Position, number]>]>, number] } | { err: InvariantError }> {
     const payload = this._program.registry.createType('(String, String, [u8;32], u32, u32)', ['Service', 'GetPositions', owner_id, size, offset]).toHex();
     if (!this._program.programId) throw new Error('Program ID is not set');
     const reply = await this._program.api.message.calculateReply({
@@ -577,8 +577,8 @@ export class Service {
       gasLimit: this._program.api.blockGasLimit.toBigInt(),
       at: atBlock,
     });
-    const result = this._program.registry.createType('(String, String, Result<(Vec<(Pool, Vec<Position>)>, u32), InvariantError>)', reply.payload);
-    return result[2].toJSON() as unknown as { ok: [Array<[Pool, Array<Position>]>, number] } | { err: InvariantError };
+    const result = this._program.registry.createType('(String, String, Result<(Vec<(Pool, Vec<(Position, u32)>)>, u32), InvariantError>)', reply.payload);
+    return result[2].toJSON() as unknown as { ok: [Array<[Pool, Array<[Position, number]>]>, number] } | { err: InvariantError };
   }
 
   public async getProtocolFee(originAddress: string, value?: number | string | bigint, atBlock?: `0x${string}`): Promise<Percentage> {

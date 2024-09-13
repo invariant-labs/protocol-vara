@@ -59,7 +59,6 @@ import {
   SwapHop
 } from './schema.js'
 import { getServiceNamePrefix, ZERO_ADDRESS, getFnNamePrefix } from 'sails-js'
-
 export type Page = { index: number; entries: [Position, Pool][] }
 
 export class Invariant {
@@ -292,13 +291,19 @@ export class Invariant {
         DEFAULT_ADDRESS as any
       )
     )
-    const mapEntries = ([pool, positions]: [Pool, Position[]]): [Position, Pool][] => {
-      return positions.map(position => {
-        return [position, pool]
+    const convertedList = convertPositions(response[0]);
+    const flattenedList: [[Position, number], Pool][] = convertedList.map(([pool, positionsWithIndexes]) => {
+      return positionsWithIndexes.map(position => {
+        return [position, pool] as [[Position, number], Pool]
       })
-    }
+    }).flat(1)
 
-    return [convertPositions(response[0]).map(mapEntries).flat(1), BigInt(response[1])]
+    const listSortedByIndex = flattenedList.sort((a, b) => {
+      return a[0][1] - b[0][1]
+    })
+    const positionAndPoolList = listSortedByIndex.map(v => [v[0][0], v[1]] as [Position, Pool])
+
+    return [positionAndPoolList, BigInt(response[1])]
   }
 
   async _getAllPositions(ownerId: ActorId): Promise<Position[]> {
