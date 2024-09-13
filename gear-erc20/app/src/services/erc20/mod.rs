@@ -4,7 +4,7 @@
 use crate::services;
 use core::{cmp::Ordering, fmt::Debug, marker::PhantomData};
 use gstd::{ext, format, Decode, Encode, String, TypeInfo, Vec};
-use primitive_types::U256;
+use sails_rs::U256;
 use sails_rs::gstd::{service, msg};
 use sails_rs::ActorId;
 use sails_rs::Box;

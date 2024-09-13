@@ -3,7 +3,7 @@ use gstd::{
     collections::{BTreeSet, HashMap},
     ActorId, Decode, Encode, String, TypeInfo,
 };
-use primitive_types::U256;
+use sails_rs::U256;
 
 // Replace with NonEmptySet
 // Consider array of [bit; RoleNumber]

@@ -2,7 +2,7 @@ use crate::{services, ServiceOf};
 use core::marker::PhantomData;
 use gstd::String;
 use gstd::{ActorId, Decode, Encode, ToString, TypeInfo, Vec};
-use primitive_types::U256;
+use sails_rs::U256;
 use sails_rs::format;
 use sails_rs::gstd::service;
 use sails_rs::Box;

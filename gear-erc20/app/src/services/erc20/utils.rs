@@ -1,5 +1,5 @@
 use gstd::{collections::HashMap, Decode, Encode, TypeInfo};
-use primitive_types::U256;
+use sails_rs::U256;
 use sails_rs::ActorId;
 
 pub type AllowancesMap = HashMap<(ActorId, ActorId), NonZeroU256>;
