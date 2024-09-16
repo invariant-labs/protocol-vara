@@ -110,11 +110,11 @@ export class FungibleToken {
     return this.erc20.vft.totalSupply(DEFAULT_ADDRESS)
   }
 
-  async approveTx(spender: ActorId, amount: bigint, tokenAddress: HexString) {
+  async approveTx(spender: ActorId, amount: bigint, tokenAddress: HexString, gasLimit: bigint = this.gasLimit) {
     this.erc20.programId = tokenAddress
 
     return new TransactionWrapper<boolean>(
-      await this.erc20.vft.approve(spender as any, amount as any).withGas(this.gasLimit)
+      await this.erc20.vft.approve(spender as any, amount as any).withGas(gasLimit)
     )
   }
 
@@ -128,11 +128,11 @@ export class FungibleToken {
     return tx.withAccount(owner).signAndSend()
   }
 
-  async burnTx(account: ActorId, amount: bigint, tokenAddress: HexString) {
+  async burnTx(account: ActorId, amount: bigint, tokenAddress: HexString, gasLimit: bigint = this.gasLimit) {
     this.erc20.programId = tokenAddress
 
     return new TransactionWrapper<boolean>(
-      await this.erc20.admin.burn(account as any, amount as any).withGas(this.gasLimit)
+      await this.erc20.admin.burn(account as any, amount as any).withGas(gasLimit)
     )
   }
 
@@ -145,11 +145,11 @@ export class FungibleToken {
     return tx.withAccount(this.admin).signAndSend()
   }
 
-  async mintTx(account: ActorId, amount: bigint, tokenAddress: HexString) {
+  async mintTx(account: ActorId, amount: bigint, tokenAddress: HexString, gasLimit: bigint = this.gasLimit) {
     this.erc20.programId = tokenAddress
 
     return new TransactionWrapper<boolean>(
-      await this.erc20.admin.mint(account as any, amount as any).withGas(this.gasLimit)
+      await this.erc20.admin.mint(account as any, amount as any).withGas(gasLimit)
     )
   }
 
@@ -162,23 +162,23 @@ export class FungibleToken {
     return tx.withAccount(this.admin).signAndSend()
   }
 
-  async setTransferFail(flag: boolean, tokenAddress: HexString) {
+  async setTransferFail(flag: boolean, tokenAddress: HexString, gasLimit: bigint = this.gasLimit) {
     this.erc20.programId = tokenAddress
 
     if (!this.admin) {
       throw new Error('Admin account is required to set transfer failure')
     }
 
-    const tx = await this.erc20.vft.setFailTransfer(flag).withGas(this.gasLimit)
+    const tx = await this.erc20.vft.setFailTransfer(flag).withGas(gasLimit)
     const { response } = await tx.withAccount(this.admin).signAndSend()
     return response()
   }
 
-  async transferTx(to: ActorId, amount: bigint, tokenAddress: HexString) {
+  async transferTx(to: ActorId, amount: bigint, tokenAddress: HexString, gasLimit: bigint = this.gasLimit) {
     this.erc20.programId = tokenAddress
 
     return new TransactionWrapper<boolean>(
-      await this.erc20.vft.transfer(to as any, amount as any).withGas(this.gasLimit)
+      await this.erc20.vft.transfer(to as any, amount as any).withGas(gasLimit)
     )
   }
 
@@ -187,13 +187,13 @@ export class FungibleToken {
     return tx.withAccount(signer).signAndSend()
   }
 
-  async transferFromTx(from: ActorId, to: ActorId, amount: bigint, tokenAddress: HexString) {
+  async transferFromTx(from: ActorId, to: ActorId, amount: bigint, tokenAddress: HexString, gasLimit: bigint = this.gasLimit) {
     this.erc20.programId = tokenAddress
 
     return new TransactionWrapper<boolean>(
       await this.erc20.vft
         .transferFrom(from as any, to as any, amount as any)
-        .withGas(this.gasLimit)
+        .withGas(gasLimit)
     )
   }
 
