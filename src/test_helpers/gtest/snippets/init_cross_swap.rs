@@ -55,14 +55,11 @@ pub fn init_cross_swap(invariant: &Program, token_x_program: &Program, token_y_p
     )
     .assert_success();
 
-    assert!(withdraw_single_token(
-        invariant,
-        REGULAR_USER_2,
-        TOKEN_X_ID,
-        None,
-        InvariantError::NoBalanceForTheToken.into()
-    )
-    .is_none());
+    assert_eq!(
+        withdraw_single_token(invariant, REGULAR_USER_2, TOKEN_X_ID, None, None::<&str>).unwrap(),
+        TokenAmount::new(0.into())
+    );
+
     assert!(
         withdraw_single_token(invariant, REGULAR_USER_2, TOKEN_Y_ID, None, None::<&str>).is_some()
     );
@@ -89,6 +86,12 @@ pub fn init_cross_swap(invariant: &Program, token_x_program: &Program, token_y_p
     );
     assert_eq!(pool_after.fee_growth_global_y, FeeGrowth::new(0));
 
-    assert_eq!(pool_after.fee_protocol_token_x, TokenAmount::new(U256::from(2)));
-    assert_eq!(pool_after.fee_protocol_token_y, TokenAmount::new(U256::from(0)));
+    assert_eq!(
+        pool_after.fee_protocol_token_x,
+        TokenAmount::new(U256::from(2))
+    );
+    assert_eq!(
+        pool_after.fee_protocol_token_y,
+        TokenAmount::new(U256::from(0))
+    );
 }

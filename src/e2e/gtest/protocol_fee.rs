@@ -106,16 +106,10 @@ fn test_withdraw_fee_not_deployer() {
 
     withdraw_single_token(&invariant, REGULAR_USER_2, token_x, None, None::<&str>).unwrap();
 
-    assert_eq!(
-        withdraw_single_token(
-            &invariant,
-            REGULAR_USER_2,
-            token_y,
-            None,
-            Some(InvariantError::NoBalanceForTheToken)
-        ),
-        None
-    );
+    let withdrawn_y =
+        withdraw_single_token(&invariant, REGULAR_USER_2, token_y, None, None::<&str>).unwrap();
+
+    assert_eq!(withdrawn_y, TokenAmount::new(0.into()));
 
     let amount_x = balance_of(&token_x_program, REGULAR_USER_2);
     let amount_y = balance_of(&token_y_program, REGULAR_USER_2);

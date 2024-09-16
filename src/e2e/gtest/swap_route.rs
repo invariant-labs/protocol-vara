@@ -176,19 +176,14 @@ fn swap_route_test() {
     )
     .assert_success();
 
-    withdraw_single_token(
-        &invariant,
-        REGULAR_USER_1,
-        token_x,
-        None,
-        InvariantError::NoBalanceForTheToken.into(),
+    assert_eq!(
+        withdraw_single_token(&invariant, REGULAR_USER_1, token_x, None, None::<&str>,).unwrap(),
+        TokenAmount::new(0.into())
     );
-    withdraw_single_token(
-        &invariant,
-        REGULAR_USER_1,
-        token_y,
-        None,
-        InvariantError::NoBalanceForTheToken.into(),
+
+    assert_eq!(
+        withdraw_single_token(&invariant, REGULAR_USER_1, token_y, None, None::<&str>,).unwrap(),
+        TokenAmount::new(0.into())
     );
 
     withdraw_single_token(&invariant, REGULAR_USER_1, token_z, None, None::<&str>);
@@ -222,12 +217,9 @@ fn swap_route_test() {
 
     withdraw_single_token(&invariant, REGULAR_USER_2, token_x, None, None::<&str>);
     withdraw_single_token(&invariant, REGULAR_USER_2, token_y, None, None::<&str>);
-    withdraw_single_token(
-        &invariant,
-        REGULAR_USER_2,
-        token_z,
-        None,
-        InvariantError::NoBalanceForTheToken.into(),
+    assert_eq!(
+        withdraw_single_token(&invariant, REGULAR_USER_2, token_z, None, None::<&str>,).unwrap(),
+        TokenAmount::new(0.into())
     );
 
     let user_2_amount_x_after = balance_of(&token_x_program, REGULAR_USER_2);
