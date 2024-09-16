@@ -37,15 +37,21 @@ const main = async () => {
   const BTCAddress = await FungibleToken.deploy(api, account, 'Bitcoin', 'BTC', 8n)
   const ETHAddress = await FungibleToken.deploy(api, account, 'Ether', 'ETH', 12n)
   const USDCAddress = await FungibleToken.deploy(api, account, 'USDC', 'USDC', 6n)
+  const SOLAddress = await FungibleToken.deploy(api, account, 'Solana', 'SOL', 9n)
+  const AZEROAddress = await FungibleToken.deploy(api, account, 'Aleph Zero', 'AZERO', 12n)
+
   const decimals = {
     [BTCAddress]: 8n,
     [ETHAddress]: 12n,
     [USDCAddress]: 6n
   }
-  console.log(`BTC: ${BTCAddress}, ETH: ${ETHAddress}, USDC: ${USDCAddress}`)
+
+  console.log(
+    `BTC: ${BTCAddress}, ETH: ${ETHAddress}, USDC: ${USDCAddress}, SOL ${SOLAddress}, AZEROAddress ${AZEROAddress}`
+  )
 
   const response = await fetch(
-    'https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=bitcoin,ethereum,aleph-zero'
+    'https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=bitcoin,ethereum'
   )
   const data = await response.json()
   const prices = {

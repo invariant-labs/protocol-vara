@@ -49,7 +49,10 @@ fn test_swap_not_enough_tokens_x() {
 
     increase_allowance(&token_x_program, REGULAR_USER_2, INVARIANT_ID, amount).assert_success();
 
-    assert_eq!(balance_of(&token_x_program, REGULAR_USER_2), U256::from(999));
+    assert_eq!(
+        balance_of(&token_x_program, REGULAR_USER_2),
+        U256::from(999)
+    );
 
     assert_eq!(balance_of(&token_x_program, INVARIANT_ID), U256::from(500));
     assert_eq!(balance_of(&token_y_program, INVARIANT_ID), U256::from(1000));
@@ -87,34 +90,25 @@ fn test_swap_not_enough_tokens_x() {
         Some(TokenAmount(deposit_amount))
     );
     assert_eq!(
-        withdraw_single_token(
-            &invariant,
-            REGULAR_USER_2,
-            TOKEN_Y_ID,
-            None,
-            InvariantError::NoBalanceForTheToken.into()
-        ),
-        None
+        withdraw_single_token(&invariant, REGULAR_USER_2, TOKEN_Y_ID, None, None::<&str>).unwrap(),
+        TokenAmount::new(0.into())
     );
 
     let pool_after = get_pool(&invariant, token_x, token_y, fee_tier).unwrap();
 
     assert_eq!(pool_before, pool_after);
 
-    assert_eq!(balance_of(&token_x_program, REGULAR_USER_2), U256::from(999));
+    assert_eq!(
+        balance_of(&token_x_program, REGULAR_USER_2),
+        U256::from(999)
+    );
     assert_eq!(balance_of(&token_y_program, REGULAR_USER_2), U256::from(0));
 
     assert_eq!(balance_of(&token_x_program, INVARIANT_ID), U256::from(500));
     assert_eq!(balance_of(&token_y_program, INVARIANT_ID), U256::from(1000));
 
-    assert_eq!(
-        pool_after.fee_growth_global_x,
-        FeeGrowth::new(0)
-    );
-    assert_eq!(
-        pool_after.fee_growth_global_y,
-        FeeGrowth::new(0)
-    );
+    assert_eq!(pool_after.fee_growth_global_x, FeeGrowth::new(0));
+    assert_eq!(pool_after.fee_growth_global_y, FeeGrowth::new(0));
 
     assert_eq!(
         pool_after.fee_protocol_token_x,
@@ -149,7 +143,10 @@ fn test_swap_not_enough_tokens_y() {
 
     increase_allowance(&token_y_program, REGULAR_USER_2, INVARIANT_ID, amount).assert_success();
 
-    assert_eq!(balance_of(&token_y_program, REGULAR_USER_2), U256::from(499));
+    assert_eq!(
+        balance_of(&token_y_program, REGULAR_USER_2),
+        U256::from(499)
+    );
 
     assert_eq!(balance_of(&token_x_program, INVARIANT_ID), U256::from(500));
     assert_eq!(balance_of(&token_y_program, INVARIANT_ID), U256::from(1000));
@@ -193,19 +190,16 @@ fn test_swap_not_enough_tokens_y() {
     assert_eq!(pool_before, pool_after);
 
     assert_eq!(balance_of(&token_x_program, REGULAR_USER_2), U256::from(0));
-    assert_eq!(balance_of(&token_y_program, REGULAR_USER_2), U256::from(499));
+    assert_eq!(
+        balance_of(&token_y_program, REGULAR_USER_2),
+        U256::from(499)
+    );
 
     assert_eq!(balance_of(&token_x_program, INVARIANT_ID), U256::from(500));
     assert_eq!(balance_of(&token_y_program, INVARIANT_ID), U256::from(1000));
 
-    assert_eq!(
-        pool_after.fee_growth_global_x,
-        FeeGrowth::new(0)
-    );
-    assert_eq!(
-        pool_after.fee_growth_global_y,
-        FeeGrowth::new(0)
-    );
+    assert_eq!(pool_after.fee_growth_global_x, FeeGrowth::new(0));
+    assert_eq!(pool_after.fee_growth_global_y, FeeGrowth::new(0));
 
     assert_eq!(
         pool_after.fee_protocol_token_x,
@@ -244,7 +238,10 @@ fn test_swap_not_enough_liquidity_token_y() {
     let swap_amount = TokenAmount::new(amount);
     let slippage = SqrtPrice::new(MAX_SQRT_PRICE.into());
 
-    assert_eq!(balance_of(&token_y_program, REGULAR_USER_2), U256::from(1000));
+    assert_eq!(
+        balance_of(&token_y_program, REGULAR_USER_2),
+        U256::from(1000)
+    );
     assert_eq!(balance_of(&token_x_program, INVARIANT_ID), U256::from(500));
     assert_eq!(balance_of(&token_y_program, INVARIANT_ID), U256::from(1000));
 
@@ -280,19 +277,16 @@ fn test_swap_not_enough_liquidity_token_y() {
     assert_eq!(pool_before, pool_after);
 
     assert_eq!(balance_of(&token_x_program, REGULAR_USER_2), U256::from(0));
-    assert_eq!(balance_of(&token_y_program, REGULAR_USER_2), U256::from(1000));
+    assert_eq!(
+        balance_of(&token_y_program, REGULAR_USER_2),
+        U256::from(1000)
+    );
 
     assert_eq!(balance_of(&token_x_program, INVARIANT_ID), U256::from(500));
     assert_eq!(balance_of(&token_y_program, INVARIANT_ID), U256::from(1000));
 
-    assert_eq!(
-        pool_after.fee_growth_global_x,
-        FeeGrowth::new(0)
-    );
-    assert_eq!(
-        pool_after.fee_growth_global_y,
-        FeeGrowth::new(0)
-    );
+    assert_eq!(pool_after.fee_growth_global_x, FeeGrowth::new(0));
+    assert_eq!(pool_after.fee_growth_global_y, FeeGrowth::new(0));
 
     assert_eq!(
         pool_after.fee_protocol_token_x,
@@ -331,7 +325,10 @@ fn test_swap_not_enough_liquidity_token_x() {
     let swap_amount = TokenAmount::new(amount);
     let slippage = SqrtPrice::new(MIN_SQRT_PRICE.into());
 
-    assert_eq!(balance_of(&token_x_program, REGULAR_USER_2), U256::from(2000));
+    assert_eq!(
+        balance_of(&token_x_program, REGULAR_USER_2),
+        U256::from(2000)
+    );
     assert_eq!(balance_of(&token_x_program, INVARIANT_ID), U256::from(500));
     assert_eq!(balance_of(&token_y_program, INVARIANT_ID), U256::from(1000));
 
@@ -362,34 +359,25 @@ fn test_swap_not_enough_liquidity_token_x() {
         Some(swap_amount)
     );
     assert_eq!(
-        withdraw_single_token(
-            &invariant,
-            REGULAR_USER_2,
-            TOKEN_Y_ID,
-            None,
-            InvariantError::NoBalanceForTheToken.into()
-        ),
-        None
+        withdraw_single_token(&invariant, REGULAR_USER_2, TOKEN_Y_ID, None, None::<&str>).unwrap(),
+        TokenAmount::new(0.into())
     );
 
     let pool_after = get_pool(&invariant, token_x, token_y, fee_tier).unwrap();
 
     assert_eq!(pool_before, pool_after);
 
-    assert_eq!(balance_of(&token_x_program, REGULAR_USER_2), U256::from(2000));
+    assert_eq!(
+        balance_of(&token_x_program, REGULAR_USER_2),
+        U256::from(2000)
+    );
     assert_eq!(balance_of(&token_y_program, REGULAR_USER_2), U256::from(0));
 
     assert_eq!(balance_of(&token_x_program, INVARIANT_ID), U256::from(500));
     assert_eq!(balance_of(&token_y_program, INVARIANT_ID), U256::from(1000));
 
-    assert_eq!(
-        pool_after.fee_growth_global_x,
-        FeeGrowth::new(0)
-    );
-    assert_eq!(
-        pool_after.fee_growth_global_y,
-        FeeGrowth::new(0)
-    );
+    assert_eq!(pool_after.fee_growth_global_x, FeeGrowth::new(0));
+    assert_eq!(pool_after.fee_growth_global_y, FeeGrowth::new(0));
 
     assert_eq!(
         pool_after.fee_protocol_token_x,
@@ -569,18 +557,12 @@ fn test_swap_x_to_y() {
     assert_eq!(lower_tick.liquidity_change, liquidity_delta);
     assert_eq!(middle_tick.liquidity_change, liquidity_delta);
     assert_eq!(upper_tick.liquidity_change, liquidity_delta);
-    assert_eq!(
-        upper_tick.fee_growth_outside_x,
-        FeeGrowth::new(0)
-    );
+    assert_eq!(upper_tick.fee_growth_outside_x, FeeGrowth::new(0));
     assert_eq!(
         middle_tick.fee_growth_outside_x,
         FeeGrowth::new(30000000000000000000000u128)
     );
-    assert_eq!(
-        lower_tick.fee_growth_outside_x,
-        FeeGrowth::new(0)
-    );
+    assert_eq!(lower_tick.fee_growth_outside_x, FeeGrowth::new(0));
     assert!(lower_tick_bit);
     assert!(middle_tick_bit);
     assert!(upper_tick_bit);
@@ -757,18 +739,12 @@ fn test_swap_y_to_x() {
     assert_eq!(lower_tick.liquidity_change, liquidity_delta);
     assert_eq!(middle_tick.liquidity_change, liquidity_delta);
     assert_eq!(upper_tick.liquidity_change, liquidity_delta);
-    assert_eq!(
-        upper_tick.fee_growth_outside_y,
-        FeeGrowth::new(0)
-    );
+    assert_eq!(upper_tick.fee_growth_outside_y, FeeGrowth::new(0));
     assert_eq!(
         middle_tick.fee_growth_outside_y,
         FeeGrowth::new(30000000000000000000000u128)
     );
-    assert_eq!(
-        lower_tick.fee_growth_outside_y,
-        FeeGrowth::new(0)
-    );
+    assert_eq!(lower_tick.fee_growth_outside_y, FeeGrowth::new(0));
     assert!(lower_tick_bit);
     assert!(middle_tick_bit);
     assert!(upper_tick_bit);

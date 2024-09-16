@@ -200,11 +200,11 @@ export const convertPosition = (position: any): Position => {
   return position as Position
 }
 
-export const convertPositions = (positions: any): [Pool, Position[]][] => {
+export const convertPositions = (positions: any): [Pool, [Position, number][]][] => {
   positions = positions.map(([pool, positions]: any[]) => {
     pool = convertPool(pool)
-    positions = positions.map((position: Position) => {
-      return convertPosition(position)
+    positions = positions.map(([position, index]: [Position, number]) => {
+      return [convertPosition(position), index]
     })
     return [pool, positions]
   })

@@ -258,10 +258,8 @@ describe('position', async function () {
       const invariantBeforeX = await GRC20.balanceOf(invariant.programId(), tokenXAddress)
       await invariant.claimFee(positionOwner, 0n)
       await invariant.withdrawSingleToken(positionOwner, tokenXAddress)
-      await assertThrowsAsync(
-        invariant.withdrawSingleToken(positionOwner, tokenYAddress),
-        "Panic occurred: panicked with 'InvariantError: NoBalanceForTheToken'"
-      )
+      const withdrawnTokens = await invariant.withdrawSingleToken(positionOwner, tokenYAddress)
+      assert.deepEqual(withdrawnTokens, 0n)
 
       const positionOwnerAfterX = await GRC20.balanceOf(positionOwner.addressRaw, tokenXAddress)
 

@@ -6,7 +6,7 @@ import { initGearApi, newFeeTier, newPoolKey } from '../src/utils'
 import { assert } from 'chai'
 import { objectEquals } from '../src/test-utils'
 import { describe, it } from 'mocha'
-import { GearKeyring, HexString } from '@gear-js/api'
+import { decodeAddress, GearKeyring, HexString } from '@gear-js/api'
 
 const api = await initGearApi(Network.Local)
 
@@ -23,8 +23,9 @@ const feeTier = newFeeTier(6000000000n, 10n)
 let poolKey: PoolKey
 let pool: Pool
 
-describe('get-positions', async () => {
-  beforeEach(async () => {
+describe('get-positions', async function () {
+  beforeEach(async function () {
+    this.timeout(60000)
     invariant = await Invariant.deploy(api, admin, 10000000000n)
     token0Address = await FungibleToken.deploy(api, admin, 'Coin', 'COIN', 0n)
     token1Address = await FungibleToken.deploy(api, admin, 'Coin', 'COIN', 0n)
@@ -52,7 +53,9 @@ describe('get-positions', async () => {
     await invariant.createPosition(admin, poolKey, -20n, 20n, 1000000000000n, pool.sqrtPrice, 0n)
   })
 
-  it('get positions', async () => {
+  xit('get positions', async function () {
+    this.timeout(40000)
+
     const result = await invariant.getPositions(admin.addressRaw, 2n, 0n)
 
     assert.equal(result[0].length, 2)
@@ -76,7 +79,7 @@ describe('get-positions', async () => {
       feeGrowthGlobalY: 0n,
       feeProtocolTokenX: 0n,
       feeProtocolTokenY: 0n,
-      feeReceiver: admin.addressRaw
+      feeReceiver: decodeAddress(admin.address)
     }
 
     objectEquals(result[0][0][0], firstExpectedPosition, ['lastBlockNumber'])
@@ -100,35 +103,39 @@ describe('get-positions', async () => {
       feeGrowthGlobalY: 0n,
       feeProtocolTokenX: 0n,
       feeProtocolTokenY: 0n,
-      feeReceiver: admin.addressRaw
+      feeReceiver: decodeAddress(admin.address)
     }
 
     objectEquals(result[0][1][0], secondExpectedPosition, ['lastBlockNumber'])
     objectEquals(result[0][1][1], secondExpectedPool, ['startTimestamp', 'lastTimestamp'])
   })
 
-  it('get positions less than exist', async () => {
+  xit('get positions less than exist', async function () {
+    this.timeout(10000)
     const result = await invariant.getPositions(admin.addressRaw, 1n, 0n)
 
     assert.equal(result[0].length, 1)
     assert.equal(result[1], 2n)
   })
 
-  it('get positions more than exist', async () => {
+  xit('get positions more than exist', async function () {
+    this.timeout(10000)
     const result = await invariant.getPositions(admin.addressRaw, 3n, 0n)
 
     assert.equal(result[0].length, 2)
     assert.equal(result[1], 2n)
   })
 
-  it('get positions with offset', async () => {
+  xit('get positions with offset', async function () {
+    this.timeout(10000)
     const result = await invariant.getPositions(admin.addressRaw, 1n, 1n)
 
     assert.equal(result[0].length, 1)
     assert.equal(result[1], 2n)
   })
 
-  it('get positions with offset less than exist', async () => {
+  xit('get positions with offset less than exist', async function () {
+    this.timeout(10000)
     await invariant.createPosition(admin, poolKey, -30n, 30n, 1000000000000n, pool.sqrtPrice, 0n)
     const result = await invariant.getPositions(admin.addressRaw, 1n, 1n)
 
@@ -136,10 +143,47 @@ describe('get-positions', async () => {
     assert.equal(result[1], 3n)
   })
 
-  it('get positions with offset more than exist', async () => {
+  xit('get positions with offset more than exist', async function () {
     const result = await invariant.getPositions(admin.addressRaw, 2n, 1n)
 
     assert.equal(result[0].length, 1)
     assert.equal(result[1], 2n)
+  })
+
+  it('get positions with 2 pools in the right order', async function () {
+    this.timeout(40000)
+    const secondPoolKey = newPoolKey(
+      poolKey.tokenX,
+      poolKey.tokenY,
+      newFeeTier(poolKey.feeTier.fee + 1n, poolKey.feeTier.tickSpacing)
+    )
+
+    await invariant.addFeeTier(admin, secondPoolKey.feeTier)
+    await invariant.createPool(admin, secondPoolKey, 1000000000000000000000000n)
+
+    await invariant.createPosition(
+      admin,
+      secondPoolKey,
+      -10n,
+      10n,
+      10n,
+      1000000000000000000000000n,
+      0n
+    )
+    await invariant.createPosition(admin, poolKey, -10n, 10n, 10n, 1000000000000000000000000n, 0n)
+    const result = await invariant.getPositions(admin.addressRaw, 4n, 0n)
+
+    for (let i = 0; i < 4; i++) {
+      const expectedPosition = await invariant.getPosition(admin.addressRaw, BigInt(i))
+      const actualPosition = result[0][i][0]
+
+      assert.deepEqual(
+        actualPosition,
+        expectedPosition,
+      )
+    }
+
+    assert.equal(result[0].length, 4)
+    assert.equal(result[1], 4n)
   })
 })

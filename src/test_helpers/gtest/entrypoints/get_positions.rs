@@ -11,13 +11,13 @@ pub fn get_positions(
     owner_id: impl Into<ActorId>,
     size: u32,
     offset: u32,
-) -> Result<(Vec<(Pool, Vec<Position>)>, u32), InvariantError> {
+) -> Result<(Vec<(Pool, Vec<(Position, u32)>)>, u32), InvariantError> {
     send_query!(
         program: invariant,
         user: PROGRAM_OWNER,
         service_name: "Service",
         action: "GetPositions",
         payload: (owner_id.into(), size, offset),
-        response_type: Result<(Vec<(Pool, Vec<Position>)>, u32), InvariantError>
+        response_type: Result<(Vec<(Pool, Vec<(Position, u32)>)>, u32), InvariantError>
     )
 }
