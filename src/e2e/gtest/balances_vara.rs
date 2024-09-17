@@ -68,7 +68,8 @@ fn test_vara_withdraw() {
     assert_eq!(sys.balance_of(INVARIANT_ID), 0);
     assert_eq!(sys.balance_of(REGULAR_USER_1), vara_mint);
 
-    let value = withdraw_vara(&invariant, REGULAR_USER_1, vara_mint.into(), None::<&str>);
+    let value = withdraw_vara(&invariant, REGULAR_USER_1, None, None::<&str>).unwrap();
+    assert_eq!(value, TokenAmount::new(0.into()));
     sys.claim_value_from_mailbox(REGULAR_USER_1);
     assert_eq!(sys.balance_of(INVARIANT_ID), 0);
     assert_eq!(sys.balance_of(REGULAR_USER_1), vara_mint);

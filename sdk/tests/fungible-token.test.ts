@@ -6,7 +6,7 @@ import { Network } from '../src/network'
 import { FungibleToken } from '../src/erc20.js'
 import { assertThrowsAsync } from '../src/test-utils.js'
 
-const api = await initGearApi(Network.Testnet)
+const api = await initGearApi(Network.Local)
 const account0 = await GearKeyring.fromSuri('//Alice')
 const account1 = await GearKeyring.fromSuri('//Bob')
 let unsub: Promise<VoidFunction> | null = null
