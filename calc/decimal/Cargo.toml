@@ -14,10 +14,7 @@ num-traits = { version = "0.2.14", default-features = false }
 sails-rs = { workspace = true, optional = true }
 traceable_result= {workspace = true, optional = true}
 serde = { version = "1.0", features = ["derive"] }
-gsys= {workspace = true, optional = true}
-galloc= {workspace = true, optional = true}
-gear-stack-buffer= {workspace = true, optional = true}
-gear-ss58= {workspace = true, optional = true}
+
 [features]
-default = ["sails-rs", "gear-ss58", "gear-stack-buffer", "galloc", "gsys"]
+default = ["sails-rs"]
 invariant-wasm = []
