@@ -13,13 +13,13 @@ use xshell::Shell;
 compile_error!("Unsupported target platform! Only the following platforms are supported: Windows (x86_64), macOS (aarch64), or Linux (x86_64).");
 
 #[cfg(all(target_os = "windows", target_arch = "x86_64"))]
-const NODE_LINK: &str = "https://get.gear.rs/gear-v1.4.1-x86_64-pc-windows-msvc.zip";
+const NODE_LINK: &str = "https://get.gear.rs/gear-v1.5.0-x86_64-pc-windows-msvc.zip";
 
 #[cfg(all(target_os = "macos", target_arch = "aarch64"))]
-const NODE_LINK: &str = "https://get.gear.rs/gear-v1.4.1-aarch64-apple-darwin.tar.xz";
+const NODE_LINK: &str = "https://get.gear.rs/gear-v1.5.0-aarch64-apple-darwin.tar.xz";
 
 #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
-const NODE_LINK: &str = "https://get.gear.rs/gear-v1.4.1-x86_64-unknown-linux-gnu.tar.xz";
+const NODE_LINK: &str = "https://get.gear.rs/gear-v1.5.0-x86_64-unknown-linux-gnu.tar.xz";
 
 fn main() -> Result<()> {
     let Some(command) = env::args().nth(1) else {
