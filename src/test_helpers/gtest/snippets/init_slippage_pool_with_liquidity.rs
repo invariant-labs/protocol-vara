@@ -10,7 +10,6 @@ use math::{
 use sails_rs::ActorId;
 
 pub fn init_slippage_pool_with_liquidity(
-    sys: &System,
     invariant: &Program<'_>,
     token_x_program: &Program<'_>,
     token_y_program: &Program<'_>,
@@ -94,30 +93,44 @@ pub fn init_slippage_pool_with_liquidity(
     );
 
     let events = res.emitted_events();
-    events[0]
+
+    let position_created_event = events[0]
         .assert_to(EVENT_ADDRESS)
-        .assert_with_payload(PositionCreatedEvent {
+        .decoded_event::<PositionCreatedEvent>()
+        .unwrap();
+
+    position_created_events_are_identical_no_timestamp(
+        &position_created_event,
+        &PositionCreatedEvent {
             address: REGULAR_USER_1.into(),
             pool_key,
             liquidity_delta: liquidity,
-            timestamp: sys.block_timestamp(),
+            timestamp: 0,
             lower_tick,
             upper_tick,
             current_sqrt_price: init_sqrt_price,
-        });
-    events[1]
+        },
+    );
+
+    let position_return_event = &events[1]
         .assert_to(REGULAR_USER_1)
-        .assert_with_payload(Position {
+        .decoded_event::<Position>()
+        .unwrap();
+
+    positions_are_identical_no_timestamp(
+        position_return_event,
+        &Position {
             pool_key,
             liquidity,
             lower_tick_index: lower_tick,
             upper_tick_index: upper_tick,
             fee_growth_inside_x: FeeGrowth::new(0),
             fee_growth_inside_y: FeeGrowth::new(0),
-            last_block_number: sys.block_height() as u64,
+            last_block_number: 0 as u64,
             tokens_owed_x: TokenAmount::new(U256::from(0)),
             tokens_owed_y: TokenAmount::new(U256::from(0)),
-        });
+        },
+    );
 
     let pool_after = get_pool(&invariant, token_0, token_1, fee_tier).unwrap();
 

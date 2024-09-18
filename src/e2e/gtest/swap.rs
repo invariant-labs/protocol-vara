@@ -23,8 +23,8 @@ fn test_swap() {
     let invariant = init_invariant(&sys, Percentage::from_scale(1, 2));
 
     init_basic_pool(&invariant, &token_x, &token_y);
-    init_basic_position(&sys, &invariant, &token_x_program, &token_y_program);
-    init_basic_swap(&sys, &invariant, &token_x_program, &token_y_program);
+    init_basic_position(&invariant, &token_x_program, &token_y_program);
+    init_basic_swap(&invariant, &token_x_program, &token_y_program);
 }
 #[test]
 fn test_swap_not_enough_tokens_x() {
@@ -37,7 +37,7 @@ fn test_swap_not_enough_tokens_x() {
     let invariant = init_invariant(&sys, Percentage::from_scale(1, 2));
 
     init_basic_pool(&invariant, &token_x, &token_y);
-    init_basic_position(&sys, &invariant, &token_x_program, &token_y_program);
+    init_basic_position(&invariant, &token_x_program, &token_y_program);
 
     let fee = Percentage::from_scale(6, 3);
     let tick_spacing = 10;
@@ -131,7 +131,7 @@ fn test_swap_not_enough_tokens_y() {
     let invariant = init_invariant(&sys, Percentage::from_scale(1, 2));
 
     init_basic_pool(&invariant, &token_x, &token_y);
-    init_basic_position(&sys, &invariant, &token_x_program, &token_y_program);
+    init_basic_position(&invariant, &token_x_program, &token_y_program);
 
     let fee = Percentage::from_scale(6, 3);
     let tick_spacing = 10;
@@ -222,7 +222,7 @@ fn test_swap_not_enough_liquidity_token_y() {
     let invariant = init_invariant(&sys, Percentage::from_scale(1, 2));
 
     init_basic_pool(&invariant, &token_x, &token_y);
-    init_basic_position(&sys, &invariant, &token_x_program, &token_y_program);
+    init_basic_position(&invariant, &token_x_program, &token_y_program);
     let fee = Percentage::from_scale(6, 3);
     let tick_spacing = 10;
     let fee_tier = FeeTier { fee, tick_spacing };
@@ -309,7 +309,7 @@ fn test_swap_not_enough_liquidity_token_x() {
     let invariant = init_invariant(&sys, Percentage::from_scale(1, 2));
 
     init_basic_pool(&invariant, &token_x, &token_y);
-    init_basic_position(&sys, &invariant, &token_x_program, &token_y_program);
+    init_basic_position(&invariant, &token_x_program, &token_y_program);
     let fee = Percentage::from_scale(6, 3);
     let tick_spacing = 10;
     let fee_tier = FeeTier { fee, tick_spacing };

@@ -43,9 +43,21 @@ fn test_create_position() {
     .assert_single_event()
     .assert_empty()
     .assert_to(REGULAR_USER_1);
-    increase_allowance(&token_x_program, REGULAR_USER_1, INVARIANT_ID, U256::from(500)).assert_success();
+    increase_allowance(
+        &token_x_program,
+        REGULAR_USER_1,
+        INVARIANT_ID,
+        U256::from(500),
+    )
+    .assert_success();
 
-    increase_allowance(&token_y_program, REGULAR_USER_1, INVARIANT_ID, U256::from(500)).assert_success();
+    increase_allowance(
+        &token_y_program,
+        REGULAR_USER_1,
+        INVARIANT_ID,
+        U256::from(500),
+    )
+    .assert_success();
 
     let pool_key = PoolKey::new(token_x.into(), token_y.into(), fee_tier).unwrap();
     let pool = get_pool(&invariant, token_x, token_y, fee_tier).unwrap();
@@ -85,31 +97,44 @@ fn test_create_position() {
 
     let events = res.emitted_events();
     assert_eq!(events.len(), 2);
-    events[0]
+
+    let position_created_event = events[0]
         .assert_to(EVENT_ADDRESS)
-        .assert_with_payload(PositionCreatedEvent {
+        .decoded_event::<PositionCreatedEvent>()
+        .unwrap();
+
+    position_created_events_are_identical_no_timestamp(
+        &position_created_event,
+        &PositionCreatedEvent {
             address: REGULAR_USER_1.into(),
             pool_key,
             liquidity_delta: Liquidity::new(U256::from(10)),
-            timestamp: sys.block_timestamp(),
+            timestamp: 0,
             lower_tick: -10,
             upper_tick: 10,
             current_sqrt_price: init_sqrt_price,
-        });
+        },
+    );
 
-    events[1]
+    let position_return_event = &events[1]
         .assert_to(REGULAR_USER_1)
-        .assert_with_payload(Position {
+        .decoded_event::<Position>()
+        .unwrap();
+
+    positions_are_identical_no_timestamp(
+        position_return_event,
+        &Position {
             pool_key,
             liquidity: Liquidity::new(U256::from(10)),
             lower_tick_index: -10,
             upper_tick_index: 10,
             fee_growth_inside_x: FeeGrowth::new(0),
             fee_growth_inside_y: FeeGrowth::new(0),
-            last_block_number: sys.block_height() as u64,
+            last_block_number: 0,
             tokens_owed_x: TokenAmount::new(U256::from(0)),
             tokens_owed_y: TokenAmount::new(U256::from(0)),
-        });
+        },
+    )
 }
 
 #[test]
@@ -144,9 +169,21 @@ fn test_position_same_upper_and_lower_tick() {
     .assert_empty()
     .assert_to(REGULAR_USER_1);
 
-    increase_allowance(&token_x_program, REGULAR_USER_1, INVARIANT_ID, U256::from(500)).assert_success();
+    increase_allowance(
+        &token_x_program,
+        REGULAR_USER_1,
+        INVARIANT_ID,
+        U256::from(500),
+    )
+    .assert_success();
 
-    increase_allowance(&token_y_program, REGULAR_USER_1, INVARIANT_ID, U256::from(500)).assert_success();
+    increase_allowance(
+        &token_y_program,
+        REGULAR_USER_1,
+        INVARIANT_ID,
+        U256::from(500),
+    )
+    .assert_success();
 
     let pool_key = PoolKey::new(token_x.into(), token_y.into(), fee_tier).unwrap();
     let pool = get_pool(&invariant, token_x, token_y, fee_tier).unwrap();
@@ -196,10 +233,8 @@ fn test_position_below_current_tick() {
     let invariant = init_invariant(&sys, Percentage(100));
 
     let initial_balance = U256::from(10_000_000_000u128);
-    let (token_x_program, token_y_program) = init_tokens_with_mint(
-        &sys,
-        (initial_balance, initial_balance),
-    );
+    let (token_x_program, token_y_program) =
+        init_tokens_with_mint(&sys, (initial_balance, initial_balance));
     let token_x = ActorId::from(TOKEN_X_ID);
     let token_y = ActorId::from(TOKEN_Y_ID);
 
@@ -273,31 +308,44 @@ fn test_position_below_current_tick() {
 
     let events = res.emitted_events();
     assert_eq!(events.len(), 2);
-    events[0]
+
+    let position_created_event = events[0]
         .assert_to(EVENT_ADDRESS)
-        .assert_with_payload(PositionCreatedEvent {
+        .decoded_event::<PositionCreatedEvent>()
+        .unwrap();
+
+    position_created_events_are_identical_no_timestamp(
+        &position_created_event,
+        &PositionCreatedEvent {
             address: REGULAR_USER_1.into(),
             pool_key,
             liquidity_delta,
-            timestamp: sys.block_timestamp(),
+            timestamp: 0,
             lower_tick: lower_tick_index,
             upper_tick: upper_tick_index,
             current_sqrt_price: init_sqrt_price,
-        });
+        },
+    );
 
-    events[1]
+    let position_return_event = &events[1]
         .assert_to(REGULAR_USER_1)
-        .assert_with_payload(Position {
+        .decoded_event::<Position>()
+        .unwrap();
+
+    positions_are_identical_no_timestamp(
+        position_return_event,
+        &Position {
             pool_key,
             liquidity: liquidity_delta,
             lower_tick_index,
             upper_tick_index,
             fee_growth_inside_x: FeeGrowth::new(0),
             fee_growth_inside_y: FeeGrowth::new(0),
-            last_block_number: sys.block_height() as u64,
+            last_block_number: 0 as u64,
             tokens_owed_x: TokenAmount::new(U256::from(0)),
             tokens_owed_y: TokenAmount::new(U256::from(0)),
-        });
+        },
+    );
 
     withdraw_token_pair(
         &invariant,
@@ -363,10 +411,8 @@ fn test_position_within_current_tick() {
     let invariant = init_invariant(&sys, Percentage(100));
 
     let initial_balance = U256::from(100_000_000);
-    let (token_x_program, token_y_program) = init_tokens_with_mint(
-        &sys,
-        (initial_balance, initial_balance),
-    );
+    let (token_x_program, token_y_program) =
+        init_tokens_with_mint(&sys, (initial_balance, initial_balance));
     let token_x = ActorId::from(TOKEN_X_ID);
     let token_y = ActorId::from(TOKEN_Y_ID);
 
@@ -502,10 +548,8 @@ fn test_position_above_current_tick() {
     let invariant = init_invariant(&sys, Percentage(100));
 
     let initial_balance = U256::from(100_000_000);
-    let (token_x_program, token_y_program) = init_tokens_with_mint(
-        &sys,
-        (initial_balance, initial_balance),
-    );
+    let (token_x_program, token_y_program) =
+        init_tokens_with_mint(&sys, (initial_balance, initial_balance));
     let token_x = ActorId::from(TOKEN_X_ID);
     let token_y = ActorId::from(TOKEN_Y_ID);
 
@@ -576,31 +620,43 @@ fn test_position_above_current_tick() {
 
     let events = res.emitted_events();
     assert_eq!(events.len(), 2);
-    events[0]
+    let position_created_event = events[0]
         .assert_to(EVENT_ADDRESS)
-        .assert_with_payload(PositionCreatedEvent {
+        .decoded_event::<PositionCreatedEvent>()
+        .unwrap();
+
+    position_created_events_are_identical_no_timestamp(
+        &position_created_event,
+        &PositionCreatedEvent {
             address: REGULAR_USER_1.into(),
             pool_key,
             liquidity_delta,
-            timestamp: sys.block_timestamp(),
+            timestamp: 0,
             lower_tick: lower_tick_index,
             upper_tick: upper_tick_index,
             current_sqrt_price: init_sqrt_price,
-        });
+        },
+    );
 
-    events[1]
+    let position_return_event = &events[1]
         .assert_to(REGULAR_USER_1)
-        .assert_with_payload(Position {
+        .decoded_event::<Position>()
+        .unwrap();
+
+    positions_are_identical_no_timestamp(
+        position_return_event,
+        &Position {
             pool_key,
             liquidity: liquidity_delta,
             lower_tick_index,
             upper_tick_index,
             fee_growth_inside_x: FeeGrowth::new(0),
             fee_growth_inside_y: FeeGrowth::new(0),
-            last_block_number: sys.block_height() as u64,
+            last_block_number: 0 as u64,
             tokens_owed_x: TokenAmount::new(U256::from(0)),
             tokens_owed_y: TokenAmount::new(U256::from(0)),
-        });
+        },
+    );
 
     withdraw_token_pair(
         &invariant,

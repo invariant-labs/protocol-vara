@@ -15,7 +15,7 @@ fn test_cross() {
     let invariant = init_invariant(&sys, Percentage::from_scale(1, 2));
 
     init_basic_pool(&invariant, &token_x, &token_y);
-    init_basic_position(&sys, &invariant, &token_x_program, &token_y_program);
+    init_basic_position(&invariant, &token_x_program, &token_y_program);
     init_cross_position(&invariant, &token_x_program, &token_y_program);
     init_cross_swap(&invariant, &token_x_program, &token_y_program);
 

@@ -1,5 +1,5 @@
 use crate::test_helpers::gtest::*;
-use contracts::{FeeTier, InvariantError, PoolKey};
+use contracts::{FeeTier, PoolKey};
 use decimal::*;
 use gtest::System;
 use io::SwapHop;

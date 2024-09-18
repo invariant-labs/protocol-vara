@@ -34,9 +34,8 @@ pub fn withdraw_single_token(
     events
         .last()
         .unwrap()
-        .decoded_event::<(String, String, TokenAmount)>()
+        .decoded_event::<TokenAmount>()
         .unwrap()
-        .2
         .into()
 }
 
@@ -70,9 +69,8 @@ pub fn withdraw_token_pair(
     events
         .last()
         .unwrap()
-        .decoded_event::<(String, String, (TokenAmount, TokenAmount))>()
+        .decoded_event::<(TokenAmount, TokenAmount)>()
         .unwrap()
-        .2
         .into()
 }
 
@@ -103,8 +101,7 @@ pub fn withdraw_vara(
     events
         .last()
         .unwrap()
-        .decoded_event::<(String, String, TokenAmount)>()
+        .decoded_event::<TokenAmount>()
         .unwrap()
-        .2
         .into()
 }

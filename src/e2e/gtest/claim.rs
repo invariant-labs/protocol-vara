@@ -18,8 +18,8 @@ fn test_claim() {
     let (token_x_program, token_y_program) = init_tokens(&sys);
 
     init_basic_pool(&invariant, &token_x, &token_y);
-    init_basic_position(&sys, &invariant, &token_x_program, &token_y_program);
-    init_basic_swap(&sys, &invariant, &token_x_program, &token_y_program);
+    init_basic_position(&invariant, &token_x_program, &token_y_program);
+    init_basic_swap(&invariant, &token_x_program, &token_y_program);
 
     let fee_tier = FeeTier::new(Percentage::from_scale(6, 3), 10).unwrap();
 
@@ -79,8 +79,8 @@ fn test_claim_not_owner() {
     let (token_x_program, token_y_program) = init_tokens(&sys);
 
     init_basic_pool(&invariant, &token_x, &token_y);
-    init_basic_position(&sys, &invariant, &token_x_program, &token_y_program);
-    init_basic_swap(&sys, &invariant, &token_x_program, &token_y_program);
+    init_basic_position(&invariant, &token_x_program, &token_y_program);
+    init_basic_swap(&invariant, &token_x_program, &token_y_program);
 
     claim_fee(
         &invariant,

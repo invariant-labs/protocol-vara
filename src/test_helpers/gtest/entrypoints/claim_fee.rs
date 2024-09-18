@@ -32,8 +32,7 @@ pub fn claim_fee(
     events
         .last()
         .unwrap()
-        .decoded_event::<(String, String, (TokenAmount, TokenAmount))>()
+        .decoded_event::<(TokenAmount, TokenAmount)>()
         .unwrap()
-        .2
         .into()
 }

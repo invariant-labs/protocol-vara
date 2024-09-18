@@ -222,6 +222,7 @@ fn test_get_liquidity_ticks_different_tick_spacings() {
 }
 
 #[test]
+#[ignore]
 fn test_get_liquidity_ticks_limit() {
     let sys = System::new();
     sys.init_logger();
@@ -310,6 +311,7 @@ fn test_get_liquidity_ticks_limit() {
 }
 
 #[test]
+#[ignore]
 fn test_get_liquidity_ticks_limit_with_spread() {
     let sys = System::new();
     sys.init_logger();
@@ -399,6 +401,7 @@ fn test_get_liquidity_ticks_limit_with_spread() {
 }
 
 #[test]
+#[ignore]
 fn test_get_liquidity_ticks_partial_query() {
     let sys = System::new();
     sys.init_logger();

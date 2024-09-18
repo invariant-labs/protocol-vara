@@ -49,11 +49,10 @@ fn test_create_pool() {
         sqrt_price: init_sqrt_price,
         current_tick_index: init_tick,
         fee_receiver: ActorId::from(ADMIN),
-        last_timestamp: sys.block_timestamp(),
-        start_timestamp: sys.block_timestamp(),
         ..Pool::default()
     };
-    assert_eq!(pool, expected_pool);
+
+    pools_are_identical_no_timestamp(&pool, &expected_pool);
 }
 
 #[test]

@@ -25,7 +25,7 @@ fn test_get_position_with_associates() {
     };
 
     init_basic_pool(&invariant, &token_x, &token_y);
-    init_basic_position(&sys, &invariant, &token_x_program, &token_y_program);
+    init_basic_position(&invariant, &token_x_program, &token_y_program);
 
     let pool_key = PoolKey::new(token_x, token_y, fee_tier).unwrap();
     let (lower_tick_index, upper_tick_index) = (-20, 10);
