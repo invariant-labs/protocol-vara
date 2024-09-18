@@ -26,10 +26,10 @@ jobs:
       - name: Install prerequisites
         run: sudo apt install -y build-essential clang cmake curl binaryen
 
-      - name: Install rust 1.78
+      - name: Install rust 1.81
         uses: actions-rs/toolchain@v1
         with:
-          toolchain: 1.78
+          toolchain: 1.81
           default: true
           target: wasm32-unknown-unknown
 
@@ -55,17 +55,17 @@ jobs:
       - name: Install prerequisites
         run: sudo apt install -y build-essential clang cmake curl binaryen
 
-      - name: Install rust 1.78
+      - name: Install rust 1.81
         uses: actions-rs/toolchain@v1
         with:
-          toolchain: 1.78
+          toolchain: 1.81
           default: true
           target: wasm32-unknown-unknown
 
       - name: Run tests script (with building)
         run: |
           chmod +x tests.sh
-          ./tests.sh --release
+          ./tests.sh --release --all -- --include-ignored
         shell: bash
   sdk_tests:
     name: Run SDK tests
@@ -84,10 +84,10 @@ jobs:
       - name: Install prerequisites
         run: sudo apt install -y build-essential binaryen
 
-      - name: Install rust 1.78
+      - name: Install rust 1.81
         uses: actions-rs/toolchain@v1
         with:
-          toolchain: 1.78
+          toolchain: 1.81
           default: true
           target: wasm32-unknown-unknown
 
