@@ -77,6 +77,9 @@ describe('vara-deposits', async function () {
     await assertVaraBalanceChange(amount, async () => {
       await invariant.withdrawVara(admin, amount)
     })
+    await assertVaraBalanceChange(0n, async () => {
+      await invariant.withdrawVara(admin, null)
+    })
   })
 
   it('deposit and withdraw failures', async function () {

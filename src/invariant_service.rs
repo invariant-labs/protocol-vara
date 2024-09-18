@@ -728,12 +728,24 @@ where
     pub fn withdraw_vara(&mut self, value: Option<TokenAmount>) -> TokenAmount {
         panicking!(|| {
             let invariant = InvariantStorage::as_mut();
+            let token = &VARA_ADDRESS;
+            let caller = &msg::source();
 
-            let value = invariant.decrease_token_balance(&VARA_ADDRESS, &msg::source(), value)?;
+            let value = match value {
+                Some(value) => {
+                    if value.get() == 0.into() {
+                        return Err(InvariantError::AmountIsZero);
+                    }
+
+                    invariant.decrease_token_balance(&token, &caller, Some(value))?
+                }
+                None => invariant
+                    .decrease_token_balance(&token, &caller, None)
+                    .unwrap_or(TokenAmount::new(0.into())),
+            };
 
             // Reply has to be hardcoded since sails
             // doesn't allow for specifying value in the reply yet
-            gstd::dbg!(value.0.as_u128());
             reply(("Service", "WithdrawVara", value), value.0.as_u128())
                 .expect("Failed to send message");
             exec::leave();
