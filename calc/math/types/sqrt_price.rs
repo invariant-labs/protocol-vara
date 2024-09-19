@@ -1,15 +1,11 @@
 use crate::consts::*;
 use crate::types::{fixed_point::FixedPoint, token_amount::TokenAmount};
 use decimal::*;
-#[allow(unused_imports)]
-use gstd::ToString;
-use gstd::{Decode, Encode, TypeInfo};
+use sails_rs::prelude::*;
 use traceable_result::*;
 
 #[decimal(24, U384)]
 #[derive(Default, Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Encode, Decode, TypeInfo)]
-#[codec(crate = gstd::codec)]
-#[scale_info(crate = gstd::scale_info)]
 pub struct SqrtPrice(pub u128);
 
 impl SqrtPrice {
@@ -317,15 +313,9 @@ mod tests {
     fn test_sqrt_price_limitation() {
         {
             let global_max_sqrt_price = SqrtPrice::from_tick(MAX_TICK).unwrap();
-            assert_eq!(
-                global_max_sqrt_price,
-                SqrtPrice::new(MAX_SQRT_PRICE)
-            ); // ceil(log2(this)) = 96
+            assert_eq!(global_max_sqrt_price, SqrtPrice::new(MAX_SQRT_PRICE)); // ceil(log2(this)) = 96
             let global_min_sqrt_price = SqrtPrice::from_tick(-MAX_TICK).unwrap();
-            assert_eq!(
-                global_min_sqrt_price,
-                SqrtPrice::new(MIN_SQRT_PRICE)
-            ); // floor(log2(this)) = 63
+            assert_eq!(global_min_sqrt_price, SqrtPrice::new(MIN_SQRT_PRICE)); // floor(log2(this)) = 63
         }
         {
             let max_sqrt_price = get_max_sqrt_price(1);
@@ -399,10 +389,7 @@ mod tests {
 
             let min_sqrt_price = get_min_sqrt_price(5);
             let min_tick: i32 = get_min_tick(5);
-            assert_eq!(
-                min_sqrt_price,
-                SqrtPrice::new(15261221000000000000u128)
-            );
+            assert_eq!(min_sqrt_price, SqrtPrice::new(15261221000000000000u128));
             assert_eq!(
                 SqrtPrice::from_tick(min_tick).unwrap(),
                 SqrtPrice::new(15261221000000000000u128)
@@ -411,10 +398,7 @@ mod tests {
             let min_sqrt_price = get_min_sqrt_price(10);
             let min_tick: i32 = get_min_tick(10);
             assert_eq!(min_tick, -221810);
-            assert_eq!(
-                min_sqrt_price,
-                SqrtPrice::new(15265036000000000000u128)
-            );
+            assert_eq!(min_sqrt_price, SqrtPrice::new(15265036000000000000u128));
             assert_eq!(
                 SqrtPrice::from_tick(min_tick).unwrap(),
                 SqrtPrice::new(15265036000000000000u128)
@@ -423,10 +407,7 @@ mod tests {
             let min_sqrt_price = get_min_sqrt_price(100);
             let min_tick: i32 = get_min_tick(100);
             assert_eq!(min_tick, -221800);
-            assert_eq!(
-                min_sqrt_price,
-                SqrtPrice::new(15272671000000000000u128)
-            );
+            assert_eq!(min_sqrt_price, SqrtPrice::new(15272671000000000000u128));
             assert_eq!(
                 SqrtPrice::from_tick(min_tick).unwrap(),
                 SqrtPrice::new(15272671000000000000u128)

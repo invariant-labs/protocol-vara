@@ -4,13 +4,15 @@ version.workspace = true
 edition.workspace = true
 
 [dependencies]
-gstd.workspace = true
 traceable_result.workspace = true
 math.workspace = true
 decimal.workspace = true
 io.workspace = true
 contracts.workspace = true
 sails-rs.workspace = true
+parity-scale-codec.workspace = true
+scale-info.workspace = true
+gstd.workspace = true
 futures = { version = "0.3.30", features = [
   "async-await",
 ], default-features = false }
@@ -58,7 +60,10 @@ sails-idl-gen = "0.3.0"
 sails-rs = "0.3.0"
 gear-wasm-builder = "1.5.0"
 gear-core = "1.5.0"
+
 # External
+parity-scale-codec = { version = "3.6.4", default-features = false }
+scale-info = { version = "2.5.0", default-features = false }
 tokio = { version = "1.36", features = ["full"] }
 xshell = "0.2"
 anyhow = "1"

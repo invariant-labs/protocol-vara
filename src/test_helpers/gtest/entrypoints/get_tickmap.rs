@@ -1,6 +1,6 @@
 use contracts::*;
-use gstd::Vec;
 use gtest::*;
+use sails_rs::Vec;
 
 use io::*;
 

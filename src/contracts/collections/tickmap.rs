@@ -1,8 +1,9 @@
 use crate::{InvariantError, PoolKey};
-use sails_rs::collections::HashMap;
 use math::{
-    types::sqrt_price::{calculate_sqrt_price, get_max_tick, SqrtPrice}, MAX_TICK
+    types::sqrt_price::{calculate_sqrt_price, get_max_tick, SqrtPrice},
+    MAX_TICK,
 };
+use sails_rs::collections::HashMap;
 
 pub const TICK_SEARCH_RANGE: i32 = 256;
 pub const CHUNK_SIZE: i32 = 64;
@@ -248,9 +249,8 @@ mod tests {
     use super::*;
     use crate::FeeTier;
     use decimal::*;
-    use sails_rs::ActorId;
     use math::{percentage::Percentage, sqrt_price::get_min_tick};
-
+    use sails_rs::ActorId;
 
     #[test]
     fn test_get_closer_limit() {
@@ -266,31 +266,36 @@ mod tests {
         tickmap.flip(true, 0, 1, pool_key);
         // tick limit closer
         {
-            let (result, from_tick) = tickmap.get_closer_limit(SqrtPrice::from_integer(5), true, 100, 1, pool_key).unwrap();
+            let (result, from_tick) = tickmap
+                .get_closer_limit(SqrtPrice::from_integer(5), true, 100, 1, pool_key)
+                .unwrap();
             let expected = SqrtPrice::from_integer(5);
             assert_eq!(result, expected);
             assert_eq!(from_tick, None);
         }
         // trade limit closer
         {
-            let (result, from_tick) =
-                tickmap.get_closer_limit(SqrtPrice::from_scale(1, 1), true, 100, 1, pool_key).unwrap();
+            let (result, from_tick) = tickmap
+                .get_closer_limit(SqrtPrice::from_scale(1, 1), true, 100, 1, pool_key)
+                .unwrap();
             let expected = SqrtPrice::from_integer(1);
             assert_eq!(result, expected);
             assert_eq!(from_tick, Some((0, true)));
         }
         // other direction
         {
-            let (result, from_tick) =
-                tickmap.get_closer_limit(SqrtPrice::from_integer(2), false, -5, 1, pool_key).unwrap();
+            let (result, from_tick) = tickmap
+                .get_closer_limit(SqrtPrice::from_integer(2), false, -5, 1, pool_key)
+                .unwrap();
             let expected = SqrtPrice::from_integer(1);
             assert_eq!(result, expected);
             assert_eq!(from_tick, Some((0, true)));
         }
         // other direction
         {
-            let (result, from_tick) =
-                tickmap.get_closer_limit(SqrtPrice::from_scale(1, 1), false, -100, 10, pool_key).unwrap();
+            let (result, from_tick) = tickmap
+                .get_closer_limit(SqrtPrice::from_scale(1, 1), false, -100, 10, pool_key)
+                .unwrap();
             let expected = SqrtPrice::from_scale(1, 1);
             assert_eq!(result, expected);
             assert_eq!(from_tick, None);

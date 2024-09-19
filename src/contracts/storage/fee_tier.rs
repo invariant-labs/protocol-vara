@@ -1,11 +1,9 @@
-use math::types::percentage::Percentage;
 use crate::errors::InvariantError;
 use decimal::*;
-use sails_rs::{Decode, Encode, TypeInfo};
+use math::types::percentage::Percentage;
+use sails_rs::prelude::*;
 
 #[derive(Encode, Decode, TypeInfo, PartialEq, Eq, Clone, Copy, Debug, Hash)]
-#[codec(crate = gstd::codec)]
-#[scale_info(crate = gstd::scale_info)]
 pub struct FeeTier {
     pub fee: Percentage,
     pub tick_spacing: u16,

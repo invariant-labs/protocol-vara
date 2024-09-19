@@ -1,9 +1,9 @@
 extern crate alloc;
+use decimal::*;
 use math::liquidity::Liquidity;
 use math::sqrt_price::{calculate_sqrt_price, SqrtPrice};
 use math::token_amount::TokenAmount;
 use math::MAX_TICK;
-use decimal::*;
 use traceable_result::*;
 
 #[derive(Debug)]

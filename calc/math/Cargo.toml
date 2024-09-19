@@ -6,7 +6,8 @@ edition = "2021"
 [dependencies]
 decimal.workspace = true
 traceable_result.workspace = true
-gstd.workspace = true
+parity-scale-codec.workspace = true
+scale-info.workspace = true
 sails-rs.workspace = true
 uint = { version = "0.9", default-features = false }
 

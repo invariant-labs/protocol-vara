@@ -1,14 +1,13 @@
-use crate::test_helpers::gtest::*;
+use crate::{send_request, test_helpers::gtest::*};
 use contracts::*;
 use decimal::*;
-use gstd::prelude::*;
 use gtest::*;
 use io::*;
 use math::{
     fee_growth::FeeGrowth, percentage::Percentage, sqrt_price::SqrtPrice,
     token_amount::TokenAmount, MIN_SQRT_PRICE,
 };
-use sails_rs::ActorId;
+use sails_rs::prelude::*;
 
 pub fn init_basic_swap(
     invariant: &Program<'_>,

@@ -1,5 +1,5 @@
 use math::token_amount::TokenAmount;
-use sails_rs::ActorId;
+use sails_rs::prelude::*;
 
 #[derive(Debug, Clone)]
 pub struct AwaitingTransfer {

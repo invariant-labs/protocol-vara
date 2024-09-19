@@ -1,3 +1,4 @@
+#![cfg(test)]
 //pub mod gclient;
 pub mod consts;
 pub mod gtest;

@@ -1,10 +1,7 @@
-use crate::{
-    send_query,
-    test_helpers::{consts::*, gtest::PROGRAM_OWNER},
-};
+use crate::{send_query, test_helpers::gtest::*};
 use contracts::*;
-use gstd::{prelude::*, ActorId, Result};
 use gtest::*;
+use sails_rs::prelude::*;
 
 use io::*;
 pub fn get_all_positions(invariant: &Program, owner_id: ActorId) -> Vec<Position> {

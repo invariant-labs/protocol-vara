@@ -161,7 +161,7 @@ pub fn reply_handler() {
         } else {
             gstd::debug!("Unknown message type");
         }
-    // message is a valid panic
+        // message is a valid panic
     } else if msg::load::<String>().is_ok() {
         handle_panic()
     } else {

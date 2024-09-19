@@ -1,10 +1,9 @@
+use crate::{send_query, test_helpers::gtest::*};
 use contracts::*;
-use gstd::Vec;
 use gtest::*;
-
 use io::*;
+use sails_rs::Vec;
 
-use crate::{send_query, test_helpers::gtest::PROGRAM_OWNER};
 pub fn get_liquidity_ticks(
     invariant: &Program,
     pool_key: PoolKey,

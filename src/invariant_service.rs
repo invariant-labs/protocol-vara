@@ -8,22 +8,22 @@ use contracts::{
 };
 use decimal::*;
 use futures;
-use gstd::{exec, format, prelude::*, String};
 use io::*;
 use math::calculate_min_amount_out;
 use math::{
     check_tick, liquidity::Liquidity, percentage::Percentage, sqrt_price::SqrtPrice,
     token_amount::TokenAmount, MAX_SQRT_PRICE, MIN_SQRT_PRICE,
 };
-use sails_rs::gstd::{
-    msg::{self, reply, CodecMessageFuture},
-    service, ExecContext,
+// import for timestamp and porgram_id
+use gstd::exec;
+use sails_rs::{
+    gstd::{
+        msg::{self, reply, CodecMessageFuture},
+        service, ExecContext,
+    },
+    prelude::*,
 };
-use sails_rs::{ActorId, Decode, Encode, MessageId};
 
-fn program_id() -> ActorId {
-    exec::program_id().into()
-}
 pub fn panic(err: InvariantError) -> ! {
     let str: String = err.into();
     panic!("{}", str)
@@ -765,7 +765,7 @@ where
                 return Err(InvariantError::FailedToChangeTokenBalance);
             }
 
-            Self::transfer_single_token(invariant, &token, &caller, amount, TransferType::Deposit)
+            self.transfer_single_token(invariant, &token, &caller, amount, TransferType::Deposit)
                 .await?;
 
             Ok(amount)
@@ -795,7 +795,7 @@ where
             };
 
             if amount.get() != 0.into() {
-                Self::transfer_single_token(
+                self.transfer_single_token(
                     invariant,
                     &token,
                     &caller,
@@ -831,10 +831,10 @@ where
             }
 
             if !token_x.1.is_zero() && !token_y.1.is_zero() {
-                Self::transfer_token_pair(invariant, &caller, &token_x, &token_y, transfer_type)
+                self.transfer_token_pair(invariant, &caller, &token_x, &token_y, transfer_type)
                     .await?;
             } else if !token_x.1.is_zero() {
-                Self::transfer_single_token(
+                self.transfer_single_token(
                     invariant,
                     &token_x.0,
                     &caller,
@@ -843,7 +843,7 @@ where
                 )
                 .await?;
             } else if !token_y.1.is_zero() {
-                Self::transfer_single_token(
+                self.transfer_single_token(
                     invariant,
                     &token_y.0,
                     &caller,
@@ -895,7 +895,7 @@ where
             };
 
             if !amount_x.is_zero() && !amount_y.is_zero() {
-                Self::transfer_token_pair(
+                self.transfer_token_pair(
                     invariant,
                     &caller,
                     &(token_x.0, amount_x),
@@ -904,23 +904,11 @@ where
                 )
                 .await?;
             } else if !amount_x.is_zero() {
-                Self::transfer_single_token(
-                    invariant,
-                    &token_x.0,
-                    &caller,
-                    amount_x,
-                    transfer_type,
-                )
-                .await?;
+                self.transfer_single_token(invariant, &token_x.0, &caller, amount_x, transfer_type)
+                    .await?;
             } else if !amount_y.is_zero() {
-                Self::transfer_single_token(
-                    invariant,
-                    &token_y.0,
-                    &caller,
-                    amount_y,
-                    transfer_type,
-                )
-                .await?;
+                self.transfer_single_token(invariant, &token_y.0, &caller, amount_y, transfer_type)
+                    .await?;
             }
 
             Ok((amount_x, amount_y))
@@ -932,6 +920,7 @@ where
     }
 
     async fn transfer_single_token(
+        &self,
         invariant: &mut Invariant,
         token: &ActorId,
         caller: &ActorId,
@@ -949,7 +938,7 @@ where
             return Err(InvariantError::NotEnoughGasToExecute);
         }
 
-        let program_id = &program_id();
+        let program_id = &self.program_id();
         let (from, to) = match transfer_type {
             TransferType::Deposit => (caller, program_id),
             TransferType::Withdrawal => (program_id, caller),
@@ -974,6 +963,7 @@ where
     }
 
     async fn transfer_token_pair(
+        &self,
         invariant: &mut Invariant,
         caller: &ActorId,
         token_x: &(ActorId, TokenAmount),
@@ -991,7 +981,7 @@ where
             return Err(InvariantError::NotEnoughGasToExecute);
         }
 
-        let program = &program_id();
+        let program = &self.program_id();
 
         let (from, to) = match transfer_type {
             TransferType::Deposit => (caller, program),
@@ -1197,6 +1187,10 @@ where
         };
 
         Ok(())
+    }
+
+    fn program_id(&self) -> ActorId {
+        exec::program_id()
     }
 }
 

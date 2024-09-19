@@ -4,7 +4,8 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-gstd.workspace = true
+parity-scale-codec.workspace = true
+scale-info.workspace = true
 contracts.workspace = true
 math.workspace = true
 sails-rs.workspace = true

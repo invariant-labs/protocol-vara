@@ -1,6 +1,5 @@
 use gtest::*;
-use sails_rs::ActorId;
-use decimal::U256;
+use sails_rs::prelude::*;
 
 use crate::{send_request, test_helpers::gtest::PROGRAM_OWNER};
 

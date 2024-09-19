@@ -1,6 +1,6 @@
 use crate::{send_request, test_helpers::gtest::*};
 use gtest::*;
-use decimal::U256;
+use sails_rs::prelude::*;
 
 pub fn increase_allowance(token: &Program, owner: u64, spender: u64, amount: U256) -> RunResult {
     let current_allowance = allowance(token, owner, spender);

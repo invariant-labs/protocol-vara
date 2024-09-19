@@ -6,15 +6,13 @@ use math::types::{
     fee_growth::FeeGrowth, liquidity::Liquidity, sqrt_price::calculate_sqrt_price,
     sqrt_price::SqrtPrice,
 };
-use sails_rs::{Decode, Encode, TypeInfo};
+use sails_rs::prelude::*;
 use traceable_result::*;
 
 pub const LIQUIDITY_TICK_LIMIT: usize = 21544;
 pub const POSITION_TICK_LIMIT: usize = 17872;
 
 #[derive(Debug, Copy, Clone, Decode, Encode, PartialEq, Eq, TypeInfo)]
-#[codec(crate = gstd::codec)]
-#[scale_info(crate = gstd::scale_info)]
 pub struct Tick {
     pub index: i32,
     pub sign: bool,
@@ -42,8 +40,6 @@ impl Default for Tick {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Encode, Decode, TypeInfo)]
-#[codec(crate = gstd::codec)]
-#[scale_info(crate = gstd::scale_info)]
 pub struct LiquidityTick {
     pub index: i32,
     pub liquidity_change: Liquidity,
@@ -61,8 +57,6 @@ impl From<&Tick> for LiquidityTick {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Encode, Decode, TypeInfo)]
-#[codec(crate = gstd::codec)]
-#[scale_info(crate = gstd::scale_info)]
 pub struct PositionTick {
     pub index: i32,
     pub fee_growth_outside_x: FeeGrowth,
@@ -198,8 +192,8 @@ impl Tick {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use math::clamm::calculate_max_liquidity_per_tick;
     use decimal::{Decimal, Factories};
+    use math::clamm::calculate_max_liquidity_per_tick;
 
     #[test]
     fn test_cross() {

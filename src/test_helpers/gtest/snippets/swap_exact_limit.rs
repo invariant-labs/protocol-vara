@@ -1,9 +1,10 @@
 use crate::test_helpers::gtest::*;
 use contracts::*;
 use decimal::*;
-use gstd::prelude::*;
 use gtest::*;
 use math::{sqrt_price::SqrtPrice, token_amount::TokenAmount, MAX_SQRT_PRICE, MIN_SQRT_PRICE};
+use sails_rs::prelude::*;
+
 #[track_caller]
 pub fn swap_exact_limit(
     invariant: &Program,

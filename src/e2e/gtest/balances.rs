@@ -5,7 +5,7 @@ use contracts::*;
 use decimal::*;
 use gtest::*;
 use math::{percentage::Percentage, token_amount::TokenAmount};
-use sails_rs::ActorId;
+use sails_rs::prelude::*;
 
 #[test]
 fn test_single_deposit_and_withdraw() {
@@ -73,7 +73,14 @@ fn test_single_deposit_and_withdraw() {
 
     // deposit and withdraw with multiple requests
     assert_eq!(
-        deposit_single_token(&invariant, REGULAR_USER_2, token, U256::from(250), None::<&str>).unwrap(),
+        deposit_single_token(
+            &invariant,
+            REGULAR_USER_2,
+            token,
+            U256::from(250),
+            None::<&str>
+        )
+        .unwrap(),
         TokenAmount::new(U256::from(250))
     );
 
@@ -83,7 +90,14 @@ fn test_single_deposit_and_withdraw() {
     );
 
     assert_eq!(
-        deposit_single_token(&invariant, REGULAR_USER_2, token, U256::from(250), None::<&str>).unwrap(),
+        deposit_single_token(
+            &invariant,
+            REGULAR_USER_2,
+            token,
+            U256::from(250),
+            None::<&str>
+        )
+        .unwrap(),
         TokenAmount::new(U256::from(250))
     );
 
@@ -93,7 +107,14 @@ fn test_single_deposit_and_withdraw() {
     );
 
     assert_eq!(
-        withdraw_single_token(&invariant, REGULAR_USER_2, token, U256::from(250).into(), None::<&str>).unwrap(),
+        withdraw_single_token(
+            &invariant,
+            REGULAR_USER_2,
+            token,
+            U256::from(250).into(),
+            None::<&str>
+        )
+        .unwrap(),
         TokenAmount::new(U256::from(250))
     );
 
@@ -103,7 +124,14 @@ fn test_single_deposit_and_withdraw() {
     );
 
     assert_eq!(
-        withdraw_single_token(&invariant, REGULAR_USER_2, token, U256::from(250).into(), None::<&str>).unwrap(),
+        withdraw_single_token(
+            &invariant,
+            REGULAR_USER_2,
+            token,
+            U256::from(250).into(),
+            None::<&str>
+        )
+        .unwrap(),
         TokenAmount::new(U256::from(250))
     );
 }
@@ -565,7 +593,7 @@ fn test_token_pair_deposit_failures() {
             balance_of(&token_program, REGULAR_USER_2),
         )
         .assert_success();
-    
+
         mint(&token_program, REGULAR_USER_2, max_deposit).assert_success();
         set_allowance(&token_program, REGULAR_USER_2, INVARIANT_ID, max_deposit).assert_success();
 
@@ -614,7 +642,7 @@ fn test_token_pair_deposit_failures() {
         &token_y_program,
         REGULAR_USER_2,
         INVARIANT_ID,
-        amount_y  * 30,
+        amount_y * 30,
     )
     .assert_success();
 
@@ -635,16 +663,36 @@ fn test_token_pair_deposit_failures() {
     set_deposit_max(token_x);
 
     // fail overflow x
-    deposit_both_fails(U256::one(), U256::zero(), InvariantError::FailedToChangeTokenBalance);
+    deposit_both_fails(
+        U256::one(),
+        U256::zero(),
+        InvariantError::FailedToChangeTokenBalance,
+    );
 
     set_deposit_max(token_y);
     // fail overflow both
-    deposit_both_fails(U256::one(), U256::zero(), InvariantError::FailedToChangeTokenBalance);
-    deposit_both_fails(U256::zero(), U256::one(), InvariantError::FailedToChangeTokenBalance);
-    deposit_both_fails(U256::one(), U256::one(), InvariantError::FailedToChangeTokenBalance);
+    deposit_both_fails(
+        U256::one(),
+        U256::zero(),
+        InvariantError::FailedToChangeTokenBalance,
+    );
+    deposit_both_fails(
+        U256::zero(),
+        U256::one(),
+        InvariantError::FailedToChangeTokenBalance,
+    );
+    deposit_both_fails(
+        U256::one(),
+        U256::one(),
+        InvariantError::FailedToChangeTokenBalance,
+    );
 
     // fail overflow y
-    deposit_both_fails(U256::zero(), U256::one(), InvariantError::FailedToChangeTokenBalance);
+    deposit_both_fails(
+        U256::zero(),
+        U256::one(),
+        InvariantError::FailedToChangeTokenBalance,
+    );
 
     let invariant_x_before = balance_of(&token_x_program, INVARIANT_ID);
     let invariant_y_before = balance_of(&token_y_program, INVARIANT_ID);
@@ -808,8 +856,8 @@ fn test_token_pair_withdraw_failures() {
             .find(|(_, (t, _))| t == &token_y)
             .and_then(|(i, (_, v))| Some((i, v.get())));
 
-        let withdrawn_amount_y =
-            withdrawn_amount_y.unwrap_or(amount_y.and_then(|(_, v)| Some(v)).unwrap_or(U256::from(0)));
+        let withdrawn_amount_y = withdrawn_amount_y
+            .unwrap_or(amount_y.and_then(|(_, v)| Some(v)).unwrap_or(U256::from(0)));
 
         if let Some((i, _)) = amount_y {
             balances_before.remove(i);
@@ -860,8 +908,8 @@ fn test_token_pair_withdraw_failures() {
             .find(|(_, (t, _))| t == &token_x)
             .and_then(|(i, (_, v))| Some((i, v.get())));
 
-        let withdrawn_amount_x =
-            withdrawn_amount_x.unwrap_or(amount_x.and_then(|(_, v)| Some(v)).unwrap_or(U256::from(0)));
+        let withdrawn_amount_x = withdrawn_amount_x
+            .unwrap_or(amount_x.and_then(|(_, v)| Some(v)).unwrap_or(U256::from(0)));
 
         if let Some((i, _)) = amount_x {
             balances_before.remove(i);
@@ -884,9 +932,21 @@ fn test_token_pair_withdraw_failures() {
     };
 
     // fail both empty
-    withdraw_both_fails(U256::one().into(), None, InvariantError::NoBalanceForTheToken);
-    withdraw_both_fails(None, U256::one().into(), InvariantError::NoBalanceForTheToken);
-    withdraw_both_fails(U256::one().into(), U256::one().into(), InvariantError::NoBalanceForTheToken);
+    withdraw_both_fails(
+        U256::one().into(),
+        None,
+        InvariantError::NoBalanceForTheToken,
+    );
+    withdraw_both_fails(
+        None,
+        U256::one().into(),
+        InvariantError::NoBalanceForTheToken,
+    );
+    withdraw_both_fails(
+        U256::one().into(),
+        U256::one().into(),
+        InvariantError::NoBalanceForTheToken,
+    );
 
     mint(&token_x_program, REGULAR_USER_2, amount_x).assert_success();
     increase_allowance(
@@ -915,7 +975,11 @@ fn test_token_pair_withdraw_failures() {
         InvariantError::RecoverableTransferError,
     );
     clear(false, true);
-    withdraw_y_fails(None, U256::one().into(), InvariantError::RecoverableTransferError);
+    withdraw_y_fails(
+        None,
+        U256::one().into(),
+        InvariantError::RecoverableTransferError,
+    );
     clear(false, true);
     withdraw_y_fails(
         amount_x.into(),
@@ -927,7 +991,11 @@ fn test_token_pair_withdraw_failures() {
     clear(true, false);
     withdraw_x_fails(None, None, InvariantError::RecoverableTransferError);
     clear(true, false);
-    withdraw_x_fails(U256::one().into(), None, InvariantError::RecoverableTransferError);
+    withdraw_x_fails(
+        U256::one().into(),
+        None,
+        InvariantError::RecoverableTransferError,
+    );
     clear(true, false);
     withdraw_x_fails(
         None,
@@ -945,11 +1013,23 @@ fn test_token_pair_withdraw_failures() {
     clear(true, true);
     withdraw_both_fails(None, None, InvariantError::RecoverableTransferError);
     clear(true, true);
-    withdraw_both_fails(U256::one().into(), None, InvariantError::RecoverableTransferError);
+    withdraw_both_fails(
+        U256::one().into(),
+        None,
+        InvariantError::RecoverableTransferError,
+    );
     clear(true, true);
-    withdraw_both_fails(None, U256::one().into(), InvariantError::RecoverableTransferError);
+    withdraw_both_fails(
+        None,
+        U256::one().into(),
+        InvariantError::RecoverableTransferError,
+    );
     clear(true, true);
-    withdraw_both_fails(U256::one().into(), U256::one().into(), InvariantError::RecoverableTransferError);
+    withdraw_both_fails(
+        U256::one().into(),
+        U256::one().into(),
+        InvariantError::RecoverableTransferError,
+    );
 
     // underflow
     clear(false, false);
