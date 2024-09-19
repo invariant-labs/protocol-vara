@@ -1143,6 +1143,14 @@ where
         )
         .map_err(|_| InvariantError::TransferError)?;
 
+        let message_id = message.waiting_reply_to;
+        let token_address_copy = token_address.clone();
+        let message = message
+            .handle_reply(move || {
+                reply_handler(token_address_copy, message_id);
+            })
+            .map_err(|_| InvariantError::TransferError)?;
+
         let account = match transfer_type {
             TransferType::Deposit => *from,
             TransferType::Withdrawal => *to,
@@ -1197,4 +1205,128 @@ where
 fn reply_with_err_and_leave(err: InvariantError) {
     reply(err, 0).expect("Failed to send reply");
     exec::leave();
+}
+
+pub fn reply_handler(token: ActorId, msg_id: MessageId) {
+    let invariant = InvariantStorage::as_mut();
+    // message is a valid reply
+    if let Ok(msg) = msg::load::<(String, String, bool)>() {
+        if msg.0 == "Vft" && msg.1 == "TransferFrom" {
+            handle_valid_reply(invariant, token, msg_id, msg.2)
+        } else {
+            gstd::debug!("Unknown message type");
+        }
+    // message is a valid panic
+    } else if msg::load::<String>().is_ok() {
+        handle_panic(invariant, token, msg_id)
+    } else {
+        gstd::debug!("Unknown message type");
+    }
+}
+
+pub fn handle_valid_reply(
+    invariant: &mut Invariant,
+    token: ActorId,
+    message: MessageId,
+    result: bool,
+) {
+    let (update_values, message_exists) = {
+        let transfer = invariant.awaiting_transfers.get(&(message, token));
+
+        let update_values = transfer.and_then(
+            |AwaitingTransfer {
+                 transfer_type,
+                 account,
+                 amount,
+             }| {
+                match transfer_type {
+                    TransferType::Deposit => {
+                        if result {
+                            Some((*account, token, *amount))
+                        } else {
+                            None
+                        }
+                    }
+                    TransferType::Withdrawal => {
+                        if !result {
+                            Some((*account, token, *amount))
+                        } else {
+                            None
+                        }
+                    }
+                }
+            },
+        );
+
+        (update_values, transfer.is_some())
+    };
+
+    if let Some((account, token, amount)) = update_values {
+        if let Err(e) = invariant.increase_token_balance(&token, &account, amount) {
+            gstd::debug!(
+                "Failed to increase balance, {:?}, {:?}, {:?}, {:?}",
+                account,
+                &token,
+                amount,
+                e
+            );
+        }
+    }
+
+    if message_exists {
+        if invariant
+            .awaiting_transfers
+            .remove(&(message, token))
+            .is_none()
+        {
+            gstd::debug!("Failed to remove transfer {:?}, {:?}", message, token);
+        }
+    }
+
+    gstd::debug!("Reply handling finished");
+}
+
+pub fn handle_panic(invariant: &mut Invariant, token: ActorId, message: MessageId) {
+    let (update_values, message_exists) = {
+        let transfer = invariant.awaiting_transfers.get(&(message.into(), token));
+        let update_values = transfer.and_then(
+            |AwaitingTransfer {
+                 transfer_type,
+                 account,
+                 amount,
+             }| {
+                // Only failure on withdrawal needs to stored, since in case of deposit failure the amount is not deducted from users account
+                if matches!(transfer_type, TransferType::Withdrawal) {
+                    Some((*account, token, *amount))
+                } else {
+                    None
+                }
+            },
+        );
+
+        (update_values, transfer.is_some())
+    };
+
+    if let Some((account, token, amount)) = update_values {
+        if let Err(e) = invariant.increase_token_balance(&token, &account, amount) {
+            gstd::debug!(
+                "Failed to increase balance, {:?}, {:?}, {:?}, {:?}",
+                account,
+                &token,
+                amount,
+                e
+            );
+        }
+    }
+
+    if message_exists
+        && invariant
+            .awaiting_transfers
+            .remove(&(message.into(), token))
+            .is_none()
+    {
+        gstd::debug!("Failed to remove transfer {:?}, {:?}", message, token);
+    }
+
+    gstd::debug!("Panic handling finished");
 }
