@@ -21,12 +21,14 @@ futures = { version = "0.3.30", features = [
 gear-wasm-builder.workspace = true
 io.workspace = true
 sails-idl-gen.workspace = true
+gear-wasm-instrument.workspace = true
 
 [dev-dependencies]
 gtest.workspace = true
 gclient.workspace = true
 tokio.workspace = true
 gstd = { workspace = true, features = ["debug"] }
+gear-wasm-instrument.workspace = true
 
 [features]
 binary-vendor = []
@@ -35,7 +37,7 @@ default = ["binary-vendor", "wasm-opt"]
 test = ["gstd/debug"]
 
 [workspace]
-members = ["xtask", "gear-erc20/wasm", "src/wasm"]
+members = ["xtask", "extended-vft/wasm", "src/wasm"]
 package.version = "0.1.0"
 package.edition = "2021"
 
@@ -47,7 +49,7 @@ traceable_result.path = "calc/traceable_result"
 contracts.path = "src/contracts"
 
 # Local contracts
-gear-erc20.path = "gear-erc20/app"
+extended-vft.path = "extended-vft/app"
 invariant.path = "."
 # Contract dependencies
 io.path = "io"
@@ -56,10 +58,13 @@ io.path = "io"
 gtest = "1.5.0"
 gclient = "1.5.0"
 gstd = "1.5.0"
-sails-idl-gen = "0.3.0"
-sails-rs = "0.3.0"
+sails-idl-gen = "=0.3.0"
+sails-rs = "=0.3.0"
 gear-wasm-builder = "1.5.0"
+gear-wasm-instrument = "=1.5.0"
+sails-client-gen = "=0.3.0"
 gear-core = "1.5.0"
+vft-service = { git = "https://github.com/gear-foundation/standards" }
 
 # External
 parity-scale-codec = { version = "3.6.4", default-features = false }

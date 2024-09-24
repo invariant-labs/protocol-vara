@@ -4,5 +4,5 @@ use sails_rs::prelude::*;
 
 #[must_use]
 pub fn mint(token: &Program, account: impl Into<ActorId>, value: U256) -> RunResult {
-    send_request!(program: token, user: PROGRAM_OWNER, service_name: "Admin", action: "Mint", payload: (account.into(), value))
+    send_request!(program: token, user: PROGRAM_OWNER, service_name: "Vft", action: "Mint", payload: (account.into(), value))
 }

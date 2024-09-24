@@ -13,7 +13,7 @@ pub enum Role {
 
 pub fn init_token(sys: &System, id: u64) -> Program<'_> {
     let bytes = include_bytes!(
-        "../../../../target/wasm32-unknown-unknown/release/gear_erc20_wasm.opt.wasm"
+        "../../../../target/wasm32-unknown-unknown/release/extended_vft_wasm.opt.wasm"
     );
     let token = Program::from_binary_with_id(sys, id, bytes);
 
@@ -22,9 +22,6 @@ pub fn init_token(sys: &System, id: u64) -> Program<'_> {
     token
         .send_bytes(PROGRAM_OWNER, request.clone())
         .assert_success();
-
-    send_request!(program: token, user: PROGRAM_OWNER, service_name: "Admin", action: "GrantRole", payload: (ActorId::from(PROGRAM_OWNER), Role::Minter)).assert_success();
-    send_request!(program: token, user: PROGRAM_OWNER, service_name: "Admin", action: "GrantRole", payload: (ActorId::from(PROGRAM_OWNER), Role::Burner)).assert_success();
 
     token
 }

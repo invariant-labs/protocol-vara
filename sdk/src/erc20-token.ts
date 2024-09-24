@@ -2,25 +2,18 @@ import { GearApi, decodeAddress } from '@gear-js/api';
 import { TypeRegistry } from '@polkadot/types';
 import { TransactionBuilder, getServiceNamePrefix, getFnNamePrefix, ZERO_ADDRESS } from 'sails-js';
 
-export type Role = "admin" | "burner" | "minter";
-
 export class Erc20Token {
   public readonly registry: TypeRegistry;
-  public readonly admin: Admin;
-  public readonly pausable: Pausable;
   public readonly vft: Vft;
 
   constructor(public api: GearApi, public programId?: `0x${string}`) {
     const types: Record<string, any> = {
-      Role: {"_enum":["Admin","Burner","Minter"]},
     }
 
     this.registry = new TypeRegistry();
     this.registry.setKnownTypes({ types });
     this.registry.register(types);
 
-    this.admin = new Admin(this);
-    this.pausable = new Pausable(this);
     this.vft = new Vft(this);
   }
 
@@ -55,34 +48,8 @@ export class Erc20Token {
   }
 }
 
-export class Admin {
+export class Vft {
   constructor(private _program: Erc20Token) {}
-
-  public allowancesReserve(additional: number): TransactionBuilder<null> {
-    if (!this._program.programId) throw new Error('Program ID is not set');
-    return new TransactionBuilder<null>(
-      this._program.api,
-      this._program.registry,
-      'send_message',
-      ['Admin', 'AllowancesReserve', additional],
-      '(String, String, u32)',
-      'Null',
-      this._program.programId
-    );
-  }
-
-  public balancesReserve(additional: number): TransactionBuilder<null> {
-    if (!this._program.programId) throw new Error('Program ID is not set');
-    return new TransactionBuilder<null>(
-      this._program.api,
-      this._program.registry,
-      'send_message',
-      ['Admin', 'BalancesReserve', additional],
-      '(String, String, u32)',
-      'Null',
-      this._program.programId
-    );
-  }
 
   public burn(from: string, value: number | string): TransactionBuilder<boolean> {
     if (!this._program.programId) throw new Error('Program ID is not set');
@@ -90,33 +57,46 @@ export class Admin {
       this._program.api,
       this._program.registry,
       'send_message',
-      ['Admin', 'Burn', from, value],
+      ['Vft', 'Burn', from, value],
       '(String, String, [u8;32], U256)',
       'bool',
       this._program.programId
     );
   }
 
-  public grantRole(to: string, role: Role): TransactionBuilder<boolean> {
-    if (!this._program.programId) throw new Error('Program ID is not set');
-    return new TransactionBuilder<boolean>(
-      this._program.api,
-      this._program.registry,
-      'send_message',
-      ['Admin', 'GrantRole', to, role],
-      '(String, String, [u8;32], Role)',
-      'bool',
-      this._program.programId
-    );
-  }
-
-  public kill(inheritor: string): TransactionBuilder<null> {
+  public grantAdminRole(to: string): TransactionBuilder<null> {
     if (!this._program.programId) throw new Error('Program ID is not set');
     return new TransactionBuilder<null>(
       this._program.api,
       this._program.registry,
       'send_message',
-      ['Admin', 'Kill', inheritor],
+      ['Vft', 'GrantAdminRole', to],
+      '(String, String, [u8;32])',
+      'Null',
+      this._program.programId
+    );
+  }
+
+  public grantBurnerRole(to: string): TransactionBuilder<null> {
+    if (!this._program.programId) throw new Error('Program ID is not set');
+    return new TransactionBuilder<null>(
+      this._program.api,
+      this._program.registry,
+      'send_message',
+      ['Vft', 'GrantBurnerRole', to],
+      '(String, String, [u8;32])',
+      'Null',
+      this._program.programId
+    );
+  }
+
+  public grantMinterRole(to: string): TransactionBuilder<null> {
+    if (!this._program.programId) throw new Error('Program ID is not set');
+    return new TransactionBuilder<null>(
+      this._program.api,
+      this._program.registry,
+      'send_message',
+      ['Vft', 'GrantMinterRole', to],
       '(String, String, [u8;32])',
       'Null',
       this._program.programId
@@ -129,248 +109,59 @@ export class Admin {
       this._program.api,
       this._program.registry,
       'send_message',
-      ['Admin', 'Mint', to, value],
+      ['Vft', 'Mint', to, value],
       '(String, String, [u8;32], U256)',
       'bool',
       this._program.programId
     );
   }
 
-  public removeRole(from: string, role: Role): TransactionBuilder<boolean> {
-    if (!this._program.programId) throw new Error('Program ID is not set');
-    return new TransactionBuilder<boolean>(
-      this._program.api,
-      this._program.registry,
-      'send_message',
-      ['Admin', 'RemoveRole', from, role],
-      '(String, String, [u8;32], Role)',
-      'bool',
-      this._program.programId
-    );
-  }
-
-  public async allowances(skip: number, take: number, originAddress: string, value?: number | string | bigint, atBlock?: `0x${string}`): Promise<Array<[[string, string], number | string]>> {
-    const payload = this._program.registry.createType('(String, String, u32, u32)', ['Admin', 'Allowances', skip, take]).toHex();
-    if (!this._program.programId) throw new Error('Program ID is not set');
-    const reply = await this._program.api.message.calculateReply({
-      destination: this._program.programId,
-      origin: decodeAddress(originAddress),
-      payload,
-      value: value || 0,
-      gasLimit: this._program.api.blockGasLimit.toBigInt(),
-      at: atBlock,
-    });
-    const result = this._program.registry.createType('(String, String, Vec<(([u8;32], [u8;32]), U256)>)', reply.payload);
-    return result[2].toJSON() as unknown as Array<[[string, string], number | string]>;
-  }
-
-  public async balances(skip: number, take: number, originAddress: string, value?: number | string | bigint, atBlock?: `0x${string}`): Promise<Array<[string, number | string]>> {
-    const payload = this._program.registry.createType('(String, String, u32, u32)', ['Admin', 'Balances', skip, take]).toHex();
-    if (!this._program.programId) throw new Error('Program ID is not set');
-    const reply = await this._program.api.message.calculateReply({
-      destination: this._program.programId,
-      origin: decodeAddress(originAddress),
-      payload,
-      value: value || 0,
-      gasLimit: this._program.api.blockGasLimit.toBigInt(),
-      at: atBlock,
-    });
-    const result = this._program.registry.createType('(String, String, Vec<([u8;32], U256)>)', reply.payload);
-    return result[2].toJSON() as unknown as Array<[string, number | string]>;
-  }
-
-  public async hasRole(actor: string, role: string, originAddress: string, value?: number | string | bigint, atBlock?: `0x${string}`): Promise<boolean> {
-    const payload = this._program.registry.createType('(String, String, [u8;32], String)', ['Admin', 'HasRole', actor, role]).toHex();
-    if (!this._program.programId) throw new Error('Program ID is not set');
-    const reply = await this._program.api.message.calculateReply({
-      destination: this._program.programId,
-      origin: decodeAddress(originAddress),
-      payload,
-      value: value || 0,
-      gasLimit: this._program.api.blockGasLimit.toBigInt(),
-      at: atBlock,
-    });
-    const result = this._program.registry.createType('(String, String, bool)', reply.payload);
-    return result[2].toJSON() as unknown as boolean;
-  }
-
-  public async mapsData(originAddress: string, value?: number | string | bigint, atBlock?: `0x${string}`): Promise<[[number, number], [number, number]]> {
-    const payload = this._program.registry.createType('(String, String)', ['Admin', 'MapsData']).toHex();
-    if (!this._program.programId) throw new Error('Program ID is not set');
-    const reply = await this._program.api.message.calculateReply({
-      destination: this._program.programId,
-      origin: decodeAddress(originAddress),
-      payload,
-      value: value || 0,
-      gasLimit: this._program.api.blockGasLimit.toBigInt(),
-      at: atBlock,
-    });
-    const result = this._program.registry.createType('(String, String, ((u32, u32), (u32, u32)))', reply.payload);
-    return result[2].toJSON() as unknown as [[number, number], [number, number]];
-  }
-
-  public async roles(originAddress: string, value?: number | string | bigint, atBlock?: `0x${string}`): Promise<Array<string>> {
-    const payload = this._program.registry.createType('(String, String)', ['Admin', 'Roles']).toHex();
-    if (!this._program.programId) throw new Error('Program ID is not set');
-    const reply = await this._program.api.message.calculateReply({
-      destination: this._program.programId,
-      origin: decodeAddress(originAddress),
-      payload,
-      value: value || 0,
-      gasLimit: this._program.api.blockGasLimit.toBigInt(),
-      at: atBlock,
-    });
-    const result = this._program.registry.createType('(String, String, Vec<String>)', reply.payload);
-    return result[2].toJSON() as unknown as Array<string>;
-  }
-
-  public subscribeToMintedEvent(callback: (data: { to: string; value: number | string }) => void | Promise<void>): Promise<() => void> {
-    return this._program.api.gearEvents.subscribeToGearEvent('UserMessageSent', ({ data: { message } }) => {;
-      if (!message.source.eq(this._program.programId) || !message.destination.eq(ZERO_ADDRESS)) {
-        return;
-      }
-
-      const payload = message.payload.toHex();
-      if (getServiceNamePrefix(payload) === 'Admin' && getFnNamePrefix(payload) === 'Minted') {
-        callback(this._program.registry.createType('(String, String, {"to":"[u8;32]","value":"U256"})', message.payload)[2].toJSON() as any as { to: string; value: number | string });
-      }
-    });
-  }
-
-  public subscribeToBurnedEvent(callback: (data: { from: string; value: number | string }) => void | Promise<void>): Promise<() => void> {
-    return this._program.api.gearEvents.subscribeToGearEvent('UserMessageSent', ({ data: { message } }) => {;
-      if (!message.source.eq(this._program.programId) || !message.destination.eq(ZERO_ADDRESS)) {
-        return;
-      }
-
-      const payload = message.payload.toHex();
-      if (getServiceNamePrefix(payload) === 'Admin' && getFnNamePrefix(payload) === 'Burned') {
-        callback(this._program.registry.createType('(String, String, {"from":"[u8;32]","value":"U256"})', message.payload)[2].toJSON() as any as { from: string; value: number | string });
-      }
-    });
-  }
-
-  public subscribeToKilledEvent(callback: (data: { inheritor: string }) => void | Promise<void>): Promise<() => void> {
-    return this._program.api.gearEvents.subscribeToGearEvent('UserMessageSent', ({ data: { message } }) => {;
-      if (!message.source.eq(this._program.programId) || !message.destination.eq(ZERO_ADDRESS)) {
-        return;
-      }
-
-      const payload = message.payload.toHex();
-      if (getServiceNamePrefix(payload) === 'Admin' && getFnNamePrefix(payload) === 'Killed') {
-        callback(this._program.registry.createType('(String, String, {"inheritor":"[u8;32]"})', message.payload)[2].toJSON() as any as { inheritor: string });
-      }
-    });
-  }
-}
-
-export class Pausable {
-  constructor(private _program: Erc20Token) {}
-
-  public delegateAdmin(actor: string): TransactionBuilder<boolean> {
-    if (!this._program.programId) throw new Error('Program ID is not set');
-    return new TransactionBuilder<boolean>(
-      this._program.api,
-      this._program.registry,
-      'send_message',
-      ['Pausable', 'DelegateAdmin', actor],
-      '(String, String, [u8;32])',
-      'bool',
-      this._program.programId
-    );
-  }
-
-  public pause(): TransactionBuilder<boolean> {
-    if (!this._program.programId) throw new Error('Program ID is not set');
-    return new TransactionBuilder<boolean>(
-      this._program.api,
-      this._program.registry,
-      'send_message',
-      ['Pausable', 'Pause'],
-      '(String, String)',
-      'bool',
-      this._program.programId
-    );
-  }
-
-  public unpause(): TransactionBuilder<boolean> {
-    if (!this._program.programId) throw new Error('Program ID is not set');
-    return new TransactionBuilder<boolean>(
-      this._program.api,
-      this._program.registry,
-      'send_message',
-      ['Pausable', 'Unpause'],
-      '(String, String)',
-      'bool',
-      this._program.programId
-    );
-  }
-
-  public async isPaused(originAddress: string, value?: number | string | bigint, atBlock?: `0x${string}`): Promise<boolean> {
-    const payload = this._program.registry.createType('(String, String)', ['Pausable', 'IsPaused']).toHex();
-    if (!this._program.programId) throw new Error('Program ID is not set');
-    const reply = await this._program.api.message.calculateReply({
-      destination: this._program.programId,
-      origin: decodeAddress(originAddress),
-      payload,
-      value: value || 0,
-      gasLimit: this._program.api.blockGasLimit.toBigInt(),
-      at: atBlock,
-    });
-    const result = this._program.registry.createType('(String, String, bool)', reply.payload);
-    return result[2].toJSON() as unknown as boolean;
-  }
-
-  public subscribeToPausedEvent(callback: (data: null) => void | Promise<void>): Promise<() => void> {
-    return this._program.api.gearEvents.subscribeToGearEvent('UserMessageSent', ({ data: { message } }) => {;
-      if (!message.source.eq(this._program.programId) || !message.destination.eq(ZERO_ADDRESS)) {
-        return;
-      }
-
-      const payload = message.payload.toHex();
-      if (getServiceNamePrefix(payload) === 'Pausable' && getFnNamePrefix(payload) === 'Paused') {
-        callback(null);
-      }
-    });
-  }
-
-  public subscribeToUnpausedEvent(callback: (data: null) => void | Promise<void>): Promise<() => void> {
-    return this._program.api.gearEvents.subscribeToGearEvent('UserMessageSent', ({ data: { message } }) => {;
-      if (!message.source.eq(this._program.programId) || !message.destination.eq(ZERO_ADDRESS)) {
-        return;
-      }
-
-      const payload = message.payload.toHex();
-      if (getServiceNamePrefix(payload) === 'Pausable' && getFnNamePrefix(payload) === 'Unpaused') {
-        callback(null);
-      }
-    });
-  }
-}
-
-export class Vft {
-  constructor(private _program: Erc20Token) {}
-
-  public approve(spender: string, value: number | string): TransactionBuilder<boolean> {
-    if (!this._program.programId) throw new Error('Program ID is not set');
-    return new TransactionBuilder<boolean>(
-      this._program.api,
-      this._program.registry,
-      'send_message',
-      ['Vft', 'Approve', spender, value],
-      '(String, String, [u8;32], U256)',
-      'bool',
-      this._program.programId
-    );
-  }
-
-  public setFailTransfer(fail: boolean): TransactionBuilder<null> {
+  public revokeAdminRole(from: string): TransactionBuilder<null> {
     if (!this._program.programId) throw new Error('Program ID is not set');
     return new TransactionBuilder<null>(
       this._program.api,
       this._program.registry,
       'send_message',
-      ['Vft', 'SetFailTransfer', fail],
+      ['Vft', 'RevokeAdminRole', from],
+      '(String, String, [u8;32])',
+      'Null',
+      this._program.programId
+    );
+  }
+
+  public revokeBurnerRole(from: string): TransactionBuilder<null> {
+    if (!this._program.programId) throw new Error('Program ID is not set');
+    return new TransactionBuilder<null>(
+      this._program.api,
+      this._program.registry,
+      'send_message',
+      ['Vft', 'RevokeBurnerRole', from],
+      '(String, String, [u8;32])',
+      'Null',
+      this._program.programId
+    );
+  }
+
+  public revokeMinterRole(from: string): TransactionBuilder<null> {
+    if (!this._program.programId) throw new Error('Program ID is not set');
+    return new TransactionBuilder<null>(
+      this._program.api,
+      this._program.registry,
+      'send_message',
+      ['Vft', 'RevokeMinterRole', from],
+      '(String, String, [u8;32])',
+      'Null',
+      this._program.programId
+    );
+  }
+
+  public setTransferFail(flag: boolean): TransactionBuilder<null> {
+    if (!this._program.programId) throw new Error('Program ID is not set');
+    return new TransactionBuilder<null>(
+      this._program.api,
+      this._program.registry,
+      'send_message',
+      ['Vft', 'SetTransferFail', flag],
       '(String, String, bool)',
       'Null',
       this._program.programId
@@ -403,6 +194,64 @@ export class Vft {
     );
   }
 
+  public approve(spender: string, value: number | string): TransactionBuilder<boolean> {
+    if (!this._program.programId) throw new Error('Program ID is not set');
+    return new TransactionBuilder<boolean>(
+      this._program.api,
+      this._program.registry,
+      'send_message',
+      ['Vft', 'Approve', spender, value],
+      '(String, String, [u8;32], U256)',
+      'bool',
+      this._program.programId
+    );
+  }
+
+  public async admins(originAddress: string, value?: number | string | bigint, atBlock?: `0x${string}`): Promise<Array<string>> {
+    const payload = this._program.registry.createType('(String, String)', ['Vft', 'Admins']).toHex();
+    if (!this._program.programId) throw new Error('Program ID is not set');
+    const reply = await this._program.api.message.calculateReply({
+      destination: this._program.programId,
+      origin: decodeAddress(originAddress),
+      payload,
+      value: value || 0,
+      gasLimit: this._program.api.blockGasLimit.toBigInt(),
+      at: atBlock,
+    });
+    const result = this._program.registry.createType('(String, String, Vec<[u8;32]>)', reply.payload);
+    return result[2].toJSON() as unknown as Array<string>;
+  }
+
+  public async burners(originAddress: string, value?: number | string | bigint, atBlock?: `0x${string}`): Promise<Array<string>> {
+    const payload = this._program.registry.createType('(String, String)', ['Vft', 'Burners']).toHex();
+    if (!this._program.programId) throw new Error('Program ID is not set');
+    const reply = await this._program.api.message.calculateReply({
+      destination: this._program.programId,
+      origin: decodeAddress(originAddress),
+      payload,
+      value: value || 0,
+      gasLimit: this._program.api.blockGasLimit.toBigInt(),
+      at: atBlock,
+    });
+    const result = this._program.registry.createType('(String, String, Vec<[u8;32]>)', reply.payload);
+    return result[2].toJSON() as unknown as Array<string>;
+  }
+
+  public async minters(originAddress: string, value?: number | string | bigint, atBlock?: `0x${string}`): Promise<Array<string>> {
+    const payload = this._program.registry.createType('(String, String)', ['Vft', 'Minters']).toHex();
+    if (!this._program.programId) throw new Error('Program ID is not set');
+    const reply = await this._program.api.message.calculateReply({
+      destination: this._program.programId,
+      origin: decodeAddress(originAddress),
+      payload,
+      value: value || 0,
+      gasLimit: this._program.api.blockGasLimit.toBigInt(),
+      at: atBlock,
+    });
+    const result = this._program.registry.createType('(String, String, Vec<[u8;32]>)', reply.payload);
+    return result[2].toJSON() as unknown as Array<string>;
+  }
+
   public async allowance(owner: string, spender: string, originAddress: string, value?: number | string | bigint, atBlock?: `0x${string}`): Promise<bigint> {
     const payload = this._program.registry.createType('(String, String, [u8;32], [u8;32])', ['Vft', 'Allowance', owner, spender]).toHex();
     if (!this._program.programId) throw new Error('Program ID is not set');
@@ -418,8 +267,8 @@ export class Vft {
     return result[2].toBigInt() as unknown as bigint;
   }
 
-  public async balanceOf(owner: string, originAddress: string, value?: number | string | bigint, atBlock?: `0x${string}`): Promise<bigint> {
-    const payload = this._program.registry.createType('(String, String, [u8;32])', ['Vft', 'BalanceOf', owner]).toHex();
+  public async balanceOf(account: string, originAddress: string, value?: number | string | bigint, atBlock?: `0x${string}`): Promise<bigint> {
+    const payload = this._program.registry.createType('(String, String, [u8;32])', ['Vft', 'BalanceOf', account]).toHex();
     if (!this._program.programId) throw new Error('Program ID is not set');
     const reply = await this._program.api.message.calculateReply({
       destination: this._program.programId,
@@ -491,5 +340,57 @@ export class Vft {
     });
     const result = this._program.registry.createType('(String, String, U256)', reply.payload);
     return result[2].toBigInt() as unknown as bigint;
+  }
+
+  public subscribeToMintedEvent(callback: (data: { to: string; value: number | string }) => void | Promise<void>): Promise<() => void> {
+    return this._program.api.gearEvents.subscribeToGearEvent('UserMessageSent', ({ data: { message } }) => {;
+      if (!message.source.eq(this._program.programId) || !message.destination.eq(ZERO_ADDRESS)) {
+        return;
+      }
+
+      const payload = message.payload.toHex();
+      if (getServiceNamePrefix(payload) === 'Vft' && getFnNamePrefix(payload) === 'Minted') {
+        callback(this._program.registry.createType('(String, String, {"to":"[u8;32]","value":"U256"})', message.payload)[2].toJSON() as any as { to: string; value: number | string });
+      }
+    });
+  }
+
+  public subscribeToBurnedEvent(callback: (data: { from: string; value: number | string }) => void | Promise<void>): Promise<() => void> {
+    return this._program.api.gearEvents.subscribeToGearEvent('UserMessageSent', ({ data: { message } }) => {;
+      if (!message.source.eq(this._program.programId) || !message.destination.eq(ZERO_ADDRESS)) {
+        return;
+      }
+
+      const payload = message.payload.toHex();
+      if (getServiceNamePrefix(payload) === 'Vft' && getFnNamePrefix(payload) === 'Burned') {
+        callback(this._program.registry.createType('(String, String, {"from":"[u8;32]","value":"U256"})', message.payload)[2].toJSON() as any as { from: string; value: number | string });
+      }
+    });
+  }
+
+  public subscribeToApprovalEvent(callback: (data: { owner: string; spender: string; value: number | string }) => void | Promise<void>): Promise<() => void> {
+    return this._program.api.gearEvents.subscribeToGearEvent('UserMessageSent', ({ data: { message } }) => {;
+      if (!message.source.eq(this._program.programId) || !message.destination.eq(ZERO_ADDRESS)) {
+        return;
+      }
+
+      const payload = message.payload.toHex();
+      if (getServiceNamePrefix(payload) === 'Vft' && getFnNamePrefix(payload) === 'Approval') {
+        callback(this._program.registry.createType('(String, String, {"owner":"[u8;32]","spender":"[u8;32]","value":"U256"})', message.payload)[2].toJSON() as any as { owner: string; spender: string; value: number | string });
+      }
+    });
+  }
+
+  public subscribeToTransferEvent(callback: (data: { from: string; to: string; value: number | string }) => void | Promise<void>): Promise<() => void> {
+    return this._program.api.gearEvents.subscribeToGearEvent('UserMessageSent', ({ data: { message } }) => {;
+      if (!message.source.eq(this._program.programId) || !message.destination.eq(ZERO_ADDRESS)) {
+        return;
+      }
+
+      const payload = message.payload.toHex();
+      if (getServiceNamePrefix(payload) === 'Vft' && getFnNamePrefix(payload) === 'Transfer') {
+        callback(this._program.registry.createType('(String, String, {"from":"[u8;32]","to":"[u8;32]","value":"U256"})', message.payload)[2].toJSON() as any as { from: string; to: string; value: number | string });
+      }
+    });
   }
 }
