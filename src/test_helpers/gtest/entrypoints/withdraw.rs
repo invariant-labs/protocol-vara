@@ -78,7 +78,7 @@ pub fn withdraw_vara(
     from: u64,
     amount: Option<u128>,
     expected_error: Option<impl Into<String>>,
-) -> Option<TokenAmount> {
+) -> Option<(RunResult, TokenAmount)> {
     extern crate std;
     let res = send_request!(
         program: invariant,
@@ -95,11 +95,14 @@ pub fn withdraw_vara(
 
     res.assert_success();
     let events = res.emitted_events();
-    assert_eq!(events.len(), 1);
-    events
-        .last()
-        .unwrap()
-        .decoded_event::<TokenAmount>()
-        .unwrap()
+    assert_eq!(events.len(), 2);
+    (
+        res,
+        events
+            .last()
+            .unwrap()
+            .decoded_event::<TokenAmount>()
+            .unwrap(),
+    )
         .into()
 }

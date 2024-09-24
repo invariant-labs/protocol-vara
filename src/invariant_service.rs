@@ -746,9 +746,23 @@ where
 
             // Reply has to be hardcoded since sails
             // doesn't allow for specifying value in the reply yet
-            reply(("Service", "WithdrawVara", value), value.0.as_u128())
+            #[cfg(not(feature = "test"))]
+            {
+                msg::reply(("Service", "WithdrawVara", value), value.0.as_u128())
+                    .expect("Failed to send message");
+                exec::leave()
+            }
+
+            #[cfg(feature = "test")]
+            {
+                msg::send(
+                    msg::source(),
+                    ("Service", "WithdrawVara", value),
+                    value.0.as_u128(),
+                )
                 .expect("Failed to send message");
-            exec::leave();
+                Ok(value)
+            }
         })
     }
 
