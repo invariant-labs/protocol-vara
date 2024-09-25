@@ -65,7 +65,11 @@ impl ExtendedService {
     }
 
     pub fn set_transfer_fail(&mut self, flag: bool) {
-        self.get_mut().transfer_fail = flag;
+        #[cfg(feature = "test")]
+        {
+            self.ensure_is_admin();
+            self.get_mut().transfer_fail = flag;
+        }
     }
 
     pub fn transfer(&mut self, to: ActorId, value: U256) -> bool {
