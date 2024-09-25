@@ -6,7 +6,7 @@ use utils_gclient::*;
 #[tokio::test]
 #[ignore]
 async fn test_basic_function() -> Result<()> {
-    let api = GearApi::dev_from_path("../target/tmp/gear").await?;
+    let api = GearApi::dev_from_path("../../target/tmp/gear").await?;
     let john_api = get_new_client(&api, USERS_STR[0]).await;
 
     let mut listener = api.subscribe().await?;
@@ -61,7 +61,7 @@ async fn test_basic_function() -> Result<()> {
 #[tokio::test]
 #[ignore]
 async fn test_grant_role() -> Result<()> {
-    let api = GearApi::dev_from_path("../target/tmp/gear").await?;
+    let api = GearApi::dev_from_path("../../target/tmp/gear").await?;
     let john_api = get_new_client(&api, USERS_STR[0]).await;
 
     let mut listener = api.subscribe().await?;

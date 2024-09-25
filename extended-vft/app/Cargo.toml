@@ -16,7 +16,7 @@ env_logger.workspace = true
 gclient.workspace = true
 gtest.workspace = true
 gear-core.workspace = true
-extended_vft_wasm = { path = "../wasm" }
+extended_vft_wasm = { path = "../wasm", features = ["test"] }
 gear-wasm-instrument.workspace = true
 tokio = "1"
 

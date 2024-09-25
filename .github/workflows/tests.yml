@@ -65,7 +65,7 @@ jobs:
       - name: Run tests script (with building)
         run: |
           chmod +x tests.sh
-          ./tests.sh --release --all -- --include-ignored
+          ./tests.sh "--release -- --include-ignored"
         shell: bash
   sdk_tests:
     name: Run SDK tests

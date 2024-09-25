@@ -50,8 +50,8 @@ pub async fn get_new_client(api: &GearApi, name: &str) -> GearApi {
 pub async fn init(api: &GearApi) -> (MessageId, ProgramId) {
     let constructor = ("Name".to_string(), "Symbol".to_string(), 10_u8);
     let request = ["New".encode(), constructor.encode()].concat();
-
-    let path = "../target/wasm32-unknown-unknown/release/extended_vft_wasm.opt.wasm";
+    
+    let path = "../../target/wasm32-unknown-unknown/release/extended_vft_wasm.opt.wasm";
     let gas_info = api
         .calculate_upload_gas(
             None,
