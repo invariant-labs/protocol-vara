@@ -1,11 +1,9 @@
-use crate::{send_request, test_helpers::gtest::InvariantResult};
+use crate::{send_request, test_helpers::gtest::*};
 use contracts::{InvariantError, PoolKey};
-use decimal::U256;
-use gstd::{vec, String, ToString};
 use gtest::*;
 use io::*;
 use math::{sqrt_price::SqrtPrice, token_amount::TokenAmount};
-use sails_rs::ActorId;
+use sails_rs::prelude::*;
 
 #[track_caller]
 pub fn deposit_single_token(
@@ -34,9 +32,8 @@ pub fn deposit_single_token(
     events
         .last()
         .unwrap()
-        .decoded_event::<(String, String, TokenAmount)>()
+        .decoded_event::<TokenAmount>()
         .unwrap()
-        .2
         .into()
 }
 
@@ -69,9 +66,8 @@ pub fn deposit_token_pair(
     events
         .last()
         .unwrap()
-        .decoded_event::<(String, String, (TokenAmount, TokenAmount))>()
+        .decoded_event::<(TokenAmount, TokenAmount)>()
         .unwrap()
-        .2
         .into()
 }
 
@@ -101,8 +97,7 @@ pub fn deposit_vara(
     events
         .last()
         .unwrap()
-        .decoded_event::<(String, String, TokenAmount)>()
+        .decoded_event::<TokenAmount>()
         .unwrap()
-        .2
         .into()
 }

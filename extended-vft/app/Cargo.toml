@@ -1,0 +1,29 @@
+[package]
+name = "extended-vft-app"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+gstd.workspace = true
+log.workspace = true
+sails-rs.workspace = true
+parity-scale-codec.workspace = true
+scale-info.workspace = true
+vft-service.workspace = true
+
+[dev-dependencies]
+env_logger.workspace = true
+gclient.workspace = true
+gtest.workspace = true
+gear-core.workspace = true
+extended_vft_wasm = { path = "../wasm", features = ["test"] }
+gear-wasm-instrument.workspace = true
+tokio = "1"
+
+[build-dependencies]
+gear-wasm-builder.workspace = true
+gear-wasm-instrument.workspace = true
+
+[features]
+test = []
+default = []

@@ -17,8 +17,8 @@ fn test_protocol_fee() {
     let (token_x_program, token_y_program) = init_tokens(&sys);
 
     init_basic_pool(&invariant, &token_x, &token_y);
-    init_basic_position(&sys, &invariant, &token_x_program, &token_y_program);
-    init_basic_swap(&sys, &invariant, &token_x_program, &token_y_program);
+    init_basic_position(&invariant, &token_x_program, &token_y_program);
+    init_basic_swap(&invariant, &token_x_program, &token_y_program);
 
     let fee_tier = FeeTier::new(Percentage::from_scale(6, 3), 10).unwrap();
     let pool_key = PoolKey::new(token_x, token_y, fee_tier).unwrap();
@@ -69,8 +69,8 @@ fn test_protocol_fee_not_admin() {
     let (token_x_program, token_y_program) = init_tokens(&sys);
 
     init_basic_pool(&invariant, &token_x, &token_y);
-    init_basic_position(&sys, &invariant, &token_x_program, &token_y_program);
-    init_basic_swap(&sys, &invariant, &token_x_program, &token_y_program);
+    init_basic_position(&invariant, &token_x_program, &token_y_program);
+    init_basic_swap(&invariant, &token_x_program, &token_y_program);
 
     let fee_tier = FeeTier::new(Percentage::from_scale(6, 3), 10).unwrap();
     let pool_key = PoolKey::new(token_x, token_y, fee_tier).unwrap();
@@ -91,8 +91,8 @@ fn test_withdraw_fee_not_deployer() {
     let (token_x_program, token_y_program) = init_tokens(&sys);
 
     init_basic_pool(&invariant, &token_x, &token_y);
-    init_basic_position(&sys, &invariant, &token_x_program, &token_y_program);
-    init_basic_swap(&sys, &invariant, &token_x_program, &token_y_program);
+    init_basic_position(&invariant, &token_x_program, &token_y_program);
+    init_basic_swap(&invariant, &token_x_program, &token_y_program);
 
     let fee_tier = FeeTier::new(Percentage::from_scale(6, 3), 10).unwrap();
     let pool_key = PoolKey::new(token_x, token_y, fee_tier).unwrap();

@@ -1,13 +1,10 @@
 use crate::types::{liquidity::*, token_amount::*};
 use decimal::*;
-#[allow(unused_imports)]
-use gstd::ToString;
-use gstd::{Decode, Encode, TypeInfo};
+use sails_rs::prelude::*;
 use traceable_result::*;
+
 #[decimal(28, U256)]
 #[derive(Default, Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Encode, Decode, TypeInfo)]
-#[codec(crate = gstd::codec)]
-#[scale_info(crate = gstd::scale_info)]
 pub struct FeeGrowth(pub u128);
 
 impl FeeGrowth {
@@ -333,10 +330,7 @@ mod tests {
             let fee_growth = FeeGrowth::from_fee(liquidity, amount).unwrap();
             // real    6.61744490042422139897126953655970282852649688720703125 × 10^-10
             // expected 6617444900424221398
-            assert_eq!(
-                fee_growth,
-                FeeGrowth::new(6617444900424221398u128)
-            );
+            assert_eq!(fee_growth, FeeGrowth::new(6617444900424221398u128));
 
             let out = fee_growth.to_fee(liquidity).unwrap();
             // real    9.99999999999999999853225897430980027744256 × 10^13
@@ -355,10 +349,7 @@ mod tests {
             let fee_growth = FeeGrowth::from_fee(liquidity, amount).unwrap();
             // real     0.06
             // expected 0.06
-            assert_eq!(
-                fee_growth,
-                FeeGrowth::new(600000000000000000000000000u128)
-            );
+            assert_eq!(fee_growth, FeeGrowth::new(600000000000000000000000000u128));
 
             let out = fee_growth.to_fee(liquidity).unwrap();
             // real     600000000000000000

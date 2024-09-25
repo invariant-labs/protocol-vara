@@ -1,5 +1,5 @@
 use crate::{InvariantError, Position};
-use sails_rs::{collections::HashMap, ActorId, Vec};
+use sails_rs::{collections::HashMap, prelude::*};
 
 #[derive(Debug, Default)]
 pub struct Positions {
@@ -108,7 +108,6 @@ impl<'a> Positions {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use gstd::vec;
 
     #[test]
     fn test_add() {

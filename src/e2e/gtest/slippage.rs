@@ -18,7 +18,7 @@ fn test_basic_slippage() {
     let (invariant, token_x_program, token_y_program) = init_slippage_invariant_and_tokens(&sys);
 
     let pool_key =
-        init_slippage_pool_with_liquidity(&sys, &invariant, &token_x_program, &token_y_program);
+        init_slippage_pool_with_liquidity(&invariant, &token_x_program, &token_y_program);
 
     let amount = U256::from(10u128.pow(8));
     let swap_amount = TokenAmount(amount);
@@ -65,7 +65,7 @@ fn test_swap_close_to_limit() {
 
     let (invariant, token_x_program, token_y_program) = init_slippage_invariant_and_tokens(&sys);
     let pool_key =
-        init_slippage_pool_with_liquidity(&sys, &invariant, &token_x_program, &token_y_program);
+        init_slippage_pool_with_liquidity(&invariant, &token_x_program, &token_y_program);
     let amount = U256::from(10u128.pow(8));
     let swap_amount = TokenAmount::new(amount);
     increase_allowance(
@@ -124,7 +124,7 @@ fn test_swap_exact_limit() {
     let (token_x_program, token_y_program) = init_tokens(&sys);
 
     init_basic_pool(&invariant, &token_x, &token_y);
-    init_basic_position(&sys, &invariant, &token_x_program, &token_y_program);
+    init_basic_position(&invariant, &token_x_program, &token_y_program);
 
     let fee_tier = FeeTier::new(Percentage::from_scale(6, 3), 10).unwrap();
 

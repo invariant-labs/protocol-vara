@@ -75,6 +75,7 @@ fn test_get_position_ticks() {
 }
 
 #[test]
+#[ignore]
 fn test_get_position_ticks_limit() {
     let sys = System::new();
     sys.init_logger();

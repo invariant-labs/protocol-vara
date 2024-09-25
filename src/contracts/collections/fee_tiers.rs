@@ -1,10 +1,8 @@
 use crate::errors::InvariantError;
 use crate::storage::fee_tier::FeeTier;
-use sails_rs::{Decode, Encode, TypeInfo, Vec};
+use sails_rs::prelude::*;
 
 #[derive(Decode, Encode, TypeInfo, PartialEq, Eq, Clone, Debug, Default)]
-#[codec(crate = gstd::codec)]
-#[scale_info(crate = gstd::scale_info)]
 pub struct FeeTiers {
     fee_tiers: Vec<FeeTier>,
 }
@@ -42,9 +40,8 @@ impl FeeTiers {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use gstd::vec;
-    use math::percentage::Percentage;
     use decimal::*;
+    use math::percentage::Percentage;
 
     #[test]
     fn test_add() {

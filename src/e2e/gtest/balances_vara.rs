@@ -1,12 +1,19 @@
 use crate::invariant_service::VARA_ADDRESS;
-use crate::test_helpers::gtest::consts::*;
 use crate::test_helpers::gtest::*;
 use contracts::InvariantError;
 use decimal::*;
 use math::percentage::Percentage;
 use math::token_amount::TokenAmount;
+use sails_rs::prelude::*;
 
 use gtest::*;
+
+fn claim_tokens(sys: &System, res: RunResult) {
+    let core_log = res.log().last().unwrap();
+    let log = Log::builder().payload_bytes(core_log.payload());
+    sys.get_mailbox(REGULAR_USER_1).claim_value(log).unwrap();
+}
+
 #[test]
 fn test_vara_deposit() {
     let sys = System::new();
@@ -60,17 +67,13 @@ fn test_vara_withdraw() {
     assert_eq!(sys.balance_of(INVARIANT_ID), vara_mint);
     assert_eq!(sys.balance_of(REGULAR_USER_1), 0);
 
-    let value = withdraw_vara(&invariant, REGULAR_USER_1, vara_mint.into(), None::<&str>);
-    assert_eq!(value.unwrap(), TokenAmount::new(vara_mint.into()));
+    let res = withdraw_vara(&invariant, REGULAR_USER_1, vara_mint.into(), None::<&str>).unwrap();
+    assert_eq!(res.1, TokenAmount::new(vara_mint.into()));
 
     assert_eq!(get_user_balances(&invariant, REGULAR_USER_1), vec![]);
-    sys.claim_value_from_mailbox(REGULAR_USER_1);
-    assert_eq!(sys.balance_of(INVARIANT_ID), 0);
-    assert_eq!(sys.balance_of(REGULAR_USER_1), vara_mint);
 
-    let value = withdraw_vara(&invariant, REGULAR_USER_1, None, None::<&str>).unwrap();
-    assert_eq!(value, TokenAmount::new(0.into()));
-    sys.claim_value_from_mailbox(REGULAR_USER_1);
+    claim_tokens(&sys, res.0);
+
     assert_eq!(sys.balance_of(INVARIANT_ID), 0);
     assert_eq!(sys.balance_of(REGULAR_USER_1), vara_mint);
 }
@@ -88,8 +91,6 @@ fn test_vara_withdraw_failure() {
         1.into(),
         Some(InvariantError::NoBalanceForTheToken),
     );
-
-    sys.claim_value_from_mailbox(REGULAR_USER_1);
 
     assert_eq!(sys.balance_of(INVARIANT_ID), 0);
     assert_eq!(sys.balance_of(REGULAR_USER_1), 0);
@@ -113,7 +114,6 @@ fn test_vara_withdraw_failure() {
         Some(InvariantError::FailedToChangeTokenBalance),
     );
 
-    sys.claim_value_from_mailbox(REGULAR_USER_1);
     assert_eq!(
         get_user_balances(&invariant, REGULAR_USER_1),
         vec![(VARA_ADDRESS, TokenAmount::new(vara_mint.into()))]
@@ -142,7 +142,6 @@ fn test_vara_deposit_and_withdraw_with_normal_entrypoint_failures() {
         Some(InvariantError::InvalidVaraDepositAttempt),
     );
 
-    sys.claim_value_from_mailbox(REGULAR_USER_1);
     assert_eq!(sys.balance_of(REGULAR_USER_1), vara_mint);
     assert_eq!(sys.balance_of(INVARIANT_ID), 0);
     assert_eq!(get_user_balances(&invariant, REGULAR_USER_1), vec![]);
@@ -157,14 +156,12 @@ fn test_vara_deposit_and_withdraw_with_normal_entrypoint_failures() {
         Some(InvariantError::InvalidVaraDepositAttempt),
     );
 
-    sys.claim_value_from_mailbox(REGULAR_USER_1);
     assert_eq!(sys.balance_of(REGULAR_USER_1), vara_mint);
     assert_eq!(sys.balance_of(INVARIANT_ID), 0);
     assert_eq!(get_user_balances(&invariant, REGULAR_USER_1), vec![]);
 
     deposit_vara(&invariant, REGULAR_USER_1, vara_mint, None::<&str>);
 
-    sys.claim_value_from_mailbox(REGULAR_USER_1);
     assert_eq!(sys.balance_of(REGULAR_USER_1), 0);
     assert_eq!(sys.balance_of(INVARIANT_ID), vara_mint);
 
@@ -181,7 +178,6 @@ fn test_vara_deposit_and_withdraw_with_normal_entrypoint_failures() {
         Some(InvariantError::InvalidVaraWithdrawAttempt),
     );
 
-    sys.claim_value_from_mailbox(REGULAR_USER_1);
     assert_eq!(sys.balance_of(REGULAR_USER_1), 0);
     assert_eq!(sys.balance_of(INVARIANT_ID), vara_mint);
 
@@ -200,7 +196,6 @@ fn test_vara_deposit_and_withdraw_with_normal_entrypoint_failures() {
         Some(InvariantError::InvalidVaraWithdrawAttempt),
     );
 
-    sys.claim_value_from_mailbox(REGULAR_USER_1);
     assert_eq!(sys.balance_of(REGULAR_USER_1), 0);
     assert_eq!(sys.balance_of(INVARIANT_ID), vara_mint);
 
@@ -209,17 +204,13 @@ fn test_vara_deposit_and_withdraw_with_normal_entrypoint_failures() {
         vec![(VARA_ADDRESS, TokenAmount::new(vara_mint.into()))]
     );
 
-    withdraw_vara(
-        &invariant,
-        REGULAR_USER_1,
-        vara_mint.into(),
-        None::<&str>,
-    );
-    sys.claim_value_from_mailbox(REGULAR_USER_1);
-    assert_eq!(
-        get_user_balances(&invariant, REGULAR_USER_1),
-        vec![]
-    );
+    sys.init_verbose_logger();
+
+    let (res, _) =
+        withdraw_vara(&invariant, REGULAR_USER_1, vara_mint.into(), None::<&str>).unwrap();
+    claim_tokens(&sys, res);
+
+    assert_eq!(get_user_balances(&invariant, REGULAR_USER_1), vec![]);
     assert_eq!(sys.balance_of(INVARIANT_ID), 0);
     assert_eq!(sys.balance_of(REGULAR_USER_1), vara_mint);
 }

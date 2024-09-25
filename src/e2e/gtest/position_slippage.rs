@@ -1,10 +1,9 @@
 use crate::test_helpers::gtest::*;
 use contracts::*;
 use decimal::*;
-use gstd::prelude::*;
 use gtest::*;
 use math::{liquidity::Liquidity, sqrt_price::SqrtPrice};
-use sails_rs::ActorId;
+use sails_rs::prelude::*;
 
 #[test]
 fn test_position_slippage_zero_slippage_and_inside_range() {
@@ -15,7 +14,7 @@ fn test_position_slippage_zero_slippage_and_inside_range() {
     let token_y = ActorId::from(TOKEN_Y_ID);
 
     let pool_key =
-        init_slippage_pool_with_liquidity(&sys, &invariant, &token_x_program, &token_y_program);
+        init_slippage_pool_with_liquidity(&invariant, &token_x_program, &token_y_program);
 
     let pool = get_pool(&invariant, token_x, token_y, pool_key.fee_tier).unwrap();
     let amount_y = balance_of(&token_y_program, REGULAR_USER_1);
@@ -84,7 +83,7 @@ fn test_position_slippage_below_range() {
     let token_y = ActorId::from(TOKEN_Y_ID);
 
     let pool_key =
-        init_slippage_pool_with_liquidity(&sys, &invariant, &token_x_program, &token_y_program);
+        init_slippage_pool_with_liquidity(&invariant, &token_x_program, &token_y_program);
 
     let _pool = get_pool(&invariant, token_x, token_y, pool_key.fee_tier).unwrap();
 
@@ -117,7 +116,7 @@ fn test_position_slippage_above_range() {
     let token_y = ActorId::from(TOKEN_Y_ID);
 
     let pool_key =
-        init_slippage_pool_with_liquidity(&sys, &invariant, &token_x_program, &token_y_program);
+        init_slippage_pool_with_liquidity(&invariant, &token_x_program, &token_y_program);
 
     let _pool = get_pool(&invariant, token_x, token_y, pool_key.fee_tier).unwrap();
 

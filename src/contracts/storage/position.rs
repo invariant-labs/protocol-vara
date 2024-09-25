@@ -11,12 +11,10 @@ use math::{
         token_amount::TokenAmount,
     },
 };
-use sails_rs::{Decode, Encode, TypeInfo};
+use sails_rs::prelude::*;
 use traceable_result::*;
 
 #[derive(PartialEq, Eq, Debug, Default, Clone, Copy, Decode, Encode, TypeInfo)]
-#[codec(crate = gstd::codec)]
-#[scale_info(crate = gstd::scale_info)]
 pub struct Position {
     pub pool_key: PoolKey,
     pub liquidity: Liquidity,
@@ -86,7 +84,8 @@ impl Position {
         fee_growth_inside_x: FeeGrowth,
         fee_growth_inside_y: FeeGrowth,
     ) -> TrackableResult<()> {
-        if liquidity_delta.get() == U256::from(0) && self.liquidity == Liquidity::new(U256::from(0)) {
+        if liquidity_delta.get() == U256::from(0) && self.liquidity == Liquidity::new(U256::from(0))
+        {
             return Err(err!("EmptyPositionPokes"));
         }
 

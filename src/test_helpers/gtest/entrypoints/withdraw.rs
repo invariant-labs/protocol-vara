@@ -1,11 +1,9 @@
+use crate::{send_request, test_helpers::gtest::*};
 use contracts::{InvariantError, PoolKey};
-use decimal::U256;
-use gstd::*;
 use gtest::*;
 use io::*;
 use math::{sqrt_price::SqrtPrice, token_amount::TokenAmount};
-
-use crate::{send_request, test_helpers::gtest::InvariantResult};
+use sails_rs::prelude::*;
 
 #[track_caller]
 pub fn withdraw_single_token(
@@ -34,9 +32,8 @@ pub fn withdraw_single_token(
     events
         .last()
         .unwrap()
-        .decoded_event::<(String, String, TokenAmount)>()
+        .decoded_event::<TokenAmount>()
         .unwrap()
-        .2
         .into()
 }
 
@@ -70,9 +67,8 @@ pub fn withdraw_token_pair(
     events
         .last()
         .unwrap()
-        .decoded_event::<(String, String, (TokenAmount, TokenAmount))>()
+        .decoded_event::<(TokenAmount, TokenAmount)>()
         .unwrap()
-        .2
         .into()
 }
 
@@ -82,7 +78,7 @@ pub fn withdraw_vara(
     from: u64,
     amount: Option<u128>,
     expected_error: Option<impl Into<String>>,
-) -> Option<TokenAmount> {
+) -> Option<(RunResult, TokenAmount)> {
     extern crate std;
     let res = send_request!(
         program: invariant,
@@ -99,12 +95,14 @@ pub fn withdraw_vara(
 
     res.assert_success();
     let events = res.emitted_events();
-    assert_eq!(events.len(), 1);
-    events
-        .last()
-        .unwrap()
-        .decoded_event::<(String, String, TokenAmount)>()
-        .unwrap()
-        .2
+    assert_eq!(events.len(), 2);
+    (
+        res,
+        events
+            .last()
+            .unwrap()
+            .decoded_event::<TokenAmount>()
+            .unwrap(),
+    )
         .into()
 }

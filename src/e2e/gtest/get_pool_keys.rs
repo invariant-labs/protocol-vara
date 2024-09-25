@@ -5,7 +5,7 @@ use contracts::*;
 use decimal::*;
 use gtest::*;
 use math::{percentage::Percentage, sqrt_price::calculate_sqrt_price};
-use sails_rs::ActorId;
+use sails_rs::prelude::*;
 
 #[test]
 fn test_get_pool_keys() {
@@ -42,6 +42,6 @@ fn test_get_pool_keys() {
 
     assert_eq!(
         pool_keys,
-        (vec![PoolKey::new(token_0, token_1, fee_tier).unwrap()],1)
+        (vec![PoolKey::new(token_0, token_1, fee_tier).unwrap()], 1)
     )
 }

@@ -1,15 +1,16 @@
 extern crate std;
 
 use crate::test_helpers::gtest::consts::*;
-pub use crate::test_helpers::utils::pools_are_identical_no_timestamp;
+pub use crate::test_helpers::utils::*;
 use contracts::*;
-use gstd::{codec::decode_from_bytes, codec::Codec, fmt::Debug, *};
 use gtest::{CoreLog, Program, RunResult};
 use io::*;
 use math::{
     liquidity::Liquidity, percentage::Percentage, sqrt_price::SqrtPrice, token_amount::TokenAmount,
 };
+use parity_scale_codec::{self as codec, decode_from_bytes, Codec};
 use sails_rs::hex::decode;
+use sails_rs::{fmt::Debug, prelude::*};
 use std::println;
 
 pub type ProgramId = [u8; 32];
@@ -57,7 +58,7 @@ impl TestEvent {
     where
         T: Decode,
     {
-        decode_from_bytes(self.payload.clone().into())
+        <(String, String, T)>::decode(&mut self.payload.as_slice()).map(|(_, _, v)| v)
     }
     pub fn empty_event(source: u64, destination: u64) -> Self {
         Self {

@@ -20,7 +20,7 @@ export class FungibleToken {
     decimals: bigint = 0n,
     gasLimit: bigint = FUNGIBLE_TOKEN_GAS_LIMIT
   ) {
-    const code = await getWasm('gear_erc20')
+    const code = await getWasm('extended_vft')
     const erc20 = new Erc20Token(api)
     const deployTx = await erc20
       .newCtorFromCode(code, name, symbol, integerSafeCast(decimals))
@@ -31,23 +31,7 @@ export class FungibleToken {
       const { response } = await deployTx.signAndSend()
       response()
     }
-    const grantBurnerRoleTx = await erc20.admin
-      .grantRole(deployer.addressRaw as any, 'burner')
-      .withAccount(deployer)
-      .withGas(gasLimit)
-    {
-      const { response } = await grantBurnerRoleTx.signAndSend()
-      response()
-    }
 
-    const grantMinterRoleTx = await erc20.admin
-      .grantRole(deployer.addressRaw as any, 'minter')
-      .withAccount(deployer)
-      .withGas(gasLimit)
-    {
-      const { response } = await grantMinterRoleTx.signAndSend()
-      response()
-    }
     if (!erc20.programId) {
       throw new Error('Failed to initialize FungibleToken program')
     }
@@ -110,7 +94,12 @@ export class FungibleToken {
     return this.erc20.vft.totalSupply(DEFAULT_ADDRESS)
   }
 
-  async approveTx(spender: ActorId, amount: bigint, tokenAddress: HexString, gasLimit: bigint = this.gasLimit) {
+  async approveTx(
+    spender: ActorId,
+    amount: bigint,
+    tokenAddress: HexString,
+    gasLimit: bigint = this.gasLimit
+  ) {
     this.erc20.programId = tokenAddress
 
     return new TransactionWrapper<boolean>(
@@ -128,11 +117,16 @@ export class FungibleToken {
     return tx.withAccount(owner).signAndSend()
   }
 
-  async burnTx(account: ActorId, amount: bigint, tokenAddress: HexString, gasLimit: bigint = this.gasLimit) {
+  async burnTx(
+    account: ActorId,
+    amount: bigint,
+    tokenAddress: HexString,
+    gasLimit: bigint = this.gasLimit
+  ) {
     this.erc20.programId = tokenAddress
 
     return new TransactionWrapper<boolean>(
-      await this.erc20.admin.burn(account as any, amount as any).withGas(gasLimit)
+      await this.erc20.vft.burn(account as any, amount as any).withGas(gasLimit)
     )
   }
 
@@ -145,11 +139,16 @@ export class FungibleToken {
     return tx.withAccount(this.admin).signAndSend()
   }
 
-  async mintTx(account: ActorId, amount: bigint, tokenAddress: HexString, gasLimit: bigint = this.gasLimit) {
+  async mintTx(
+    account: ActorId,
+    amount: bigint,
+    tokenAddress: HexString,
+    gasLimit: bigint = this.gasLimit
+  ) {
     this.erc20.programId = tokenAddress
 
     return new TransactionWrapper<boolean>(
-      await this.erc20.admin.mint(account as any, amount as any).withGas(gasLimit)
+      await this.erc20.vft.mint(account as any, amount as any).withGas(gasLimit)
     )
   }
 
@@ -169,12 +168,17 @@ export class FungibleToken {
       throw new Error('Admin account is required to set transfer failure')
     }
 
-    const tx = await this.erc20.vft.setFailTransfer(flag).withGas(gasLimit)
+    const tx = await this.erc20.vft.setTransferFail(flag).withGas(gasLimit)
     const { response } = await tx.withAccount(this.admin).signAndSend()
     return response()
   }
 
-  async transferTx(to: ActorId, amount: bigint, tokenAddress: HexString, gasLimit: bigint = this.gasLimit) {
+  async transferTx(
+    to: ActorId,
+    amount: bigint,
+    tokenAddress: HexString,
+    gasLimit: bigint = this.gasLimit
+  ) {
     this.erc20.programId = tokenAddress
 
     return new TransactionWrapper<boolean>(
@@ -187,13 +191,17 @@ export class FungibleToken {
     return tx.withAccount(signer).signAndSend()
   }
 
-  async transferFromTx(from: ActorId, to: ActorId, amount: bigint, tokenAddress: HexString, gasLimit: bigint = this.gasLimit) {
+  async transferFromTx(
+    from: ActorId,
+    to: ActorId,
+    amount: bigint,
+    tokenAddress: HexString,
+    gasLimit: bigint = this.gasLimit
+  ) {
     this.erc20.programId = tokenAddress
 
     return new TransactionWrapper<boolean>(
-      await this.erc20.vft
-        .transferFrom(from as any, to as any, amount as any)
-        .withGas(gasLimit)
+      await this.erc20.vft.transferFrom(from as any, to as any, amount as any).withGas(gasLimit)
     )
   }
 

@@ -1,7 +1,6 @@
 use crate::test_helpers::gtest::*;
 use contracts::*;
 use decimal::*;
-use gstd::prelude::*;
 use gtest::*;
 use math::{
     fee_growth::FeeGrowth,
@@ -9,7 +8,7 @@ use math::{
     sqrt_price::{calculate_sqrt_price, SqrtPrice},
     token_amount::TokenAmount,
 };
-use sails_rs::ActorId;
+use sails_rs::prelude::*;
 
 pub fn multiple_swap(x_to_y: bool) {
     let sys = System::new();
@@ -146,9 +145,15 @@ pub fn multiple_swap(x_to_y: bool) {
     }
     assert_eq!(pool.liquidity, liquidity_delta);
     if x_to_y {
-        assert_eq!(pool.sqrt_price, SqrtPrice::new(959805958530842759275220u128));
+        assert_eq!(
+            pool.sqrt_price,
+            SqrtPrice::new(959805958530842759275220u128)
+        );
     } else {
-        assert_eq!(pool.sqrt_price, SqrtPrice::new(1041877257701839564633600u128));
+        assert_eq!(
+            pool.sqrt_price,
+            SqrtPrice::new(1041877257701839564633600u128)
+        );
     }
 
     let invariant_amount_x = balance_of(&token_x_program, INVARIANT_ID);

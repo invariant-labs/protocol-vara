@@ -1,17 +1,15 @@
-use crate::test_helpers::gtest::*;
+use crate::{send_request, test_helpers::gtest::*};
 use contracts::*;
 use decimal::*;
-use gstd::prelude::*;
 use gtest::*;
 use io::*;
 use math::{
     fee_growth::FeeGrowth, percentage::Percentage, sqrt_price::SqrtPrice,
     token_amount::TokenAmount, MIN_SQRT_PRICE,
 };
-use sails_rs::ActorId;
+use sails_rs::prelude::*;
 
 pub fn init_basic_swap(
-    sys: &System,
     invariant: &Program<'_>,
     token_x_program: &Program<'_>,
     token_y_program: &Program<'_>,
@@ -62,10 +60,15 @@ pub fn init_basic_swap(
     let pool_after = get_pool(&invariant, token_x, token_y, fee_tier).unwrap();
 
     let events = res.emitted_events();
-    events[0]
+    let swap_event = events[0]
         .assert_to(EVENT_ADDRESS)
-        .assert_with_payload(SwapEvent {
-            timestamp: sys.block_timestamp(),
+        .decoded_event::<SwapEvent>()
+        .unwrap();
+
+    swap_events_are_identical_no_timestamp(
+        &swap_event,
+        &SwapEvent {
+            timestamp: 0,
             address: REGULAR_USER_2.into(),
             pool_key,
             amount_in: TokenAmount::new(U256::from(1000)),
@@ -74,7 +77,9 @@ pub fn init_basic_swap(
             start_sqrt_price: SqrtPrice::new(1000000000000000000000000u128),
             target_sqrt_price: SqrtPrice::new(999006987054867461743028u128),
             x_to_y: true,
-        });
+        },
+    );
+
     events[1]
         .assert_to(REGULAR_USER_2)
         .assert_with_payload(CalculateSwapResult {
@@ -96,7 +101,10 @@ pub fn init_basic_swap(
     assert_ne!(pool_after.sqrt_price, pool_before.sqrt_price);
 
     assert_eq!(balance_of(&token_x_program, REGULAR_USER_2), U256::from(0));
-    assert_eq!(balance_of(&token_y_program, REGULAR_USER_2), U256::from(993));
+    assert_eq!(
+        balance_of(&token_y_program, REGULAR_USER_2),
+        U256::from(993)
+    );
 
     assert_eq!(balance_of(&token_x_program, INVARIANT_ID), U256::from(1500));
     assert_eq!(balance_of(&token_y_program, INVARIANT_ID), U256::from(7));
@@ -107,6 +115,12 @@ pub fn init_basic_swap(
     );
     assert_eq!(pool_after.fee_growth_global_y, FeeGrowth::new(0));
 
-    assert_eq!(pool_after.fee_protocol_token_x, TokenAmount::new(U256::from(1)));
-    assert_eq!(pool_after.fee_protocol_token_y, TokenAmount::new(U256::from(0)));
+    assert_eq!(
+        pool_after.fee_protocol_token_x,
+        TokenAmount::new(U256::from(1))
+    );
+    assert_eq!(
+        pool_after.fee_protocol_token_y,
+        TokenAmount::new(U256::from(0))
+    );
 }

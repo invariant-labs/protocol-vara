@@ -1,10 +1,9 @@
-use crate::test_helpers::gtest::consts::*;
 use crate::test_helpers::gtest::*;
-
 use contracts::*;
 use decimal::*;
 use gtest::*;
 use math::percentage::Percentage;
+use sails_rs::prelude::*;
 
 #[test]
 fn test_add_multiple_fee_tiers() {

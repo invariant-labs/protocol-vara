@@ -1,5 +1,5 @@
 use crate::test_helpers::gtest::*;
-use contracts::{FeeTier, InvariantError, PoolKey};
+use contracts::{FeeTier, PoolKey};
 use decimal::*;
 use gtest::System;
 use io::SwapHop;
@@ -7,7 +7,8 @@ use math::types::{
     liquidity::Liquidity, percentage::Percentage, sqrt_price::calculate_sqrt_price,
     token_amount::TokenAmount,
 };
-use sails_rs::ActorId;
+use sails_rs::prelude::*;
+
 #[test]
 fn swap_route_test() {
     let sys = System::new();

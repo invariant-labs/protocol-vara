@@ -8,22 +8,22 @@ use contracts::{
 };
 use decimal::*;
 use futures;
-use gstd::{exec, format, prelude::*, String};
 use io::*;
 use math::calculate_min_amount_out;
 use math::{
     check_tick, liquidity::Liquidity, percentage::Percentage, sqrt_price::SqrtPrice,
     token_amount::TokenAmount, MAX_SQRT_PRICE, MIN_SQRT_PRICE,
 };
-use sails_rs::gstd::{
-    msg::{self, reply, CodecMessageFuture},
-    service, ExecContext,
+// import for timestamp and porgram_id
+use gstd::exec;
+use sails_rs::{
+    gstd::{
+        msg::{self, reply, CodecMessageFuture},
+        service, ExecContext,
+    },
+    prelude::*,
 };
-use sails_rs::{ActorId, Decode, Encode, MessageId};
 
-fn program_id() -> ActorId {
-    exec::program_id().into()
-}
 pub fn panic(err: InvariantError) -> ! {
     let str: String = err.into();
     panic!("{}", str)
@@ -746,9 +746,23 @@ where
 
             // Reply has to be hardcoded since sails
             // doesn't allow for specifying value in the reply yet
-            reply(("Service", "WithdrawVara", value), value.0.as_u128())
+            #[cfg(not(feature = "test"))]
+            {
+                msg::reply(("Service", "WithdrawVara", value), value.0.as_u128())
+                    .expect("Failed to send message");
+                exec::leave()
+            }
+
+            #[cfg(feature = "test")]
+            {
+                msg::send(
+                    msg::source(),
+                    ("Service", "WithdrawVara", value),
+                    value.0.as_u128(),
+                )
                 .expect("Failed to send message");
-            exec::leave();
+                Ok(value)
+            }
         })
     }
 
@@ -765,7 +779,7 @@ where
                 return Err(InvariantError::FailedToChangeTokenBalance);
             }
 
-            Self::transfer_single_token(invariant, &token, &caller, amount, TransferType::Deposit)
+            self.transfer_single_token(invariant, &token, &caller, amount, TransferType::Deposit)
                 .await?;
 
             Ok(amount)
@@ -795,7 +809,7 @@ where
             };
 
             if amount.get() != 0.into() {
-                Self::transfer_single_token(
+                self.transfer_single_token(
                     invariant,
                     &token,
                     &caller,
@@ -831,10 +845,10 @@ where
             }
 
             if !token_x.1.is_zero() && !token_y.1.is_zero() {
-                Self::transfer_token_pair(invariant, &caller, &token_x, &token_y, transfer_type)
+                self.transfer_token_pair(invariant, &caller, &token_x, &token_y, transfer_type)
                     .await?;
             } else if !token_x.1.is_zero() {
-                Self::transfer_single_token(
+                self.transfer_single_token(
                     invariant,
                     &token_x.0,
                     &caller,
@@ -843,7 +857,7 @@ where
                 )
                 .await?;
             } else if !token_y.1.is_zero() {
-                Self::transfer_single_token(
+                self.transfer_single_token(
                     invariant,
                     &token_y.0,
                     &caller,
@@ -895,7 +909,7 @@ where
             };
 
             if !amount_x.is_zero() && !amount_y.is_zero() {
-                Self::transfer_token_pair(
+                self.transfer_token_pair(
                     invariant,
                     &caller,
                     &(token_x.0, amount_x),
@@ -904,23 +918,11 @@ where
                 )
                 .await?;
             } else if !amount_x.is_zero() {
-                Self::transfer_single_token(
-                    invariant,
-                    &token_x.0,
-                    &caller,
-                    amount_x,
-                    transfer_type,
-                )
-                .await?;
+                self.transfer_single_token(invariant, &token_x.0, &caller, amount_x, transfer_type)
+                    .await?;
             } else if !amount_y.is_zero() {
-                Self::transfer_single_token(
-                    invariant,
-                    &token_y.0,
-                    &caller,
-                    amount_y,
-                    transfer_type,
-                )
-                .await?;
+                self.transfer_single_token(invariant, &token_y.0, &caller, amount_y, transfer_type)
+                    .await?;
             }
 
             Ok((amount_x, amount_y))
@@ -932,6 +934,7 @@ where
     }
 
     async fn transfer_single_token(
+        &self,
         invariant: &mut Invariant,
         token: &ActorId,
         caller: &ActorId,
@@ -949,7 +952,7 @@ where
             return Err(InvariantError::NotEnoughGasToExecute);
         }
 
-        let program_id = &program_id();
+        let program_id = &self.program_id();
         let (from, to) = match transfer_type {
             TransferType::Deposit => (caller, program_id),
             TransferType::Withdrawal => (program_id, caller),
@@ -974,6 +977,7 @@ where
     }
 
     async fn transfer_token_pair(
+        &self,
         invariant: &mut Invariant,
         caller: &ActorId,
         token_x: &(ActorId, TokenAmount),
@@ -991,7 +995,7 @@ where
             return Err(InvariantError::NotEnoughGasToExecute);
         }
 
-        let program = &program_id();
+        let program = &self.program_id();
 
         let (from, to) = match transfer_type {
             TransferType::Deposit => (caller, program),
@@ -1153,6 +1157,14 @@ where
         )
         .map_err(|_| InvariantError::TransferError)?;
 
+        let message_id = message.waiting_reply_to;
+        let token_address_copy = token_address.clone();
+        let message = message
+            .handle_reply(move || {
+                reply_handler(token_address_copy, message_id);
+            })
+            .map_err(|_| InvariantError::TransferError)?;
+
         let account = match transfer_type {
             TransferType::Deposit => *from,
             TransferType::Withdrawal => *to,
@@ -1198,9 +1210,137 @@ where
 
         Ok(())
     }
+
+    fn program_id(&self) -> ActorId {
+        exec::program_id()
+    }
 }
 
 fn reply_with_err_and_leave(err: InvariantError) {
     reply(err, 0).expect("Failed to send reply");
     exec::leave();
+}
+
+pub fn reply_handler(token: ActorId, msg_id: MessageId) {
+    let invariant = InvariantStorage::as_mut();
+    // message is a valid reply
+    if let Ok(msg) = msg::load::<(String, String, bool)>() {
+        if msg.0 == "Vft" && msg.1 == "TransferFrom" {
+            handle_valid_reply(invariant, token, msg_id, msg.2)
+        } else {
+            gstd::debug!("Unknown message type");
+        }
+    // message is a valid panic
+    } else if msg::load::<String>().is_ok() {
+        handle_panic(invariant, token, msg_id)
+    } else {
+        gstd::debug!("Unknown message type");
+    }
+}
+
+pub fn handle_valid_reply(
+    invariant: &mut Invariant,
+    token: ActorId,
+    message: MessageId,
+    result: bool,
+) {
+    let (update_values, message_exists) = {
+        let transfer = invariant.awaiting_transfers.get(&(message, token));
+
+        let update_values = transfer.and_then(
+            |AwaitingTransfer {
+                 transfer_type,
+                 account,
+                 amount,
+             }| {
+                match transfer_type {
+                    TransferType::Deposit => {
+                        if result {
+                            Some((*account, token, *amount))
+                        } else {
+                            None
+                        }
+                    }
+                    TransferType::Withdrawal => {
+                        if !result {
+                            Some((*account, token, *amount))
+                        } else {
+                            None
+                        }
+                    }
+                }
+            },
+        );
+
+        (update_values, transfer.is_some())
+    };
+
+    if let Some((account, token, amount)) = update_values {
+        if let Err(e) = invariant.increase_token_balance(&token, &account, amount) {
+            gstd::debug!(
+                "Failed to increase balance, {:?}, {:?}, {:?}, {:?}",
+                account,
+                &token,
+                amount,
+                e
+            );
+        }
+    }
+
+    if message_exists {
+        if invariant
+            .awaiting_transfers
+            .remove(&(message, token))
+            .is_none()
+        {
+            gstd::debug!("Failed to remove transfer {:?}, {:?}", message, token);
+        }
+    }
+
+    gstd::debug!("Reply handling finished");
+}
+
+pub fn handle_panic(invariant: &mut Invariant, token: ActorId, message: MessageId) {
+    let (update_values, message_exists) = {
+        let transfer = invariant.awaiting_transfers.get(&(message.into(), token));
+        let update_values = transfer.and_then(
+            |AwaitingTransfer {
+                 transfer_type,
+                 account,
+                 amount,
+             }| {
+                // Only failure on withdrawal needs to stored, since in case of deposit failure the amount is not deducted from users account
+                if matches!(transfer_type, TransferType::Withdrawal) {
+                    Some((*account, token, *amount))
+                } else {
+                    None
+                }
+            },
+        );
+
+        (update_values, transfer.is_some())
+    };
+
+    if let Some((account, token, amount)) = update_values {
+        if let Err(e) = invariant.increase_token_balance(&token, &account, amount) {
+            gstd::debug!(
+                "Failed to increase balance, {:?}, {:?}, {:?}, {:?}",
+                account,
+                &token,
+                amount,
+                e
+            );
+        }
+    }
+
+    if message_exists
+        && invariant
+            .awaiting_transfers
+            .remove(&(message.into(), token))
+            .is_none()
+    {
+        gstd::debug!("Failed to remove transfer {:?}, {:?}", message, token);
+    }
+
+    gstd::debug!("Panic handling finished");
 }

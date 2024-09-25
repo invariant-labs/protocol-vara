@@ -11,12 +11,10 @@ use math::{
     sqrt_price::{calculate_sqrt_price, check_tick_to_sqrt_price_relationship, SqrtPrice},
     token_amount::TokenAmount,
 };
-use sails_rs::{ActorId, Decode, Encode, TypeInfo};
+use sails_rs::prelude::*;
 use traceable_result::*;
 
 #[derive(PartialEq, Debug, Clone, Decode, Encode, TypeInfo, Eq)]
-#[codec(crate = gstd::codec)]
-#[scale_info(crate = gstd::scale_info)]
 pub struct Pool {
     pub liquidity: Liquidity,
     pub sqrt_price: SqrtPrice,
@@ -244,8 +242,7 @@ mod tests {
 
         {
             let init_tick = 0;
-            let init_sqrt_price =
-                calculate_sqrt_price(init_tick).unwrap() + SqrtPrice::new(1);
+            let init_sqrt_price = calculate_sqrt_price(init_tick).unwrap() + SqrtPrice::new(1);
             let tick_spacing = 3;
             let pool = Pool::create(
                 init_sqrt_price,
@@ -318,8 +315,7 @@ mod tests {
         }
         {
             let init_tick = MAX_TICK;
-            let init_sqrt_price =
-                calculate_sqrt_price(init_tick).unwrap() - SqrtPrice::new(1);
+            let init_sqrt_price = calculate_sqrt_price(init_tick).unwrap() - SqrtPrice::new(1);
             let tick_spacing = 1;
             Pool::create(
                 init_sqrt_price,

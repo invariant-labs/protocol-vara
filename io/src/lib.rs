@@ -1,15 +1,13 @@
 #![no_std]
 use contracts::*;
-use sails_rs::{ActorId, Decode, Encode, TypeInfo, Vec};
 use math::{
     percentage::Percentage,
     token_amount::TokenAmount,
     types::{liquidity::Liquidity, sqrt_price::SqrtPrice},
 };
+use sails_rs::prelude::*;
 
 #[derive(Decode, Encode, TypeInfo, PartialEq, Eq, Clone, Copy, Debug)]
-#[codec(crate = gstd::codec)]
-#[scale_info(crate = gstd::scale_info)]
 pub struct InvariantConfig {
     pub admin: ActorId,
     pub protocol_fee: Percentage,
@@ -24,8 +22,6 @@ impl Default for InvariantConfig {
 }
 
 #[derive(Clone, Decode, Encode, Debug, PartialEq, Eq, TypeInfo)]
-#[codec(crate = gstd::codec)]
-#[scale_info(crate = gstd::scale_info)]
 pub enum InvariantEvent {
     PositionCreatedEvent {
         timestamp: u64,
@@ -65,8 +61,6 @@ pub enum InvariantEvent {
 }
 
 #[derive(Decode, Default, Encode, Clone, Debug, PartialEq, Eq, TypeInfo)]
-#[codec(crate = gstd::codec)]
-#[scale_info(crate = gstd::scale_info)]
 pub struct CalculateSwapResult {
     pub amount_in: TokenAmount,
     pub amount_out: TokenAmount,
@@ -78,16 +72,12 @@ pub struct CalculateSwapResult {
 }
 
 #[derive(Decode, Default, Encode, Clone, Debug, PartialEq, Eq, TypeInfo)]
-#[codec(crate = gstd::codec)]
-#[scale_info(crate = gstd::scale_info)]
 pub struct SwapHop {
     pub pool_key: PoolKey,
     pub x_to_y: bool,
 }
 
 #[derive(Decode, Default, Encode, Clone, Debug, PartialEq, Eq, TypeInfo)]
-#[codec(crate = gstd::codec)]
-#[scale_info(crate = gstd::scale_info)]
 pub struct QuoteResult {
     pub amount_in: TokenAmount,
     pub amount_out: TokenAmount,

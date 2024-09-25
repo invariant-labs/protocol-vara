@@ -1,7 +1,6 @@
 use crate::{send_query, test_helpers::gtest::REGULAR_USER_1};
 use gtest::*;
-use sails_rs::ActorId;
-use decimal::U256;
+use sails_rs::prelude::*;
 
 pub fn allowance(token: &Program, owner: u64, spender: u64) -> U256 {
     send_query!(

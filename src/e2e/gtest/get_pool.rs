@@ -25,8 +25,6 @@ fn test_get_pool() {
     let init_sqrt_price = calculate_sqrt_price(0).unwrap();
     let init_tick = 0;
 
-    let block_timestamp = sys.block_timestamp();
-
     let res = create_pool(
         &invariant,
         REGULAR_USER_1,
@@ -42,15 +40,15 @@ fn test_get_pool() {
 
     let pool = get_pool(&invariant, token_0, token_1, fee_tier).unwrap();
 
-    assert_eq!(
-        pool,
-        Pool {
-            start_timestamp: block_timestamp,
-            last_timestamp: block_timestamp,
+    pools_are_identical_no_timestamp(
+        &pool,
+        &Pool {
+            start_timestamp: 0,
+            last_timestamp: 0,
             sqrt_price: init_sqrt_price,
             current_tick_index: init_tick,
             fee_receiver: ADMIN.into(),
             ..Pool::default()
-        }
-    )
+        },
+    );
 }

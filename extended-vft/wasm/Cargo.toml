@@ -1,0 +1,25 @@
+[package]
+name = "extended_vft_wasm"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+extended-vft-app = { path = "../app" }
+sails-rs.workspace = true
+
+[build-dependencies]
+sails-rs = { workspace = true, features = ["wasm-builder"] }
+sails-idl-gen.workspace = true
+sails-client-gen.workspace = true
+gtest.workspace = true
+gclient.workspace = true
+gear-wasm-instrument.workspace = true
+extended-vft-app = { path = "../app" }
+
+[lib]
+crate-type = ["rlib"]
+name = "extended_vft_wasm"
+
+[features]
+test = ["extended-vft-app/test"]
+default = []

@@ -1,7 +1,7 @@
 use super::init_tokens;
 use crate::test_helpers::gtest::*;
-use decimal::U256;
 use gtest::*;
+use sails_rs::prelude::*;
 
 pub fn init_tokens_with_mint(
     sys: &System,

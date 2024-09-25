@@ -1,9 +1,7 @@
-use crate::send_query;
-use crate::test_helpers::consts::*;
-use crate::test_helpers::gtest::consts::*;
+use crate::{send_query, test_helpers::gtest::*};
 use contracts::*;
-use gstd::prelude::*;
 use gtest::*;
+use sails_rs::prelude::*;
 
 use io::*;
 pub fn get_fee_tiers(invariant: &Program) -> Vec<FeeTier> {

@@ -41,10 +41,10 @@ fn test_interaction_with_pool_on_removed_fee_tier() {
     .assert_panicked_with(InvariantError::FeeTierNotFound);
 
     // Init  position
-    init_basic_position(&sys, &invariant, &token_x_program, &token_y_program);
+    init_basic_position(&invariant, &token_x_program, &token_y_program);
 
     // Init swap
-    init_basic_swap(&sys, &invariant, &token_x_program, &token_y_program);
+    init_basic_swap(&invariant, &token_x_program, &token_y_program);
 
     // Claim fee
     let (claimed_x, claimed_y) =
@@ -70,7 +70,7 @@ fn test_interaction_with_pool_on_removed_fee_tier() {
     assert_eq!(pools.0.len(), 1);
 
     // Transfer position
-    init_basic_position(&sys, &invariant, &token_x_program, &token_y_program);
+    init_basic_position(&invariant, &token_x_program, &token_y_program);
     let transferred_index = 0;
     let owner_list_before = get_all_positions(&invariant, REGULAR_USER_1.into());
     let recipient_list_before = get_all_positions(&invariant, REGULAR_USER_2.into());

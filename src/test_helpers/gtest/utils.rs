@@ -1,4 +1,3 @@
-use gstd::{vec, Vec};
 #[macro_export]
 macro_rules! send_query {
   (
@@ -10,10 +9,8 @@ macro_rules! send_query {
     response_type: $response_type:ty
   ) => {
         {
-          use sails_rs::gstd::*;
-          use gstd::ToString;
-          use sails_rs::{Decode, Encode};
-          use crate::test_helpers::gtest::entrypoints::utils::InvariantResult;
+          use sails_rs::prelude::*;
+          use crate::{send_request, test_helpers::gtest::*};
 
           let name = $name.to_string().encode();
           let action = $action.to_string().encode();
@@ -46,7 +43,7 @@ macro_rules! send_query {
 macro_rules! send_request {
     (program: $program: expr, user: $user: expr, service_name: $name: literal, action: $action: literal, payload: ($($val: expr),*)) => {
         {
-            use gstd::*;
+            use sails_rs::*;
             let request = [
                 $name.encode(),
                 $action.encode(),
@@ -60,7 +57,7 @@ macro_rules! send_request {
     };
     (program: $program: expr, user: $user: expr, service_name: $name: literal, action: $action: literal, payload: ($($val: expr),*), value: $value: expr ) => {
       {
-          use gstd::*;
+          use sails_rs::*;
           let request = [
               $name.encode(),
               $action.encode(),

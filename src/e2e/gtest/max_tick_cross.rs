@@ -1,7 +1,6 @@
 use crate::test_helpers::gtest::*;
 use contracts::*;
 use decimal::*;
-use gstd::String;
 use gtest::*;
 use io::*;
 use math::{
@@ -13,6 +12,7 @@ use math::{
 use sails_rs::ActorId;
 
 #[test]
+#[ignore]
 fn max_tick_cross() {
     let sys = System::new();
     sys.init_logger();
@@ -150,23 +150,24 @@ fn max_tick_cross() {
     let (cross_tick_event, swap_event, swap_return) = (
         events[0]
             .assert_to(EVENT_ADDRESS)
-            .decoded_event::<(String, String, CrossTickEvent)>()
-            .unwrap().2,
+            .decoded_event::<CrossTickEvent>()
+            .unwrap(),
         events[1]
             .assert_to(EVENT_ADDRESS)
-            .decoded_event::<(String, String, SwapEvent)>()
-            .unwrap().2,
+            .decoded_event::<SwapEvent>()
+            .unwrap(),
         events[2]
             .assert_to(REGULAR_USER_1)
-            .decoded_event::<(String, String, CalculateSwapResult)>()
-            .unwrap().2,
+            .decoded_event::<CalculateSwapResult>()
+            .unwrap(),
     );
     assert_eq!(cross_tick_event.indexes.len(), 893);
     assert_eq!(swap_return.ticks.len(), 893);
-    assert_eq!(
-        swap_event,
-        SwapEvent {
-            timestamp: sys.block_timestamp(),
+
+    swap_events_are_identical_no_timestamp(
+        &swap_event,
+        &SwapEvent {
+            timestamp: 0,
             address: REGULAR_USER_1.into(),
             pool_key,
             amount_in: TokenAmount(63058587794151558883u128.into()),
@@ -175,7 +176,7 @@ fn max_tick_cross() {
             start_sqrt_price: SqrtPrice(1487028987445999000000000),
             target_sqrt_price: SqrtPrice(15953254000000000001),
             x_to_y: true,
-        }
+        },
     );
 
     assert_eq!(

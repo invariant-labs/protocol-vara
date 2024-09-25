@@ -1,6 +1,6 @@
 {
   "name": "@invariant-labs/vara-sdk",
-  "version": "0.1.18",
+  "version": "0.1.19",
   "collaborators": [
     "Invariant Labs"
   ],
@@ -49,9 +49,9 @@
     "test:simulate-invariant-swap": "npx mocha --config mocharc.json ./tests/simulate-invariant-swap.test.ts",
     "contract:build": "cd ../ && ./build.sh dev-sdk",
     "invariant:copy": "cp ../src/wasm/invariant.idl ./contracts/invariant/invariant.idl && cp ../target/wasm32-unknown-unknown/release/invariant_wasm.opt.wasm ./contracts/invariant/invariant.opt.wasm",
-    "erc-20:copy": "cp ../gear-erc20/wasm/erc20.idl ./contracts/gear_erc20/gear_erc20.idl && cp ../target/wasm32-unknown-unknown/release/gear_erc20_wasm.opt.wasm ./contracts/gear_erc20/gear_erc20.opt.wasm",
+    "erc-20:copy": "cp ../extended-vft/wasm/extended_vft.idl ./contracts/extended_vft/extended_vft.idl && cp ../target/wasm32-unknown-unknown/release/extended_vft_wasm.opt.wasm ./contracts/extended_vft/extended_vft.opt.wasm",
     "invariant:generate": "npm run invariant:copy && npx sails-js generate ./contracts/invariant/invariant.idl -o ./src/invariant-contract.ts -n InvariantContract",
-    "erc-20:generate": "npm run erc-20:copy && npx sails-js generate ./contracts/gear_erc20/gear_erc20.idl -o ./src/erc20-token.ts -n Erc20Token",
+    "erc-20:generate": "npm run erc-20:copy && npx sails-js generate ./contracts/extended_vft/extended_vft.idl -o ./src/erc20-token.ts -n Erc20Token",
     "fix-generate": "node fix-generate.js"
   },
   "dependencies": {
