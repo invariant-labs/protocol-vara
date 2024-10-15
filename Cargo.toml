@@ -64,7 +64,7 @@ gear-wasm-builder = "1.5.0"
 gear-wasm-instrument = "=1.5.0"
 sails-client-gen = "=0.3.0"
 gear-core = "1.5.0"
-vft-service = { git = "https://github.com/gear-foundation/standards" }
+vft-service = { git = "https://github.com/gear-foundation/standards", rev ="adafda03117173ab522aeb3eb3b87fd9a4c6f1c6" }
 
 # External
 parity-scale-codec = { version = "3.6.4", default-features = false }

@@ -14,7 +14,7 @@ pub struct SimulateSwapResult {
   pub target_sqrt_price: SqrtPrice,
   pub crossed_ticks: Vec<LiquidityTick>,
   pub global_insufficient_liquidity: bool,
-  pub max_ticks_crossed: bool,
+  pub max_swap_steps_reached: bool,
   pub state_outdated: bool,
 }
 

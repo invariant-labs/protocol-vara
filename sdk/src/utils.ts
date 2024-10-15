@@ -36,7 +36,8 @@ import {
   tickIndexToPosition,
   _positionToTick,
   _alignTickToSpacing,
-  _calculateSqrtPrice
+  _calculateSqrtPrice,
+  SimulateSwapResult
 } from '@invariant-labs/vara-sdk-wasm'
 
 import { TypeRegistry } from '@polkadot/types'
@@ -66,7 +67,7 @@ import {
   Liquidity
 } from './schema.js'
 import { Network } from './network.js'
-import { CONCENTRATION_FACTOR, LOCAL, MAINNET, MAX_TICK_CROSS, TESTNET } from './consts.js'
+import { CONCENTRATION_FACTOR, LOCAL, MAINNET, MAX_SWAP_STEPS, TESTNET } from './consts.js'
 export { HexString } from '@gear-js/api'
 
 export type Signer = string | IKeyringPair
@@ -486,7 +487,7 @@ export function filterTicks<T extends Tick | LiquidityTick>(
   let tickCount = 0
 
   for (const [index, tick] of filteredTicks.entries()) {
-    if (tickCount >= MAX_TICK_CROSS) {
+    if (tickCount >= MAX_SWAP_STEPS) {
       break
     }
 
@@ -515,7 +516,7 @@ export function filterTickmap(
   const [currentChunkIndex] = tickIndexToPosition(index, tickSpacing)
   let tickCount = 0
   for (const [chunkIndex] of filteredTickmap) {
-    if (tickCount >= MAX_TICK_CROSS) {
+    if (tickCount >= MAX_SWAP_STEPS) {
       break
     }
 
@@ -707,7 +708,7 @@ export const simulateInvariantSwap = (
   amount: bigint,
   byAmountIn: boolean,
   sqrtPriceLimit: bigint
-) => {
+): SimulateSwapResult => {
   return wasmSerializer.decodeSimulateSwapResult(
     _simulateInvariantSwap(
       tickmap,

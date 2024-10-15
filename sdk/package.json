@@ -1,14 +1,11 @@
 {
   "name": "@invariant-labs/vara-sdk",
-  "version": "0.1.20",
+  "version": "0.1.21",
   "collaborators": [
     "Invariant Labs"
   ],
   "description": "",
   "type": "module",
-  "workspaces": [
-    "src/wasm/pkg"
-  ],
   "main": "target/index.js",
   "keywords": [
     "VARA",
@@ -47,6 +44,7 @@
     "test:query-on-pair": "npx mocha --config mocharc.json ./tests/query-on-pair.test.ts",
     "test:batch": "npx mocha --config mocharc.json ./tests/batch.test.ts",
     "test:simulate-invariant-swap": "npx mocha --config mocharc.json ./tests/simulate-invariant-swap.test.ts",
+    "test:crosses": "npx mocha --config mocharc.json ./tests/testnet-max-tick-cross.test.ts",
     "contract:build": "cd ../ && ./build.sh dev-sdk",
     "invariant:copy": "cp ../src/wasm/invariant.idl ./contracts/invariant/invariant.idl && cp ../target/wasm32-unknown-unknown/release/invariant_wasm.opt.wasm ./contracts/invariant/invariant.opt.wasm",
     "erc-20:copy": "cp ../extended-vft/wasm/extended_vft.idl ./contracts/extended_vft/extended_vft.idl && cp ../target/wasm32-unknown-unknown/release/extended_vft_wasm.opt.wasm ./contracts/extended_vft/extended_vft.opt.wasm",
@@ -56,7 +54,7 @@
   },
   "dependencies": {
     "@gear-js/api": "0.38.1",
-    "@invariant-labs/vara-sdk-wasm": "0.1.16",
+    "@invariant-labs/vara-sdk-wasm": "0.1.17",
     "@polkadot/api": "11.0.2",
     "@polkadot/types": "11.0.2",
     "sails-js": "0.1.4"

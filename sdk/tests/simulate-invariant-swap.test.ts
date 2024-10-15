@@ -1,8 +1,8 @@
-import { delay, getMaxSqrtPrice, getMinSqrtPrice, integerSafeCast } from '../src/utils'
+import { calculateSqrtPrice, delay, getMaxSqrtPrice, getMinSqrtPrice, integerSafeCast } from '../src/utils'
 import { Keyring } from '@polkadot/api'
 import { expect } from 'chai'
 import { Network } from '../src/network.js'
-import { MAX_SQRT_PRICE, MIN_SQRT_PRICE, MAX_TICK_CROSS } from '../src/consts'
+import { MAX_SQRT_PRICE, MIN_SQRT_PRICE, MAX_SWAP_STEPS, SEARCH_RANGE } from '../src/consts'
 import { Invariant } from '../src/invariant'
 import { FungibleToken } from '../src/erc20'
 import { assertThrowsAsync } from '../src/test-utils'
@@ -16,7 +16,6 @@ import {
 } from '../src/utils'
 import { describe, it } from 'mocha'
 import { HexString } from '@gear-js/api'
-import { assert } from 'chai'
 
 const api = await initGearApi(Network.Local)
 import { subscribeToNewHeads } from '../src/utils'
@@ -79,7 +78,9 @@ describe('simulateInvariantSwap', async function () {
 
       const pool = await invariant.getPool(token0Address, token1Address, feeTier)
 
-      const sqrtPriceLimit = getMinSqrtPrice(feeTier.tickSpacing)
+      const sqrtPriceLimit = calculateSqrtPrice(
+        pool.currentTickIndex - feeTier.tickSpacing * SEARCH_RANGE * MAX_SWAP_STEPS
+      )
 
       const amountIn = 6000n
       const byAmountIn = true
@@ -109,7 +110,7 @@ describe('simulateInvariantSwap', async function () {
         sqrtPriceLimit
       )
       expect(simulation.stateOutdated).to.equal(false)
-      expect(simulation.maxTicksCrossed).to.equal(false)
+      expect(simulation.maxSwapStepsReached).to.equal(false)
       expect(simulation.globalInsufficientLiquidity).to.equal(true)
       expect(simulation.crossedTicks.length).to.equal(1)
 
@@ -124,7 +125,9 @@ describe('simulateInvariantSwap', async function () {
       const poolKey = newPoolKey(token0Address, token1Address, feeTier)
       const pool = await invariant.getPool(token0Address, token1Address, feeTier)
 
-      const sqrtPriceLimit = getMaxSqrtPrice(feeTier.tickSpacing)
+      const sqrtPriceLimit = calculateSqrtPrice(
+        pool.currentTickIndex + feeTier.tickSpacing * SEARCH_RANGE * MAX_SWAP_STEPS
+      )
       const amountIn = 6000n
       const byAmountIn = true
       const xToY = false
@@ -154,7 +157,7 @@ describe('simulateInvariantSwap', async function () {
       )
 
       expect(simulation.stateOutdated).to.equal(false)
-      expect(simulation.maxTicksCrossed).to.equal(false)
+      expect(simulation.maxSwapStepsReached).to.equal(false)
       expect(simulation.globalInsufficientLiquidity).to.equal(true)
       expect(simulation.crossedTicks.length).to.equal(1)
 
@@ -168,7 +171,10 @@ describe('simulateInvariantSwap', async function () {
 
       const poolKey = newPoolKey(token0Address, token1Address, feeTier)
       const pool = await invariant.getPool(token0Address, token1Address, feeTier)
-      const sqrtPriceLimit = getMaxSqrtPrice(feeTier.tickSpacing)
+      const sqrtPriceLimit = calculateSqrtPrice(
+        pool.currentTickIndex + feeTier.tickSpacing * SEARCH_RANGE * MAX_SWAP_STEPS
+      )
+
       const amountIn = 5000n
       const byAmountIn = false
       const xToY = false
@@ -197,7 +203,7 @@ describe('simulateInvariantSwap', async function () {
       )
 
       expect(simulation.stateOutdated).to.equal(false)
-      expect(simulation.maxTicksCrossed).to.equal(false)
+      expect(simulation.maxSwapStepsReached).to.equal(false)
       expect(simulation.globalInsufficientLiquidity).to.equal(true)
       expect(simulation.crossedTicks.length).to.equal(1)
 
@@ -212,7 +218,10 @@ describe('simulateInvariantSwap', async function () {
       const poolKey = newPoolKey(token0Address, token1Address, feeTier)
       const pool = await invariant.getPool(token0Address, token1Address, feeTier)
 
-      const sqrtPriceLimit = getMinSqrtPrice(feeTier.tickSpacing)
+      const sqrtPriceLimit = calculateSqrtPrice(
+        pool.currentTickIndex - feeTier.tickSpacing * SEARCH_RANGE * MAX_SWAP_STEPS
+      )
+
       const amountIn = 5000n
       const byAmountIn = false
       const xToY = true
@@ -242,7 +251,7 @@ describe('simulateInvariantSwap', async function () {
       )
 
       expect(simulation.stateOutdated).to.equal(false)
-      expect(simulation.maxTicksCrossed).to.equal(false)
+      expect(simulation.maxSwapStepsReached).to.equal(false)
       expect(simulation.globalInsufficientLiquidity).to.equal(true)
       expect(simulation.crossedTicks.length).to.equal(1)
 
@@ -258,11 +267,11 @@ describe('simulateInvariantSwap', async function () {
 
       const poolKey = newPoolKey(token0Address, token1Address, feeTier)
       const pool = await invariant.getPool(token0Address, token1Address, feeTier)
-      const sqrtPriceLimit = getMaxSqrtPrice(feeTier.tickSpacing)
+      const sqrtPriceLimit = getMinSqrtPrice(feeTier.tickSpacing)
 
       const amountIn = 4999n
       const byAmountIn = true
-      const xToY = false
+      const xToY = true
 
       const tickmap = filterTickmap(
         await invariant.getTickmap(poolKey),
@@ -292,7 +301,7 @@ describe('simulateInvariantSwap', async function () {
       const swapResult = swap
 
       expect(simulation.stateOutdated).to.equal(false)
-      expect(simulation.maxTicksCrossed).to.equal(false)
+      expect(simulation.maxSwapStepsReached).to.equal(false)
       expect(simulation.globalInsufficientLiquidity).to.equal(false)
       expect(swapResult.amountIn).to.equal(simulation.amountIn)
       expect(swapResult.amountOut).to.equal(simulation.amountOut)
@@ -349,7 +358,7 @@ describe('simulateInvariantSwap', async function () {
 
       expect(simulation.globalInsufficientLiquidity).to.equal(false)
       expect(simulation.stateOutdated).to.equal(false)
-      expect(simulation.maxTicksCrossed).to.equal(false)
+      expect(simulation.maxSwapStepsReached).to.equal(false)
       expect(swapResult.amountIn).to.equal(simulation.amountIn)
       expect(swapResult.amountOut).to.equal(simulation.amountOut)
       expect(swapResult.startSqrtPrice).to.equal(simulation.startSqrtPrice)
@@ -404,7 +413,7 @@ describe('simulateInvariantSwap', async function () {
 
       expect(simulation.globalInsufficientLiquidity).to.equal(false)
       expect(simulation.stateOutdated).to.equal(false)
-      expect(simulation.maxTicksCrossed).to.equal(false)
+      expect(simulation.maxSwapStepsReached).to.equal(false)
 
       expect(swapResult.amountIn).to.equal(simulation.amountIn)
       expect(swapResult.amountOut).to.equal(simulation.amountOut)
@@ -460,7 +469,7 @@ describe('simulateInvariantSwap', async function () {
 
       expect(simulation.globalInsufficientLiquidity).to.equal(false)
       expect(simulation.stateOutdated).to.equal(false)
-      expect(simulation.maxTicksCrossed).to.equal(false)
+      expect(simulation.maxSwapStepsReached).to.equal(false)
       expect(swapResult.amountIn).to.equal(simulation.amountIn)
       expect(swapResult.amountOut).to.equal(simulation.amountOut)
       expect(swapResult.startSqrtPrice).to.equal(simulation.startSqrtPrice)
@@ -517,7 +526,7 @@ describe('simulateInvariantSwap', async function () {
       )
 
       expect(simulation.globalInsufficientLiquidity).to.equal(false)
-      expect(simulation.maxTicksCrossed).to.equal(false)
+      expect(simulation.maxSwapStepsReached).to.equal(false)
       expect(simulation.stateOutdated).to.equal(true)
       expect(simulation.crossedTicks.length).to.equal(0)
     })
@@ -568,7 +577,7 @@ describe('simulateInvariantSwap', async function () {
       )
 
       expect(simulation.globalInsufficientLiquidity).to.equal(false)
-      expect(simulation.maxTicksCrossed).to.equal(false)
+      expect(simulation.maxSwapStepsReached).to.equal(false)
       expect(simulation.stateOutdated).to.equal(true)
       expect(simulation.crossedTicks.length).to.equal(0)
     })
@@ -623,67 +632,50 @@ describe('simulateInvariantSwap', async function () {
       )
 
       expect(simulation.globalInsufficientLiquidity).to.equal(false)
-      expect(simulation.maxTicksCrossed).to.equal(false)
+      expect(simulation.maxSwapStepsReached).to.equal(false)
       expect(simulation.stateOutdated).to.equal(true)
       expect(simulation.crossedTicks.length).to.equal(1)
     })
   })
-  it('max ticks crossed', async function () {
-    this.timeout(6000000)
+  it('max swap steps reached', async function () {
+    this.timeout(2000000)
     const poolKey = newPoolKey(token0Address, token1Address, feeTier)
 
     const sqrtPriceLimit = getMinSqrtPrice(feeTier.tickSpacing)
-    const amountIn = 63309369303010671648n
-    const yToXSwapAmount = 491901187596437n + 100n
+    const amountIn = 1000000n
     const byAmountIn = true
     const xToY = true
 
-    const mintAmount = 2n ** 253n - 1n
+    const mintAmount = 1n << 120n
     await GRC20.mint(admin.addressRaw, mintAmount, token0Address)
     await GRC20.approve(admin, invariant.programId(), mintAmount, token0Address)
     await GRC20.mint(admin.addressRaw, mintAmount, token1Address)
     await GRC20.approve(admin, invariant.programId(), mintAmount, token1Address)
 
-    // clear existing position
-    await invariant.removePosition(admin, 0n)
-    await invariant.depositTokenPair(
-      admin,
-      [token0Address, 2n ** 253n - 1n],
-      [token1Address, 2n ** 253n - 1n]
-    )
-    const liquidityDelta = 1000000000000000n * 10n ** 5n
+    const liquidityDelta = 10000000n * 10n ** 6n
     const spotSqrtPrice = 1000000000000000000000000n
     const slippageTolerance = 0n
 
     const indexes: bigint[] = []
-    indexes.push(-863n * 256n)
-    for (let i = -863n; i < 32n; i += 1n) {
-      indexes.push((i + 1n) * 256n)
+
+    for (let i = -MAX_SWAP_STEPS; i < 5; i += 1n) {
+      indexes.push(i + 1n)
       await invariant.createPosition(
         admin,
         poolKey,
-        i * 256n,
-        (i + 1n) * 256n,
+        i,
+        i + 1n,
         liquidityDelta,
         spotSqrtPrice,
         slippageTolerance
       )
     }
-    const initSwap = await invariant.swap(
-      admin,
-      poolKey,
-      true,
-      yToXSwapAmount,
-      true,
-      getMinSqrtPrice(1n)
-    )
-    assert.equal(initSwap.ticks.length, 31)
 
     const pool = await invariant.getPool(token0Address, token1Address, feeTier)
 
     const tickmap = filterTickmap(
       await invariant.getTickmap(poolKey),
-      poolKey.feeTier.tickSpacing as any,
+      poolKey.feeTier.tickSpacing,
       pool.currentTickIndex,
       xToY
     )
@@ -704,10 +696,10 @@ describe('simulateInvariantSwap', async function () {
       byAmountIn,
       sqrtPriceLimit
     )
-    expect(simulation.crossedTicks.length).to.equal(integerSafeCast(MAX_TICK_CROSS + 1n))
+    expect(simulation.crossedTicks.length).to.equal(integerSafeCast(MAX_SWAP_STEPS + 1n))
     expect(simulation.globalInsufficientLiquidity).to.equal(false)
     expect(simulation.stateOutdated).to.equal(false)
-    expect(simulation.maxTicksCrossed).to.equal(true)
+    expect(simulation.maxSwapStepsReached).to.equal(true)
   })
 
   it('max token amount - X to Y - amount in', async function () {
@@ -743,8 +735,8 @@ describe('simulateInvariantSwap', async function () {
       MIN_SQRT_PRICE
     )
     expect(simulation.stateOutdated).to.equal(false)
-    expect(simulation.maxTicksCrossed).to.equal(false)
-    expect(simulation.globalInsufficientLiquidity).to.equal(true)
+    expect(simulation.maxSwapStepsReached).to.equal(true)
+    expect(simulation.globalInsufficientLiquidity).to.equal(false)
     expect(simulation.crossedTicks.length).to.equal(1)
 
     await assertThrowsAsync(
@@ -785,8 +777,8 @@ describe('simulateInvariantSwap', async function () {
       MIN_SQRT_PRICE
     )
     expect(simulation.stateOutdated).to.equal(false)
-    expect(simulation.maxTicksCrossed).to.equal(false)
-    expect(simulation.globalInsufficientLiquidity).to.equal(true)
+    expect(simulation.maxSwapStepsReached).to.equal(true)
+    expect(simulation.globalInsufficientLiquidity).to.equal(false)
     expect(simulation.crossedTicks.length).to.equal(1)
 
     await assertThrowsAsync(
@@ -827,8 +819,8 @@ describe('simulateInvariantSwap', async function () {
       MAX_SQRT_PRICE
     )
     expect(simulation.stateOutdated).to.equal(false)
-    expect(simulation.maxTicksCrossed).to.equal(false)
-    expect(simulation.globalInsufficientLiquidity).to.equal(true)
+    expect(simulation.maxSwapStepsReached).to.equal(true)
+    expect(simulation.globalInsufficientLiquidity).to.equal(false)
     expect(simulation.crossedTicks.length).to.equal(1)
 
     await assertThrowsAsync(
@@ -869,8 +861,8 @@ describe('simulateInvariantSwap', async function () {
       MAX_SQRT_PRICE
     )
     expect(simulation.stateOutdated).to.equal(false)
-    expect(simulation.maxTicksCrossed).to.equal(false)
-    expect(simulation.globalInsufficientLiquidity).to.equal(true)
+    expect(simulation.maxSwapStepsReached).to.equal(true)
+    expect(simulation.globalInsufficientLiquidity).to.equal(false)
     expect(simulation.crossedTicks.length).to.equal(1)
 
     await assertThrowsAsync(
