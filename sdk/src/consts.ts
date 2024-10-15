@@ -1,7 +1,7 @@
 import {
   getGlobalMaxSqrtPrice,
   getGlobalMinSqrtPrice,
-  getMaxTickCross,
+  getMaxSwapStep,
   getChunkSize,
   getLiquidityTickLimit,
   getMaxPoolKeysReturned,
@@ -22,7 +22,8 @@ import {
   getPriceDenominator,
   getSecondsPerLiquidityDenominator,
   getSqrtPriceDenominator,
-  getTokenAmountDenominator
+  getTokenAmountDenominator,
+  getTickSearchRange
 } from '@invariant-labs/vara-sdk-wasm'
 import { HexString } from './utils.js'
 
@@ -36,7 +37,8 @@ export const DEFAULT_ADDRESS = '5F3sa2TJAWMqDhXG6jhV4N8ko9SxwGy8TpaNS1repo5EYjQX
 
 export const MAX_SQRT_PRICE = getGlobalMaxSqrtPrice()
 export const MIN_SQRT_PRICE = getGlobalMinSqrtPrice()
-export const MAX_TICK_CROSS = getMaxTickCross()
+export const MAX_SWAP_STEPS = getMaxSwapStep()
+export const SEARCH_RANGE = getTickSearchRange()
 export const CHUNK_SIZE = getChunkSize()
 export const LIQUIDITY_TICKS_LIMIT = getLiquidityTickLimit()
 export const MAX_POOL_PAIRS_RETURNED = getMaxPoolPairsReturned()

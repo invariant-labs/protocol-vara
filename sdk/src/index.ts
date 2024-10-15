@@ -1,6 +1,6 @@
 export { Invariant } from './invariant.js'
 export { FungibleToken } from './erc20.js'
-export { GearKeyring } from '@gear-js/api'
+export { GearKeyring, GearApi } from '@gear-js/api'
 export { Network } from './network.js'
 export {
   CONCENTRATION_FACTOR,

@@ -2,15 +2,15 @@ import 'mocha'
 import { initGearApi, newFeeTier, newPoolKey, subscribeToNewHeads } from '../src/utils.js'
 import { GearKeyring, HexString } from '@gear-js/api'
 import { Network } from '../src/network.js'
-import { MAX_TICK_CROSS } from '../src/consts.js'
 import { Invariant } from '../src/invariant.js'
 import { FungibleToken } from '../src/erc20.js'
-import { SqrtPrice } from '../src/schema.js'
+import {  SqrtPrice } from '../src/schema.js'
 import { getMinSqrtPrice } from '../src/utils.js'
 import { assert } from 'chai'
+import { MAX_SWAP_STEPS } from '../src/consts.js'
 const api = await initGearApi(Network.Testnet)
-// const admin = await GearKeyring.fromSuri("//Alice")
-const admin = await GearKeyring.fromMnemonic(process.env.VARA_TESTNET_MNEMONIC as string)
+const admin = await GearKeyring.fromSuri("//Alice")
+// const admin = await GearKeyring.fromMnemonic(process.env.VARA_TESTNET_MNEMONIC as string)
 let unsub: Promise<VoidFunction> | null = null
 const GRC20: FungibleToken = await FungibleToken.load(api)
 GRC20.setAdmin(admin)
@@ -55,8 +55,10 @@ describe('Invariant', async function () {
     const slippageTolerance = 0n
 
     const indexes: bigint[] = []
-    indexes.push(-863n * 256n)
-    for (let i = -863n; i < 32n; i += 1n) {
+    const indexCount = 160n;
+
+    indexes.push(-indexCount * 256n)
+    for (let i = -indexCount; i < 0n; i += 1n) {
       indexes.push((i + 1n) * 256n)
       await invariant.createPosition(
         admin,
@@ -68,13 +70,11 @@ describe('Invariant', async function () {
         slippageTolerance
       )
     }
-    const yToXSwapAmount = 489951846302626n;
-    const initSwap = await invariant.swap(admin, poolKey, true, yToXSwapAmount, true, getMinSqrtPrice(1n))
-    assert.equal(initSwap.ticks.length, 30)
-    
-    const swapAmount = 63058587794151558883n
-    const result = await invariant.swap(admin, poolKey, true, swapAmount, true, getMinSqrtPrice(1n))
-    assert.equal(result.ticks.length, Number(MAX_TICK_CROSS))
+
+    const swapGasLimit = 120_000_000_000n
+    const amountIn = 5128996965924687n;
+    const swap = await invariant.swap(admin, poolKey, true, amountIn, true, getMinSqrtPrice(1n), swapGasLimit)
+    assert.equal(swap.ticks.length, Number(MAX_SWAP_STEPS))
   })
 
   this.afterAll(async function () {

@@ -1,8 +1,8 @@
 use crate::types::sqrt_price::get_max_tick;
 use js_sys::BigInt;
+use traceable_result::*;
 use wasm_bindgen::prelude::*;
 use wasm_wrapper::wasm_wrapper;
-use traceable_result::*;
 
 pub const LIQUIDITY_TICK_LIMIT: u32 = 21544;
 pub const POSITION_TICK_LIMIT: u32 = 17872;
@@ -19,7 +19,7 @@ pub const MIN_SQRT_PRICE: u128 = 15258932000000000000;
 pub const TICK_SEARCH_RANGE: i32 = 256;
 pub const CHUNK_SIZE: i32 = 64;
 
-pub const MAX_TICK_CROSS: u32 = 1117*8/10;
+pub const MAX_SWAP_STEPS: u32 = 1117 * 8 / 10 * 120 / 750; // 1117*8/10 - max gas limit, 120/750 gas limit/max gas coefficient;
 
 #[wasm_wrapper]
 pub fn get_global_max_sqrt_price() -> u128 {
@@ -50,8 +50,8 @@ pub fn get_chunk_size() -> i32 {
 }
 
 #[wasm_wrapper]
-pub fn get_max_tick_cross() -> u32 {
-    MAX_TICK_CROSS
+pub fn get_max_swap_step() -> u32 {
+    MAX_SWAP_STEPS
 }
 
 #[wasm_wrapper]
